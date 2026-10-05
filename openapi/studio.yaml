@@ -1934,9 +1934,6 @@ paths:
       responses:
         '200':
           description: The record and its publication.
-          headers:
-            X-Arthome-Rights-Version:
-              $ref: '#/components/headers/RightsVersion'
           content:
             application/json:
               schema:
@@ -1950,7 +1947,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:03:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
@@ -1972,6 +1969,9 @@ paths:
                     version: 7
                     checklist: []
                     offeredTransitions: []
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2072,7 +2072,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:03:25.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   title: Nuit blanche
@@ -2177,6 +2177,7 @@ paths:
                         revenue:
                           description: '**Absent** without `canRevenue`.'
                           x-arthome-tax-basis: inclusive
+                          x-arthome-restricted: canRevenue
                           $ref: '#/components/schemas/Money'
                         version:
                           type: integer
@@ -2185,7 +2186,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-22T10:00:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   policy: included
@@ -2306,11 +2307,6 @@ paths:
       responses:
         '200':
           description: Transition applied. The publication up to date, with its newly offered transitions.
-          headers:
-            X-Arthome-Rights-Version:
-              $ref: '#/components/headers/RightsVersion'
-            Idempotency-Replayed:
-              $ref: '#/components/headers/IdempotencyReplayed'
           content:
             application/json:
               schema:
@@ -2324,7 +2320,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:04:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
@@ -2338,124 +2334,6 @@ paths:
                   - from: scheduled
                     to: technical
                     irreversible: false
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          description: |
-            `state.conflict` (with the current version, and the current state when the record has one),
-            `publication.transition_irreversible` (with the promise committed),
-            `publication.promise_unacknowledged` (a one-way transition sent without its promise), or
-            `publication.checklist_incomplete` (with the list of what is missing).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: publication.checklist_incomplete
-                  nature: refused
-                  params:
-                    missing:
-                    - poster
-                    - at_least_one_active_price
-                    - technical_check_passed
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:04:00.000Z'
-        '413':
-          $ref: '#/components/responses/PayloadTooLarge'
-        '415':
-          $ref: '#/components/responses/UnsupportedMediaType'
-        '500':
-          $ref: '#/components/responses/InternalError'
-        '502':
-          $ref: '#/components/responses/BadGateway'
-        '504':
-          $ref: '#/components/responses/GatewayTimeout'
-  /v1/dates/{dateId}/replay-policy:
-    put:
-      operationId: setDateReplayPolicy
-      summary: Sets the replay policy — the promise made before the purchase.
-      description: |
-        **`none` is final for this date.** You cannot later switch on a replay you promised not to
-        make: the public price depended on it. The other values lock when ticketing opens.
-
-        The contract separates three things the sources conflated: the **promise** belongs to
-        `catalog`, the **sale** to `ticketing`, the **file and its expiry** to `streaming`.
-      x-arthome-maturity: stable
-      x-arthome-upstream:
-      - catalog
-      tags:
-      - publication
-      security:
-      - sessionCookie: []
-      - bearerToken: []
-      parameters:
-      - $ref: '#/components/parameters/DateId'
-      - $ref: '#/components/parameters/IdempotencyKey'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                policy:
-                  type: string
-                  enum:
-                  - included
-                  - subscription
-                  - unit
-                  - none
-                  x-arthome-vocabulary-source: REPLAY_POLICIES
-                windowHours:
-                  anyOf:
-                  - type: integer
-                    minimum: 1
-                  - type: 'null'
-                expectedVersion:
-                  type: integer
-                  format: int64
-              required:
-              - policy
-              - expectedVersion
-            example:
-              policy: unit
-              windowHours: 72
-              expectedVersion: 7
-      responses:
-        '200':
-          description: Policy up to date.
-          content:
-            application/json:
-              schema:
-                allOf:
-                - $ref: '#/components/schemas/EnvelopeMeta'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '#/components/schemas/Publication'
-                  required:
-                  - data
-                  additionalProperties: {}
-              example:
-                servedAt: '2026-09-21T18:08:00.000Z'
-                rightsVersion: 412
-                data:
-                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
-                  state: scheduled
-                  orderRank: 3
-                  version: 8
-                  checklist: []
-                  offeredTransitions: []
           headers:
             X-Arthome-Rights-Version:
               $ref: '#/components/headers/RightsVersion'
@@ -2571,22 +2449,890 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: '`date.replay_policy_final` when the policy was `none`.'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
+                anyOf:
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: state.conflict
+                        params:
+                          type: object
+                          properties:
+                            currentVersion:
+                              type: integer
+                              format: int64
+                            state:
+                              type: string
+                              description: Present when the record has a lifecycle state.
+                          required:
+                          - currentVersion
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.idempotency_key_reused
+                        params:
+                          type: object
+                          properties: {}
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.idempotency_in_flight
+                        params:
+                          type: object
+                          properties:
+                            retryAfterMs:
+                              type: integer
+                              format: int64
+                          required:
+                          - retryAfterMs
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: publication.transition_irreversible
+                        params:
+                          type: object
+                          properties:
+                            from:
+                              type: string
+                            to:
+                              type: string
+                            promise:
+                              type: string
+                          required:
+                          - from
+                          - to
+                          - promise
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: publication.promise_unacknowledged
+                        params:
+                          type: object
+                          properties:
+                            from:
+                              type: string
+                            to:
+                              type: string
+                            promise:
+                              type: string
+                          required:
+                          - from
+                          - to
+                          - promise
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: publication.checklist_incomplete
+                        params:
+                          type: object
+                          properties:
+                            missing:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                          - missing
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+              examples:
+                state.conflict:
+                  value:
+                    error:
+                      code: state.conflict
+                      nature: refused
+                      params:
+                        currentVersion: 8
+                        state: live
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.idempotency_key_reused:
+                  value:
+                    error:
+                      code: api.idempotency_key_reused
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.idempotency_in_flight:
+                  value:
+                    error:
+                      code: api.idempotency_in_flight
+                      nature: unavailable
+                      params:
+                        retryAfterMs: 1000
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                publication.transition_irreversible:
+                  value:
+                    error:
+                      code: publication.transition_irreversible
+                      nature: refused
+                      params:
+                        from: scheduled
+                        to: reserve
+                        promise: prices_engaged
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                publication.promise_unacknowledged:
+                  value:
+                    error:
+                      code: publication.promise_unacknowledged
+                      nature: refused
+                      params:
+                        from: draft
+                        to: scheduled
+                        promise: prices_engaged
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                publication.checklist_incomplete:
+                  value:
+                    error:
+                      code: publication.checklist_incomplete
+                      nature: refused
+                      params:
+                        missing:
+                        - poster
+                        - at_least_one_active_price
+                        - technical_check_passed
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /v1/dates/{dateId}/replay-policy:
+    put:
+      operationId: setDateReplayPolicy
+      summary: Sets the replay policy — the promise made before the purchase.
+      description: |
+        **`none` is final for this date.** You cannot later switch on a replay you promised not to
+        make: the public price depended on it. The other values lock when ticketing opens.
+
+        The contract separates three things the sources conflated: the **promise** belongs to
+        `catalog`, the **sale** to `ticketing`, the **file and its expiry** to `streaming`.
+      x-arthome-maturity: stable
+      x-arthome-upstream:
+      - catalog
+      tags:
+      - publication
+      security:
+      - sessionCookie: []
+      - bearerToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                policy:
+                  type: string
+                  enum:
+                  - included
+                  - subscription
+                  - unit
+                  - none
+                  x-arthome-vocabulary-source: REPLAY_POLICIES
+                windowHours:
+                  anyOf:
+                  - type: integer
+                    minimum: 1
+                  - type: 'null'
+                expectedVersion:
+                  type: integer
+                  format: int64
+              required:
+              - policy
+              - expectedVersion
+            example:
+              policy: unit
+              windowHours: 72
+              expectedVersion: 7
+      responses:
+        '200':
+          description: Policy up to date.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/Publication'
+                  required:
+                  - data
+                  additionalProperties: {}
               example:
-                error:
-                  code: date.replay_policy_final
-                  nature: refused
-                  params:
-                    currentPolicy: none
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:08:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
+                rightsVersion: 412
+                data:
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  state: scheduled
+                  orderRank: 3
+                  version: 8
+                  publishedAt: '2026-09-21T18:04:00Z'
+                  pricesLockedAt: '2026-09-21T18:04:00Z'
+                  checklist: []
+                  offeredTransitions:
+                  - from: scheduled
+                    to: technical
+                    irreversible: false
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.forbidden
+                        params:
+                          type: object
+                          properties: {}
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.rights_version_stale
+                        params:
+                          type: object
+                          properties:
+                            currentRightsVersion:
+                              type: integer
+                              format: int64
+                          required:
+                          - currentRightsVersion
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: state.conflict
+                        params:
+                          type: object
+                          properties:
+                            currentVersion:
+                              type: integer
+                              format: int64
+                            state:
+                              type: string
+                              description: Present when the record has a lifecycle state.
+                          required:
+                          - currentVersion
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.idempotency_key_reused
+                        params:
+                          type: object
+                          properties: {}
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.idempotency_in_flight
+                        params:
+                          type: object
+                          properties:
+                            retryAfterMs:
+                              type: integer
+                              format: int64
+                          required:
+                          - retryAfterMs
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: date.replay_policy_final
+                        params:
+                          type: object
+                          properties:
+                            currentPolicy:
+                              type: string
+                          required:
+                          - currentPolicy
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+              examples:
+                state.conflict:
+                  value:
+                    error:
+                      code: state.conflict
+                      nature: refused
+                      params:
+                        currentVersion: 8
+                        state: live
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.idempotency_key_reused:
+                  value:
+                    error:
+                      code: api.idempotency_key_reused
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.idempotency_in_flight:
+                  value:
+                    error:
+                      code: api.idempotency_in_flight
+                      nature: unavailable
+                      params:
+                        retryAfterMs: 1000
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                date.replay_policy_final:
+                  value:
+                    error:
+                      code: date.replay_policy_final
+                      nature: refused
+                      params:
+                        currentPolicy: none
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -2643,7 +3389,7 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:09:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   deleted: true
@@ -2762,22 +3508,275 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: '`date.has_sold_seats`, with the count.'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: date.has_sold_seats
-                  nature: refused
-                  params:
-                    seatsSold: 174
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:09:00.000Z'
+                anyOf:
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: state.conflict
+                        params:
+                          type: object
+                          properties:
+                            currentVersion:
+                              type: integer
+                              format: int64
+                            state:
+                              type: string
+                              description: Present when the record has a lifecycle state.
+                          required:
+                          - currentVersion
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.idempotency_key_reused
+                        params:
+                          type: object
+                          properties: {}
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.idempotency_in_flight
+                        params:
+                          type: object
+                          properties:
+                            retryAfterMs:
+                              type: integer
+                              format: int64
+                          required:
+                          - retryAfterMs
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: date.has_sold_seats
+                        params:
+                          type: object
+                          properties:
+                            seatsSold:
+                              type: integer
+                              format: int64
+                          required:
+                          - seatsSold
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+              examples:
+                state.conflict:
+                  value:
+                    error:
+                      code: state.conflict
+                      nature: refused
+                      params:
+                        currentVersion: 8
+                        state: live
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.idempotency_key_reused:
+                  value:
+                    error:
+                      code: api.idempotency_key_reused
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.idempotency_in_flight:
+                  value:
+                    error:
+                      code: api.idempotency_in_flight
+                      nature: unavailable
+                      params:
+                        retryAfterMs: 1000
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                date.has_sold_seats:
+                  value:
+                    error:
+                      code: date.has_sold_seats
+                      nature: refused
+                      params:
+                        seatsSold: 174
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '500':
           $ref: '#/components/responses/InternalError'
         '502':
@@ -2846,21 +3845,26 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:10:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
-                  dateId: 019928c1-0000-7000-8000-000000000001
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
                   title: Nuit blanche
-                  startsAt: '2026-11-05T19:30:00Z'
+                  startsAt: '2026-09-21T19:00:00Z'
+                  venueClock:
+                    venueTimezone: Europe/Paris
+                    venueUtcOffsetMin: 120
+                  runtimeMin: 95
                   openPanes:
                   - public
                   - tickets
+                  - tech
                   publication:
-                    dateId: 019928c1-0000-7000-8000-000000000001
-                    state: draft
-                    orderRank: 1
-                    version: 1
+                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                    state: scheduled
+                    orderRank: 3
+                    version: 7
                     checklist: []
                     offeredTransitions: []
           headers:
@@ -2978,6 +3982,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -3096,7 +4118,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T20:50:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   outcome: postponed
@@ -3109,29 +4131,851 @@ paths:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
         '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          description: '`date.outcome_decision_forbidden` — this role can only report.'
+          description: Malformed request, or a mandatory filter missing.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: date.outcome_decision_forbidden
-                  nature: refused
-                  params:
-                    canEscalateTo:
-                    - artist
-                    - production
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T20:50:00.000Z'
+                anyOf:
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.schema_invalid
+                        params:
+                          type: object
+                          properties:
+                            issues:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  path:
+                                    type: array
+                                    items:
+                                      anyOf:
+                                      - type: string
+                                      - type: integer
+                                        format: int64
+                                  rule:
+                                    type: string
+                                    x-arthome-vocabulary:
+                                    - too_small
+                                    - too_big
+                                    - invalid_type
+                                    - invalid_format
+                                    - invalid_value
+                                    - unrecognized_key
+                                    - custom
+                                    x-arthome-vocabulary-source: SCHEMA_ISSUE_RULES
+                                  minimum:
+                                    type: number
+                                  maximum:
+                                    type: number
+                                  inclusive:
+                                    type: boolean
+                                  format:
+                                    type: string
+                                  values:
+                                    type: array
+                                    items:
+                                      type:
+                                      - string
+                                      - number
+                                      - boolean
+                                      - 'null'
+                                required:
+                                - path
+                                - rule
+                                additionalProperties: {}
+                          required:
+                          - issues
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: date.reschedule_in_past
+                        params:
+                          type: object
+                          properties:
+                            rescheduledTo:
+                              type: string
+                          required:
+                          - rescheduledTo
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+              examples:
+                api.schema_invalid:
+                  value:
+                    error:
+                      code: api.schema_invalid
+                      nature: refused
+                      params:
+                        issues:
+                        - path:
+                          - quantity
+                          rule: too_small
+                          minimum: 1
+                          inclusive: true
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                date.reschedule_in_past:
+                  value:
+                    error:
+                      code: date.reschedule_in_past
+                      nature: refused
+                      params:
+                        rescheduledTo: '2026-10-01T19:30:00Z'
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.forbidden
+                        params:
+                          type: object
+                          properties: {}
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.rights_version_stale
+                        params:
+                          type: object
+                          properties:
+                            currentRightsVersion:
+                              type: integer
+                              format: int64
+                          required:
+                          - currentRightsVersion
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: date.outcome_decision_forbidden
+                        params:
+                          type: object
+                          properties:
+                            canEscalateTo:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                          - canEscalateTo
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                date.outcome_decision_forbidden:
+                  value:
+                    error:
+                      code: date.outcome_decision_forbidden
+                      nature: refused
+                      params:
+                        canEscalateTo:
+                        - artist
+                        - production
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: state.conflict
+                        params:
+                          type: object
+                          properties:
+                            currentVersion:
+                              type: integer
+                              format: int64
+                            state:
+                              type: string
+                              description: Present when the record has a lifecycle state.
+                          required:
+                          - currentVersion
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.idempotency_key_reused
+                        params:
+                          type: object
+                          properties: {}
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.idempotency_in_flight
+                        params:
+                          type: object
+                          properties:
+                            retryAfterMs:
+                              type: integer
+                              format: int64
+                          required:
+                          - retryAfterMs
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: date.outcome_final
+                        params:
+                          type: object
+                          properties:
+                            outcome:
+                              type: string
+                          required:
+                          - outcome
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: date.not_public
+                        params:
+                          type: object
+                          properties:
+                            state:
+                              type: string
+                          required:
+                          - state
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: date.already_started
+                        params:
+                          type: object
+                          properties:
+                            startsAt:
+                              type: string
+                          required:
+                          - startsAt
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: date.not_started
+                        params:
+                          type: object
+                          properties:
+                            startsAt:
+                              type: string
+                          required:
+                          - startsAt
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: date.already_ended
+                        params:
+                          type: object
+                          properties:
+                            endsAt:
+                              type: string
+                          required:
+                          - endsAt
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: The one moment left where the person can read out a number and dictate it to support.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          description: |
+                            `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                            **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                            retryable. A frozen `enum` here would make an earlier version of the application reject the
+                            **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                            something is wrong, on duty, on an application a store review takes days to replace.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+              examples:
+                state.conflict:
+                  value:
+                    error:
+                      code: state.conflict
+                      nature: refused
+                      params:
+                        currentVersion: 8
+                        state: live
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.idempotency_key_reused:
+                  value:
+                    error:
+                      code: api.idempotency_key_reused
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.idempotency_in_flight:
+                  value:
+                    error:
+                      code: api.idempotency_in_flight
+                      nature: unavailable
+                      params:
+                        retryAfterMs: 1000
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                date.outcome_final:
+                  value:
+                    error:
+                      code: date.outcome_final
+                      nature: refused
+                      params:
+                        outcome: cancelled
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                date.not_public:
+                  value:
+                    error:
+                      code: date.not_public
+                      nature: refused
+                      params:
+                        state: draft
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                date.already_started:
+                  value:
+                    error:
+                      code: date.already_started
+                      nature: refused
+                      params:
+                        startsAt: '2026-11-04T19:30:00Z'
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                date.not_started:
+                  value:
+                    error:
+                      code: date.not_started
+                      nature: refused
+                      params:
+                        startsAt: '2026-11-04T19:30:00Z'
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                date.already_ended:
+                  value:
+                    error:
+                      code: date.already_ended
+                      nature: refused
+                      params:
+                        endsAt: '2026-11-04T21:05:00Z'
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -3437,6 +5281,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -3669,6 +5531,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -3890,6 +5770,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -4203,6 +6101,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -4673,6 +6589,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -5941,6 +7875,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -6144,6 +8096,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -6341,6 +8311,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -6538,6 +8526,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -6754,6 +8760,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -7051,6 +9075,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '413':
@@ -7254,6 +9296,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -7436,6 +9496,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -7990,6 +10068,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -9912,6 +12008,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -10105,6 +12219,24 @@ paths:
                   - error
                   - servedAt
                   additionalProperties: {}
+              examples:
+                api.forbidden:
+                  value:
+                    error:
+                      code: api.forbidden
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.rights_version_stale:
+                  value:
+                    error:
+                      code: api.rights_version_stale
+                      nature: refused
+                      params:
+                        currentRightsVersion: 412
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':

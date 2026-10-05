@@ -849,6 +849,9 @@ function filterParameter(schema: z.ZodObject): Parameter {
 const SORT_PARAMETERS: readonly string[] = ['sortBy', 'sortDir'];
 
 const NOT_FOUND: ErrorsInput<string> = { 404: [ApiErrorCode.NOT_FOUND] };
+/** The version a write's example expects the record to be at. */
+const EXAMPLE_VERSION = 7;
+
 const IDEMPOTENCY: readonly string[] = [
   ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
   ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
@@ -936,10 +939,15 @@ function firstExample(schema: z.ZodType | undefined): unknown {
 function sentBody(
   schema: z.ZodType,
   docs: AnyDocs | undefined,
+  exampleFrom: DerivedExample | undefined,
 ): {
   readonly required: boolean;
   readonly content: {
-    readonly 'application/json': { readonly schema: z.ZodType; readonly example?: unknown };
+    readonly 'application/json': {
+      readonly schema: z.ZodType;
+      readonly example?: unknown;
+      readonly exampleFrom?: DerivedExample;
+    };
   };
 } {
   return {
@@ -948,6 +956,7 @@ function sentBody(
       'application/json': {
         schema,
         ...(docs?.example !== undefined && { example: docs.example }),
+        ...(exampleFrom !== undefined && { exampleFrom }),
       },
     },
   };
@@ -962,6 +971,8 @@ interface Spec {
   readonly responses: Responses;
   readonly errors: ErrorsInput<string>;
   readonly body?: z.ZodType;
+  /** The schema the body was made from, when it is not the body itself: its example is the body's. */
+  readonly bodyFrom?: z.ZodType;
 }
 
 export function makeResource(
@@ -1007,6 +1018,8 @@ export function makeResource(
   };
   const withVersion = (body: z.ZodObject): z.ZodType =>
     owned ? body : body.extend({ expectedVersion: conventions.expectedVersion });
+  const versionedExample = (example: unknown): unknown =>
+    owned ? example : { ...(example as object), expectedVersion: EXAMPLE_VERSION };
 
   const route = (spec: Spec): unknown => {
     const rest: Record<string, unknown> = { ...spec.docs };
@@ -1020,7 +1033,13 @@ export function makeResource(
       method: spec.method,
       path: spec.path,
       operationId: spec.docs?.operationId ?? spec.derivedId,
-      ...(spec.body !== undefined && { requestBody: sentBody(spec.body, spec.docs) }),
+      ...(spec.body !== undefined && {
+        requestBody: sentBody(
+          spec.body,
+          spec.docs,
+          spec.bodyFrom === undefined ? undefined : { of: spec.bodyFrom, as: versionedExample },
+        ),
+      }),
       ...(owned && { owner: 'caller' }),
       ...rest,
       parameters: [...spec.parameters, ...(spec.docs?.parameters ?? [])],
@@ -1216,6 +1235,7 @@ export function makeResource(
       },
       errors: conflicts,
       body: withVersion(writable),
+      bodyFrom: (docs.fields ?? docs.body) as z.ZodType,
     });
   };
 
@@ -1236,6 +1256,7 @@ export function makeResource(
       },
       errors: conflicts,
       body: withVersion(docs.body as z.ZodObject),
+      bodyFrom: docs.body as z.ZodType,
     });
 
   const upsert = (docs: AnyDocs) =>
@@ -1361,6 +1382,7 @@ export function makeResource(
             : { 204: { description: 'Done.' } },
         errors: conflicts,
         body: withVersion(docs.body as z.ZodObject),
+        bodyFrom: docs.body as z.ZodType,
       }),
   });
 

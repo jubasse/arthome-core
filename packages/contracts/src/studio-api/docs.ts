@@ -1,8 +1,11 @@
 import { MemberRole } from '@arthome/core';
 
 import { StudioTag } from './components.js';
-import type { ApiDocs, ModuleDocs } from '../openapi/docs.js';
+import { Deleted } from '../http/index.js';
+import type { ApiDocs, ModuleDocs, ModuleExamples } from '../openapi/docs.js';
 import { apiDocs } from '../openapi/docs.js';
+import { datesDocs } from './dates/docs.js';
+import { datesExamples } from './dates/examples.js';
 
 /**
  * The operations whose maturity is not their owning service's (`transport.md` §5.11). Each entry
@@ -53,10 +56,6 @@ const statedMaturities = {
     maturity: 'provisional',
     maturityReason: 'studio merchandise is not built',
   },
-  getDateReplayPane: {
-    maturity: 'provisional',
-    maturityReason: 'the replay slice (adr-replay, D-090 to D-092) is not built',
-  },
   getChannelDashboard: {
     maturity: 'provisional',
     maturityReason: 'the studio statistics (studio-money) are not built',
@@ -66,6 +65,9 @@ const statedMaturities = {
     maturityReason: 'the studio statistics (studio-money) are not built',
   },
 } satisfies ModuleDocs;
+
+/** The examples of the schemas `./http` shares between modules. */
+const sharedExamples: ModuleExamples = [[Deleted, [{ deleted: true }]]];
 
 /** The studio document's introduction, and the docs and examples its modules register. */
 export const studioDocs: ApiDocs = apiDocs({
@@ -154,6 +156,6 @@ export const studioDocs: ApiDocs = apiDocs({
         '**`studio-mobile` cannot hold its session in a cookie**: `capacitor://localhost` is a\nthird-party context on iOS. The studio BFF therefore offers a **bearer-token** session\nalongside the cookie session — a refresh token bound to the device, kept in the native store\n(`@capacitor/preferences`, **never `localStorage`**), a short access token, revocation per\ndevice.\n\nOn returning from the background with an expired token: **silent refresh**. A\nre-authentication while on duty is an operational fault. It is required only for\n**sensitive operations** — revealing or rotating a stream key, transferring ownership of a\nchannel, changing a payout method — and it is then asked for **at the moment of the\noperation**, not on returning to a screen.\n\nAllowed origins on the CORS side, as **literal strings**: `capacitor://localhost` and\n`https://localhost`. A bare `localhost` entry covers neither, `*` is illegal with credentialed\nrequests, and a framework that normalises the origin through a URL parser would reject\n`capacitor://`.\n',
     },
   },
-  modules: [statedMaturities],
-  examples: [],
+  modules: [statedMaturities, datesDocs],
+  examples: [sharedExamples, datesExamples],
 });

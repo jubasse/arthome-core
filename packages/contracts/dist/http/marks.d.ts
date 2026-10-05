@@ -13,8 +13,11 @@ export declare function sensitive<S extends z.ZodType>(schema: S): S;
 /**
  * A field present only for a caller who holds `right`: optional in the type and in the document,
  * absent from the answer otherwise, never present and null.
+ *
+ * @param meta the field's own metadata, given here rather than through a `.meta()` of its own: a
+ *   second `.meta()` on a schema the document names (`MoneyOut`) writes it out in full.
  */
-export declare function restricted<S extends z.ZodType, const Right extends string>(schema: S, right: Right): z.ZodOptional<S>;
+export declare function restricted<S extends z.ZodType, const Right extends string>(schema: S, right: Right, meta?: Readonly<Record<string, unknown>>): z.ZodOptional<S>;
 /** The dotted paths of the sensitive fields: `reauthToken`, `data.streamKey`, `items[].secret`. */
 export declare function sensitivePathsOf(schema: z.ZodType): readonly string[];
 export interface RestrictedField {

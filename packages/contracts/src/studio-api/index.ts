@@ -78,6 +78,16 @@ import {
   transferChannelOwnership,
 } from './crew.js';
 import {
+  decideDateOutcome,
+  deleteDate,
+  duplicateDate,
+  getDatePublicPane,
+  getDateReplayPane,
+  getDateSheet,
+  moveDatePublicationState,
+  setDateReplayPolicy,
+} from './dates/routes.js';
+import {
   addBannedWord,
   claimModerationItem,
   getDateChatPane,
@@ -98,17 +108,7 @@ import {
   requestBankChange,
   requestChannelExport,
 } from './payouts.js';
-import {
-  createDateDraft,
-  decideDateOutcome,
-  deleteDate,
-  duplicateDate,
-  getDatePublicPane,
-  getDateReplayPane,
-  getDateSheet,
-  moveDatePublicationState,
-  setDateReplayPolicy,
-} from './publication.js';
+import { createDateDraft } from './publication.js';
 import {
   escalateIncidentToProduction,
   getChannelStreamSettings,

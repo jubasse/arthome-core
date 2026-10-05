@@ -74,7 +74,7 @@ export declare function defineErrorModel<Allowed extends string>(model: ErrorMod
 /**
  * The response for a status. A response already standing for every code asked, or asking for none,
  * is the api's own and is returned as it is; otherwise a response is built that lists the standard
- * codes and the added ones.
+ * codes and the added ones, with one example per code from the registry.
  */
 export declare function errorResponseFor(model: ErrorModel<string> | undefined, status: number, codes: readonly string[], base: Response | undefined): Response;
 /**

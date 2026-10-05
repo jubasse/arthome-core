@@ -87,7 +87,7 @@
       "reason": "The HTTP authentication scheme of RFC 6750, `scheme: bearer`, in the bearer token's security scheme. SESSION_MODES holds the word for the session's transport, which is not what an OpenAPI scheme names."
     },
     {
-      "file": "packages/contracts/src/studio-api/publication.ts",
+      "file": "packages/contracts/src/studio-api/dates/routes.ts",
       "value": "duplicate",
       "reason": "The last path segment of POST /dates/{dateId}/duplicate, an action name. It shares its spelling with a refund reason without being that vocabulary: importing REFUND_REASONS here would say a date is duplicated for a refund."
     },

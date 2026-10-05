@@ -19,12 +19,16 @@ export function sensitive<S extends z.ZodType>(schema: S): S {
 /**
  * A field present only for a caller who holds `right`: optional in the type and in the document,
  * absent from the answer otherwise, never present and null.
+ *
+ * @param meta the field's own metadata, given here rather than through a `.meta()` of its own: a
+ *   second `.meta()` on a schema the document names (`MoneyOut`) writes it out in full.
  */
 export function restricted<S extends z.ZodType, const Right extends string>(
   schema: S,
   right: Right,
+  meta: Readonly<Record<string, unknown>> = {},
 ): z.ZodOptional<S> {
-  return schema.meta({ [RESTRICTED_KEY]: right }).optional();
+  return schema.meta({ ...meta, [RESTRICTED_KEY]: right }).optional();
 }
 
 function metaOf(schema: z.ZodType): Readonly<Record<string, unknown>> {

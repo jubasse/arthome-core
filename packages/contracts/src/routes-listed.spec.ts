@@ -14,6 +14,7 @@ import * as studioAgenda from './studio-api/agenda.js';
 import * as studioBootstrap from './studio-api/bootstrap.js';
 import * as studioChannel from './studio-api/channel.js';
 import * as studioCrew from './studio-api/crew.js';
+import * as studioDates from './studio-api/dates/routes.js';
 import { studioApi } from './studio-api/index.js';
 import * as studioModeration from './studio-api/moderation.js';
 import * as studioPayouts from './studio-api/payouts.js';
@@ -66,6 +67,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       studioBootstrap,
       studioChannel,
       studioCrew,
+      studioDates,
       studioModeration,
       studioPayouts,
       studioPublication,

@@ -26,6 +26,7 @@ here, and a skill for one of them would be the wrong instrument.
 | `pnpm -r run build` | every package. There is no root `build` script — `pnpm run build` fails |
 | `pnpm run generate:openapi` | writes `openapi/storefront.yaml` and `openapi/studio.yaml` from the route declarations. Run it after any change to `packages/contracts` that reaches a document, and commit both |
 | `pnpm run fix` | Prettier, then ESLint `--fix`, then Prettier again |
+| `pnpm run generate:contract-types` | writes the `types.ts` of every module folder (`<api>/<module>/`) from its `routes.ts`, and the explicit types of its `schemas.ts`. Run it after any change to a module folder, and commit what it writes |
 | `node tools/sync-route-annotations.mjs <module.ts>` | after a route moves under a scope, an identity or a resource: rewrites the `method`, `path`, `parameters` and `access` of its explicit annotation (`--check` only reports) |
 | `pnpm run measure:surface-bundle` | what a surface ships for `createClient(api)`, minified and gzipped, part by part. A report, not a gate |
 
@@ -39,7 +40,7 @@ reachable from the `.` entry point imports zod or a Node API) · `check-contract
 subpath a surface imports reaches a docs or examples module of the contracts, and the maturity
 regimes match `transport.md` §5.11) · `check-decisions-index`
 (`DECISIONS-INDEX.md` matches what regenerating from `DECISIONS.md` produces) · `check-openapi` (both documents
-conform) · `check-openapi-generated` (each committed document is byte for byte what the route declarations generate, D-120) · `check-vocabulary` (the documents, the architecture prose and `@arthome/core` agree
+conform) · `check-openapi-generated` (each committed document is byte for byte what the route declarations generate, D-120) · `check-contract-types` (each module folder's `types.ts` and `schemas.ts` annotations are what the tool writes) · `check-vocabulary` (the documents, the architecture prose and `@arthome/core` agree
 member for member) · `check-map` (`REPOSITORY_MAP.md` matches the installed
 declarations) · `check-prettier-conflict` (no ESLint rule fights Prettier).
 

@@ -34,8 +34,11 @@
     "_comment:openapi-generated": "The two documents are GENERATED from the route declarations in @arthome/contracts (D-120), and committed for readers and tools. `generate:openapi` writes them; `check:openapi-generated` fails when a committed document is not byte for byte what the declarations generate, paths and components and top-level keys included. It reads dist/, so it builds first.",
     "generate:openapi": "python3 tools/generate-openapi.py",
     "check:openapi-generated": "python3 tools/generate-openapi.py --check",
+    "_comment:contract-types": "A module folder's types.ts holds its routes' annotations and is GENERATED from routes.ts; schemas.ts gets its schemas' explicit types the same way. `generate:contract-types` writes both, `check:contract-types` fails when either is stale.",
+    "generate:contract-types": "node tools/contract-types.mjs --all",
+    "check:contract-types": "node tools/contract-types.mjs --check --all",
     "measure:surface-bundle": "node tools/measure-surface-bundle.mjs",
-    "verify": "pnpm run verify:offline && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run check:openapi-generated && pnpm run check:map",
+    "verify": "pnpm run verify:offline && pnpm run check:prettier-conflict && pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run check:openapi-generated && pnpm run check:contract-types && pnpm run check:map",
     "verify:offline": "pnpm run check:versions && pnpm run check:tsconfig && pnpm run check:enums && pnpm run check:language && pnpm run check:symbols && pnpm run check:core-entry && pnpm run check:contract-docs && pnpm run check:decisions-index && pnpm run check:openapi && pnpm run check:vocabulary && node -e \"console.log('\\n  NOTE verify:offline is the subset that needs no install. It does NOT run format:check, lint, typecheck or test. Run pnpm run verify before pushing.')\""
   },
   "devDependencies": {

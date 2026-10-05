@@ -142,7 +142,7 @@ function unique(values: readonly string[]): string[] {
 /**
  * The response for a status. A response already standing for every code asked, or asking for none,
  * is the api's own and is returned as it is; otherwise a response is built that lists the standard
- * codes and the added ones.
+ * codes and the added ones, with one example per code from the registry.
  */
 export function errorResponseFor(
   model: ErrorModel<string> | undefined,
@@ -165,6 +165,9 @@ export function errorResponseFor(
     content: {
       'application/json': {
         schema: rest.length === 0 ? first : z.union([first, ...rest]),
+        examples: Object.fromEntries(
+          all.map((code) => [code, { value: errorExampleOf(code as ErrorCode) }]),
+        ),
       },
     },
   };
