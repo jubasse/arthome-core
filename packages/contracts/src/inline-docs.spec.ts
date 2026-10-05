@@ -86,7 +86,6 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'escalateIncidentToProduction',
   'getChannelAgenda',
   'getChannelDashboard',
-  'getChannelExport',
   'getChannelSettings',
   'getChannelStats',
   'getChannelStreamSettings',

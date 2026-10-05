@@ -110,6 +110,7 @@ import {
   setTechnicalProvision,
   submitHealthSample,
 } from './dates/routes.js';
+import { getChannelExport } from './exports/routes.js';
 import {
   addBannedWord,
   claimModerationItem,
@@ -123,7 +124,6 @@ import {
 import {
   closeReconciliationPeriod,
   countersignBankChange,
-  getChannelExport,
   listPayouts,
   requestBankChange,
   requestChannelExport,

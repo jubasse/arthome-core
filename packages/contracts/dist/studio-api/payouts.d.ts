@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { PAYOUT_STATES } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
-import { ChannelIdParameter, ConflictResponse, ForbiddenResponse, GoneResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter } from './components.js';
+import { ChannelIdParameter, ConflictResponse, ForbiddenResponse, GoneResponse, IdempotencyKeyParameter, IfRightsVersionParameter, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
@@ -129,23 +129,6 @@ export declare const requestChannelExport: Route<{
             data: typeof ExportJobSchema;
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
-    };
-}>;
-export declare const getChannelExport: Route<{
-    method: 'get';
-    version: 1;
-    path: '/exports/{exportId}';
-    parameters: readonly [
-        PathParameter<'exportId', z.ZodString>,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
-    ];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof ExportJobSchema;
-        }, z.core.$loose>>>;
-        404: typeof NotFoundResponse;
     };
 }>;
 export {};

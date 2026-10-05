@@ -9366,6 +9366,9 @@ paths:
       - payouts
       tags:
       - payouts
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - name: exportId
         in: path
@@ -9374,7 +9377,6 @@ paths:
           type: string
           format: uuid
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -9392,7 +9394,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:44:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   exportId: 019928e8-0000-7000-8000-000000000001
@@ -9401,8 +9403,23 @@ paths:
                   requestedAt: '2026-09-21T18:39:00Z'
                   downloadUrl: https://files.arthome.fr/exports/019928e8?sig=abc
                   downloadExpiresAt: '2026-09-21T19:44:00Z'
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
 components:
   securitySchemes:
     sessionCookie:

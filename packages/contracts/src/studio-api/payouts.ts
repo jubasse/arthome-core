@@ -30,7 +30,6 @@ import {
   GoneResponse,
   IdempotencyKeyParameter,
   IfRightsVersionParameter,
-  NotFoundResponse,
   PageParameter,
   PageSizeParameter,
   SortByParameter,
@@ -642,71 +641,5 @@ export const requestChannelExport: Route<{
       },
     },
     403: ForbiddenResponse,
-  },
-});
-
-export const getChannelExport: Route<{
-  method: 'get';
-  version: 1;
-  path: '/exports/{exportId}';
-  parameters: readonly [
-    PathParameter<'exportId', z.ZodString>,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
-  ];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<{ data: typeof ExportJobSchema }, z.core.$loose>
-      >
-    >;
-    404: typeof NotFoundResponse;
-  };
-}> = payoutsRoutes.defineRoute({
-  method: 'get',
-  path: '/exports/{exportId}',
-  operationId: 'getChannelExport',
-  summary: "An export's state, and its signed URL once it is ready.",
-  description:
-    'Until it is `ready`, `downloadUrl` is null: the contract never serves an address that would not answer.',
-  'x-arthome-maturity': 'provisional',
-  'x-arthome-upstream': [NavigationEntry.PAYOUTS],
-  parameters: [
-    {
-      name: 'exportId',
-      in: 'path',
-      required: true,
-      schema: uuidIn(),
-    },
-  ],
-  responses: {
-    200: {
-      description: "The export's state.",
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              data: ExportJobSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:44:00.000Z',
-            rightsVersion: 412,
-            data: {
-              exportId: '019928e8-0000-7000-8000-000000000001',
-              kind: 'fec',
-              state: 'ready',
-              requestedAt: '2026-09-21T18:39:00Z',
-              downloadUrl: 'https://files.arthome.fr/exports/019928e8?sig=abc',
-              downloadExpiresAt: '2026-09-21T19:44:00Z',
-            },
-          },
-        },
-      },
-    },
-    404: NotFoundResponse,
   },
 });
