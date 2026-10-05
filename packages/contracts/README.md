@@ -357,8 +357,9 @@ compile errors that name the operation. Measured on the 32 routes under a date, 
   a surface narrows on a code and reads its params typed. The full derived set is added rather than the subset a route
   implies, so a surface switches on a `401` or a `429` with types on any route, and the cost is one
   union per call. A status that is neither declared nor derived throws `UndeclaredStatusError`.
-- **Deny by default is a ratchet**: `deny-by-default.spec.ts` lists the routes not yet declared through
-  an identity or `.public()`; the list only shrinks, and the fan-out ends with it empty.
+- **Deny by default**: a builder defines no route without an identity or `.public()`, and
+  `deny-by-default.spec.ts` holds every route of both apis to an access, one made by the plain
+  `defineRoute` included.
 
 ### Converting a module
 
@@ -442,7 +443,7 @@ routes keep their tags and their operation ids; they leave the tag modules they 
    that spells a core vocabulary member (`'chat'`, `'crew'`, `'tickets'`) is written as it is:
    `check-enums` skips the segment given to the builder, never an import of the vocabulary.
    `deny-by-default.spec.ts` and `inline-docs.spec.ts` hold every route to an identity and to no
-   description, doc-only `x-arthome-*` or example of its own; their lists of exceptions are empty.
+   description, doc-only `x-arthome-*` or example of its own.
 6. **Generate and check.** `pnpm run generate:contract-types`, `pnpm run fix`, `pnpm -r run build`,
    `pnpm run generate:openapi`, `pnpm exec arthome-generate-map`, `pnpm run verify`.
 7. **Read what moved.** Each operation keeps its path, method, statuses and parameters. Examples,
