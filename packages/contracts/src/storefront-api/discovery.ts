@@ -24,7 +24,6 @@ import {
   TraceparentParameter,
   UnavailableResponse,
   VaryAuthHeader,
-  ViewerTimezoneParameter,
   PublicReadSecurity,
   storefrontV1,
 } from './components.js';
@@ -35,7 +34,6 @@ import {
   CategoryTileSchema,
   DateCardSchema,
   FacetSchema,
-  LiveScreenSchema,
   RailSchema,
   SearchCriteriaSchema,
   ShowGroupSchema,
@@ -62,70 +60,6 @@ const LIST_ARTISTS_SORT = ['alpha', 'followers'] as const;
 const SEARCH_TAB = ['best', 'lives', 'replays', 'artists'] as const;
 const LIST_REPLAYS_SORT = ['expiring_first', 'recent', 'popularity'] as const;
 const RESOLVE_PUBLIC_LINK_KIND = ['date', 'show', 'artist', 'category'] as const;
-
-export const getLiveScreen: Route<{
-  method: 'get';
-  version: 1;
-  path: '/live';
-  parameters: readonly [
-    typeof ViewerTimezoneParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StorefrontEnvelopeMetaSchema,
-        z.ZodObject<{ data: typeof LiveScreenSchema }, z.core.$loose>
-      >
-    >;
-    503: typeof UnavailableResponse;
-  };
-}> = discoveryRoutes.defineRoute({
-  method: 'get',
-  path: '/live',
-  operationId: 'getLiveScreen',
-  summary: "What is live now and tonight's grid, grouped in the viewer's local time.",
-  description:
-    "**One call**, and the hourly grouping is **server-side**: it depends on the viewer's\ntimezone, which the surface sends in a header. Grouped client-side it would be grouped five\ndifferent ways, and Next's server rendering does not know the visitor's timezone.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n",
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.STREAMING, Service.IDENTITY],
-  'x-arthome-freshness': 15,
-  parameters: [ViewerTimezoneParameter],
-  responses: {
-    200: {
-      description: "Tonight's grid.",
-      headers: {
-        'Cache-Control': CacheControlPublicHeader,
-        Vary: VaryAuthHeader,
-      },
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              data: LiveScreenSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:02:14.210Z',
-            validUntil: '2026-09-21T18:02:29.210Z',
-            data: {
-              slots: [
-                {
-                  localHourLabelKey: '20',
-                  startsAt: '2026-09-21T18:00:00Z',
-                  dates: [],
-                },
-              ],
-            },
-          },
-        },
-      },
-    },
-    503: UnavailableResponse,
-  },
-});
 
 export const listCategories: Route<{
   method: 'get';

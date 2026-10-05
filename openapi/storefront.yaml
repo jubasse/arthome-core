@@ -4503,14 +4503,13 @@ paths:
       - ticketing
       - streaming
       - identity
-      x-arthome-freshness: 15
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/ViewerTimezone'
       - $ref: '#/components/parameters/Surface'
@@ -4518,11 +4517,6 @@ paths:
       responses:
         '200':
           description: Tonight's grid.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -4536,15 +4530,29 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:14.210Z'
-                validUntil: '2026-09-21T18:02:29.210Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   slots:
                   - localHourLabelKey: '20'
                     startsAt: '2026-09-21T18:00:00Z'
                     dates: []
-        '503':
-          $ref: '#/components/responses/Unavailable'
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/categories:
     get:
       operationId: listCategories

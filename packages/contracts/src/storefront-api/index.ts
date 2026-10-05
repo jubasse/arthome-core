@@ -81,7 +81,6 @@ import {
   extendRail,
   getArtistDetail,
   getCategoryScreen,
-  getLiveScreen,
   listArtists,
   listCategories,
   listReplays,
@@ -89,6 +88,7 @@ import {
   search,
 } from './discovery.js';
 import { getHomeScreen } from './home/routes.js';
+import { getLiveScreen } from './live/routes.js';
 import {
   addPasskey,
   addPaymentMethod,

@@ -33,7 +33,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
   'getCart',
   'getCategoryScreen',
   'getDateDetail',
-  'getLiveScreen',
   'getOrder',
   'getSalesQueuePosition',
   'getViewerContext',
