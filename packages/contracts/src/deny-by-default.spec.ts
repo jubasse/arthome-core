@@ -85,7 +85,6 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'getChannelStats',
   'getChannelStreamSettings',
   'getChannelTicketing',
-  'getStudioBootstrap',
   'inviteMember',
   'listChannelEvents',
   'listChannelJournal',

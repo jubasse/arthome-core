@@ -9,9 +9,9 @@ import {
 } from './agenda.js';
 import { signInStudio, verifyTwoFactorStudio, requestPasswordResetStudio } from './auth/routes.js';
 import { countersignBankChange } from './bank-change-requests/routes.js';
+import { getStudioBootstrap } from './bootstrap/routes.js';
 import {
   createReauthToken,
-  getStudioBootstrap,
   listReauthFactors,
   listStudioChanges,
   listStudioDevices,

@@ -86,7 +86,6 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'getChannelStats',
   'getChannelStreamSettings',
   'getChannelTicketing',
-  'getStudioBootstrap',
   'inviteMember',
   'listChannelEvents',
   'listChannelJournal',

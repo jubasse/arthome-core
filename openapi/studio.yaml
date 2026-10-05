@@ -515,18 +515,15 @@ paths:
       - identity
       tags:
       - bootstrap
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IfRightsVersion'
       responses:
         '200':
           description: The bootstrap.
-          headers:
-            X-Arthome-Served-At:
-              $ref: '#/components/headers/ServedAt'
-            X-Arthome-Rights-Version:
-              $ref: '#/components/headers/RightsVersion'
           content:
             application/json:
               schema:
@@ -540,7 +537,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:00:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   person:
@@ -615,10 +612,19 @@ paths:
                   realtime:
                     namespace: /studio
                     pulseIntervalSec: 5
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
         '503':
           $ref: '#/components/responses/Unavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/inbox:
     get:
       operationId: listInbox

@@ -8,6 +8,8 @@ import { authDocs } from './auth/docs.js';
 import { authExamples } from './auth/examples.js';
 import { bankChangeRequestsDocs } from './bank-change-requests/docs.js';
 import { bankChangeRequestsExamples } from './bank-change-requests/examples.js';
+import { bootstrapDocs } from './bootstrap/docs.js';
+import { bootstrapExamples } from './bootstrap/examples.js';
 import { dateAccessGrantsDocs } from './date-access-grants/docs.js';
 import { dateAccessGrantsExamples } from './date-access-grants/examples.js';
 import { datesDocs } from './dates/docs.js';
@@ -178,6 +180,7 @@ export const studioDocs: ApiDocs = apiDocs({
     moderationDocs,
     authDocs,
     inboxDocs,
+    bootstrapDocs,
   ],
   examples: [
     sharedExamples,
@@ -191,6 +194,7 @@ export const studioDocs: ApiDocs = apiDocs({
     moderationExamples,
     authExamples,
     inboxExamples,
+    bootstrapExamples,
   ],
 });
 

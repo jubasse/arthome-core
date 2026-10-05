@@ -14,6 +14,7 @@ import * as storefrontPlayback from './storefront-api/playback.js';
 import * as studioAgenda from './studio-api/agenda.js';
 import * as studioAuth from './studio-api/auth/routes.js';
 import * as studioBankChangeRequests from './studio-api/bank-change-requests/routes.js';
+import * as studioBootstrapItems from './studio-api/bootstrap/routes.js';
 import * as studioBootstrap from './studio-api/bootstrap.js';
 import * as studioChannel from './studio-api/channel.js';
 import * as studioCrew from './studio-api/crew.js';
@@ -95,6 +96,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       studioModerationItems,
       studioAuth,
       studioInbox,
+      studioBootstrapItems,
     ],
   ],
 ];

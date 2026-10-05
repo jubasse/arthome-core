@@ -1,15 +1,6 @@
 import { z } from 'zod';
 
-import {
-  CrewRole,
-  DatePane,
-  Locale,
-  LOCALES,
-  MemberRole,
-  NavigationEntry,
-  Service,
-  Upstream,
-} from '@arthome/core';
+import { Locale, LOCALES, Service, Upstream } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
 import {
   InstantOut,
@@ -27,14 +18,11 @@ import {
   IdempotencyKeyParameter,
   IfRightsVersionParameter,
   NotFoundResponse,
-  RightsVersionHeader,
-  ServedAtHeader,
   StudioTag,
   SurfaceParameter,
   TooManyRequestsResponse,
   TraceparentParameter,
   UnauthorizedResponse,
-  UnavailableResponse,
   studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema } from '../envelope/index.js';
@@ -45,7 +33,6 @@ import type {
   QueryParameter,
   Route,
 } from '../http/index.js';
-import { StudioBootstrapSchema } from '../studio-access/index.js';
 
 const bootstrapRoutes = studioV1
   .tags(StudioTag.BOOTSTRAP)
@@ -83,144 +70,6 @@ const LIST_STUDIO_CHANGES_INVALIDATED = [
   'person:inbox',
   'person:rights',
 ] as const;
-
-export const getStudioBootstrap: Route<{
-  method: 'get';
-  version: 1;
-  path: '/bootstrap';
-  parameters: readonly [
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-    typeof IfRightsVersionParameter,
-  ];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<{ data: typeof StudioBootstrapSchema }, z.core.$loose>
-      >
-    >;
-    401: typeof UnauthorizedResponse;
-    503: typeof UnavailableResponse;
-  };
-}> = bootstrapReads.defineRoute({
-  method: 'get',
-  path: '/bootstrap',
-  operationId: 'getStudioBootstrap',
-  summary: 'The bootstrap — the only thing the first paint waits for.',
-  description:
-    '**One call**, and nothing is painted until it is there: the person, **all** their channels\nwith their effective roles, `grants` **projected onto those roles**, the preferences, the\nrights version, the badge counters and the domain constants.\n\n**The root is a person, not a channel.** A freelance stage manager can be on duty for two\nlive shows the same evening, at two different channels.\n\nThe failure of this call is **a failure screen in its own right, with the trace identifier**:\nit is the only moment left where the person can still read out a number and dictate it to\nsupport.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.IDENTITY],
-  responses: {
-    200: {
-      description: 'The bootstrap.',
-      headers: {
-        'X-Arthome-Served-At': ServedAtHeader,
-        'X-Arthome-Rights-Version': RightsVersionHeader,
-      },
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              data: StudioBootstrapSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:00:00.000Z',
-            rightsVersion: 412,
-            data: {
-              person: {
-                personId: '019928b0-0000-7000-8000-000000000001',
-                displayName: 'Claire D.',
-                isFreelance: true,
-                runsCalled: 84,
-                readingTimezone: 'Europe/Paris',
-              },
-              rightsVersion: 412,
-              channels: [
-                {
-                  channelId: '019928a0-7d31-7a10-b8c4-2f9e11a4c222',
-                  channelName: 'Compagnie Verticale',
-                  roles: [MemberRole.PRODUCTION, MemberRole.COORDINATION],
-                  isOwner: false,
-                  navigation: [
-                    NavigationEntry.DASHBOARD,
-                    DatePane.CREW,
-                    NavigationEntry.EVENTS,
-                    NavigationEntry.STREAM,
-                    NavigationEntry.STATS,
-                    DatePane.TICKETS,
-                    NavigationEntry.STORE,
-                    NavigationEntry.REPLAYS,
-                    NavigationEntry.TEAM,
-                    NavigationEntry.JOURNAL,
-                    NavigationEntry.HELP,
-                  ],
-                  datePanes: [
-                    DatePane.PUBLIC,
-                    DatePane.TICKETS,
-                    DatePane.CHAT,
-                    DatePane.TECH,
-                    DatePane.CREW,
-                    DatePane.REPLAY,
-                  ],
-                  canRevenue: true,
-                  canOps: true,
-                  canTech: true,
-                  canDecideOutcome: true,
-                  assignableRoles: [
-                    MemberRole.COORDINATION,
-                    CrewRole.DIRECTOR,
-                    CrewRole.VIDEO,
-                    CrewRole.SOUND,
-                    CrewRole.MODERATION,
-                  ],
-                  dateGrants: [],
-                },
-              ],
-              constants: {
-                technicalProvisionThreshold: 10000,
-                provisionRevisionHours: 72,
-                waitlistPriorityWindowHours: 2,
-                cancelDeadlineMinutesBefore: 60,
-                payoutDelayDays: 14,
-                commissionRateBps: 1200,
-                chatBurstThresholdPerMinute: 60,
-                moderationQueueAlertThreshold: 10,
-                crewUnassignedAlertHoursBefore: 24,
-                holdScreenAutoAfterSec: 15,
-                seasonBounds: {
-                  startsOn: '09-01',
-                  endsOn: '08-31',
-                },
-              },
-              labelCatalog: {
-                locale: Locale.FR,
-                version: 41,
-                url: 'https://cdn.arthome.fr/i18n/studio/fr/v41.json',
-              },
-              counters: {
-                moderationPending: 14,
-                inboxUnread: 2,
-                dutiesTonight: 3,
-                invitationsPending: 1,
-                datesToCover: 3,
-                payoutsDue: 0,
-              },
-              realtime: {
-                namespace: '/studio',
-                pulseIntervalSec: 5,
-              },
-            },
-          },
-        },
-      },
-    },
-    503: UnavailableResponse,
-  },
-});
 
 export const createReauthToken: Route<{
   method: 'post';

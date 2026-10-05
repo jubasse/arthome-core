@@ -1,30 +1,12 @@
 import { z } from 'zod';
 import { LOCALES } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
-import { BadRequestResponse, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter, UnauthorizedResponse, UnavailableResponse } from './components.js';
+import { BadRequestResponse, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter, UnauthorizedResponse } from './components.js';
 import { StudioEnvelopeMetaSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
-import { StudioBootstrapSchema } from '../studio-access/index.js';
 declare const CREATE_REAUTH_TOKEN_INTENT: readonly ["reveal_stream_key", "rotate_stream_key", "transfer_ownership", "delete_channel", "change_bank_details"];
 declare const CREATE_REAUTH_TOKEN_FACTOR: readonly ["platform_biometric", "password", "totp", "backup_code"];
 declare const REGISTER_STUDIO_PUSH_TOKEN_PLATFORM: readonly ["fcm", "apns"];
-export declare const getStudioBootstrap: Route<{
-    method: 'get';
-    version: 1;
-    path: '/bootstrap';
-    parameters: readonly [
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof IfRightsVersionParameter
-    ];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof StudioBootstrapSchema;
-        }, z.core.$loose>>>;
-        401: typeof UnauthorizedResponse;
-        503: typeof UnavailableResponse;
-    };
-}>;
 export declare const createReauthToken: Route<{
     method: 'post';
     version: 1;
