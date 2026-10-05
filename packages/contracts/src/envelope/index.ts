@@ -50,13 +50,16 @@ import { z } from 'zod';
 
 import {
   ApiErrorCode,
+  ChatErrorCode,
   DomainErrorCode,
   FailureNature,
   IdentityErrorCode,
+  OrderErrorCode,
+  PairingErrorCode,
   PublicationChecklistItem,
   PublicationPromise,
   PublicationState,
-  type ErrorCode,
+  WATCH_DENIAL_REASONS,
 } from '@arthome/core';
 import { ErrorSchema, InstantOut, int64 } from '@arthome/core/schema';
 
@@ -220,14 +223,82 @@ export const StudioErrorEnvelopeSchema: z.ZodObject<
  * when the BFF stopped waiting, so a code outside this list cannot reach a surface. A code joins
  * when a route can receive it and a surface has a screen for it.
  */
-export const STOREFRONT_RELAYED_CODES: readonly ErrorCode[] = [
+export const STOREFRONT_RELAYED_CODES: readonly [
+  typeof ApiErrorCode.SCHEMA_INVALID,
+  typeof ApiErrorCode.CURSOR_TOO_OLD,
+  typeof ApiErrorCode.NOT_FOUND,
+  typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
+  typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
+  typeof DomainErrorCode.STATE_CONFLICT,
+  typeof IdentityErrorCode.EMAIL_TAKEN,
+  typeof IdentityErrorCode.INVALID_CREDENTIALS,
+  typeof IdentityErrorCode.TWO_FACTOR_REQUIRED,
+  typeof IdentityErrorCode.VERIFICATION_LINK_INVALID,
+  typeof IdentityErrorCode.RESET_TOKEN_EXPIRED,
+  typeof IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED,
+  typeof IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED,
+  typeof OrderErrorCode.QUOTE_ADDRESS_MISMATCH,
+  typeof OrderErrorCode.QUOTE_EXPIRED,
+  typeof OrderErrorCode.SOLD_OUT,
+  typeof OrderErrorCode.TIER_UNAVAILABLE,
+  typeof OrderErrorCode.PAYMENT_DECLINED,
+  typeof OrderErrorCode.PRICE_STALE,
+  typeof OrderErrorCode.PLAN_UNAVAILABLE,
+  typeof OrderErrorCode.CONTRIBUTION_OUT_OF_RANGE,
+  typeof OrderErrorCode.CHECKOUT_LINE_UNAVAILABLE,
+  typeof OrderErrorCode.SALES_QUEUE_ADMISSION_REQUIRED,
+  typeof OrderErrorCode.LATE_ENTRY_UNACKNOWLEDGED,
+  typeof OrderErrorCode.SALES_CLOSED,
+  typeof OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED,
+  typeof ChatErrorCode.HOLDERS_ONLY,
+  typeof ChatErrorCode.RATE_LIMITED,
+  typeof IdentityErrorCode.SIGNED_OUT_ELSEWHERE,
+  typeof PairingErrorCode.SLOW_DOWN,
+  typeof PairingErrorCode.IDENTITY_MISMATCH,
+  typeof PairingErrorCode.INTENT_NOT_ENGAGEABLE,
+  typeof PairingErrorCode.EXECUTION_ENGAGED,
+  ...typeof WATCH_DENIAL_REASONS,
+] = [
   ApiErrorCode.SCHEMA_INVALID,
   ApiErrorCode.CURSOR_TOO_OLD,
   ApiErrorCode.NOT_FOUND,
   // transport.md §5.4's two refusals of a key: the surface reuses a key or waits, the BFF cannot.
   ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
   ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
+  // A versioned write (the profile, a cart line) refused on a stale expectedVersion.
+  DomainErrorCode.STATE_CONFLICT,
   IdentityErrorCode.EMAIL_TAKEN,
   IdentityErrorCode.INVALID_CREDENTIALS,
+  IdentityErrorCode.TWO_FACTOR_REQUIRED,
   IdentityErrorCode.VERIFICATION_LINK_INVALID,
+  IdentityErrorCode.RESET_TOKEN_EXPIRED,
+  IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED,
+  IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED,
+  // The refusals of a purchase, a cart checkout, a plan change and a seat cancellation: the viewer
+  // acts on each (pick another tier, accept the new price, join the waiting list, change the card).
+  OrderErrorCode.QUOTE_ADDRESS_MISMATCH,
+  OrderErrorCode.QUOTE_EXPIRED,
+  OrderErrorCode.SOLD_OUT,
+  OrderErrorCode.TIER_UNAVAILABLE,
+  OrderErrorCode.PAYMENT_DECLINED,
+  OrderErrorCode.PRICE_STALE,
+  OrderErrorCode.PLAN_UNAVAILABLE,
+  OrderErrorCode.CONTRIBUTION_OUT_OF_RANGE,
+  OrderErrorCode.CHECKOUT_LINE_UNAVAILABLE,
+  OrderErrorCode.SALES_QUEUE_ADMISSION_REQUIRED,
+  OrderErrorCode.LATE_ENTRY_UNACKNOWLEDGED,
+  OrderErrorCode.SALES_CLOSED,
+  OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED,
+  ChatErrorCode.HOLDERS_ONLY,
+  ChatErrorCode.RATE_LIMITED,
+  IdentityErrorCode.SIGNED_OUT_ELSEWHERE,
+  PairingErrorCode.SLOW_DOWN,
+  PairingErrorCode.IDENTITY_MISMATCH,
+  PairingErrorCode.INTENT_NOT_ENGAGEABLE,
+  PairingErrorCode.EXECUTION_ENGAGED,
+  // Each denial of the right to watch is a screen of its own, with its way out (WatchFallbackAction).
+  ...WATCH_DENIAL_REASONS,
 ];
+
+/** The codes a storefront operation may declare: only what a surface can be handed. */
+export type StorefrontRelayedCode = (typeof STOREFRONT_RELAYED_CODES)[number];

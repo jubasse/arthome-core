@@ -9,7 +9,7 @@ import { DomainConstant } from '../kernel/domain-constants.js';
 import { DomainError } from '../kernel/errors.js';
 import { isBefore } from '../time/instant.js';
 import { DateOutcome, PublicationState } from '../vocabulary/catalog.js';
-import { CatalogErrorCode, DomainErrorCode } from '../vocabulary/error-codes.js';
+import { CatalogErrorCode } from '../vocabulary/error-codes.js';
 
 /** `rescheduledTo` is where a postponement moves the date (D-074); the other two carry none. */
 export type OutcomeDeclaration =
@@ -27,16 +27,11 @@ export interface DateBeforeOutcome {
   readonly timing: DateTiming;
 }
 
-function refused(params: Readonly<Record<string, string>>): DomainError {
-  return new DomainError({ code: DomainErrorCode.STATE_CONFLICT, params });
-}
-
 /**
- * Throws `state.conflict` when the declaration does not fit the date: a final outcome already
- * declared; a date not public yet, which is deleted rather than cancelled; a postponement once
- * the live show has started or to an instant already past; an interruption before it started;
- * a cancellation once it has ended. Throws `date.postponement_limit_reached` past
- * `POSTPONEMENTS_MAX`.
+ * Refuses a declaration that does not fit the date, naming what it met: a final outcome already
+ * declared, a date not public yet (deleted rather than given an outcome), a postponement once the
+ * live show has started or to an instant already past, an interruption before it started, a
+ * cancellation once it has ended, and a postponement past `POSTPONEMENTS_MAX`.
  */
 export function assertOutcomeDeclarable(
   date: DateBeforeOutcome,
@@ -44,16 +39,23 @@ export function assertOutcomeDeclarable(
   now: Instant,
 ): void {
   if (date.outcome !== null && date.outcome !== DateOutcome.POSTPONED) {
-    throw refused({ outcome: date.outcome });
+    throw new DomainError({
+      code: CatalogErrorCode.OUTCOME_FINAL,
+      params: { outcome: date.outcome },
+    });
   }
   if (
     date.publicationState === PublicationState.DRAFT ||
     date.publicationState === PublicationState.RESERVE
   ) {
-    throw refused({ state: date.publicationState });
+    throw new DomainError({
+      code: CatalogErrorCode.DATE_NOT_PUBLIC,
+      params: { state: date.publicationState },
+    });
   }
 
-  const started = !isBefore(now, date.timing.startsAt);
+  const { startsAt } = date.timing;
+  const started = !isBefore(now, startsAt);
   switch (declaration.outcome) {
     case DateOutcome.POSTPONED:
       if (date.postponements >= DomainConstant.POSTPONEMENTS_MAX) {
@@ -62,15 +64,33 @@ export function assertOutcomeDeclarable(
           params: { max: DomainConstant.POSTPONEMENTS_MAX },
         });
       }
-      if (started || !isBefore(now, declaration.rescheduledTo)) {
-        throw refused({ startsAt: date.timing.startsAt });
+      if (started) {
+        throw new DomainError({
+          code: CatalogErrorCode.DATE_ALREADY_STARTED,
+          params: { startsAt },
+        });
+      }
+      if (!isBefore(now, declaration.rescheduledTo)) {
+        throw new DomainError({
+          code: CatalogErrorCode.RESCHEDULE_IN_PAST,
+          params: { rescheduledTo: declaration.rescheduledTo },
+        });
       }
       return;
     case DateOutcome.INTERRUPTED:
-      if (!started) throw refused({ startsAt: date.timing.startsAt });
+      if (!started) {
+        throw new DomainError({ code: CatalogErrorCode.DATE_NOT_STARTED, params: { startsAt } });
+      }
       return;
-    case DateOutcome.CANCELLED:
-      if (!isBefore(now, endsAt(date.timing))) throw refused({ startsAt: date.timing.startsAt });
+    case DateOutcome.CANCELLED: {
+      const ended = endsAt(date.timing);
+      if (!isBefore(now, ended)) {
+        throw new DomainError({
+          code: CatalogErrorCode.DATE_ALREADY_ENDED,
+          params: { endsAt: ended },
+        });
+      }
       return;
+    }
   }
 }

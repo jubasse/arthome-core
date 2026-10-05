@@ -641,6 +641,11 @@ What `studio-mobile` asks for is adopted in full and becomes a contract rule:
 
 The opaque state is served by better-auth's **`one-time-token`** plugin, which already exists.
 
+A single-use token that has run out answers `410` with the code of its own journey, so a surface restarts
+the right one: `identity.one_time_token_expired` on the exchange of this state,
+`identity.reset_token_expired` on a password reset, `identity.two_factor_challenge_expired` on the
+answer to a two-factor challenge. None carries params.
+
 ### 6.5 The shared television
 
 `multi-session` with `maximumSessions: 5` — which is already the default — carries exactly the

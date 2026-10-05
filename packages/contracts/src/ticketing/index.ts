@@ -1,9 +1,9 @@
 /**
  * `@arthome/contracts/ticketing` — Buying: price tiers, tickets, merchandise, the cart line, the order and the subscription.
  *
- * EVERY SCHEMA HERE EMITS A NAMED SCHEMA OF `openapi/storefront.yaml` EXACTLY, and
- * `pnpm run check:emit-diff` is what proves it: the document is authoritative
- * (D-058), so where the two differ the schema changes.
+ * EVERY SCHEMA HERE IS A COMPONENT OF `openapi/storefront.yaml`, which is generated from it
+ * (D-120): `pnpm run check:openapi-generated` fails when the committed document is not
+ * what the schemas emit.
  *
  * The rules this file follows, each of which was a defect the gate found (D-060, D-065):
  *
@@ -50,6 +50,7 @@ import {
 } from '@arthome/core/schema';
 
 import { DateCardSchema } from '../catalog/index.js';
+import { sensitive } from '../http/index.js';
 
 const REFUND_METHODS = ['original_payment_method', 'account_credit'] as const;
 
@@ -384,7 +385,7 @@ export const PaymentHandoffSchema: z.ZodObject<
     paymentIntentRef: z
       .string()
       .describe('**Opaque** reference to the domain. Only the adapter knows how to read it.'),
-    clientSecret: z.string(),
+    clientSecret: sensitive(z.string()),
     nextAction: z
       .looseObject({
         kind: vocabularyOutLocal(NEXT_ACTION_KINDS, PROVIDER_STATE_REASON).optional(),
@@ -566,7 +567,7 @@ export const SalesQueuePositionSchema: z.ZodObject<
       ),
     admission: z
       .looseObject({
-        token: z.string().min(1),
+        token: sensitive(z.string().min(1)),
         expiresAt: InstantOut,
       })
       .nullable()

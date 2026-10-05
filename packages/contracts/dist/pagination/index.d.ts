@@ -15,11 +15,13 @@
  */
 import { z } from 'zod';
 import type { VocabularyOutNullable } from '@arthome/core/schema';
+import type { AccessorOf } from '../http/index.js';
 /**
  * Why a list came back empty. Local to the contract: the domain neither produces nor
  * consumes these — a fifteenth reason is an endpoint change, not a domain one.
  */
 export declare const EMPTY_REASONS: readonly ["no_match_for_query", "no_match_with_filters", "nothing_in_category_yet", "no_live_in_category", "no_upcoming_in_category", "no_replay_in_category", "no_followed_artist", "no_followed_artist_live", "no_order_yet", "no_ticket_yet", "no_replay_available", "empty_cart", "no_saved_search", "no_watchlist_entry"];
+export declare const EmptyReason: AccessorOf<typeof EMPTY_REASONS>;
 /** The storefront's cursor page. Its studio counterpart carries `pendingCount` instead — D-065 family G. */
 export declare const StorefrontCursorPageInfoSchema: z.ZodObject<{
     nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;

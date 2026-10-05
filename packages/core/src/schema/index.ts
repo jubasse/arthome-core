@@ -17,7 +17,7 @@
  * 1. No `z.transform()` at a boundary — inconvertible to JSON Schema, so the generated OpenAPI
  *    would describe a shape the API does not accept.
  * 2. A failure becomes a code, never a zod message: zod's messages are English prose, and the
- *    first place that leaks is a payment form. `issueToCode` is the only way out.
+ *    first place that leaks is a payment form. `schemaInvalidParams` is the only way out.
  *
  * Every exported schema carries an explicit type annotation. `isolatedDeclarations` refuses
  * an export whose type it cannot write without inferring through zod's builder chain, so
@@ -31,7 +31,11 @@ export {
   InstantIn,
   InstantOut,
   int64,
+  uuidIn,
   uuidOut,
+  dateIn,
+  dateTimeIn,
+  uriIn,
   LocaleIn,
   LocaleOut,
   PageCursorSchema,
@@ -79,7 +83,9 @@ export {
   VatLineSchema,
 } from './tax.js';
 
-export { ErrorSchema, FailureNatureOut, issueToCode } from './error.js';
+export { ErrorSchema, FailureNatureOut, schemaInvalidParams } from './error.js';
+export type { ErrorParamsRead } from './error-params.js';
+export { ERROR_PARAMS, errorParamsSchemaOf } from './error-params.js';
 
 export { InternalTokenClaimsSchema } from './internal-token.js';
 export type { InternalTokenClaims } from './internal-token.js';

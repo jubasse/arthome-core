@@ -50,6 +50,56 @@
       "file": "packages/contracts/src/studio-access/index.ts",
       "value": "expired",
       "reason": "The same invitation state machine. Shares the word with SEAT_HOLD_STATES without being a hold's."
+    },
+    {
+      "file": "packages/contracts/src/http/index.ts",
+      "value": "cookie",
+      "reason": "OpenAPI's parameter location, the `in` of a parameter or an API key carried in a cookie. It shares the word with SESSION_MODES without being a session mode: a route's location and a session's transport are unrelated facts, and SessionMode.COOKIE there would read as one."
+    },
+    {
+      "file": "packages/contracts/src/storefront-api/docs.ts",
+      "value": "cookie",
+      "reason": "OpenAPI's location of an API key, `in: cookie`, in the session cookie's security scheme: the word SESSION_MODES also holds, for a different fact (the same entry as http/index.ts)."
+    },
+    {
+      "file": "packages/contracts/src/storefront-api/docs.ts",
+      "value": "bearer",
+      "reason": "The HTTP authentication scheme of RFC 6750, `scheme: bearer`, in the bearer token's security scheme. SESSION_MODES holds the word for the session's transport, which is not what an OpenAPI scheme names."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/channels/schemas.ts",
+      "value": "state",
+      "reason": "The NAME of a query parameter, `state`, which filters a resource by its own state machine. TAX_JURISDICTION_LEVELS holds the same word for a level of tax jurisdiction, which is a different fact and not what is named here."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/docs.ts",
+      "value": "cookie",
+      "reason": "OpenAPI's location of an API key, `in: cookie`, in the session cookie's security scheme: the word SESSION_MODES also holds, for a different fact (the same entry as http/index.ts)."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/docs.ts",
+      "value": "bearer",
+      "reason": "The HTTP authentication scheme of RFC 6750, `scheme: bearer`, in the bearer token's security scheme. SESSION_MODES holds the word for the session's transport, which is not what an OpenAPI scheme names."
+    },
+    {
+      "file": "packages/contracts/src/http/policy.ts",
+      "value": "public",
+      "reason": "The Cache-Control directive `public` (may a shared cache keep this answer), not a date pane. The two share the spelling without being the same vocabulary: importing DATE_PANES here would say a cache is shared with the public pane."
+    },
+    {
+      "file": "packages/contracts/src/storefront-api/components.ts",
+      "value": "public",
+      "reason": "A cache scope, Cache-Control: public. It shares its spelling with a date pane without being that vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/studio-money/index.ts",
+      "value": "custom",
+      "reason": "A period preset of the revenue screen, a period the person chose by hand, not a vocabulary of the domain."
+    },
+    {
+      "file": "packages/contracts/src/http/schema-kinds.ts",
+      "value": "custom",
+      "reason": "A zod schema kind (`def.type`), the vocabulary of the library the walkers read, not a schema issue rule. The two share the word without being the same vocabulary."
     }
   ]
 }

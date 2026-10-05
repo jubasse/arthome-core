@@ -23,7 +23,7 @@ import { WATCH_DENIAL_REASONS } from './entitlement.js';
  * route that does not resolve, not a missing aggregate: a service expressing a domain rule with
  * one of these makes the surface render "not found" for a date that exists and is not on sale.
  */
-export declare const API_ERROR_CODES: readonly ["api.unauthenticated", "api.token_expired", "api.forbidden", "api.not_found", "api.rate_limited", "api.schema_invalid", "api.internal", "api.service_unavailable", "api.upstream_unavailable", "api.cursor_too_old", "api.sort_key_forbidden", "api.period_filter_required", "api.rights_version_stale", "api.idempotency_key_reused", "api.idempotency_in_flight", "api.deadline_exceeded", "api.upstream_timeout"];
+export declare const API_ERROR_CODES: readonly ["api.unauthenticated", "api.token_expired", "api.forbidden", "api.not_found", "api.rate_limited", "api.schema_invalid", "api.internal", "api.service_unavailable", "api.upstream_unavailable", "api.cursor_too_old", "api.sort_key_forbidden", "api.period_filter_required", "api.rights_version_stale", "api.idempotency_key_reused", "api.idempotency_in_flight", "api.deadline_exceeded", "api.upstream_timeout", "api.payload_too_large", "api.unsupported_media_type", "api.reauthentication_required"];
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 export declare const ApiErrorCode: {
     readonly UNAUTHENTICATED: "api.unauthenticated";
@@ -43,13 +43,31 @@ export declare const ApiErrorCode: {
     readonly IDEMPOTENCY_IN_FLIGHT: "api.idempotency_in_flight";
     readonly DEADLINE_EXCEEDED: "api.deadline_exceeded";
     readonly UPSTREAM_TIMEOUT: "api.upstream_timeout";
+    readonly PAYLOAD_TOO_LARGE: "api.payload_too_large";
+    readonly UNSUPPORTED_MEDIA_TYPE: "api.unsupported_media_type";
+    readonly REAUTHENTICATION_REQUIRED: "api.reauthentication_required";
+};
+/**
+ * The rule an `api.schema_invalid` issue broke, so a form can say what is wrong with a field
+ * without a sentence on the wire. Read from zod's issue codes, closed here.
+ */
+export declare const SCHEMA_ISSUE_RULES: readonly ["too_small", "too_big", "invalid_type", "invalid_format", "invalid_value", "unrecognized_key", "custom"];
+export type SchemaIssueRule = (typeof SCHEMA_ISSUE_RULES)[number];
+export declare const SchemaIssueRule: {
+    readonly TOO_SMALL: "too_small";
+    readonly TOO_BIG: "too_big";
+    readonly INVALID_TYPE: "invalid_type";
+    readonly INVALID_FORMAT: "invalid_format";
+    readonly INVALID_VALUE: "invalid_value";
+    readonly UNRECOGNIZED_KEY: "unrecognized_key";
+    readonly CUSTOM: "custom";
 };
 /**
  * Sign-in, sign-up and session refusals. `identity.signed_out_elsewhere` is served to a session
  * still open on this device and revoked from another: not an authentication failure, and not to
  * be retried as one.
  */
-export declare const IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.handle_taken", "identity.invalid_credentials", "identity.two_factor_required", "identity.signed_out_elsewhere", "identity.verification_link_invalid"];
+export declare const IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.handle_taken", "identity.invalid_credentials", "identity.two_factor_required", "identity.signed_out_elsewhere", "identity.verification_link_invalid", "identity.reset_token_expired", "identity.one_time_token_expired", "identity.two_factor_challenge_expired"];
 export type IdentityErrorCode = (typeof IDENTITY_ERROR_CODES)[number];
 export declare const IdentityErrorCode: {
     readonly EMAIL_TAKEN: "identity.email_taken";
@@ -58,6 +76,9 @@ export declare const IdentityErrorCode: {
     readonly TWO_FACTOR_REQUIRED: "identity.two_factor_required";
     readonly SIGNED_OUT_ELSEWHERE: "identity.signed_out_elsewhere";
     readonly VERIFICATION_LINK_INVALID: "identity.verification_link_invalid";
+    readonly RESET_TOKEN_EXPIRED: "identity.reset_token_expired";
+    readonly ONE_TIME_TOKEN_EXPIRED: "identity.one_time_token_expired";
+    readonly TWO_FACTOR_CHALLENGE_EXPIRED: "identity.two_factor_challenge_expired";
 };
 /**
  * Device pairing, where the same code is polled repeatedly. `pairing.slow_down` is a rate signal
@@ -94,10 +115,12 @@ export declare const ModerationErrorCode: {
  * Refusals about a date and what may still be changed on it — the wire's half of
  * `publication.ts`'s irreversible transitions.
  */
-export declare const CATALOG_ERROR_CODES: readonly ["artist.slug_taken", "date.has_sold_seats", "date.outcome_decision_forbidden", "date.prices_locked", "date.prices_currency_mismatch", "date.replay_policy_final", "date.technical_check_required", "date.technical_provision_required", "date.provision_deadline_passed", "date.provision_below_capacity", "date.stream_key_rotation_during_run", "date.postponement_limit_reached"];
+export declare const CATALOG_ERROR_CODES: readonly ["artist.slug_taken", "artist.already_exists", "show.slug_taken", "date.has_sold_seats", "date.outcome_decision_forbidden", "date.prices_locked", "date.prices_currency_mismatch", "date.replay_policy_final", "date.technical_check_required", "date.technical_provision_required", "date.provision_deadline_passed", "date.provision_below_capacity", "date.stream_key_rotation_during_run", "date.postponement_limit_reached", "date.outcome_final", "date.not_public", "date.already_started", "date.not_started", "date.already_ended", "date.reschedule_in_past"];
 export type CatalogErrorCode = (typeof CATALOG_ERROR_CODES)[number];
 export declare const CatalogErrorCode: {
     readonly ARTIST_SLUG_TAKEN: "artist.slug_taken";
+    readonly ARTIST_ALREADY_EXISTS: "artist.already_exists";
+    readonly SHOW_SLUG_TAKEN: "show.slug_taken";
     readonly DATE_HAS_SOLD_SEATS: "date.has_sold_seats";
     readonly OUTCOME_DECISION_FORBIDDEN: "date.outcome_decision_forbidden";
     readonly PRICES_LOCKED: "date.prices_locked";
@@ -109,6 +132,12 @@ export declare const CatalogErrorCode: {
     readonly PROVISION_BELOW_CAPACITY: "date.provision_below_capacity";
     readonly STREAM_KEY_ROTATION_DURING_RUN: "date.stream_key_rotation_during_run";
     readonly POSTPONEMENT_LIMIT_REACHED: "date.postponement_limit_reached";
+    readonly OUTCOME_FINAL: "date.outcome_final";
+    readonly DATE_NOT_PUBLIC: "date.not_public";
+    readonly DATE_ALREADY_STARTED: "date.already_started";
+    readonly DATE_NOT_STARTED: "date.not_started";
+    readonly DATE_ALREADY_ENDED: "date.already_ended";
+    readonly RESCHEDULE_IN_PAST: "date.reschedule_in_past";
 };
 /**
  * Channel membership, crew and ownership refusals. `channel.same_actor_forbidden` is the four-eyes
@@ -123,21 +152,27 @@ export declare const ChannelErrorCode: {
     readonly TRANSFER_TARGET_INELIGIBLE: "channel.transfer_target_ineligible";
     readonly SAME_ACTOR_FORBIDDEN: "channel.same_actor_forbidden";
 };
-/** Payout refusals: a period does not close over an unexplained discrepancy. */
-export declare const PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained"];
+/**
+ * Payout refusals: a period does not close over an unexplained discrepancy, and a bank change
+ * request past its deadline can no longer be countersigned.
+ */
+export declare const PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained", "payout.bank_change_request_expired"];
 export type PayoutErrorCode = (typeof PAYOUT_ERROR_CODES)[number];
 export declare const PayoutErrorCode: {
     readonly RECONCILIATION_DISCREPANCY_UNEXPLAINED: "payout.reconciliation_discrepancy_unexplained";
+    readonly BANK_CHANGE_REQUEST_EXPIRED: "payout.bank_change_request_expired";
 };
 /**
  * The viewer's commerce refusals: a purchase, a seat, a means of payment. `failureCode` narrows
  * it to the four a purchase command can refuse with.
  */
-export declare const ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.sold_out", "order.payment_declined", "order.price_stale", "order.plan_unavailable", "order.contribution_out_of_range", "order.checkout_line_unavailable", "order.sales_queue_admission_required", "order.late_entry_unacknowledged", "order.sales_closed", "seat.cancel_deadline_passed", "payment_method.in_use"];
+export declare const ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.quote_expired", "order.sold_out", "order.tier_unavailable", "order.payment_declined", "order.price_stale", "order.plan_unavailable", "order.contribution_out_of_range", "order.checkout_line_unavailable", "order.sales_queue_admission_required", "order.late_entry_unacknowledged", "order.sales_closed", "seat.cancel_deadline_passed", "payment_method.in_use"];
 export type OrderErrorCode = (typeof ORDER_ERROR_CODES)[number];
 export declare const OrderErrorCode: {
     readonly QUOTE_ADDRESS_MISMATCH: "order.quote_address_mismatch";
+    readonly QUOTE_EXPIRED: "order.quote_expired";
     readonly SOLD_OUT: "order.sold_out";
+    readonly TIER_UNAVAILABLE: "order.tier_unavailable";
     readonly PAYMENT_DECLINED: "order.payment_declined";
     readonly PRICE_STALE: "order.price_stale";
     readonly PLAN_UNAVAILABLE: "order.plan_unavailable";

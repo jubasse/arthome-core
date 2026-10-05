@@ -155,7 +155,7 @@ export function assertCommandedTransition(
   if (current.version !== command.expectedVersion) {
     throw new DomainError({
       code: DomainErrorCode.STATE_CONFLICT,
-      params: { state: current.state, version: current.version },
+      params: { currentVersion: current.version, state: current.state },
     });
   }
   const transition = assertTransitionAllowed(current.state, command.to, canDecide);

@@ -47,8 +47,10 @@
     "  ./engagement                                  — what a viewer is served",
     "  ./studio-access ./studio-stage                — what a control room is served",
     "  ./studio-desk ./studio-money",
+    "  ./http ./http-client ./openapi                — routes as TypeScript, their client, the document they emit",
+    "  ./storefront-api ./studio-api                 — every route of each document, from which the document is generated",
     "",
-    "Fourteen, not the seven planned here. `./chat`, `./payouts` and `./notifications`",
+    "Fourteen bounded contexts, not the seven planned here. `./chat`, `./payouts` and `./notifications`",
     "were named as plans and never existed: chat and notifications are served to a",
     "VIEWER so they live in ./engagement, and payouts are OPERATED so they live in",
     "./studio-money. The bounded context that matters at a contract boundary is the",
@@ -78,6 +80,16 @@
       "types": "./dist/envelope/index.d.ts",
       "import": "./dist/envelope/index.js"
     },
+    "./http": {
+      "@arthome/source": "./src/http/index.ts",
+      "types": "./dist/http/index.d.ts",
+      "import": "./dist/http/index.js"
+    },
+    "./http-client": {
+      "@arthome/source": "./src/http-client/index.ts",
+      "types": "./dist/http-client/index.d.ts",
+      "import": "./dist/http-client/index.js"
+    },
     "./identity": {
       "@arthome/source": "./src/identity/index.ts",
       "types": "./dist/identity/index.d.ts",
@@ -88,10 +100,35 @@
       "types": "./dist/money/index.d.ts",
       "import": "./dist/money/index.js"
     },
+    "./openapi": {
+      "@arthome/source": "./src/openapi/index.ts",
+      "types": "./dist/openapi/index.d.ts",
+      "import": "./dist/openapi/index.js"
+    },
     "./pagination": {
       "@arthome/source": "./src/pagination/index.ts",
       "types": "./dist/pagination/index.d.ts",
       "import": "./dist/pagination/index.js"
+    },
+    "./storefront-api": {
+      "@arthome/source": "./src/storefront-api/index.ts",
+      "types": "./dist/storefront-api/index.d.ts",
+      "import": "./dist/storefront-api/index.js"
+    },
+    "./storefront-api/docs": {
+      "@arthome/source": "./src/storefront-api/docs.ts",
+      "types": "./dist/storefront-api/docs.d.ts",
+      "import": "./dist/storefront-api/docs.js"
+    },
+    "./studio-api": {
+      "@arthome/source": "./src/studio-api/index.ts",
+      "types": "./dist/studio-api/index.d.ts",
+      "import": "./dist/studio-api/index.js"
+    },
+    "./studio-api/docs": {
+      "@arthome/source": "./src/studio-api/docs.ts",
+      "types": "./dist/studio-api/docs.d.ts",
+      "import": "./dist/studio-api/docs.js"
     },
     "./streaming": {
       "@arthome/source": "./src/streaming/index.ts",

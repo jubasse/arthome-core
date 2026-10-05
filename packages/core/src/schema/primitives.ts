@@ -36,6 +36,52 @@ export const InstantOut: z.ZodString = z.string().meta({ format: 'date-time' });
  */
 export const uuidOut = (): z.ZodString => z.string().meta({ format: 'uuid' });
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/i;
+
+/**
+ * The same identifier where a request CARRIES it, in a path, a query or a header: `format: uuid` and
+ * nothing more is published, but the shape is refused. Like `int64`, the check is a refinement, which
+ * `toJSONSchema` does not emit, so the document stays what it was.
+ */
+export const uuidIn = (): z.ZodString =>
+  z
+    .string()
+    .refine((value) => UUID.test(value))
+    .meta({ format: 'uuid' });
+
+/** A calendar day, `2026-10-03`, as a request carries it: `format: date`, an impossible day refused. */
+export const dateIn = (): z.ZodString =>
+  z
+    .string()
+    .refine((value) => {
+      const parts = DATE.exec(value);
+      if (parts === null) return false;
+      const [year, month, day] = [Number(parts[1]), Number(parts[2]), Number(parts[3])];
+      const date = new Date(Date.UTC(year, month - 1, day));
+      return (
+        date.getUTCFullYear() === year &&
+        date.getUTCMonth() === month - 1 &&
+        date.getUTCDate() === day
+      );
+    })
+    .meta({ format: 'date' });
+
+/** An absolute URI as a request carries it: `format: uri`, and what `z.url()` refuses is refused. */
+export const uriIn = (): z.ZodString =>
+  z
+    .string()
+    .refine((value) => z.url().safeParse(value).success)
+    .meta({ format: 'uri' });
+
+/** An RFC 3339 instant, offset allowed, as a request carries it in a path, a query or a header. */
+export const dateTimeIn = (): z.ZodString =>
+  z
+    .string()
+    .refine((value) => DATE_TIME.test(value) && !Number.isNaN(Date.parse(value)))
+    .meta({ format: 'date-time' });
+
 /**
  * A 64-bit integer on the wire: `type: integer, format: int64`, and no bounds.
  *

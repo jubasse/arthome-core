@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { ErrorSchema, issueToCode } from './error.js';
+import { ERROR_PARAMS } from './error-params.js';
+import { ErrorSchema, schemaInvalidParams } from './error.js';
 import { AccountIdSchema, PublicHandleSchema } from './identifiers.js';
-import { MoneyIn, MoneyOut } from './money.js';
+import { MoneyOut } from './money.js';
 import { IanaTimeZoneSchema, InstantIn, LocaleIn, LocaleOut, int64 } from './primitives.js';
 import { vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
 import { DATE_OUTCOMES } from '../vocabulary/catalog.js';
+import { ApiErrorCode, SchemaIssueRule } from '../vocabulary/error-codes.js';
 
 /**
  * A vocabulary is strict IN and tolerant OUT, and a bare `z.enum()` does the
@@ -61,26 +63,63 @@ describe('the in / out asymmetry', () => {
  * `z.string().transform(...)` in `money.ts` — the gate exits 1 with file and line.
  */
 describe('failures leave as codes', () => {
-  it('turns an issue into a code and parameters, keeping the field', () => {
-    const result = MoneyIn.safeParse({ amountMinor: 1.5, currencyCode: 'EUR' });
-    expect(result.success).toBe(false);
-    if (result.success) return;
-    const { code, params } = issueToCode(result.error.issues[0]!);
-    expect(code).toMatch(/^validation\./);
-    expect(params.field).toBe('amountMinor');
+  function issuesOf(schema: z.ZodType, input: unknown): unknown {
+    const result = schema.safeParse(input);
+    if (result.success) throw new Error('expected a failure');
+    return schemaInvalidParams(result.error.issues).issues;
+  }
+
+  it('keeps the path, the rule and its limit, inclusive or not', () => {
+    const Line = z.object({ items: z.array(z.object({ quantity: z.number().positive().max(8) })) });
+    expect(issuesOf(Line, { items: [{ quantity: 0 }, { quantity: 9 }] })).toEqual([
+      {
+        path: ['items', 0, 'quantity'],
+        rule: SchemaIssueRule.TOO_SMALL,
+        minimum: 0,
+        inclusive: false,
+      },
+      {
+        path: ['items', 1, 'quantity'],
+        rule: SchemaIssueRule.TOO_BIG,
+        maximum: 8,
+        inclusive: true,
+      },
+    ]);
   });
 
-  it('carries no English prose out of zod', () => {
+  it('names the format, the accepted values, and each unknown key', () => {
+    const Form = z.strictObject({ email: z.email(), outcome: vocabularyIn(DATE_OUTCOMES) });
+    expect(issuesOf(Form, { email: 'nobody', outcome: 'lost', extra: 1, other: 2 })).toEqual([
+      { path: ['email'], rule: SchemaIssueRule.INVALID_FORMAT, format: 'email' },
+      { path: ['outcome'], rule: SchemaIssueRule.INVALID_VALUE, values: [...DATE_OUTCOMES] },
+      { path: ['extra'], rule: SchemaIssueRule.UNRECOGNIZED_KEY },
+      { path: ['other'], rule: SchemaIssueRule.UNRECOGNIZED_KEY },
+    ]);
+  });
+
+  it('reads an unknown union tag as a value outside the known ones, and a refine as custom', () => {
+    const Tagged = z.object({
+      body: z.discriminatedUnion('kind', [
+        z.object({ kind: z.literal('seat') }),
+        z.object({ kind: z.literal('plan') }),
+      ]),
+      count: int64(),
+    });
+    expect(issuesOf(Tagged, { body: { kind: 'gift' }, count: 1.5 })).toEqual([
+      { path: ['body', 'kind'], rule: SchemaIssueRule.INVALID_VALUE, values: ['seat', 'plan'] },
+      { path: ['count'], rule: SchemaIssueRule.CUSTOM },
+    ]);
+    expect(issuesOf(z.object({ count: z.number() }), { count: 'one' })).toEqual([
+      { path: ['count'], rule: SchemaIssueRule.INVALID_TYPE },
+    ]);
+  });
+
+  it('carries no English prose out of zod, and its params are the ones the contract documents', () => {
     const result = InstantIn.safeParse('2026-09-21 20:30');
-    expect(result.success).toBe(false);
-    if (result.success) return;
-    // `!` is banned here (no-non-null-assertion) and `pnpm run fix` removes it,
-    // which breaks the compile — hence the destructure.
-    const [issue] = result.error.issues;
-    if (issue === undefined) throw new Error('expected at least one issue');
-    const { code } = issueToCode(issue);
-    // A code is a vocabulary; a message is a sentence.
-    expect(code).not.toMatch(/\s/);
+    if (result.success) throw new Error('expected a failure');
+    const params = schemaInvalidParams(result.error.issues);
+    expect(JSON.stringify(params)).not.toMatch(/message|\s/);
+    expect(ERROR_PARAMS[ApiErrorCode.SCHEMA_INVALID].safeParse(params).success).toBe(true);
   });
 
   it('accepts the envelope every surface depends on', () => {

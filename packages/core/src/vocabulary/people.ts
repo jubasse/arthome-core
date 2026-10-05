@@ -165,6 +165,17 @@ export const UPSTREAMS: readonly [...typeof SERVICES, 'realtime'] = [
 ] as const;
 export type Upstream = (typeof UPSTREAMS)[number];
 
+export const Upstream = {
+  IDENTITY: 'identity',
+  CATALOG: 'catalog',
+  TICKETING: 'ticketing',
+  STREAMING: 'streaming',
+  CHAT: 'chat',
+  PAYOUTS: 'payouts',
+  NOTIFICATIONS: 'notifications',
+  REALTIME: 'realtime',
+} as const;
+
 /**
  * Where a decision was taken — the studio journal is by-name and situated, and
  * `system` is an actor like any other (standby screen, lease expiry).

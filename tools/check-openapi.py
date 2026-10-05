@@ -11,6 +11,34 @@ counts = {}
 HTTP = {"get","put","post","delete","patch","head","options","trace"}
 ERRS = []
 
+
+def envelope_shaped(schema, schemas):
+    """The shared envelope, or what a route that adds domain codes writes in its place.
+
+    A status whose codes the api already documents keeps the shared `ErrorEnvelope`. A status
+    that adds a code (a stale rights version, a locked price) is a `oneOf` of one envelope per
+    code, each carrying `error` and `servedAt` with the code it stands for: the typed client's
+    union on `error.code` is read from it. Each code's envelope is a component, referred to.
+    """
+    ref = schema.get("$ref", "")
+    if ref == "#/components/schemas/ErrorEnvelope":
+        return True
+    if ref.startswith("#/components/schemas/"):
+        target = schemas.get(ref.rsplit("/", 1)[-1])
+        return target is not None and envelope_shaped(target, schemas)
+    branches = schema.get("oneOf") if "oneOf" in schema else schema.get("anyOf")
+    if "oneOf" in schema or "anyOf" in schema:
+        return bool(branches) and all(envelope_shaped(branch, schemas) for branch in branches)
+    props = schema.get("properties") or {}
+    required = schema.get("required") or []
+    if not all(name in props and name in required for name in ("error", "servedAt")):
+        return False
+    error = props["error"]
+    if "$ref" in error:
+        return error["$ref"] == "#/components/schemas/Error"
+    inner = error.get("properties") or {}
+    return "code" in inner and "code" in (error.get("required") or [])
+
 def err(doc, msg): ERRS.append(f"{doc}: {msg}")
 
 def walk(node, path=""):
@@ -205,7 +233,7 @@ def check(fn):
                     continue
                 for ct, media in (r.get("content") or {}).items():
                     s = media.get("schema",{})
-                    if s.get("$ref") != "#/components/schemas/ErrorEnvelope":
+                    if not envelope_shaped(s, d.get("components", {}).get("schemas", {})):
                         err(fn, f"R10 response {c} does not use ErrorEnvelope — {oid}")
 
         # R11 — every committing write carries Idempotency-Key

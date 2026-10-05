@@ -54,6 +54,12 @@ export const API_ERROR_CODES = [
   // The BFF stopped waiting for a service. Not `upstream_unavailable`: the service may still
   //   finish, so a caller retrying a command must reuse its Idempotency-Key.
   'api.upstream_timeout',
+  // transport.md §5.7's three refusals made before a handler runs: a body over the route's
+  //   ceiling (413), a media type the route does not take (415), and a route that requires a recent
+  //   re-authentication the caller has not just given (403).
+  'api.payload_too_large',
+  'api.unsupported_media_type',
+  'api.reauthentication_required',
 ] as const;
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
@@ -75,6 +81,34 @@ export const ApiErrorCode = {
   IDEMPOTENCY_IN_FLIGHT: 'api.idempotency_in_flight',
   DEADLINE_EXCEEDED: 'api.deadline_exceeded',
   UPSTREAM_TIMEOUT: 'api.upstream_timeout',
+  PAYLOAD_TOO_LARGE: 'api.payload_too_large',
+  UNSUPPORTED_MEDIA_TYPE: 'api.unsupported_media_type',
+  REAUTHENTICATION_REQUIRED: 'api.reauthentication_required',
+} as const;
+
+/**
+ * The rule an `api.schema_invalid` issue broke, so a form can say what is wrong with a field
+ * without a sentence on the wire. Read from zod's issue codes, closed here.
+ */
+export const SCHEMA_ISSUE_RULES = [
+  'too_small',
+  'too_big',
+  'invalid_type',
+  'invalid_format',
+  'invalid_value',
+  'unrecognized_key',
+  'custom',
+] as const;
+export type SchemaIssueRule = (typeof SCHEMA_ISSUE_RULES)[number];
+
+export const SchemaIssueRule = {
+  TOO_SMALL: 'too_small',
+  TOO_BIG: 'too_big',
+  INVALID_TYPE: 'invalid_type',
+  INVALID_FORMAT: 'invalid_format',
+  INVALID_VALUE: 'invalid_value',
+  UNRECOGNIZED_KEY: 'unrecognized_key',
+  CUSTOM: 'custom',
 } as const;
 
 /**
@@ -101,6 +135,10 @@ export const IDENTITY_ERROR_CODES = [
   // An email verification link that is unknown, expired or already used: one answer for the
   //   three, since telling them apart says which tokens were ever issued.
   'identity.verification_link_invalid',
+  // A single-use token that has run out, one code per journey so a surface restarts the right one.
+  'identity.reset_token_expired',
+  'identity.one_time_token_expired',
+  'identity.two_factor_challenge_expired',
 ] as const;
 export type IdentityErrorCode = (typeof IDENTITY_ERROR_CODES)[number];
 
@@ -111,6 +149,9 @@ export const IdentityErrorCode = {
   TWO_FACTOR_REQUIRED: 'identity.two_factor_required',
   SIGNED_OUT_ELSEWHERE: 'identity.signed_out_elsewhere',
   VERIFICATION_LINK_INVALID: 'identity.verification_link_invalid',
+  RESET_TOKEN_EXPIRED: 'identity.reset_token_expired',
+  ONE_TIME_TOKEN_EXPIRED: 'identity.one_time_token_expired',
+  TWO_FACTOR_CHALLENGE_EXPIRED: 'identity.two_factor_challenge_expired',
 } as const;
 
 /**
@@ -168,6 +209,11 @@ export const CATALOG_ERROR_CODES = [
   // The public face's slug, unique across artists: `updateChannelIdentity` names it, and a 409
   //   without the code would say "conflict" about a URL someone else already owns.
   'artist.slug_taken',
+  // A channel has one public face: two first edits racing, the second finds it created.
+  'artist.already_exists',
+  // Two shows of one title published at once: the second's slug is taken, and publishing again
+  //   takes the next free one.
+  'show.slug_taken',
   'date.has_sold_seats',
   'date.outcome_decision_forbidden',
   'date.prices_locked',
@@ -185,11 +231,20 @@ export const CATALOG_ERROR_CODES = [
   'date.provision_below_capacity',
   'date.stream_key_rotation_during_run',
   'date.postponement_limit_reached',
+  // The refusals of an outcome declaration (outcome.ts), one per fact the date opposes to it.
+  'date.outcome_final',
+  'date.not_public',
+  'date.already_started',
+  'date.not_started',
+  'date.already_ended',
+  'date.reschedule_in_past',
 ] as const;
 export type CatalogErrorCode = (typeof CATALOG_ERROR_CODES)[number];
 
 export const CatalogErrorCode = {
   ARTIST_SLUG_TAKEN: 'artist.slug_taken',
+  ARTIST_ALREADY_EXISTS: 'artist.already_exists',
+  SHOW_SLUG_TAKEN: 'show.slug_taken',
   DATE_HAS_SOLD_SEATS: 'date.has_sold_seats',
   OUTCOME_DECISION_FORBIDDEN: 'date.outcome_decision_forbidden',
   PRICES_LOCKED: 'date.prices_locked',
@@ -201,6 +256,12 @@ export const CatalogErrorCode = {
   PROVISION_BELOW_CAPACITY: 'date.provision_below_capacity',
   STREAM_KEY_ROTATION_DURING_RUN: 'date.stream_key_rotation_during_run',
   POSTPONEMENT_LIMIT_REACHED: 'date.postponement_limit_reached',
+  OUTCOME_FINAL: 'date.outcome_final',
+  DATE_NOT_PUBLIC: 'date.not_public',
+  DATE_ALREADY_STARTED: 'date.already_started',
+  DATE_NOT_STARTED: 'date.not_started',
+  DATE_ALREADY_ENDED: 'date.already_ended',
+  RESCHEDULE_IN_PAST: 'date.reschedule_in_past',
 } as const;
 
 /**
@@ -224,12 +285,19 @@ export const ChannelErrorCode = {
   SAME_ACTOR_FORBIDDEN: 'channel.same_actor_forbidden',
 } as const;
 
-/** Payout refusals: a period does not close over an unexplained discrepancy. */
-export const PAYOUT_ERROR_CODES = ['payout.reconciliation_discrepancy_unexplained'] as const;
+/**
+ * Payout refusals: a period does not close over an unexplained discrepancy, and a bank change
+ * request past its deadline can no longer be countersigned.
+ */
+export const PAYOUT_ERROR_CODES = [
+  'payout.reconciliation_discrepancy_unexplained',
+  'payout.bank_change_request_expired',
+] as const;
 export type PayoutErrorCode = (typeof PAYOUT_ERROR_CODES)[number];
 
 export const PayoutErrorCode = {
   RECONCILIATION_DISCREPANCY_UNEXPLAINED: 'payout.reconciliation_discrepancy_unexplained',
+  BANK_CHANGE_REQUEST_EXPIRED: 'payout.bank_change_request_expired',
 } as const;
 
 /**
@@ -238,7 +306,11 @@ export const PayoutErrorCode = {
  */
 export const ORDER_ERROR_CODES = [
   'order.quote_address_mismatch',
+  // The binding quote has expired (data-model 3.5): a new quote, then checkout again.
+  'order.quote_expired',
   'order.sold_out',
+  // A price tier the date no longer sells.
+  'order.tier_unavailable',
   'order.payment_declined',
   'order.price_stale',
   'order.plan_unavailable',
@@ -261,7 +333,9 @@ export type OrderErrorCode = (typeof ORDER_ERROR_CODES)[number];
 
 export const OrderErrorCode = {
   QUOTE_ADDRESS_MISMATCH: 'order.quote_address_mismatch',
+  QUOTE_EXPIRED: 'order.quote_expired',
   SOLD_OUT: 'order.sold_out',
+  TIER_UNAVAILABLE: 'order.tier_unavailable',
   PAYMENT_DECLINED: 'order.payment_declined',
   PRICE_STALE: 'order.price_stale',
   PLAN_UNAVAILABLE: 'order.plan_unavailable',

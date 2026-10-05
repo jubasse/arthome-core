@@ -367,8 +367,12 @@ has no consequence. It is **last writer wins, with a server-side rank** (`data-m
 }
 ```
 
-and, where applicable: `version` (on every aggregate a conditional command might target) and
-`lastEventSeq` (on every read model fed by a stream).
+and, where applicable: `lastEventSeq` (on every read model fed by a stream).
+
+**`version` sits inside the record, never at the envelope root.** An aggregate a conditional command
+might target carries its `version` in the item, which is also the only place that works for a list
+whose records each carry one. A versioned write that leaves a record answers the new version in the
+item; a removal answers none.
 
 **Every error response**, from the service, from the BFF **and from Traefik**, carries exactly
 this:
@@ -385,8 +389,10 @@ this:
 }
 ```
 
-- **`code` is a code, never a sentence.** A zod validation failure becomes `api.schema_invalid` with
-  the field paths in `params` — **never** zod's English message;
+- **`code` is a code, never a sentence.** A zod validation failure becomes `api.schema_invalid`, its
+  `params.issues` one per refused field: the `path`, the `rule` broken (`SCHEMA_ISSUE_RULES`) and
+  that rule's limit (`minimum`, `maximum`, `inclusive`, `format`, `values`) — **never** zod's
+  English message;
 - **`traceId` is the `trace-id` part of the `traceparent`**, readable and copyable from the error
   screen. On mobile it is the only link between "my app crashed" and a server log;
 - **`nature` is what `studio-mobile` requires**, and it is the decision someone on duty must make
@@ -408,10 +414,11 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 |---|---|---|
 | `400` | `refused` | `api.schema_invalid`, `api.period_filter_required` |
 | `401` | `refused` | `api.unauthenticated`, `api.token_expired` |
+| `402` | `refused` | `order.payment_declined` (the payment provider declined; not a rule of ours) |
 | `403` | `refused` | `api.forbidden`, `api.sort_key_forbidden`, `api.rights_version_stale`, `pairing.identity_mismatch`, `order.sales_queue_admission_required` |
 | `404` | `refused` | `api.not_found` |
-| `409` | `refused` | `state.conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `api.idempotency_in_flight`, `capacity.tier_must_widen` |
-| `410` | `refused` | `api.cursor_too_old`, `pairing.expired`, `watch.replay_expired` |
+| `409` | `refused` | `state.conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `capacity.tier_must_widen`; two are `unavailable`, since retrying succeeds: `api.idempotency_in_flight` (param `retryAfterMs`) and `show.slug_taken` (publishing again takes the next free slug) |
+| `410` | `refused` | `api.cursor_too_old`, `pairing.expired`, `watch.replay_expired`, `order.quote_expired`, `payout.bank_change_request_expired`, `identity.reset_token_expired`, `identity.one_time_token_expired`, `identity.two_factor_challenge_expired` |
 | `429` | `unavailable` | `api.rate_limited`, `chat.rate_limited` (param `retryAfterMs`) |
 | `500` | `unavailable` | `api.internal` — **never** the original error's message |
 | `502` | `unavailable` | `api.upstream_unavailable` (the BFF, for a service that failed) |
@@ -421,6 +428,13 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 **"Typical", and the word is load-bearing**: this table names the codes worth knowing per status, not
 every member of `ERROR_CODES`. A code absent from it is not a defect — a code *in* it that the vocabulary
 does not carry is, which is what the gate checks.
+
+**Every code has one entry in `ERRORS`, in `@arthome/contracts/http`**: its status and an example of
+its params, and a code without one does not compile. Its nature is `natureOf(code)` in
+`@arthome/core`, which a `DomainError` carries and the documents show, so a raised error and a
+documented one cannot disagree. Tests fail when a generated document shows a code under another
+status, when an example does not parse with the code's `ERROR_PARAMS`, or when a code's nature is not
+its status's in the table above without `natureOf` naming it.
 
 **The BFF never relays a service error as-is** (`nestjs-bff-gateway` skill, rule 6). It maps an
 **allowlist** of domain codes, which cross with their `params`, and everything else becomes
@@ -552,6 +566,12 @@ sets it as `cache-control` and the surface that maps it onto its client cache:
 | `live`, capacity, counters | 15 s | `private, max-age=15` |
 | `PlaybackTicket`, `WatchVerdict`, stream key | **never** | **`no-store`** |
 
+**`public` is only ever an anonymous caller's.** A caller a credential identifies gets `private`
+whatever the family, because its body may carry what is theirs, and a shared cache that ignores
+`Vary` would hand it to the next caller. A read served to both (`publicRead`) answers the anonymous
+one `public` with the same `max-age`. The contracts derive the value per caller
+(`cacheControlOf(policy, caller)`), and the document declares both on that read's `200`.
+
 `no-store` on the stream key and the playback token is not an optimisation: it is what keeps them
 out of the phone's HTTP cache and out of the application snapshot the OS takes when it goes to the
 background (`data-model.md` §5.2).
@@ -581,6 +601,13 @@ compile. It is one of §2.3's eight traps, and the most visible on every deploym
 It is the same cut as `buf.yaml` for the events, with the same exit rule: the exception line is
 removed **the day the context's tier ships**, never before.
 
+**An operation's maturity is its owning service's**: the first service in its `x-arthome-upstream`.
+A BFF keeps its own shape stable over a provisional service it translates, so a composed read owned
+by `catalog` stays stable when `streaming` contributes to it. The contracts derive it from this table
+(`maturityOf` and `MATURITY_BY_SERVICE` in `@arthome/contracts/openapi`, the table held to this one by
+`check-contract-docs`), and an operation states its own only where it differs, with the reason in
+one phrase: a flow not built or not settled on a stable service, or a feed that calls no service.
+
 **What "stable" allows, and nothing else**: adding an entry point, adding an **optional** property
 to a response, adding a value to an enumeration, adding an **optional** parameter. Everything else
 is a `v2` of the service, served **beside** the `v1` until both BFFs have migrated.
@@ -597,6 +624,78 @@ as neutral**, never rejected. On the zod side, a bare `z.enum()` **does not do t
 **input** (strict write). The two are not the same schema, and `z.toJSONSchema()`'s `io: "input"` /
 `io: "output"` is exactly what separates them. Getting it wrong produces false documentation in
 both directions.
+
+### 5.12 Writing — PUT, PATCH and the action, and what a route declares
+
+The product owner's rule on how a record changes. **The test that decides: does this change have
+rules or consequences?** If it does, it is an action.
+
+| Verb | Contract call | What it is |
+|---|---|---|
+| `PUT` | `replace`, `subresource(name).replace()`, `upsert` | a **full replacement**, idempotent. The body is complete; an absent field is **reset**. `upsert` is the same on an id the client chose (`/follows/{artistId}`) |
+| `PATCH` | `update` | a **partial change** of one or several properties with **no business rule**. An absent field is unchanged; `null` clears an optional field. The schema is derived from the writable fields made optional, and can be overridden. It carries `expectedVersion` |
+| `POST /{res}/{id}/{action}` | `action(name, ...)` | **every business state change**: a status, a publication, a cancellation, a boolean that triggers rules or events. Never a `PATCH` on a status field. On the collection: `collectionAction`, `/{res}/{action}`; on a single resource, `/{name}/{action}` |
+| `DELETE` | `delete` | the record **disappears** (a later read answers `404`), even when guarded: a guard is a `409` with a domain code (`deleteChannel` is refused while a payout is owed). If the record **stays readable with a new state**, it is an action (`cancelSubscription` is `POST /subscription/cancel`) |
+
+**A state machine with few commanded transitions is one action per transition** (the run: `rehearse`, `go-on-air`, `end`, `reset`); a sanction (`none`, `muted`, `banned`) is one `POST` action, lifting it being the kind `none`.
+
+`find` (`GET` one), `findAll` (the paginated list), `create` (`POST`, with `Idempotency-Key`) complete
+the set; `crud` composes `find`, `findAll`, `create`, `update` and `delete` (on a single resource,
+`find` and `update`), and `replace` and `upsert` only when asked for. A read carries an `ETag`, with
+`If-None-Match` and the `304`, only when its `cache` says so.
+
+**What exists once is a `single`** (`/me/preferences`, `/subscription`, a channel's `settings`): its
+URL has no id.
+
+**Data only its caller writes is `owner: 'caller'`** (preferences, saved searches, follows, the
+watchlist, reminders, passkeys, payment methods, devices): the write carries no `expectedVersion` and
+no `409 state.conflict` (the idempotency codes stay), two devices writing at once settle on the last
+write, and another caller's id answers `404 api.not_found`, never `403`: the answer must not reveal
+that the record exists. Data a team shares keeps its version, and its item must carry `version`.
+
+**Who may call is declared, and denied by default.** A route requires its surface's identity unless it
+says `.public()`; `.optionalAuth()` lets an anonymous caller in with a principal that may be null (a
+credential presented and refused is still a `401`). The only exception is a route declaring
+`.optionalAuth({ refusedCredentialIsAnonymous: reason })`, which counts a refused credential as none
+and derives no `401`: `signOut` alone, since signing out is idempotent (`access-exceptions.spec.ts`).
+A rule beyond identity is a name with parameters and errors (`roles(...).on('channelId')`,
+`recentAuth()`, `throttle('auth')`) that the server maps to a guard; the identity writes the
+document's `security`, including the CSRF token of a cookie write.
+
+A public write takes no CSRF token because it uses no session. Login CSRF, a forged sign-in that
+signs the victim's browser into the attacker's account, threatens only the six writes that open a
+cookie session (storefront: `signIn`, `signUp`, `exchangeOneTimeToken`, `verifyTwoFactor`; studio:
+`signInStudio`, `verifyTwoFactorStudio`), and JSON-only bodies, the CORS preflight a JSON body triggers and `SameSite=Lax` hold them. A route that lifts
+JSON-only, such as a `form_post` callback, must declare its own CSRF defence with a reason.
+
+**Errors are declared by code, in three levels merged per status**, and the derivable ones are added
+by the declaration, because nothing the server can answer is undocumented:
+
+1. the errors common to a group (`.errors([ApiErrorCode.FORBIDDEN, ApiErrorCode.NOT_FOUND])`);
+2. the conventions: `404 api.not_found` on `find`, `update`, `replace` and `delete` of one record;
+   `409 state.conflict`, carrying the current version, on `update`, `replace` and `delete` of a shared
+   record; the idempotency codes on every write; `400` on an invalid cursor and `410` on an old one;
+3. the domain codes of the operation, taken from the core vocabularies
+   (`errors: [CatalogErrorCode.PRICES_LOCKED]`), each answered with the status `ERRORS` gives it.
+
+| What the route declares | Added |
+|---|---|
+| any input (path, query, body) | `400 api.schema_invalid` |
+| a body | `413 api.payload_too_large` (1 MiB, 2 MiB on a batch), `415 api.unsupported_media_type` |
+| a write carrying `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` and `X-Arthome-Served-At` headers |
+| an identity | `401`; a write by cookie, the CSRF `403`; the studio's `If-Rights-Version` and its `403 api.rights_version_stale`, and `X-Arthome-Rights-Version` on every success |
+| a rule | its codes (`api.reauthentication_required`, `api.rate_limited`) |
+| the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `503 api.service_unavailable` (its own, never relayed), `504 api.upstream_timeout`, `504 api.deadline_exceeded` |
+
+The framework's own refusals (a malformed JSON body, a wrong content type, a body over the ceiling,
+an unknown route) answer the envelope with these codes too, and an end-to-end test fails on a status
+or a code the route does not declare.
+
+`ErrorParamsMap` in `@arthome/core` gives every code the type of its `error.params`, an empty one
+for a code that carries none, and `DomainError` takes the params of its code; `ERROR_PARAMS` in
+`@arthome/core/schema` is its schema, code for code. So the documented response, the server and the
+typed client read the same one; the client receives a union discriminated on `error.code`. A storefront operation may declare only the codes of
+`STOREFRONT_RELAYED_CODES`, and the compiler refuses any other.
 
 ---
 

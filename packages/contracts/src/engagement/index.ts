@@ -1,9 +1,9 @@
 /**
  * `@arthome/contracts/engagement` — What reaches a viewer between visits: notification preferences, the change feed, chat and the reaction quota.
  *
- * EVERY SCHEMA HERE EMITS A NAMED SCHEMA OF `openapi/storefront.yaml` EXACTLY, and
- * `pnpm run check:emit-diff` is what proves it: the document is authoritative
- * (D-058), so where the two differ the schema changes.
+ * EVERY SCHEMA HERE IS A COMPONENT OF `openapi/storefront.yaml`, which is generated from it
+ * (D-120): `pnpm run check:openapi-generated` fails when the committed document is not
+ * what the schemas emit.
  *
  * The rules this file follows, each of which was a defect the gate found (D-060, D-065):
  *
@@ -55,7 +55,7 @@ const CACHE_TAGS = [
 export const NotificationPreferencesSchema: z.ZodObject<
   {
     triggers: z.ZodOptional<
-      z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodArray<VocabularyOut>>>
+      z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodArray<VocabularyOut>>>
     >;
     quietHours: z.ZodOptional<
       z.ZodObject<
@@ -175,7 +175,7 @@ export const NotificationEntrySchema: z.ZodObject<
   {
     id: z.ZodString;
     triggerCode: z.ZodString;
-    params: z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodUnknown>>;
+    params: z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodUnknown>>;
     deepLink: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     createdAt: z.ZodString;
     read: z.ZodBoolean;

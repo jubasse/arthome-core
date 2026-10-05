@@ -41,6 +41,9 @@ import {
   vocabularyOutNullable,
 } from '@arthome/core/schema';
 
+import { sensitive } from '../http/marks.js';
+import type { TaggedSchema } from '../http/tagged.js';
+import { tagged } from '../http/tagged.js';
 import { SessionMode } from '../identity/index.js';
 
 const LOCAL_REASON =
@@ -440,8 +443,8 @@ export const StudioSessionEstablishedBearerSchema: z.ZodObject<
 > = z
   .looseObject({
     mode: z.literal(SessionMode.BEARER),
-    accessToken: z.string(),
-    refreshToken: z.string().nullable().optional(),
+    accessToken: sensitive(z.string()),
+    refreshToken: sensitive(z.string().nullable().optional()),
     expiresAt: InstantOut,
     bootstrap: StudioBootstrapSchema,
   })
@@ -466,25 +469,18 @@ export const StudioSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bea
   );
 
 /** Exactly one of a cookie or a bearer session, discriminated by the mode. */
-export const StudioSessionEstablishedSchema: z.ZodDiscriminatedUnion<
-  [typeof StudioSessionEstablishedCookieSchema, typeof StudioSessionEstablishedBearerSchema]
-> = z
-  .discriminatedUnion('mode', [
-    StudioSessionEstablishedCookieSchema,
-    StudioSessionEstablishedBearerSchema,
-  ])
-  .meta({
-    discriminator: {
-      propertyName: 'mode',
-      mapping: {
-        cookie: '#/components/schemas/SessionEstablishedCookie',
-        bearer: '#/components/schemas/SessionEstablishedBearer',
-      },
-    },
-  })
-  .describe(
-    '**Invariant: a response never carries a cookie and a token at once.** Two bearers for one\nsession means two revocations to keep up and one that will be forgotten. So these are **two\nschemas**, discriminated by the mode, and not one schema with an optional field.\n',
-  );
+export const StudioSessionEstablishedSchema: TaggedSchema<
+  'mode',
+  {
+    cookie: typeof StudioSessionEstablishedCookieSchema;
+    bearer: typeof StudioSessionEstablishedBearerSchema;
+  }
+> = tagged('mode', {
+  cookie: StudioSessionEstablishedCookieSchema,
+  bearer: StudioSessionEstablishedBearerSchema,
+}).describe(
+  '**Invariant: a response never carries a cookie and a token at once.** Two bearers for one\nsession means two revocations to keep up and one that will be forgotten. So these are **two\nschemas**, discriminated by the mode, and not one schema with an optional field.\n',
+);
 
 /** A member of a channel's team. */
 export const ChannelMemberSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z.looseObject({

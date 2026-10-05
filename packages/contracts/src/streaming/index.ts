@@ -1,9 +1,9 @@
 /**
  * `@arthome/contracts/streaming` — Watching: the advisory entitlement verdict and the incident veil a player displays.
  *
- * EVERY SCHEMA HERE EMITS A NAMED SCHEMA OF `openapi/storefront.yaml` EXACTLY, and
- * `pnpm run check:emit-diff` is what proves it: the document is authoritative
- * (D-058), so where the two differ the schema changes.
+ * EVERY SCHEMA HERE IS A COMPONENT OF `openapi/storefront.yaml`, which is generated from it
+ * (D-120): `pnpm run check:openapi-generated` fails when the committed document is not
+ * what the schemas emit.
  *
  * The rules this file follows, each of which was a defect the gate found (D-060, D-065):
  *
@@ -38,6 +38,7 @@ import {
 } from '@arthome/core/schema';
 
 import { ChapterSchema, DateCardSchema } from '../catalog/index.js';
+import { sensitive } from '../http/marks.js';
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
 
 export const IncidentSchema: z.ZodNullable<
@@ -85,7 +86,7 @@ const playbackSignature = (): z.ZodObject<
   z.core.$loose
 > =>
   z.looseObject({
-    queryToken: z.string().nullable().optional(),
+    queryToken: sensitive(z.string()).nullable().optional(),
     cookieSet: z.boolean().nullable().optional(),
   });
 

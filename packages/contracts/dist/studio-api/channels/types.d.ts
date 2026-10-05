@@ -1,0 +1,739 @@
+/** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
+import type { z } from 'zod';
+import type { ApiErrorCode, CHAT_MODES, ChannelErrorCode, DomainErrorCode, FILTER_SEVERITIES, PayoutErrorCode } from '@arthome/core';
+import type { VocabularyIn } from '@arthome/core/schema';
+import type { Deleted, ExpectedVersionQuery, IdentifiedAccess, ItemResponse, JsonRequestBody, PageResponse, QueryParameter, Route } from '../../http/index.js';
+import type { ChannelMemberSchema } from '../../studio-access/index.js';
+import type { AudienceMemberSchema, JournalEntrySchema, ModerationItemSchema } from '../../studio-desk/index.js';
+import type { BankChangeRequestSchema, DashboardScreenSchema, ExportJobSchema } from '../../studio-money/index.js';
+import type { ChannelIdParameter, CursorParameter, IdempotencyKeyParameter, IfRightsVersionParameter, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter, operator, studioConventions } from '../components.js';
+import type { AddBannedWordBodySchema, AgendaListSchema, AudienceMemberIdParameter, AudienceSanctionParameter, AudienceSearch, BannedWordAdditionSchema, BannedWordParameter, ChangeMemberRolesBodySchema, ChannelDefaultsSchema, ChannelDeletionAnswerSchema, ChannelIdentitySchema, ChannelMemberPageSchema, ChannelReplaySchema, ChannelReplayStateParameter, ChannelSettingsSchema, ChannelStreamSettingsSchema, ChannelTicketingSchema, CloseReconciliationPeriodBodySchema, CreateDateDraftBodySchema, DeleteChannelBodySchema, EventStatesParameter, EventsWindowParameter, InviteMemberBodySchema, JournalDateParameter, JournalNatureParameter, MemberRoleParameter, MerchItemIdParameter, ModerationQueueFilterParameter, OwnershipTransferSchema, PayoutPageSchema, PayoutStateParameter, PersonIdParameter, PresentOnDateParameter, ReconciliationClosureSchema, ReconciliationPeriodIdParameter, RequestBankChangeBodySchema, RequestChannelExportBodySchema, SanctionAudienceMemberBodySchema, StatsAnswerSchema, StatsPeriodPresetParameter, StatsShowParameter, StatsTabParameter, TransferChannelOwnershipBodySchema, UpsertMerchItemBodySchema } from './schemas.js';
+export type ListChannelReplaysRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/replays';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof PageParameter,
+        typeof PageSizeParameter,
+        typeof SortByParameter,
+        typeof SortDirParameter,
+        typeof ChannelReplayStateParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: PageResponse<typeof studioConventions, typeof ChannelReplaySchema>;
+    };
+    errorCodes: {
+        400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type GetChannelSettingsRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/settings';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof ChannelSettingsSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type UpdateChannelSettingsRoute = Route<{
+    method: 'patch';
+    version: 1;
+    path: '/channels/{channelId}/settings';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<z.ZodObject<{
+        readonly moderationDefaults: z.ZodOptional<z.ZodOptional<z.ZodObject<{
+            filterSeverity: z.ZodOptional<VocabularyIn<typeof FILTER_SEVERITIES>>;
+            slowModeSec: z.ZodOptional<z.ZodInt>;
+            holdersOnly: z.ZodOptional<z.ZodBoolean>;
+            retroactiveFilter: z.ZodOptional<z.ZodBoolean>;
+            chatMode: z.ZodOptional<VocabularyIn<typeof CHAT_MODES>>;
+        }, z.core.$strip>>>;
+        readonly broadcastDefaults: z.ZodOptional<z.ZodOptional<z.ZodObject<{
+            ingestProtocol: z.ZodOptional<VocabularyIn<readonly ['rtmps', 'srt', 'whip']>>;
+            holdScreenAutoAfterSec: z.ZodOptional<z.ZodInt>;
+        }, z.core.$strip>>>;
+    } & {
+        readonly expectedVersion: z.ZodNumber;
+    }, z.core.$strip>, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof ChannelDefaultsSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof DomainErrorCode.STATE_CONFLICT)[];
+    };
+}>;
+export type ListChannelJournalRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/journal';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof PageParameter,
+        typeof PageSizeParameter,
+        QueryParameter<'from', z.ZodString, true>,
+        QueryParameter<'to', z.ZodString, true>,
+        typeof JournalNatureParameter,
+        typeof JournalDateParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: PageResponse<typeof studioConventions, typeof JournalEntrySchema>;
+    };
+    errorCodes: {
+        400: readonly (typeof ApiErrorCode.PERIOD_FILTER_REQUIRED | typeof ApiErrorCode.SCHEMA_INVALID)[];
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type ListChannelMerchItemsRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/merch-items';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: {
+            readonly description: 'The items.';
+            readonly content: {
+                readonly 'application/json': {
+                    readonly schema: typeof AgendaListSchema;
+                };
+            };
+        };
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type UpsertMerchItemRoute = Route<{
+    method: 'put';
+    version: 1;
+    path: '/channels/{channelId}/merch-items/{itemId}';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof MerchItemIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof UpsertMerchItemBodySchema, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof ChannelMemberSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof DomainErrorCode.STATE_CONFLICT)[];
+    };
+}>;
+export type UpdateChannelIdentityRoute = Route<{
+    method: 'patch';
+    version: 1;
+    path: '/channels/{channelId}/identity';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<z.ZodObject<{
+        readonly publicName: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+        readonly slug: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+        readonly biography: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodObject<{
+            contentLanguage: z.ZodString;
+            text: z.ZodString;
+        }, z.core.$strip>>>>;
+        readonly categoryId: z.ZodOptional<z.ZodOptional<z.ZodString>>;
+        readonly avatarAssetId: z.ZodOptional<z.ZodOptional<z.ZodNullable<z.ZodString>>>;
+    } & {
+        readonly expectedVersion: z.ZodNumber;
+    }, z.core.$strip>, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof ChannelIdentitySchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof DomainErrorCode.STATE_CONFLICT)[];
+    };
+}>;
+export type ListChannelMembersRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/members';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof PageParameter,
+        typeof PageSizeParameter,
+        typeof AudienceSearch,
+        typeof MemberRoleParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: {
+            readonly description: 'A page of members, plus the head count per role.';
+            readonly content: {
+                readonly 'application/json': {
+                    readonly schema: typeof ChannelMemberPageSchema;
+                };
+            };
+        };
+    };
+    errorCodes: {
+        400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type InviteMemberRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/invitations';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof InviteMemberBodySchema, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        201: ItemResponse<typeof studioConventions, typeof ChannelMemberSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN | typeof ChannelErrorCode.ROLE_NOT_ASSIGNABLE)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+    };
+}>;
+export type ChangeMemberRolesRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/members/{personId}/change-roles';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof PersonIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof ChangeMemberRolesBodySchema, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof ChannelMemberSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+    };
+}>;
+export type RemoveMemberRoute = Route<{
+    method: 'delete';
+    version: 1;
+    path: '/channels/{channelId}/members/{personId}';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof PersonIdParameter,
+        typeof IdempotencyKeyParameter,
+        ExpectedVersionQuery,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof Deleted, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof DomainErrorCode.STATE_CONFLICT)[];
+    };
+}>;
+export type TransferChannelOwnershipRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/ownership-transfer';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof TransferChannelOwnershipBodySchema, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        202: ItemResponse<typeof studioConventions, typeof OwnershipTransferSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof ChannelErrorCode.TRANSFER_TARGET_INELIGIBLE)[];
+    };
+}>;
+export type ListChannelEventsRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/events';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof PageParameter,
+        typeof PageSizeParameter,
+        typeof SortByParameter,
+        typeof SortDirParameter,
+        typeof EventsWindowParameter,
+        typeof EventStatesParameter,
+        typeof AudienceSearch,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: PageResponse<typeof studioConventions, typeof ChannelMemberSchema>;
+    };
+    errorCodes: {
+        400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
+        403: readonly (typeof ApiErrorCode.FORBIDDEN | typeof ApiErrorCode.SORT_KEY_FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type GetChannelDashboardRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/dashboard';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof StatsPeriodPresetParameter,
+        QueryParameter<'from', z.ZodString, false>,
+        QueryParameter<'to', z.ZodString, false>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof DashboardScreenSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type GetChannelStatsRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/stats';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof StatsTabParameter,
+        typeof StatsPeriodPresetParameter,
+        QueryParameter<'from', z.ZodString, false>,
+        QueryParameter<'to', z.ZodString, false>,
+        typeof StatsShowParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: {
+            readonly description: 'The tab requested. `audience` and `series` are mutually exclusive.';
+            readonly content: {
+                readonly 'application/json': {
+                    readonly schema: typeof StatsAnswerSchema;
+                };
+            };
+        };
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type GetChannelAgendaRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/agenda';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        QueryParameter<'from', z.ZodString, true>,
+        QueryParameter<'to', z.ZodString, true>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: {
+            readonly description: 'The dates between the two bounds.';
+            readonly content: {
+                readonly 'application/json': {
+                    readonly schema: typeof AgendaListSchema;
+                };
+            };
+        };
+    };
+    errorCodes: {
+        400: readonly (typeof ApiErrorCode.PERIOD_FILTER_REQUIRED)[];
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type ListPayoutsRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/payouts';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof PageParameter,
+        typeof PageSizeParameter,
+        typeof SortByParameter,
+        typeof SortDirParameter,
+        typeof PayoutStateParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: {
+            readonly description: 'A page of payout lines, and the balances **per currency**.';
+            readonly content: {
+                readonly 'application/json': {
+                    readonly schema: typeof PayoutPageSchema;
+                };
+            };
+        };
+    };
+    errorCodes: {
+        400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type RequestBankChangeRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/bank-change-requests';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof RequestBankChangeBodySchema, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        202: ItemResponse<typeof studioConventions, typeof BankChangeRequestSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+    };
+}>;
+export type CloseReconciliationPeriodRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/reconciliation-periods/{periodId}/close';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof ReconciliationPeriodIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof CloseReconciliationPeriodBodySchema, false>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof ReconciliationClosureSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof PayoutErrorCode.RECONCILIATION_DISCREPANCY_UNEXPLAINED)[];
+    };
+}>;
+export type RequestChannelExportRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/exports';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof RequestChannelExportBodySchema, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        202: ItemResponse<typeof studioConventions, typeof ExportJobSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+    };
+}>;
+export type ListModerationQueueRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/moderation/queue';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof CursorParameter,
+        QueryParameter<'limit', z.ZodDefault<z.ZodInt>>,
+        typeof JournalDateParameter,
+        typeof ModerationQueueFilterParameter,
+        typeof AudienceSearch,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: PageResponse<typeof studioConventions, typeof ModerationItemSchema>;
+    };
+    errorCodes: {
+        400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type SearchAudienceRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/audience';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof PageParameter,
+        typeof PageSizeParameter,
+        typeof AudienceSearch,
+        typeof PresentOnDateParameter,
+        typeof AudienceSanctionParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: PageResponse<typeof studioConventions, typeof AudienceMemberSchema>;
+    };
+    errorCodes: {
+        400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type SanctionAudienceMemberRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/audience/{memberId}/sanction';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof AudienceMemberIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof SanctionAudienceMemberBodySchema, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof AudienceMemberSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+    };
+}>;
+export type AddBannedWordRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/moderation/banned-words';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof AddBannedWordBodySchema, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        202: ItemResponse<typeof studioConventions, typeof BannedWordAdditionSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+    };
+}>;
+export type RemoveBannedWordRoute = Route<{
+    method: 'delete';
+    version: 1;
+    path: '/channels/{channelId}/moderation/banned-words/{word}';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof BannedWordParameter,
+        typeof IdempotencyKeyParameter,
+        ExpectedVersionQuery,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof Deleted, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof DomainErrorCode.STATE_CONFLICT)[];
+    };
+}>;
+export type GetChannelStreamSettingsRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/stream';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof ChannelStreamSettingsSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type GetChannelTicketingRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/ticketing';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        QueryParameter<'from', z.ZodString, true>,
+        QueryParameter<'to', z.ZodString, true>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof ChannelTicketingSchema, unknown>;
+    };
+    errorCodes: {
+        400: readonly (typeof ApiErrorCode.PERIOD_FILTER_REQUIRED)[];
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type CreateDateDraftRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/dates';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof CreateDateDraftBodySchema, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        201: ItemResponse<typeof studioConventions, typeof ChannelMemberSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof DomainErrorCode.STATE_CONFLICT)[];
+    };
+}>;
+export type DeleteChannelRoute = Route<{
+    method: 'delete';
+    version: 1;
+    path: '/channels/{channelId}';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: {
+        readonly required: true;
+        readonly content: {
+            readonly 'application/json': {
+                readonly schema: typeof DeleteChannelBodySchema;
+                readonly exampleFrom: {
+                    readonly of: typeof DeleteChannelBodySchema;
+                    readonly as: (example: unknown) => unknown;
+                };
+            };
+        };
+    };
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: {
+            readonly description: 'Channel deleted.';
+            readonly content: {
+                readonly 'application/json': {
+                    readonly schema: typeof ChannelDeletionAnswerSchema;
+                    readonly exampleFrom: {
+                        readonly of: typeof Deleted;
+                        readonly as: (data: unknown) => unknown;
+                    };
+                };
+            };
+        };
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS)[];
+    };
+}>;
+//# sourceMappingURL=types.d.ts.map

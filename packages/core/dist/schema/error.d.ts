@@ -11,6 +11,8 @@
  */
 import { z } from 'zod';
 import { type VocabularyOut } from './vocabulary.js';
+import type { ErrorParamsOf } from '../kernel/error-params.js';
+import { type ApiErrorCode } from '../vocabulary/error-codes.js';
 /**
  * The failure nature, tolerant — the only vocabulary in either contract declaring its unknown-member
  * fallback, because the cost is asymmetric: an unknown nature read as `refused` stops a client
@@ -36,12 +38,8 @@ export declare const ErrorSchema: z.ZodObject<{
     nature: VocabularyOut;
 }, z.core.$loose>;
 /**
- * The only sanctioned way out of a zod failure. Its `message` is prose written by a library, and
- * putting one on a wire makes the contract's language the library's. The path is joined rather than
- * dropped because "which field" is what a form needs and a code alone cannot carry.
+ * The only sanctioned way out of a zod failure: `api.schema_invalid`'s params. An issue keeps its
+ * path, the rule it broke and that rule's limit, never zod's `message`, which is English prose.
  */
-export declare function issueToCode(issue: z.core.$ZodIssue): {
-    readonly code: string;
-    readonly params: Readonly<Record<string, string>>;
-};
+export declare function schemaInvalidParams(issues: readonly z.core.$ZodIssue[]): ErrorParamsOf<typeof ApiErrorCode.SCHEMA_INVALID>;
 //# sourceMappingURL=error.d.ts.map

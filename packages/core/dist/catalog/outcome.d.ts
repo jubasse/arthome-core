@@ -21,11 +21,10 @@ export interface DateBeforeOutcome {
     readonly timing: DateTiming;
 }
 /**
- * Throws `state.conflict` when the declaration does not fit the date: a final outcome already
- * declared; a date not public yet, which is deleted rather than cancelled; a postponement once
- * the live show has started or to an instant already past; an interruption before it started;
- * a cancellation once it has ended. Throws `date.postponement_limit_reached` past
- * `POSTPONEMENTS_MAX`.
+ * Refuses a declaration that does not fit the date, naming what it met: a final outcome already
+ * declared, a date not public yet (deleted rather than given an outcome), a postponement once the
+ * live show has started or to an instant already past, an interruption before it started, a
+ * cancellation once it has ended, and a postponement past `POSTPONEMENTS_MAX`.
  */
 export declare function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;
 //# sourceMappingURL=outcome.d.ts.map

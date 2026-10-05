@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DateTiming } from './date-state.js';
+import { endsAt, type DateTiming } from './date-state.js';
 import { assertOutcomeDeclarable, type DateBeforeOutcome } from './outcome.js';
 import { isDomainError } from '../kernel/errors.js';
 import { DateOutcome, PublicationState, ReplayPolicy } from '../vocabulary/catalog.js';
-import { CatalogErrorCode, DomainErrorCode } from '../vocabulary/error-codes.js';
+import { CatalogErrorCode } from '../vocabulary/error-codes.js';
 
 const timing: DateTiming = {
   startsAt: '2026-11-04T19:30:00.000Z',
@@ -49,18 +49,24 @@ describe('assertOutcomeDeclarable — each outcome at its moment', () => {
     expect(refusalOf(() => assertOutcomeDeclarable(scheduled, interrupt, DURING))).toBeNull();
   });
 
-  it('refuses each outside its moment, naming the start', () => {
-    for (const [declaration, now] of [
-      [postpone, DURING],
-      [{ ...postpone, rescheduledTo: '2026-10-01T19:30:00.000Z' }, BEFORE],
-      [interrupt, BEFORE],
-      [cancel, AFTER],
-    ] as const) {
-      expect(refusalOf(() => assertOutcomeDeclarable(scheduled, declaration, now))).toEqual({
-        code: DomainErrorCode.STATE_CONFLICT,
-        params: { startsAt: timing.startsAt },
-      });
-    }
+  it('refuses each outside its moment, naming the instant it met', () => {
+    const inThePast = { ...postpone, rescheduledTo: '2026-10-01T19:30:00.000Z' };
+    expect(refusalOf(() => assertOutcomeDeclarable(scheduled, postpone, DURING))).toEqual({
+      code: CatalogErrorCode.DATE_ALREADY_STARTED,
+      params: { startsAt: timing.startsAt },
+    });
+    expect(refusalOf(() => assertOutcomeDeclarable(scheduled, inThePast, BEFORE))).toEqual({
+      code: CatalogErrorCode.RESCHEDULE_IN_PAST,
+      params: { rescheduledTo: inThePast.rescheduledTo },
+    });
+    expect(refusalOf(() => assertOutcomeDeclarable(scheduled, interrupt, BEFORE))).toEqual({
+      code: CatalogErrorCode.DATE_NOT_STARTED,
+      params: { startsAt: timing.startsAt },
+    });
+    expect(refusalOf(() => assertOutcomeDeclarable(scheduled, cancel, AFTER))).toEqual({
+      code: CatalogErrorCode.DATE_ALREADY_ENDED,
+      params: { endsAt: endsAt(timing) },
+    });
   });
 
   it('lets a postponed date move again or be cancelled, up to three postponements', () => {
@@ -80,7 +86,7 @@ describe('assertOutcomeDeclarable — each outcome at its moment', () => {
       refusalOf(() =>
         assertOutcomeDeclarable({ ...scheduled, outcome: DateOutcome.CANCELLED }, postpone, BEFORE),
       ),
-    ).toEqual({ code: DomainErrorCode.STATE_CONFLICT, params: { outcome: DateOutcome.CANCELLED } });
+    ).toEqual({ code: CatalogErrorCode.OUTCOME_FINAL, params: { outcome: DateOutcome.CANCELLED } });
     expect(
       refusalOf(() =>
         assertOutcomeDeclarable(
@@ -89,6 +95,9 @@ describe('assertOutcomeDeclarable — each outcome at its moment', () => {
           BEFORE,
         ),
       ),
-    ).toEqual({ code: DomainErrorCode.STATE_CONFLICT, params: { state: PublicationState.DRAFT } });
+    ).toEqual({
+      code: CatalogErrorCode.DATE_NOT_PUBLIC,
+      params: { state: PublicationState.DRAFT },
+    });
   });
 });

@@ -24,6 +24,18 @@ export declare const InstantOut: z.ZodString;
  */
 export declare const uuidOut: () => z.ZodString;
 /**
+ * The same identifier where a request CARRIES it, in a path, a query or a header: `format: uuid` and
+ * nothing more is published, but the shape is refused. Like `int64`, the check is a refinement, which
+ * `toJSONSchema` does not emit, so the document stays what it was.
+ */
+export declare const uuidIn: () => z.ZodString;
+/** A calendar day, `2026-10-03`, as a request carries it: `format: date`, an impossible day refused. */
+export declare const dateIn: () => z.ZodString;
+/** An absolute URI as a request carries it: `format: uri`, and what `z.url()` refuses is refused. */
+export declare const uriIn: () => z.ZodString;
+/** An RFC 3339 instant, offset allowed, as a request carries it in a path, a query or a header. */
+export declare const dateTimeIn: () => z.ZodString;
+/**
  * A 64-bit integer on the wire: `type: integer, format: int64`, and no bounds.
  *
  * Not `z.int()`, which emits JavaScript's safe range as `minimum`/`maximum` and tells a client

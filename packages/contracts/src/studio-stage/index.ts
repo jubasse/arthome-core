@@ -38,6 +38,7 @@ import {
   vocabularyOutNullable,
 } from '@arthome/core/schema';
 
+import { restricted, sensitive } from '../http/index.js';
 import { ActorSchema } from '../studio-access/index.js';
 import { StudioLocalizedTextSchema } from '../text/index.js';
 
@@ -145,7 +146,7 @@ export const PublicationSchema: z.ZodObject<
     "**The rank travels with the state.** The event board sorts by state, and the order is the\nmachine's, not the alphabet's. Without a served rank, every surface reinvents its own ordering\ntable.\n",
   ),
   version: int().describe(
-    'The studio is **multi-operator without a lock**: the arbitration is on the server. Every\ntransition carries `expectedVersion`, and a command sent from `technical` while the current\nstate is `live` is refused with `state.conflict` **with the current state and version**.\n',
+    'The studio is **multi-operator without a lock**: the arbitration is on the server. Every\ntransition carries `expectedVersion`, and a command sent from `technical` while the current\nstate is `live` is refused with `state.conflict` **with the current version, and the current state when the record has one**.\n',
   ),
   publishedAt: instantNullable().optional(),
   pricesLockedAt: instantNullable().optional(),
@@ -322,11 +323,12 @@ export const EventsRowSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
       .describe(
         '**The "next date" card displays "N / M seats"**, and `seatsSold` + `fillRateBps` did not\ngive the M. A client deriving it (`seatsSold / fillRateBps`) would recompute a value the\nserver already holds, with a division and a rounding thrown in. A field, not a route.\n',
       ),
-    grossRevenue: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' })
-      .optional()
-      .describe(
-        '**Absent** from the response when the role lacks `canRevenue`. Never present and null.',
-      ),
+    grossRevenue: restricted(
+      MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }),
+      'canRevenue',
+    ).describe(
+      '**Absent** from the response when the role lacks `canRevenue`. Never present and null.',
+    ),
   })
   .describe(
     'A row of the event board. **Role projection decides what it contains**: `grossRevenue` is\n**absent** — not null — for a role without `canRevenue`, and a sort on that key is then\n**refused**.\n',
@@ -388,11 +390,12 @@ export const RunConsoleSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
       .describe(
         '**Measured by the server, in a declared unit**: a 60 s sliding window, unit\nmessages/minute, refreshed every 5 s. The console\'s switching threshold (60 msg/min) reads\nagainst **that measurement** — not against "number of messages ÷ hours elapsed", which is not\nthe same thing.\n',
       ),
-    grossRevenue: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' })
-      .optional()
-      .describe(
-        '**Absent** without `canRevenue`. The `:revenue` real-time room is separate for the same reason.',
-      ),
+    grossRevenue: restricted(
+      MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }),
+      'canRevenue',
+    ).describe(
+      '**Absent** without `canRevenue`. The `:revenue` real-time room is separate for the same reason.',
+    ),
     version: int().optional(),
   })
   .describe(
@@ -425,7 +428,7 @@ export const HealthSeriesSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
 /** A secret, shown once and never cached. */
 export const StreamKeyRevealSchema: z.ZodObject<z.ZodRawShape, z.core.$loose> = z
   .looseObject({
-    streamKey: z.string(),
+    streamKey: sensitive(z.string()),
     ingestUrl: z.string().meta({ format: 'uri' }),
     revealedAt: InstantOut,
   })

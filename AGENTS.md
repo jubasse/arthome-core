@@ -1,7 +1,7 @@
 # Working in arthome-core
 
 This repository holds the **domain** (`@arthome/core`), the **published contracts** (`@arthome/contracts`,
-emitted from `openapi/`), and the **shared tooling** (`@arthome/tooling`). It declares no platform
+declaring every operation of `openapi/`), and the **shared tooling** (`@arthome/tooling`). It declares no platform
 dependency and names no framework router, deliberately — there is no NestJS, no Next.js, no Angular
 here, and a skill for one of them would be the wrong instrument.
 
@@ -24,7 +24,11 @@ here, and a skill for one of them would be the wrong instrument.
 | `pnpm run verify` | everything below, in order. Green before you commit, and the pre-commit hook enforces it |
 | `pnpm run verify:offline` | the subset needing no install. Does **not** run `format:check`, `lint`, `typecheck` or `test` |
 | `pnpm -r run build` | every package. There is no root `build` script — `pnpm run build` fails |
+| `pnpm run generate:openapi` | writes `openapi/storefront.yaml` and `openapi/studio.yaml` from the route declarations. Run it after any change to `packages/contracts` that reaches a document, and commit both |
 | `pnpm run fix` | Prettier, then ESLint `--fix`, then Prettier again |
+| `pnpm run generate:contract-types` | writes the `types.ts` of every module folder (`<api>/<module>/`) from its `routes.ts`, and the explicit types of its `schemas.ts`. Run it after any change to a module folder, and commit what it writes |
+| `node tools/prune-unused.mjs <module.ts>...` | drops the imports and top-level consts a module no longer uses once its routes moved out; `pnpm run fix` after it |
+| `pnpm run measure:surface-bundle` | what a surface ships for `createClient(api)`, minified and gzipped, part by part. A report, not a gate |
 
 The gates, and what each proves: `check-versions` (one version per dependency across manifests) ·
 `check-tsconfig` (the compiler locks are intact) · `check-enums` (no enumeration value copied as a
@@ -32,11 +36,12 @@ literal — the project's dominant fault, E2) · `check-language` (no French *se
 file; an isolated French term is out of scope and the gate says so) · `check-symbols` (no warning
 sign, check mark, cross or emoji outside Markdown inline code; `tools/symbols.allow.json` names the
 read-only design content) · `check-core-entry` (nothing
-reachable from the `.` entry point imports zod or a Node API) · `check-decisions-index`
+reachable from the `.` entry point imports zod or a Node API) · `check-contract-docs` (no
+subpath a surface imports reaches a docs or examples module of the contracts, and the maturity
+regimes match `transport.md` §5.11) · `check-decisions-index`
 (`DECISIONS-INDEX.md` matches what regenerating from `DECISIONS.md` produces) · `check-openapi` (both documents
-conform) · `check-vocabulary` (the documents, the architecture prose and `@arthome/core` agree
-member for member) · `check-emit-diff` (every emitted schema matches the document it must emit —
-**the document is authoritative**, D-058) · `check-map` (`REPOSITORY_MAP.md` matches the installed
+conform) · `check-openapi-generated` (each committed document is byte for byte what the route declarations generate, D-120) · `check-contract-types` (each module folder's `types.ts` and `schemas.ts` annotations are what the tool writes) · `check-vocabulary` (the documents, the architecture prose and `@arthome/core` agree
+member for member) · `check-map` (`REPOSITORY_MAP.md` matches the installed
 declarations) · `check-prettier-conflict` (no ESLint rule fights Prettier).
 
 `arthome-comment-density` reports comment density. It is a **report, not a gate**: it exits 0 and is
@@ -60,9 +65,9 @@ two agents in one afternoon.
 **`packages/*/dist/*.d.ts` are tracked and carry the JSDoc** (`removeComments: false`), so a comment
 change shows up in `dist` too. That is expected; commit it.
 
-**`openapi/` is the source, `@arthome/contracts` is generated from it.** Change the document, run
-`node tools/emit-contracts.mjs`, rebuild. Changing only the zod schema makes `check-emit-diff` red,
-correctly.
+**`@arthome/contracts` is the source, `openapi/` is generated from it (D-120).** Edit the route
+declaration or the zod schema, then `pnpm run generate:openapi`, and commit the source and both
+documents. Editing a document by hand makes `check-openapi-generated` red, correctly.
 
 **Proving a comment-only change is comment-only: run each touched file through the TypeScript
 parser with `removeComments` and compare to `HEAD`.** A hand-rolled token scanner is not enough — five
