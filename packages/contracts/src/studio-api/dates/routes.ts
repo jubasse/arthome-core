@@ -311,7 +311,7 @@ export const rehearseRun: RehearseRunRoute = run.action('rehearse', {
   body: RunTransitionBodySchema,
   response: RunConsoleSchema,
   answer: 'The console up to date.',
-  errors: [CatalogErrorCode.TECHNICAL_CHECK_REQUIRED, DomainErrorCode.STATE_CONFLICT],
+  errors: [DomainErrorCode.STATE_CONFLICT],
 });
 
 export const goOnAir: GoOnAirRoute = run.action('go-on-air', {

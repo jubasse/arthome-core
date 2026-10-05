@@ -611,7 +611,6 @@ export type RehearseRunRoute = Route<{
     409: readonly (
       | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
       | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
-      | typeof CatalogErrorCode.TECHNICAL_CHECK_REQUIRED
       | typeof DomainErrorCode.STATE_CONFLICT
     )[];
   };
