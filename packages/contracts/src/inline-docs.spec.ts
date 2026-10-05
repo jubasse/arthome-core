@@ -35,7 +35,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
   'getLiveScreen',
   'getOrder',
   'getSalesQueuePosition',
-  'getViewerContext',
   'joinWaitlist',
   'leaveWaitlist',
   'listArtists',

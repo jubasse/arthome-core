@@ -271,7 +271,6 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
-      x-arthome-freshness: 300
       tags:
       - bootstrap
       security:
@@ -285,9 +284,6 @@ paths:
       responses:
         '200':
           description: Viewer context.
-          headers:
-            X-Arthome-Served-At:
-              $ref: '#/components/headers/ServedAt'
           content:
             application/json:
               schema:
@@ -301,7 +297,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:12.400Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
                   signedIn: true
@@ -341,10 +337,19 @@ paths:
                   realtime:
                     namespace: /storefront
                     pulseIntervalSec: 5
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '503':
-          $ref: '#/components/responses/Unavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/changes:
     get:
       operationId: listChanges
@@ -3930,7 +3935,16 @@ paths:
                 data:
                   deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
                   signedIn: true
-                  profiles: []
+                  currentProfileId: 019928f4-2a11-7000-8000-000000000001
+                  profiles:
+                  - id: 019928f4-2a11-7000-8000-000000000001
+                    name: Marie
+                    kind: adult
+                  plan:
+                    tier: pass
+                    state: active
+                    seatDiscountBps: 1000
+                    concurrentStreamsAllowed: 1
                   constants:
                     roomOpensMinutesBefore: 30
                     cancelDeadlineMinutesBefore: 60
@@ -3938,8 +3952,12 @@ paths:
                     billboardPreviewDelaySec: 4
                     waitlistPriorityWindowHours: 2
                     chatRateLimitPerSecond: 2
+                    chatCatchUpMessages: 20
                     reminderLeadMinutes: 30
                     replayExpiryWarningHours: 6
+                    previewSecondsTotal: 300
+                    searchExactTotalLimit: 10000
+                    creditDelayCode: refund_delay_business_days_3_5
                   labelCatalog:
                     domain: storefront
                     locale: fr
@@ -3950,6 +3968,9 @@ paths:
                     locale: fr
                     version: 12
                     url: https://cdn.arthome.fr/taxonomy/fr/v12.json
+                  realtime:
+                    namespace: /storefront
+                    pulseIntervalSec: 5
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'

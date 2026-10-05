@@ -1,9 +1,20 @@
 import type { z } from 'zod';
 
-import { DisplayState, PriceTier, ReplayPolicy, RightsScope, SeatState } from '@arthome/core';
+import {
+  AccountStatus,
+  DisplayState,
+  Locale,
+  MessageDomain,
+  PlanTier,
+  PriceTier,
+  ReplayPolicy,
+  RightsScope,
+  SeatState,
+} from '@arthome/core';
 
 import { ArtistSummarySchema, DateCardSchema } from '../catalog/index.js';
 import { Acknowledged, Deleted, ReauthProof } from '../http/index.js';
+import { ViewerContextSchema } from '../identity/index.js';
 import type { ModuleExamples } from '../openapi/docs.js';
 import { TicketCardSchema } from '../ticketing/index.js';
 
@@ -47,6 +58,55 @@ const artistSummary: z.output<typeof ArtistSummarySchema> = {
   alertEnabled: true,
 };
 
+const viewerContext: z.output<typeof ViewerContextSchema> = {
+  deviceId: '019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77',
+  signedIn: true,
+  currentProfileId: '019928f4-2a11-7000-8000-000000000001',
+  profiles: [
+    {
+      id: '019928f4-2a11-7000-8000-000000000001',
+      name: 'Marie',
+      kind: 'adult',
+    },
+  ],
+  plan: {
+    tier: PlanTier.PASS,
+    state: AccountStatus.ACTIVE,
+    seatDiscountBps: 1000,
+    concurrentStreamsAllowed: 1,
+  },
+  constants: {
+    roomOpensMinutesBefore: 30,
+    cancelDeadlineMinutesBefore: 60,
+    scarcityThresholdBps: 8500,
+    billboardPreviewDelaySec: 4,
+    waitlistPriorityWindowHours: 2,
+    chatRateLimitPerSecond: 2,
+    chatCatchUpMessages: 20,
+    reminderLeadMinutes: 30,
+    replayExpiryWarningHours: 6,
+    previewSecondsTotal: 300,
+    searchExactTotalLimit: 10000,
+    creditDelayCode: 'refund_delay_business_days_3_5',
+  },
+  labelCatalog: {
+    domain: MessageDomain.STOREFRONT,
+    locale: Locale.FR,
+    version: 41,
+    url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json',
+  },
+  taxonomyArtifact: {
+    domain: MessageDomain.TAXONOMY,
+    locale: Locale.FR,
+    version: 12,
+    url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json',
+  },
+  realtime: {
+    namespace: '/storefront',
+    pulseIntervalSec: 5,
+  },
+};
+
 /**
  * The examples of the schemas several modules answer: the factories of `./http`, and the records
  * of a subpath more than one module shows. A schema is registered once per api.
@@ -58,4 +118,5 @@ export const sharedExamples: ModuleExamples = [
   [DateCardSchema, [dateCard]],
   [TicketCardSchema, [ticketCard]],
   [ArtistSummarySchema, [artistSummary]],
+  [ViewerContextSchema, [viewerContext]],
 ];

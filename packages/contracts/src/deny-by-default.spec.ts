@@ -35,7 +35,6 @@ const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
   'getLiveScreen',
   'getOrder',
   'getSalesQueuePosition',
-  'getViewerContext',
   'joinWaitlist',
   'leaveWaitlist',
   'listArtists',

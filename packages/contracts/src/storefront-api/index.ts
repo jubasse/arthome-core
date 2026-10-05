@@ -21,7 +21,6 @@ import {
   startSocialSignIn,
   verifyTwoFactor,
 } from './account.js';
-import { getViewerContext } from './bootstrap.js';
 import { listChanges } from './changes/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
 import {
@@ -135,6 +134,7 @@ import {
 } from './pairing.js';
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
 import { contactSupport } from './support/routes.js';
+import { getViewerContext } from './viewer-context/routes.js';
 import {
   ArtistDetailSchema,
   ArtistSummarySchema,
