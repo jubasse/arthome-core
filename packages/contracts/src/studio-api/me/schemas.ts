@@ -1,21 +1,21 @@
 import { z } from 'zod';
 
 import type { VocabularyIn } from '@arthome/core/schema';
-import { InstantOut, uuidIn, uuidOut, vocabularyOutLocal } from '@arthome/core/schema';
+import {
+  InstantOut,
+  uuidIn,
+  uuidOut,
+  vocabularyIn,
+  vocabularyOutLocal,
+} from '@arthome/core/schema';
 
 import { StudioEnvelopeMetaSchema } from '../../envelope/index.js';
 import type { Period, PathParameter } from '../../http/index.js';
 import { localVocabulary, period, sensitive } from '../../http/index.js';
 import { DutySchema } from '../../studio-access/index.js';
 import { LocaleInputSchema } from '../auth/schemas.js';
+import { REAUTH_INTENTS } from '../components.js';
 
-const REAUTH_INTENTS = [
-  'reveal_stream_key',
-  'rotate_stream_key',
-  'transfer_ownership',
-  'delete_channel',
-  'change_bank_details',
-] as const;
 const REAUTH_FACTORS = ['platform_biometric', 'password', 'totp', 'backup_code'] as const;
 const REAUTH_FACTOR_REASON =
   'An account-management shape, local to this endpoint: what the person asked for, not a fact the domain reasons about.';
@@ -41,10 +41,11 @@ export const CreateReauthTokenBodySchema: z.ZodObject<
   },
   z.core.$strip
 > = z.object({
-  intent: localVocabulary(
-    REAUTH_INTENTS,
-    'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.',
-  ).meta({ description: 'The command targeted. The token is valid for that one only.' }),
+  intent: vocabularyIn(REAUTH_INTENTS).meta({
+    'x-arthome-vocabulary-source': 'REAUTH_INTENTS',
+    description:
+      'The command targeted. The token is valid for that one only: the route names its intent in `x-arthome-requires`.',
+  }),
   factor: localVocabulary(REAUTH_FACTORS, REAUTH_FACTOR_REASON),
   proof: sensitive(z.string())
     .nullable()

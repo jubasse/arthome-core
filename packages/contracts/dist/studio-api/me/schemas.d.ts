@@ -4,7 +4,7 @@ import { StudioEnvelopeMetaSchema } from '../../envelope/index.js';
 import type { Period, PathParameter } from '../../http/index.js';
 import { DutySchema } from '../../studio-access/index.js';
 import { LocaleInputSchema } from '../auth/schemas.js';
-declare const REAUTH_INTENTS: readonly ["reveal_stream_key", "rotate_stream_key", "transfer_ownership", "delete_channel", "change_bank_details"];
+import { REAUTH_INTENTS } from '../components.js';
 declare const REAUTH_FACTORS: readonly ["platform_biometric", "password", "totp", "backup_code"];
 declare const PUSH_PLATFORMS: readonly ["fcm", "apns"];
 export declare const DeviceIdParameter: PathParameter<'deviceId', z.ZodString>;

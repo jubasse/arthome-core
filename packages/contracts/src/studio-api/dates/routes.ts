@@ -75,7 +75,7 @@ import type {
   SetTechnicalProvisionRoute,
   SubmitHealthSampleRoute,
 } from './types.js';
-import { Acknowledged, Deleted, ReauthProof, cursor, recentAuth } from '../../http/index.js';
+import { Acknowledged, Deleted, ReauthProof, cursor } from '../../http/index.js';
 import { DateAccessGrantSchema } from '../../studio-access/index.js';
 import { ChatPolicySchema } from '../../studio-desk/index.js';
 import { DateSalesPaneSchema } from '../../studio-money/index.js';
@@ -89,10 +89,12 @@ import {
 } from '../../studio-stage/index.js';
 import {
   DateIdParameter,
+  ReauthIntent,
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
   operator,
+  recentAuth,
   studioV1,
 } from '../components.js';
 
@@ -404,7 +406,7 @@ const streamKey = runDate.single('stream-key');
 export const revealStreamKey: RevealStreamKeyRoute = streamKey.action('reveal', {
   operationId: 'revealStreamKey',
   summary: 'Reveals the stream key — a separate command, audited, by name.',
-  requires: [recentAuth()],
+  requires: [recentAuth({ intent: ReauthIntent.REVEAL_STREAM_KEY })],
   body: ReauthProof,
   response: StreamKeyRevealSchema,
   answer: 'The key, once, uncached.',
@@ -413,7 +415,7 @@ export const revealStreamKey: RevealStreamKeyRoute = streamKey.action('reveal', 
 export const rotateStreamKey: RotateStreamKeyRoute = streamKey.action('rotate', {
   operationId: 'rotateStreamKey',
   summary: 'Rotates the stream key — the old one stops broadcasting at once.',
-  requires: [recentAuth()],
+  requires: [recentAuth({ intent: ReauthIntent.ROTATE_STREAM_KEY })],
   body: RotateStreamKeyBodySchema,
   response: StreamKeyRevealSchema,
   answer: 'New key issued.',

@@ -7,7 +7,7 @@ import type { VocabularyIn } from '@arthome/core/schema';
 
 import { sensitive } from './marks.js';
 
-/** The proof `recentAuth()` reads: the body of a route that requires it extends this. */
+/** The proof `recentAuth({ intent })` reads: the body of a route that requires it extends this. */
 export const ReauthProof: z.ZodObject<{ reauthToken: z.ZodString }, z.core.$strip> = z.object({
   reauthToken: sensitive(z.string()).meta({
     description: 'Single-use re-authentication token, short-lived.',

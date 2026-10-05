@@ -1,7 +1,7 @@
 /**
- * One entry per error code: the status it is answered with (transport.md §5.5), an example of its
- * params, and its nature where it is not its status's, so a route's error responses are grouped
- * and illustrated from one place.
+ * One entry per error code: the status it is answered with (transport.md §5.5) and an example of
+ * its params, so a route's error responses are grouped and illustrated from one place. Its nature
+ * is `natureOf` in `@arthome/core`, the one a `DomainError` carries.
  */
 import { ApiErrorCode, CatalogErrorCode, ChannelErrorCode, ChatErrorCode, DomainErrorCode, FailureNature, IdentityErrorCode, ModerationErrorCode, OrderErrorCode, PairingErrorCode, PayoutErrorCode, WatchDenialReason, type ErrorCode, type ErrorParamsOf } from '@arthome/core';
 import type { ErrorStatus } from './errors.js';
@@ -119,15 +119,15 @@ export interface ErrorStatusMap {
 export interface ErrorDefinition<C extends ErrorCode = ErrorCode> {
     readonly status: ErrorStatusMap[C];
     readonly example: ErrorParamsOf<C>;
-    /** Only where it differs from `NATURE_BY_STATUS`. */
-    readonly nature?: FailureNature;
 }
-/** transport.md §5.5: a 4xx is refused, except 429; a 5xx is unavailable. */
+/**
+ * transport.md §5.5: a 4xx is refused, except 429; a 5xx is unavailable. Each code's `natureOf`
+ * agrees with its status's, except where `natureOf` gives its reason.
+ */
 export declare const NATURE_BY_STATUS: Readonly<Record<ErrorStatus, FailureNature>>;
 export declare const ERRORS: {
     readonly [C in ErrorCode]: ErrorDefinition<C>;
 };
 export declare function statusOf<C extends ErrorCode>(code: C): ErrorStatusMap[C];
 export declare function exampleOf<C extends ErrorCode>(code: C): ErrorParamsOf<C>;
-export declare function natureOf(code: ErrorCode): FailureNature;
 //# sourceMappingURL=error-registry.d.ts.map

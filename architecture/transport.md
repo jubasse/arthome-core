@@ -429,10 +429,12 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 every member of `ERROR_CODES`. A code absent from it is not a defect — a code *in* it that the vocabulary
 does not carry is, which is what the gate checks.
 
-**Every code has one entry in `ERRORS`, in `@arthome/contracts/http`**: its status, an example of its
-params, and its nature where it is not its status's (`natureOf(code)`), and a code without one does
-not compile. Tests fail when a generated document shows a
-code under another status, or when an example does not parse with the code's `ERROR_PARAMS`.
+**Every code has one entry in `ERRORS`, in `@arthome/contracts/http`**: its status and an example of
+its params, and a code without one does not compile. Its nature is `natureOf(code)` in
+`@arthome/core`, which a `DomainError` carries and the documents show, so a raised error and a
+documented one cannot disagree. Tests fail when a generated document shows a code under another
+status, when an example does not parse with the code's `ERROR_PARAMS`, or when a code's nature is not
+its status's in the table above without `natureOf` naming it.
 
 **The BFF never relays a service error as-is** (`nestjs-bff-gateway` skill, rule 6). It maps an
 **allowlist** of domain codes, which cross with their `params`, and everything else becomes
@@ -680,7 +682,7 @@ by the declaration, because nothing the server can answer is undocumented:
 |---|---|
 | any input (path, query, body) | `400 api.schema_invalid` |
 | a body | `413 api.payload_too_large` (1 MiB, 2 MiB on a batch), `415 api.unsupported_media_type` |
-| a write carrying `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` header |
+| a write carrying `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` and `X-Arthome-Served-At` headers |
 | an identity | `401`; a write by cookie, the CSRF `403`; the studio's `If-Rights-Version` and its `403 api.rights_version_stale`, and `X-Arthome-Rights-Version` on every success |
 | a rule | its codes (`api.reauthentication_required`, `api.rate_limited`) |
 | the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `503 api.service_unavailable` (its own, never relayed), `504 api.upstream_timeout`, `504 api.deadline_exceeded` |

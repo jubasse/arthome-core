@@ -13,7 +13,6 @@ import { Freshness, cache } from '../../http/index.js';
 import {
   AdmissionTokenParameter,
   LateEntryAcknowledgedParameter,
-  ServedAtHeader,
   StorefrontTag,
   SurfaceParameter,
   TraceparentParameter,
@@ -37,7 +36,6 @@ export const purchaseSeat: PurchaseSeatRoute = orders.collectionAction('seats', 
   responses: {
     201: {
       description: 'Seats created, and the updated date.',
-      headers: { 'X-Arthome-Served-At': ServedAtHeader },
       content: { 'application/json': { schema: SeatPurchaseAnswerSchema } },
     },
     202: {

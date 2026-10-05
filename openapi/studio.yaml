@@ -388,6 +388,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -509,6 +511,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -795,6 +799,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -880,9 +886,8 @@ paths:
                   - transfer_ownership
                   - delete_channel
                   - change_bank_details
-                  x-arthome-vocabulary-source: none
-                  x-arthome-vocabulary-reason: A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.
-                  description: The command targeted. The token is valid for that one only.
+                  x-arthome-vocabulary-source: REAUTH_INTENTS
+                  description: 'The command targeted. The token is valid for that one only: the route names its intent in `x-arthome-requires`.'
                 factor:
                   type: string
                   enum:
@@ -949,6 +954,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -1219,6 +1226,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1297,6 +1306,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1411,6 +1422,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1620,6 +1633,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2388,6 +2403,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2860,6 +2877,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3011,6 +3030,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3122,6 +3143,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3263,6 +3286,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3417,6 +3442,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           description: Malformed request, or a mandatory filter missing.
           content:
@@ -3702,6 +3729,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3860,6 +3889,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4016,6 +4047,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4171,6 +4204,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4291,6 +4326,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4704,6 +4741,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4934,6 +4973,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5055,6 +5096,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5212,6 +5255,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5467,6 +5512,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5580,6 +5627,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5672,6 +5721,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6141,6 +6192,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6257,6 +6310,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6383,6 +6438,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6524,6 +6581,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6644,6 +6703,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6783,6 +6844,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7107,6 +7170,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7200,6 +7265,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7349,6 +7416,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7438,6 +7507,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7541,6 +7612,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7599,6 +7672,7 @@ paths:
       - run
       x-arthome-requires:
       - name: recentAuth
+        intent: reveal_stream_key
         proof:
           in: body
           name: reauthToken
@@ -7655,6 +7729,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -7713,6 +7789,7 @@ paths:
       - run
       x-arthome-requires:
       - name: recentAuth
+        intent: rotate_stream_key
         proof:
           in: body
           name: reauthToken
@@ -7773,6 +7850,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -8318,6 +8397,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -8442,6 +8523,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -8570,6 +8653,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -8663,6 +8748,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -8787,6 +8874,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -8885,6 +8974,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -8930,6 +9021,7 @@ paths:
       - crew
       x-arthome-requires:
       - name: recentAuth
+        intent: transfer_ownership
         proof:
           in: body
           name: reauthToken
@@ -8995,6 +9087,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -9069,6 +9163,7 @@ paths:
       - channel
       x-arthome-requires:
       - name: recentAuth
+        intent: delete_channel
         proof:
           in: body
           name: reauthToken
@@ -9129,6 +9224,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -9646,6 +9743,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -9899,6 +9998,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10141,6 +10242,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10240,6 +10343,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10344,6 +10449,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10509,6 +10616,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10693,6 +10802,7 @@ paths:
       - payouts
       x-arthome-requires:
       - name: recentAuth
+        intent: change_bank_details
         proof:
           in: body
           name: reauthToken
@@ -10762,6 +10872,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10814,6 +10926,7 @@ paths:
       - payouts
       x-arthome-requires:
       - name: recentAuth
+        intent: change_bank_details
         proof:
           in: body
           name: reauthToken
@@ -10892,6 +11005,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -11023,6 +11138,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -11166,6 +11283,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Location:
               description: Where to follow the outcome, `getChannelExport`.
               schema:
@@ -11470,6 +11589,14 @@ components:
       description: Present and `true` when the body is the memorised response of an earlier attempt.
       schema:
         type: boolean
+    ServedAt:
+      description: |
+        Server instant **of this response**, sent with `Idempotency-Replayed`. On a replay it differs
+        from the body's `servedAt`, which is the first attempt's: a replay proves an effect took
+        place, it does not promise fresh data.
+      schema:
+        type: string
+        format: date-time
   responses:
     BadRequest:
       description: Malformed request, or a mandatory filter missing.

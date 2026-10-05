@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { InstantOut } from '@arthome/core/schema';
+
 import type { Header } from './index.js';
 
 /**
@@ -123,4 +125,11 @@ export const IDEMPOTENCY_REPLAYED_HEADER: Header = {
   description:
     'Present and `true` when this answer replays the one stored for the same `Idempotency-Key`.',
   schema: z.string(),
+};
+
+/** Beside `Idempotency-Replayed`: when the replay was served, the body's `servedAt` being the first attempt's. */
+export const SERVED_AT_HEADER: Header = {
+  description:
+    "Server instant **of this response**, sent with `Idempotency-Replayed`. On a replay it differs\nfrom the body's `servedAt`, which is the first attempt's: a replay proves an effect took\nplace, it does not promise fresh data.\n",
+  schema: InstantOut,
 };

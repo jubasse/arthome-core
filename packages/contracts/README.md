@@ -178,7 +178,7 @@ in its `components.ts`), and a builder opts in:
 const me = storefrontV1.identity(viewer).tags(StorefrontTag.ACCOUNT).headers(SurfaceParameter, TraceparentParameter);
 storefrontV1.public()          // no identity: sign-in, public links
 storefrontV1.identity(viewer).optionalAuth()   // anonymous allowed, the principal may be null
-studioV1.identity(operator).requires(roles(MemberRole.PRODUCTION).on('channelId'), recentAuth())
+studioV1.identity(operator).requires(roles(MemberRole.PRODUCTION).on('channelId'), recentAuth({ intent: ReauthIntent.DELETE_CHANNEL }))
 ```
 
 - **The route's `security` is derived** from its identity and its method (a write by cookie adds
@@ -186,7 +186,9 @@ studioV1.identity(operator).requires(roles(MemberRole.PRODUCTION).on('channelId'
   module loads.
 - **`requires(rule)`** takes rules in the order the server applies them after the identity. A rule is
   a declaration, a name with its parameters and its errors: `roles(...)` (with `.on('channelId')` for
-  the path parameter it reads), `recentAuth()` (the proof is the body field `reauthToken`),
+  the path parameter it reads), `recentAuth({ intent })` (the proof is the body field
+  `reauthToken`, a token minted for that intent alone: the surface binds its intents once with
+  `recentAuthOver`, so a route that names none, or one outside them, does not compile),
   `throttle('auth')`, or `requirement(name, { params, errors })`. The contract holds no server code:
   the server maps each name to a guard, and a name with no guard fails at boot. The rules are
   documented as `x-arthome-requires`.
@@ -215,7 +217,7 @@ loads. So every route derives, and nothing the server can answer is undocumented
 |---|---|
 | a path or query parameter, a required header, or a body | `400 api.schema_invalid` |
 | a body | `413 api.payload_too_large`, `415 api.unsupported_media_type`, and a `bodyLimit` (1 MiB; 2 MiB on a batch) |
-| an `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` header on its successes |
+| an `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` and `X-Arthome-Served-At` headers on its successes |
 | an identity | `401` (unless a refused credential counts as none), the identity's codes, and on a write its write codes (the CSRF `403`, a stale rights version) |
 | a rule | the rule's codes (`403 api.reauthentication_required`, `429 api.rate_limited`) |
 | the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `503 api.service_unavailable` (its own, never relayed), `504 api.upstream_timeout` and `api.deadline_exceeded` |
@@ -401,7 +403,7 @@ has a module goes in that module.
      of its accessor members, typed member by member;
    - a field only some callers see is `restricted(schema, right, meta)`, its own meta given there;
    - a body carrying a re-authentication proof extends `ReauthProof`, and the route
-     `requires: [recentAuth()]`.
+     `requires: [recentAuth({ intent: ReauthIntent.X })]`, naming the command the token was minted for.
 3. **Examples.** One example per schema the module accepts or answers, on the schema it shows: a
    request's on its body, an answer's on the data's schema. Type it (`const x: DateTechPane`, or
    `z.output<typeof RunConsoleSchema>` for a subpath's schema) and register it once: the registry
@@ -426,7 +428,7 @@ has a module goes in that module.
      (its reason in `docs.ts` as `idempotencyExemption`), and `x-arthome-invalidates`, which stays on
      the route because a surface reads it;
    - `requires`: a rule, on the route or on the builder, adds its codes (`throttle('export')` its
-     `429`, `recentAuth()` its `403`); a rate limit is always a `throttle` rule, named by the key of core's `AuthRateLimit` when one exists
+     `429`, `recentAuth({ intent })` its `403`); a rate limit is always a `throttle` rule, named by the key of core's `AuthRateLimit` when one exists
      (`throttle('SIGN_IN_PER_ADDRESS')`; `throttle-buckets.spec.ts` lists the buckets that have none yet);
    - a secret in an answer is `sensitive(schema)`, which derives `Cache-Control: no-store`: never a
      hand header;

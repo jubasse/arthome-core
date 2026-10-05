@@ -30,6 +30,7 @@ import {
   NO_STORE_HEADER,
   DEFAULT_BODY_LIMIT,
   IDEMPOTENCY_REPLAYED_HEADER,
+  SERVED_AT_HEADER,
   VARY_HEADER,
 } from './policy.js';
 import type { Resource, ResourceConventions, ResourceOptions, SingleOptions } from './resource.js';
@@ -332,7 +333,7 @@ type AnyBuilder = RouteBuilder<
 
 type CodesByStatus = Record<string, readonly string[]>;
 
-/** A rule that reads a body field finds it declared: `recentAuth()` on a body extending `ReauthProof`. */
+/** A rule that reads a body field finds it declared: `recentAuth({ intent })` on a body extending `ReauthProof`. */
 function checkProofs(
   operationId: string,
   requires: readonly Requirement[],
@@ -479,7 +480,7 @@ function holdsSensitive(response: Response): boolean {
   );
 }
 
-/** The headers a declaration implies on its successes: the identity's, the replay marker, the cache's. */
+/** The headers a declaration implies on its successes: the identity's, the replay marker and its instant, the cache's. */
 function withHeaders(
   responses: Record<string, Response>,
   implied: ResponseHeaders,
@@ -493,6 +494,7 @@ function withHeaders(
       ...(success &&
         implied.replayed && {
           'Idempotency-Replayed': implied.replayedHeader ?? IDEMPOTENCY_REPLAYED_HEADER,
+          'X-Arthome-Served-At': SERVED_AT_HEADER,
         }),
       ...(status === '200' &&
         implied.cache !== undefined && {

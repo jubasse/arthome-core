@@ -27,7 +27,7 @@ export type {
 } from './error-params.js';
 // `FailureNature` is both a type and an object of named members: the re-export
 // carries both meanings of the name.
-export { DomainError, FAILURE_NATURES, FailureNature, isDomainError } from './errors.js';
+export { DomainError, FAILURE_NATURES, FailureNature, isDomainError, natureOf } from './errors.js';
 
 export type { Err, Ok, Result } from './result.js';
 export { err, isOk, ok } from './result.js';

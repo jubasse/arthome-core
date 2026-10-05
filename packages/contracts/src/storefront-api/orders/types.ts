@@ -2,13 +2,7 @@
 
 import type { ApiErrorCode, OrderErrorCode } from '@arthome/core';
 
-import type {
-  Header,
-  IdentifiedAccess,
-  ItemResponse,
-  JsonRequestBody,
-  Route,
-} from '../../http/index.js';
+import type { IdentifiedAccess, ItemResponse, JsonRequestBody, Route } from '../../http/index.js';
 import type {
   AdmissionTokenParameter,
   IdempotencyKeyParameter,
@@ -44,7 +38,6 @@ export type PurchaseSeatRoute = Route<{
   responses: {
     201: {
       readonly description: 'Seats created, and the updated date.';
-      readonly headers: { readonly 'X-Arthome-Served-At': Header };
       readonly content: {
         readonly 'application/json': { readonly schema: typeof SeatPurchaseAnswerSchema };
       };

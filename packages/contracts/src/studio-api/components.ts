@@ -26,6 +26,7 @@ import type {
   JsonResponse,
   PathParameter,
   QueryParameter,
+  RecentAuth,
   Response,
   ResourceConventions,
   RouteBuilder,
@@ -37,6 +38,7 @@ import {
   errorResponse,
   identity,
   pages,
+  recentAuthOver,
   routeBuilder,
 } from '../http/index.js';
 import { OffsetPageInfoSchema, StudioCursorPageInfoSchema } from '../pagination/index.js';
@@ -479,6 +481,20 @@ export const operator: Identity<
   writeResponses: { 403: CsrfRefusedResponse },
   responseHeaders: { 'X-Arthome-Rights-Version': RightsVersionHeader },
 });
+
+/** The commands a re-authentication token is minted for, one per token. */
+export const REAUTH_INTENTS = [
+  'reveal_stream_key',
+  'rotate_stream_key',
+  'transfer_ownership',
+  'delete_channel',
+  'change_bank_details',
+] as const;
+
+export const ReauthIntent: AccessorOf<typeof REAUTH_INTENTS> = accessorOf(REAUTH_INTENTS);
+
+/** `requires: [recentAuth({ intent: ReauthIntent.DELETE_CHANNEL })]`: a token minted for another command is refused. */
+export const recentAuth: RecentAuth<typeof REAUTH_INTENTS> = recentAuthOver(REAUTH_INTENTS);
 
 export const studioV1: RouteBuilder<
   1,

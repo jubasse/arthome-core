@@ -674,7 +674,9 @@ The rule "never one identifier at a time" stays in `definition-of-done.md`.
 
 ### 9.3 Derived on writes
 
-- **Every write carrying `Idempotency-Key`** declares the `Idempotency-Replayed` response header.
+- **Every write carrying `Idempotency-Key`** declares the `Idempotency-Replayed` response header,
+  and beside it `X-Arthome-Served-At`, the instant of a replay, whose body's `servedAt` is the first
+  attempt's.
   Today 2 routes do.
 - **A versioned record's item schema must carry `version`** (§5.5). A resource whose members take
   `expectedVersion` refuses, at compile time, an item without it.
@@ -719,8 +721,12 @@ evolution, security, tooling).
   - studio: `listReauthFactors`, `createReauthToken`, `revealStreamKey`, `rotateStreamKey`,
     `transferChannelOwnership`, `deleteChannel`, `requestBankChange`, `countersignBankChange`.
 
-  `requires(recentAuth())` declares the proof it takes and its `403` (a code to add), so a client
-  knows before calling.
+  `requires(recentAuth({ intent }))` declares the proof it takes, the command its token was minted
+  for, and its `403` (a code to add), so a client knows before calling. The intent is typed by the
+  surface's re-authentication intents (the vocabulary `createReauthToken` mints for) and emitted in
+  `x-arthome-requires`, so the server refuses a token minted for another command without a second,
+  hand-kept map from operation to intent; a route that requires it without an intent does not
+  compile.
 
   Three of the ten are not `recentAuth` routes as built: `enableTwoFactor` and `disableTwoFactor`
   prove the caller by a password in the body, and `listReauthFactors` lists the factors to prove

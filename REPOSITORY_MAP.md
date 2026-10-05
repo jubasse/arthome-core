@@ -80,7 +80,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 182 exported names.
+Declarations: `dist/http/index.d.ts` — 183 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
@@ -167,7 +167,8 @@ Declarations: `dist/http/index.d.ts` — 182 exported names.
 - `PublicAccess` (interface)
 - `QueryParameter` (type)
 - `RESTRICTED_KEY` (const) — `RESTRICTED_KEY = "x-arthome-restricted"`
-- `ReauthProof` (const) — `ReauthProof: z.ZodObject<{ reauthToken: z.ZodString; }, z.core.$strip>` — The proof 'recentAuth()' reads: the body of a route that requires it extends this.
+- `ReauthProof` (const) — `ReauthProof: z.ZodObject<{ reauthToken: z.ZodString; }, z.core.$strip>` — The proof 'recentAuth({ intent })' reads: the body of a route that requires it extends this.
+- `RecentAuth` (type) — The 'recentAuth' rule of a surface, typed by its re-authentication intents.
 - `ReplaceRoute` (type)
 - `RequestBody` (interface)
 - `Requirement` (interface) — A rule beyond identity: a name the server maps to a guard, its parameters, and the codes it can answer.
@@ -196,6 +197,7 @@ Declarations: `dist/http/index.d.ts` — 182 exported names.
 - `RouteSuccessStatus` (type) — `type RouteSuccessStatus<R extends RouteShape> = Extract<RouteStatus<R>, 200 | 201 | 202 | 203 | 204 | 206 | '200' | '201' | '202' | '203' | '204' | '206'>;` — The 2xx statuses a route declares.
 - `RouteTree` (interface)
 - `SENSITIVE_KEY` (const) — `SENSITIVE_KEY = "x-arthome-sensitive"`
+- `SERVED_AT_HEADER` (const) — `SERVED_AT_HEADER: Header` — Beside 'Idempotency-Replayed': when the replay was served, the body's 'servedAt' being the first attempt's.
 - `Scope` (interface) — A path prefix and the path parameters it declares: what 'path()' accumulates.
 - `SearchTextOptions` (interface)
 - `SecurityRequirement` (type) — `type SecurityRequirement = Readonly<Record<string, readonly string[]>>;` — The schemes that satisfy a route, by name: '{}' is a call with no credential at all.
@@ -237,14 +239,13 @@ Declarations: `dist/http/index.d.ts` — 182 exported names.
 - `identity` (function)
 - `localVocabulary` (function) — `function localVocabulary<const T extends readonly [string, ...string[]]>(values: T, reason: string): VocabularyIn<T>;` — A request vocabulary no domain owns: 'source: none', and why.
 - `makeResource` (function)
-- `natureOf` (function) — `function natureOf(code: ErrorCode): FailureNature;`
 - `pages` (function) — `function pages(options: { readonly maxPageSize: number; }): { readonly kind: 'pages'; readonly maxPageSize: number; };` — 'page' and 'pageSize': the studio's page with its total.
 - `paramsSchemaOf` (function) — `function paramsSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteParams<R>, unknown>;`
 - `parseTolerant` (function) — `function parseTolerant(schema: z.ZodType, value: unknown): TolerantParse;` — Parses with the schema, and accepts a value whose only faults are variants of a tagged union it does not know: the value comes back raw, wi…
 - `period` (function) — `function period<const Required extends boolean = true>(options: PeriodOptions<Required>): Period<Required>;`
 - `perishable` (function) — `function perishable<S extends z.core.$ZodShape, C extends z.core.$ZodObjectConfig>(schema: z.ZodObject<S, C>): z.ZodObject<S & { validUntil: ValidUntil; }, C>;` — 'schema' with the 'validUntil' the envelope declares, for data that stops being true at an instant.
 - `querySchemaOf` (function) — `function querySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteQuery<R>, unknown>;` — The query a server validates: undeclared parameters refused, defaults not materialised.
-- `recentAuth` (function) — The caller holds a recent re-authentication: the proof is the body field 'proof' names (a token 'createReauthToken' minted), declared by ex…
+- `recentAuthOver` (function) — `function recentAuthOver<const Intents extends readonly string[]>(intents: Intents): RecentAuth<Intents>;` — The caller holds a recent re-authentication for the one command 'intent' names: the proof is the body's 'reauthToken' (the body extends 'Re…
 - `requirement` (function)
 - `restricted` (function) — `function restricted<S extends z.ZodType, const Right extends string>(schema: S, right: Right, meta?: Readonly<Record<string, unknown>>): z.ZodOptional<S>;` — A field present only for a caller who holds 'right': optional in the type and in the document, absent from the answer otherwise, never pres…
 - `restrictedFieldsOf` (function) — `function restrictedFieldsOf(schema: z.ZodType): readonly RestrictedField[];` — Each restricted field with the right that unlocks it.
@@ -465,7 +466,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 465 exported names.
+Declarations: `dist/index.d.ts` — 466 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -533,7 +534,7 @@ Declarations: `dist/index.d.ts` — 465 exported names.
 - `DomainConstant` (const) — The operational constants served to every surface as 'DomainConstants' (openapi/storefront.yaml) and copied nowhere: a copy is how "the web…
 - `DomainError` (class) — An invariant violation.
 - `DomainErrorCode` (type+const)
-- `DomainErrorInit` (type) — `type DomainErrorInit<C extends RaisableErrorCode> = { readonly code: C; readonly nature?: FailureNature; } & ParamsField<ErrorParamsOf<C>>;`
+- `DomainErrorInit` (type) — `type DomainErrorInit<C extends RaisableErrorCode> = { readonly code: C; } & ParamsField<ErrorParamsOf<C>>;`
 - `DomainGuardCode` (type+const)
 - `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS` (const) — `EMAIL_VERIFICATION_LINK_LIFETIME_HOURS = 24` — 'adr-auth.md' §6.7 (D-100): an email verification link expires after a day, and is spent by its first use.
 - `ERROR_CODES` (const) — Every error code, composed — the vocabulary the two contracts declare against.
@@ -868,6 +869,7 @@ Declarations: `dist/index.d.ts` — 465 exported names.
 - `moderationBadgeOf` (function) — `function moderationBadgeOf(messageState: MessageState, authorSanction: AudienceSanction): ModerationBadge;`
 - `money` (function) — `function money(amountMinor: number, currencyCode: string): Money;`
 - `multiplyByCount` (function) — `function multiplyByCount(value: Money, count: number): Money;`
+- `natureOf` (function) — `function natureOf(code: RaisableErrorCode): FailureNature;` — A code's nature, for the error a domain raises and for the error a route documents.
 - `nextPublicationTransitions` (function) — `function nextPublicationTransitions(from: PublicationState, canDecide: boolean): readonly PublicationTransition[];` — The transitions offered to this operator.
 - `normalizePairingCodeInput` (function) — `function normalizePairingCodeInput(raw: string): string;` — Normalises a code typed by a person, or refuses it by name.
 - `normalizeSearchCriteria` (function) — `function normalizeSearchCriteria(criteria: SearchCriteria): SearchCriteria;` — Normalises criteria so that two equivalent entries produce the same thing.

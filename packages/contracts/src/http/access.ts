@@ -194,21 +194,35 @@ export function roles<const Allowed extends string>(
   return make(undefined);
 }
 
-/**
- * The caller holds a recent re-authentication: the proof is the body field `proof` names (a token
- * `createReauthToken` minted), declared by extending `ReauthProof`, and the refusal asks for one.
- */
-export function recentAuth<const Proof extends string = 'reauthToken'>(
-  proof?: Proof,
-): Requirement<
+/** The `recentAuth` rule of a surface, typed by its re-authentication intents. */
+export type RecentAuth<Intents extends readonly string[]> = (options: {
+  readonly intent: Intents[number];
+}) => Requirement<
   'recentAuth',
-  { readonly proof: { readonly in: 'body'; readonly name: Proof } },
+  {
+    readonly intent: Intents[number];
+    readonly proof: { readonly in: 'body'; readonly name: 'reauthToken' };
+  },
   typeof ApiErrorCode.REAUTHENTICATION_REQUIRED
-> {
-  return requirement('recentAuth', {
-    params: { proof: { in: 'body', name: (proof ?? 'reauthToken') as Proof } },
-    errors: [ApiErrorCode.REAUTHENTICATION_REQUIRED],
-  });
+>;
+
+/**
+ * The caller holds a recent re-authentication for the one command `intent` names: the proof is the
+ * body's `reauthToken` (the body extends `ReauthProof`), a token `createReauthToken` minted for that
+ * intent, and the refusal asks for one. A surface binds its intents once; a route names its own.
+ */
+export function recentAuthOver<const Intents extends readonly string[]>(
+  intents: Intents,
+): RecentAuth<Intents> {
+  return ({ intent }) => {
+    if (!intents.includes(intent)) {
+      throw new Error(`recentAuth: "${intent}" is not one of ${intents.join(', ')}.`);
+    }
+    return requirement('recentAuth', {
+      params: { intent, proof: { in: 'body', name: 'reauthToken' } },
+      errors: [ApiErrorCode.REAUTHENTICATION_REQUIRED],
+    });
+  };
 }
 
 /** A rate-limit bucket by name: the server binds the cap, and the `429` is derived. */

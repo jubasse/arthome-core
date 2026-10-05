@@ -44,7 +44,6 @@ import {
   LimitParameter,
   NotFoundResponse,
   RetryAfterMsHeader,
-  ServedAtHeader,
   SurfaceParameter,
   TooManyRequestsResponse,
   TraceparentParameter,
@@ -163,7 +162,7 @@ import {
   StorefrontErrorSchema,
 } from '../envelope/index.js';
 import type { Api } from '../http/index.js';
-import { defineApi, variantOf } from '../http/index.js';
+import { SERVED_AT_HEADER, defineApi, variantOf } from '../http/index.js';
 import {
   AccountDeepLinkSchema,
   AccountScreenSchema,
@@ -414,7 +413,7 @@ export const storefrontApi: Api<{
       CategoryId: CategoryIdParameter,
     },
     headers: {
-      ServedAt: ServedAtHeader,
+      ServedAt: SERVED_AT_HEADER,
       IdempotencyReplayed: IdempotencyReplayedHeader,
       RetryAfterMs: RetryAfterMsHeader,
     },

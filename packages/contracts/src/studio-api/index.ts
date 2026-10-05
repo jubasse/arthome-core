@@ -128,7 +128,7 @@ import {
   StudioErrorEnvelopeSchema,
   StudioErrorSchema,
 } from '../envelope/index.js';
-import { defineApi, variantOf } from '../http/index.js';
+import { SERVED_AT_HEADER, defineApi, variantOf } from '../http/index.js';
 import type { Api } from '../http/index.js';
 import { SessionMode } from '../identity/index.js';
 import { OffsetPageInfoSchema, StudioCursorPageInfoSchema } from '../pagination/index.js';
@@ -389,6 +389,7 @@ export const studioApi: Api<{
     headers: {
       RightsVersion: RightsVersionHeader,
       IdempotencyReplayed: IdempotencyReplayedHeader,
+      ServedAt: SERVED_AT_HEADER,
     },
     responses: {
       BadRequest: BadRequestResponse,

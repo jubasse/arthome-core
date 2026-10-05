@@ -115,16 +115,22 @@ export interface RolesRequirement<Allowed extends string> extends Requirement<'r
     on(parameter: string): RolesRequirement<Allowed>;
 }
 export declare function roles<const Allowed extends string>(...allowed: readonly Allowed[]): RolesRequirement<Allowed>;
-/**
- * The caller holds a recent re-authentication: the proof is the body field `proof` names (a token
- * `createReauthToken` minted), declared by extending `ReauthProof`, and the refusal asks for one.
- */
-export declare function recentAuth<const Proof extends string = 'reauthToken'>(proof?: Proof): Requirement<'recentAuth', {
+/** The `recentAuth` rule of a surface, typed by its re-authentication intents. */
+export type RecentAuth<Intents extends readonly string[]> = (options: {
+    readonly intent: Intents[number];
+}) => Requirement<'recentAuth', {
+    readonly intent: Intents[number];
     readonly proof: {
         readonly in: 'body';
-        readonly name: Proof;
+        readonly name: 'reauthToken';
     };
 }, typeof ApiErrorCode.REAUTHENTICATION_REQUIRED>;
+/**
+ * The caller holds a recent re-authentication for the one command `intent` names: the proof is the
+ * body's `reauthToken` (the body extends `ReauthProof`), a token `createReauthToken` minted for that
+ * intent, and the refusal asks for one. A surface binds its intents once; a route names its own.
+ */
+export declare function recentAuthOver<const Intents extends readonly string[]>(intents: Intents): RecentAuth<Intents>;
 /** A rate-limit bucket by name: the server binds the cap, and the `429` is derived. */
 export declare function throttle<const Bucket extends string>(bucket: Bucket): Requirement<'throttle', {
     readonly bucket: Bucket;

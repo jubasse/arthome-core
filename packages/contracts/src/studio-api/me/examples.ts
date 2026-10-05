@@ -27,15 +27,16 @@ import {
   UpdateStudioPreferencesBodySchema,
 } from './schemas.js';
 import type { ModuleExamples } from '../../openapi/docs.js';
+import { ReauthIntent } from '../components.js';
 
 const createReauthTokenBody: CreateReauthTokenBody = {
-  intent: 'rotate_stream_key',
+  intent: ReauthIntent.ROTATE_STREAM_KEY,
   factor: 'platform_biometric',
 };
 
 const reauthToken: ReauthToken = {
   reauthToken: 'ott_9f2ac1',
-  intent: 'rotate_stream_key',
+  intent: ReauthIntent.ROTATE_STREAM_KEY,
   expiresAt: '2026-09-21T18:44:50Z',
 };
 
