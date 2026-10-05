@@ -2,12 +2,12 @@
 import type { z } from 'zod';
 import type { ApiErrorCode, CHAT_MODES, CatalogErrorCode, ChannelErrorCode, DomainErrorCode, FILTER_SEVERITIES, PRICE_TIERS, REPLAY_POLICIES } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import type { Acknowledged, Deleted, ExpectedVersionQuery, IdentifiedAccess, ItemResponse, JsonRequestBody, PageResponse, ReauthProof, Route } from '../../http/index.js';
+import type { Acknowledged, Deleted, ExpectedVersionQuery, IdentifiedAccess, ItemResponse, JsonRequestBody, PageResponse, QueryParameter, ReauthProof, Route } from '../../http/index.js';
 import type { DateAccessGrantSchema } from '../../studio-access/index.js';
 import type { ChatPolicySchema } from '../../studio-desk/index.js';
 import type { DateSalesPaneSchema } from '../../studio-money/index.js';
 import type { PublicationSchema, StudioIncidentSchema } from '../../studio-stage/index.js';
-import type { CursorParameter, DateIdParameter, IdempotencyKeyParameter, IfRightsVersionParameter, LimitParameter, SurfaceParameter, TraceparentParameter, operator, studioConventions } from '../components.js';
+import type { CursorParameter, DateIdParameter, IdempotencyKeyParameter, IfRightsVersionParameter, SurfaceParameter, TraceparentParameter, operator, studioConventions } from '../components.js';
 import type { CapacityTierOpeningSchema, ChapterIdParameter, ChapterSchema, ComplimentaryIssueSchema, DateChatPaneSchema, DateCrewPaneSchema, DateOutcomeDecisionSchema, DatePublicPaneSchema, DateReplayPaneSchema, DateTechPaneSchema, DecideDateOutcomeBodySchema, DuplicateDateBodySchema, GrantDateAccessBodySchema, HealthWindowParameter, IssueComplimentaryBodySchema, MerchPinSchema, MoveDatePublicationStateBodySchema, OpenCapacityTierBodySchema, PinMerchDuringLiveBodySchema, PostChapterBodySchema, RaiseIncidentBodySchema, ReopenReplayWindowBodySchema, ReplayWindowSchema, RotateStreamKeyBodySchema, RunTransitionBodySchema, SinceSeqParameter, StudioChatMessageSchema, SubmitHealthSampleBodySchema, TechnicalCheckSchema } from './schemas.js';
 export type GetDateSheetRoute = Route<{
     method: 'get';
@@ -353,7 +353,7 @@ export type ListStudioChatMessagesRoute = Route<{
     parameters: readonly [
         typeof DateIdParameter,
         typeof CursorParameter,
-        typeof LimitParameter,
+        QueryParameter<'limit', z.ZodDefault<z.ZodInt>>,
         typeof SinceSeqParameter,
         typeof SurfaceParameter,
         typeof TraceparentParameter

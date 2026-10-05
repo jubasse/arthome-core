@@ -20,8 +20,6 @@ export declare const PageSizeParameter: QueryParameter<'pageSize', z.ZodDefault<
 export declare const SortByParameter: QueryParameter<'sortBy', z.ZodString>;
 export declare const SortDirParameter: QueryParameter<'sortDir', z.ZodDefault<VocabularyIn<typeof SORT_DIR>>>;
 export declare const CursorParameter: QueryParameter<'cursor', z.ZodString>;
-export declare const LimitParameter: QueryParameter<'limit', z.ZodDefault<z.ZodInt>>;
-export declare const ServedAtHeader: Header;
 export declare const RightsVersionHeader: Header;
 export declare const IdempotencyReplayedHeader: Header;
 export declare const BadRequestResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.PERIOD_FILTER_REQUIRED>;

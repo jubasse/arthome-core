@@ -38,7 +38,6 @@ import type {
   CursorParameter,
   IdempotencyKeyParameter,
   IfRightsVersionParameter,
-  LimitParameter,
   PageParameter,
   PageSizeParameter,
   SortByParameter,
@@ -678,7 +677,7 @@ export type ListModerationQueueRoute = Route<{
   parameters: readonly [
     typeof ChannelIdParameter,
     typeof CursorParameter,
-    typeof LimitParameter,
+    QueryParameter<'limit', z.ZodDefault<z.ZodInt>>,
     typeof JournalDateParameter,
     typeof ModerationQueueFilterParameter,
     typeof AudienceSearch,

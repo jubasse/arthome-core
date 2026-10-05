@@ -30,7 +30,6 @@ import {
   AdmissionTokenParameter,
   ArtistIdParameter,
   BadRequestResponse,
-  CacheControlPublicHeader,
   CategoryIdParameter,
   ConflictResponse,
   CsrfRefusedResponse,
@@ -56,7 +55,6 @@ import {
   InternalErrorResponse,
   BadGatewayResponse,
   GatewayTimeoutResponse,
-  VaryAuthHeader,
   ViewerTimezoneParameter,
 } from './components.js';
 import {
@@ -420,8 +418,6 @@ export const storefrontApi: Api<{
       ServedAt: ServedAtHeader,
       IdempotencyReplayed: IdempotencyReplayedHeader,
       RetryAfterMs: RetryAfterMsHeader,
-      CacheControlPublic: CacheControlPublicHeader,
-      VaryAuth: VaryAuthHeader,
     },
     responses: {
       BadRequest: BadRequestResponse,

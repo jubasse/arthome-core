@@ -28,10 +28,8 @@ export declare const CategoryIdParameter: PathParameter<'categoryId', z.ZodStrin
 export declare const ServedAtHeader: Header;
 export declare const IdempotencyReplayedHeader: Header;
 export declare const RetryAfterMsHeader: Header;
-export declare const CacheControlPublicHeader: Header;
 /** The freshness of a public read: `public` for an anonymous caller, varying on every credential and the surface. */
 export declare function publicRead(freshness: Freshness): CachePolicy;
-export declare const VaryAuthHeader: Header;
 /** `api.schema_invalid`'s envelope, so the document says what a refused field carries. */
 declare const SchemaInvalidEnvelopeSchema: z.ZodType<ErrorBody<typeof ApiErrorCode.SCHEMA_INVALID>>;
 export declare const BadRequestResponse: JsonResponse<typeof SchemaInvalidEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.SCHEMA_INVALID>;
