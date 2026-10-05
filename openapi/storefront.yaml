@@ -813,7 +813,7 @@ paths:
       tags:
       - account
       x-arthome-csrf-exempt: A forged sign-out ends a session and grants nothing, and a browser that lost its CSRF cookie must still be able to sign out.
-      x-arthome-refused-credential-is-anonymous: 'Signing out is idempotent: a revoked, expired or absent session signs out as a no-op.'
+      x-arthome-refused-credential-is-anonymous: 'Signing out is idempotent: a session already revoked signs out as a no-op.'
       security:
       - sessionCookie: []
       - bearerToken: []

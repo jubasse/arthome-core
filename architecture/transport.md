@@ -647,10 +647,12 @@ that the record exists. Data a team shares keeps its version, and its item must 
 
 **Who may call is declared, and denied by default.** A route requires its surface's identity unless it
 says `.public()`; `.optionalAuth()` lets an anonymous caller in with a principal that may be null (a
-credential presented and refused is still a `401`, except on `signOut`: signing out is idempotent, so
-its `refusedCredentialIsAnonymous` counts a revoked or expired session as none and answers `200`). A rule beyond identity is a name with parameters
-and errors (`roles(...).on('channelId')`, `recentAuth()`, `throttle('auth')`) that the server maps to a
-guard; the identity writes the document's `security`, including the CSRF token of a cookie write.
+credential presented and refused is still a `401`). The only exception is a route declaring
+`.optionalAuth({ refusedCredentialIsAnonymous: reason })`, which counts a refused credential as none
+and derives no `401`: `signOut` alone, since signing out is idempotent (`access-exceptions.spec.ts`).
+A rule beyond identity is a name with parameters and errors (`roles(...).on('channelId')`,
+`recentAuth()`, `throttle('auth')`) that the server maps to a guard; the identity writes the
+document's `security`, including the CSRF token of a cookie write.
 
 **Errors are declared by code, in three levels merged per status**, and the derivable ones are added
 by the declaration, because nothing the server can answer is undocumented:

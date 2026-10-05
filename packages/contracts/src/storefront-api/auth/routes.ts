@@ -58,7 +58,7 @@ const signOutOnly = account
   })
   .optionalAuth({
     refusedCredentialIsAnonymous:
-      'Signing out is idempotent: a revoked, expired or absent session signs out as a no-op.',
+      'Signing out is idempotent: a session already revoked signs out as a no-op.',
   })
   .single('auth');
 
