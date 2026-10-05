@@ -191,9 +191,9 @@ studioV1.identity(operator).requires(roles(MemberRole.PRODUCTION).on('channelId'
   the server maps each name to a guard, and a name with no guard fails at boot. The rules are
   documented as `x-arthome-requires`.
 - **A write may be exempt from the CSRF token**: `identity(viewer, { csrfExempt: 'reason' })` gives
-  the write the schemes of a read and none of the identity's write codes, and the reason is
-  documented as `x-arthome-csrf-exempt`. The server's guard for the identity must honour it. Only
-  `signOut` uses it.
+  the write the schemes of a read and none of the identity's write codes or write parameters, and
+  the reason is documented as `x-arthome-csrf-exempt`. The server's guard for the identity must
+  honour it. Only `signOut` and `signOutStudio` use it.
 - **An optional route may count a refused credential as none**:
   `.optionalAuth({ refusedCredentialIsAnonymous: 'reason' })` derives no `401`, and the reason is
   documented as `x-arthome-refused-credential-is-anonymous`. The server's guard for the identity must

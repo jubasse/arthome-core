@@ -613,12 +613,13 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
           ? access.identity.writeResponses
           : {};
       const tags = rest.tags ?? settings.tags;
+      const identityWriteParameters =
+        access.kind === 'identified' && rest.method !== 'get' && access.csrfExempt === undefined
+          ? access.identity.writeParameters
+          : [];
       const identityParameters =
         access.kind === 'identified'
-          ? [
-              ...access.identity.parameters,
-              ...(rest.method === 'get' ? [] : access.identity.writeParameters),
-            ]
+          ? [...access.identity.parameters, ...identityWriteParameters]
           : [];
       const conditional =
         (rest.method === 'get' && rest.cache?.etag === true) ||

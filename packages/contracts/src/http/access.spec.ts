@@ -89,6 +89,18 @@ describe('identity', () => {
     });
   });
 
+  it('drops the identity write parameters from a csrfExempt write, as it drops its write codes', () => {
+    const define = (method: 'get' | 'post', exempt: boolean) =>
+      base
+        .identity(operator, exempt ? { csrfExempt: 'it opens a session' } : undefined)
+        .defineRoute({ method, path: '/b', operationId: 'b', responses: ok });
+    const namesOf = (route: { readonly parameters?: readonly { readonly name: string }[] }) =>
+      (route.parameters ?? []).map((parameter) => parameter.name);
+
+    expect(namesOf(define('post', false))).toContain('If-Rights-Version');
+    expect(namesOf(define('post', true))).not.toContain('If-Rights-Version');
+  });
+
   it('lets an optional route treat a refused credential as none with a stated reason, and derives no 401', () => {
     const write = base
       .identity(viewer, { csrfExempt: 'a lost CSRF cookie must not block it' })

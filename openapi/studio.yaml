@@ -1270,7 +1270,6 @@ paths:
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IfRightsVersion'
       responses:
         '200':
           description: Session closed. Replayed on an already-closed session, it succeeds.
