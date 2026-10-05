@@ -185,6 +185,7 @@ const dateOutcomeDecision: DateOutcomeDecision = {
   declaredAt: '2026-09-21T20:50:00Z',
   moneyEffectCode: 'no_movement',
   affectedSeats: 174,
+  version: 9,
 };
 
 const dateSalesPane: z.output<typeof DateSalesPaneSchema> = {
@@ -232,6 +233,7 @@ const capacityTierOpening: CapacityTierOpening = {
   },
   waitlistNotified: 12,
   priorityUntil: '2026-09-21T20:06:00Z',
+  version: 14,
 };
 
 const setTechnicalProvisionBody: SetTechnicalProvisionBody = { provisionedCapacity: 15000 };

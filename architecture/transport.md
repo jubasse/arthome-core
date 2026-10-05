@@ -367,8 +367,12 @@ has no consequence. It is **last writer wins, with a server-side rank** (`data-m
 }
 ```
 
-and, where applicable: `version` (on every aggregate a conditional command might target) and
-`lastEventSeq` (on every read model fed by a stream).
+and, where applicable: `lastEventSeq` (on every read model fed by a stream).
+
+**`version` sits inside the record, never at the envelope root.** An aggregate a conditional command
+might target carries its `version` in the item, which is also the only place that works for a list
+whose records each carry one. A versioned write that leaves a record answers the new version in the
+item; a removal answers none.
 
 **Every error response**, from the service, from the BFF **and from Traefik**, carries exactly
 this:

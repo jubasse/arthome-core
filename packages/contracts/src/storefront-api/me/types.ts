@@ -60,7 +60,7 @@ import type {
   PaymentMethodIdParameter,
   PaymentMethodSetupSchema,
   PlaybackPositionSchema,
-  ProfileUpdateAnswerSchema,
+  ProfileSchema,
   RecordPlaybackPositionBodySchema,
   ReminderSchema,
   RequestAccountDeletionBodySchema,
@@ -565,12 +565,7 @@ export type UpdateProfileRoute = Route<{
   >;
   access: IdentifiedAccess<typeof viewer, false>;
   responses: {
-    200: {
-      readonly description: 'Profile updated.';
-      readonly content: {
-        readonly 'application/json': { readonly schema: typeof ProfileUpdateAnswerSchema };
-      };
-    };
+    200: ItemResponse<typeof storefrontConventions, typeof ProfileSchema, unknown>;
   };
   errorCodes: {
     409: readonly (

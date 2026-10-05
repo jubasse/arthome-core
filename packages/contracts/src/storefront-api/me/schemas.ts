@@ -283,22 +283,20 @@ export const UpdateProfileBodySchema: z.ZodObject<
   city: z.string().nullable().optional(),
 });
 
-export const ProfileUpdateAnswerSchema: z.ZodIntersection<
-  typeof StorefrontEnvelopeMetaSchema,
-  z.ZodObject<
-    {
-      version: z.ZodOptional<z.ZodInt>;
-      data: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>;
-    },
-    z.core.$loose
-  >
-> = z.intersection(
-  StorefrontEnvelopeMetaSchema,
-  z.looseObject({
-    version: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
-    data: z.looseObject({}).optional(),
-  }),
-);
+export const ProfileSchema: z.ZodObject<
+  {
+    displayName: z.ZodOptional<z.ZodString>;
+    publicHandle: z.ZodOptional<z.ZodString>;
+    city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    version: z.ZodOptional<z.ZodInt>;
+  },
+  z.core.$loose
+> = z.looseObject({
+  displayName: z.string().optional(),
+  publicHandle: z.string().optional(),
+  city: z.string().nullable().optional(),
+  version: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
+});
 
 export const UpdatePreferencesBodySchema: z.ZodObject<
   {
@@ -500,7 +498,7 @@ export type NotificationPage = z.output<typeof NotificationPageSchema>;
 export type MarkNotificationsReadBody = z.output<typeof MarkNotificationsReadBodySchema>;
 export type NotificationBadgeAnswer = z.output<typeof NotificationBadgeAnswerSchema>;
 export type UpdateProfileBody = z.output<typeof UpdateProfileBodySchema>;
-export type ProfileUpdateAnswer = z.output<typeof ProfileUpdateAnswerSchema>;
+export type Profile = z.output<typeof ProfileSchema>;
 export type UpdatePreferencesBody = z.output<typeof UpdatePreferencesBodySchema>;
 export type UpdateNotificationPreferencesBody = z.output<
   typeof UpdateNotificationPreferencesBodySchema

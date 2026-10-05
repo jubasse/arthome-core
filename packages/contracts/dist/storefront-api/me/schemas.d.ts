@@ -84,10 +84,12 @@ export declare const UpdateProfileBodySchema: z.ZodObject<{
     publicHandle: z.ZodOptional<z.ZodString>;
     city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$strip>;
-export declare const ProfileUpdateAnswerSchema: z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
+export declare const ProfileSchema: z.ZodObject<{
+    displayName: z.ZodOptional<z.ZodString>;
+    publicHandle: z.ZodOptional<z.ZodString>;
+    city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     version: z.ZodOptional<z.ZodInt>;
-    data: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>;
-}, z.core.$loose>>;
+}, z.core.$loose>;
 export declare const UpdatePreferencesBodySchema: z.ZodObject<{
     account: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>;
     device: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>;
@@ -155,7 +157,7 @@ export type NotificationPage = z.output<typeof NotificationPageSchema>;
 export type MarkNotificationsReadBody = z.output<typeof MarkNotificationsReadBodySchema>;
 export type NotificationBadgeAnswer = z.output<typeof NotificationBadgeAnswerSchema>;
 export type UpdateProfileBody = z.output<typeof UpdateProfileBodySchema>;
-export type ProfileUpdateAnswer = z.output<typeof ProfileUpdateAnswerSchema>;
+export type Profile = z.output<typeof ProfileSchema>;
 export type UpdatePreferencesBody = z.output<typeof UpdatePreferencesBodySchema>;
 export type UpdateNotificationPreferencesBody = z.output<typeof UpdateNotificationPreferencesBodySchema>;
 export type UpdateConsentsBody = z.output<typeof UpdateConsentsBodySchema>;

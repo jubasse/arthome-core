@@ -488,7 +488,7 @@ export type EndRunRoute = Route<{
     errorCodes: {
         403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
-        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof CatalogErrorCode.TECHNICAL_CHECK_REQUIRED | typeof DomainErrorCode.STATE_CONFLICT)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof DomainErrorCode.STATE_CONFLICT)[];
     };
 }>;
 export type ResetRunRoute = Route<{
@@ -510,7 +510,7 @@ export type ResetRunRoute = Route<{
     errorCodes: {
         403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
-        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof CatalogErrorCode.TECHNICAL_CHECK_REQUIRED | typeof DomainErrorCode.STATE_CONFLICT)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof DomainErrorCode.STATE_CONFLICT)[];
     };
 }>;
 export type SetQualityProfileRoute = Route<{

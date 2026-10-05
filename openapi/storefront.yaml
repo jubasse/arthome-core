@@ -3409,19 +3409,29 @@ paths:
                 - $ref: '#/components/schemas/EnvelopeMeta'
                 - type: object
                   properties:
-                    version:
-                      type: integer
                     data:
                       type: object
-                      properties: {}
+                      properties:
+                        displayName:
+                          type: string
+                        publicHandle:
+                          type: string
+                        city:
+                          type:
+                          - string
+                          - 'null'
+                        version:
+                          type: integer
                       additionalProperties: {}
+                  required:
+                  - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:04:00.000Z'
-                version: 8
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   displayName: Marie J.
                   publicHandle: '@marie.j'
+                  version: 8
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'

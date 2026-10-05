@@ -2872,6 +2872,8 @@ paths:
                           description: '`full_refund` · `account_credit` · `no_movement`. A **code**, never a sentence.'
                         affectedSeats:
                           type: integer
+                        version:
+                          type: integer
                       additionalProperties: {}
                   required:
                   - data
@@ -2884,6 +2886,7 @@ paths:
                   declaredAt: '2026-09-21T20:50:00Z'
                   moneyEffectCode: no_movement
                   affectedSeats: 174
+                  version: 9
           headers:
             X-Arthome-Rights-Version:
               $ref: '#/components/headers/RightsVersion'
@@ -3303,6 +3306,8 @@ paths:
                         priorityUntil:
                           type: string
                           format: date-time
+                        version:
+                          type: integer
                       additionalProperties: {}
                   required:
                   - data
@@ -3320,6 +3325,7 @@ paths:
                     version: 13
                   waitlistNotified: 12
                   priorityUntil: '2026-09-21T20:06:00Z'
+                  version: 14
           headers:
             X-Arthome-Rights-Version:
               $ref: '#/components/headers/RightsVersion'
@@ -5625,28 +5631,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: |
-            A final business refusal, and the `code` says which. `state.conflict` carries **the current
-            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
-            promise committed**; `moderation.already_settled` carries **the winning verdict and its
-            author**.
-          content:
-            application/json:
-              schema:
-                anyOf:
-                - $ref: '#/components/schemas/StateConflictError'
-                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
-                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
-                - $ref: '#/components/schemas/DateTechnicalCheckRequiredError'
-              examples:
-                state.conflict:
-                  $ref: '#/components/examples/StateConflictError'
-                api.idempotency_key_reused:
-                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
-                api.idempotency_in_flight:
-                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
-                date.technical_check_required:
-                  $ref: '#/components/examples/DateTechnicalCheckRequiredError'
+          $ref: '#/components/responses/Conflict'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -5765,28 +5750,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: |
-            A final business refusal, and the `code` says which. `state.conflict` carries **the current
-            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
-            promise committed**; `moderation.already_settled` carries **the winning verdict and its
-            author**.
-          content:
-            application/json:
-              schema:
-                anyOf:
-                - $ref: '#/components/schemas/StateConflictError'
-                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
-                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
-                - $ref: '#/components/schemas/DateTechnicalCheckRequiredError'
-              examples:
-                state.conflict:
-                  $ref: '#/components/examples/StateConflictError'
-                api.idempotency_key_reused:
-                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
-                api.idempotency_in_flight:
-                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
-                date.technical_check_required:
-                  $ref: '#/components/examples/DateTechnicalCheckRequiredError'
+          $ref: '#/components/responses/Conflict'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':

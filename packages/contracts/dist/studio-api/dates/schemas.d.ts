@@ -71,6 +71,7 @@ export declare const DateOutcomeDecisionSchema: z.ZodObject<{
     declaredAt: z.ZodOptional<z.ZodString>;
     moneyEffectCode: z.ZodOptional<z.ZodString>;
     affectedSeats: z.ZodOptional<z.ZodInt>;
+    version: z.ZodOptional<z.ZodInt>;
 }, z.core.$loose>;
 export declare const SetDatePricesBodySchema: z.ZodObject<{
     tiers: z.ZodArray<z.ZodObject<{
@@ -89,6 +90,7 @@ export declare const CapacityTierOpeningSchema: z.ZodObject<{
     sales: z.ZodOptional<typeof DateSalesPaneSchema>;
     waitlistNotified: z.ZodOptional<z.ZodInt>;
     priorityUntil: z.ZodOptional<z.ZodString>;
+    version: z.ZodOptional<z.ZodInt>;
 }, z.core.$loose>;
 export declare const SetTechnicalProvisionBodySchema: z.ZodObject<{
     provisionedCapacity: z.ZodInt;

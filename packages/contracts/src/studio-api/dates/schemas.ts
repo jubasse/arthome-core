@@ -213,6 +213,7 @@ export const DateOutcomeDecisionSchema: z.ZodObject<
     declaredAt: z.ZodOptional<z.ZodString>;
     moneyEffectCode: z.ZodOptional<z.ZodString>;
     affectedSeats: z.ZodOptional<z.ZodInt>;
+    version: z.ZodOptional<z.ZodInt>;
   },
   z.core.$loose
 > = z.looseObject({
@@ -226,6 +227,7 @@ export const DateOutcomeDecisionSchema: z.ZodObject<
     })
     .optional(),
   affectedSeats: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
+  version: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
 });
 
 export const SetDatePricesBodySchema: z.ZodObject<
@@ -272,12 +274,14 @@ export const CapacityTierOpeningSchema: z.ZodObject<
     sales: z.ZodOptional<typeof DateSalesPaneSchema>;
     waitlistNotified: z.ZodOptional<z.ZodInt>;
     priorityUntil: z.ZodOptional<z.ZodString>;
+    version: z.ZodOptional<z.ZodInt>;
   },
   z.core.$loose
 > = z.looseObject({
   sales: DateSalesPaneSchema.optional(),
   waitlistNotified: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
   priorityUntil: InstantOut.optional(),
+  version: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
 });
 
 export const SetTechnicalProvisionBodySchema: z.ZodObject<

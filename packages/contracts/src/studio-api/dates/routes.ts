@@ -329,7 +329,7 @@ export const endRun: EndRunRoute = run.action('end', {
   body: RunTransitionBodySchema,
   response: RunConsoleSchema,
   answer: 'The console up to date.',
-  errors: [CatalogErrorCode.TECHNICAL_CHECK_REQUIRED, DomainErrorCode.STATE_CONFLICT],
+  errors: [DomainErrorCode.STATE_CONFLICT],
 });
 
 export const resetRun: ResetRunRoute = run.action('reset', {
@@ -338,7 +338,7 @@ export const resetRun: ResetRunRoute = run.action('reset', {
   body: RunTransitionBodySchema,
   response: RunConsoleSchema,
   answer: 'The console up to date.',
-  errors: [CatalogErrorCode.TECHNICAL_CHECK_REQUIRED, DomainErrorCode.STATE_CONFLICT],
+  errors: [DomainErrorCode.STATE_CONFLICT],
 });
 
 export const setQualityProfile: SetQualityProfileRoute = runDate

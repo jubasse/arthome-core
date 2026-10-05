@@ -22,7 +22,7 @@ import {
   PaymentMethodIdParameter,
   PaymentMethodSetupSchema,
   PlaybackPositionSchema,
-  ProfileUpdateAnswerSchema,
+  ProfileSchema,
   RecordPlaybackPositionBodySchema,
   ReminderSchema,
   RequestAccountDeletionBodySchema,
@@ -327,12 +327,8 @@ export const updateProfile: UpdateProfileRoute = account.single('profile').updat
   summary: 'Changes the displayed identity.',
   'x-arthome-invalidates': ['account:profile'],
   body: UpdateProfileBodySchema,
-  responses: {
-    200: {
-      description: 'Profile updated.',
-      content: { 'application/json': { schema: ProfileUpdateAnswerSchema } },
-    },
-  },
+  item: ProfileSchema,
+  answer: 'Profile updated.',
 });
 
 export const updatePreferences: UpdatePreferencesRoute = account

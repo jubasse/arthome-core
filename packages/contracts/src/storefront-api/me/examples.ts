@@ -17,7 +17,7 @@ import type {
   PasskeyEnrolment,
   PaymentMethodSetup,
   PlaybackPosition,
-  ProfileUpdateAnswer,
+  Profile,
   RecordPlaybackPositionBody,
   Reminder,
   RequestAccountDeletionBody,
@@ -44,7 +44,7 @@ import {
   PasskeyEnrolmentSchema,
   PaymentMethodSetupSchema,
   PlaybackPositionSchema,
-  ProfileUpdateAnswerSchema,
+  ProfileSchema,
   RecordPlaybackPositionBodySchema,
   ReminderSchema,
   RequestAccountDeletionBodySchema,
@@ -181,11 +181,7 @@ const notificationBadgeAnswer: NotificationBadgeAnswer = {
 
 const updateProfileBody: UpdateProfileBody = { displayName: 'Marie J.' };
 
-const profileUpdateAnswer: ProfileUpdateAnswer = {
-  servedAt: '2026-09-21T19:04:00.000Z',
-  version: 8,
-  data: { displayName: 'Marie J.', publicHandle: '@marie.j' },
-};
+const profile: Profile = { displayName: 'Marie J.', publicHandle: '@marie.j', version: 8 };
 
 const updatePreferencesBody: UpdatePreferencesBody = {
   device: { subtitleSizeStep: 2, reduceMotion: true },
@@ -292,7 +288,7 @@ export const meExamples: ModuleExamples = [
   [MarkNotificationsReadBodySchema, [markNotificationsReadBody]],
   [NotificationBadgeAnswerSchema, [notificationBadgeAnswer]],
   [UpdateProfileBodySchema, [updateProfileBody]],
-  [ProfileUpdateAnswerSchema, [profileUpdateAnswer]],
+  [ProfileSchema, [profile]],
   [UpdatePreferencesBodySchema, [updatePreferencesBody]],
   [ViewerPreferencesSchema, [viewerPreferences]],
   [UpdateNotificationPreferencesBodySchema, [updateNotificationPreferencesBody]],
