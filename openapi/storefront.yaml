@@ -4765,18 +4765,17 @@ paths:
       x-arthome-upstream:
       - catalog
       - identity
-      x-arthome-freshness: 300
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/Cursor'
-      - $ref: '#/components/parameters/CursorDirection'
       - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/CursorDirection'
       - name: categoryId
         in: query
         schema:
@@ -4801,11 +4800,6 @@ paths:
       responses:
         '200':
           description: A page of artists.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -4824,18 +4818,39 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:17.000Z'
-                items: []
+                servedAt: '2026-09-21T19:00:00.000Z'
+                items:
+                - id: 019928a0-7d31-7a10-b8c4-2f9e11a4c333
+                  channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                  name: Compagnie Verticale
+                  categoryId: dance-contemporary
+                  followedByViewer: true
+                  followers: 4120
+                  isLiveNow: true
+                  alertEnabled: true
                 page:
                   hasMore: false
-                  nextCursor: null
-                  prevCursor: null
-                  approximateTotal: 213
-                  totalIsLowerBound: false
-                  emptyReason: no_match_with_filters
-                  emptyActionCode: clear_filters
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '410':
           $ref: '#/components/responses/Gone'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/artists/{artistId}:
     get:
       operationId: getArtistDetail
@@ -4856,14 +4871,13 @@ paths:
       - ticketing
       - identity
       - streaming
-      x-arthome-freshness: 300
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/ArtistId'
       - $ref: '#/components/parameters/Surface'
@@ -4871,11 +4885,6 @@ paths:
       responses:
         '200':
           description: The page.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -4889,7 +4898,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:18.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   id: 019928a0-7d31-7a10-b8c4-2f9e11a4c333
                   channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
@@ -4897,8 +4906,27 @@ paths:
                   categoryId: dance-contemporary
                   followers: 4120
                   isLiveNow: true
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/search:
     get:
       operationId: search

@@ -10,10 +10,8 @@ import {
 } from '@arthome/core/schema';
 
 import {
-  ArtistIdParameter,
   BadRequestResponse,
   CacheControlPublicHeader,
-  CursorDirectionParameter,
   CursorParameter,
   GoneResponse,
   LimitParameter,
@@ -27,7 +25,6 @@ import {
   storefrontV1,
 } from './components.js';
 import {
-  ArtistDetailSchema,
   ArtistSummarySchema,
   DateCardSchema,
   FacetSchema,
@@ -52,173 +49,10 @@ const GET_CATEGORY_SCREEN_SORT = [
   'price_asc',
   'price_desc',
 ] as const;
-const LIST_ARTISTS_SORT = ['alpha', 'followers'] as const;
+
 const SEARCH_TAB = ['best', 'lives', 'replays', 'artists'] as const;
 const LIST_REPLAYS_SORT = ['expiring_first', 'recent', 'popularity'] as const;
 const RESOLVE_PUBLIC_LINK_KIND = ['date', 'show', 'artist', 'category'] as const;
-
-export const listArtists: Route<{
-  method: 'get';
-  version: 1;
-  path: '/artists';
-  parameters: readonly [
-    typeof CursorParameter,
-    typeof CursorDirectionParameter,
-    typeof LimitParameter,
-    QueryParameter<'categoryId', z.ZodString>,
-    QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof LIST_ARTISTS_SORT>>>,
-    QueryParameter<'liveOnly', z.ZodDefault<z.ZodBoolean>>,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StorefrontEnvelopeMetaSchema,
-        z.ZodObject<
-          {
-            items: z.ZodArray<typeof ArtistSummarySchema>;
-            page: typeof StorefrontCursorPageInfoSchema;
-          },
-          z.core.$loose
-        >
-      >
-    >;
-    410: typeof GoneResponse;
-  };
-}> = discoveryRoutes.defineRoute({
-  method: 'get',
-  path: '/artists',
-  operationId: 'listArtists',
-  summary: 'The artist directory, by cursor.',
-  description:
-    'Two sorts only, and they are **served**: alphabetical and by follower count. The follower\ncount comes from **a single projection**, so that it never differs between the artist page\nand the list.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.CATALOG, Service.IDENTITY],
-  'x-arthome-freshness': 300,
-  parameters: [
-    CursorParameter,
-    CursorDirectionParameter,
-    LimitParameter,
-    {
-      name: 'categoryId',
-      in: 'query',
-      schema: z.string(),
-    },
-    {
-      name: 'sort',
-      in: 'query',
-      schema: vocabularyIn(LIST_ARTISTS_SORT)
-        .meta({
-          'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
-          'x-arthome-vocabulary-reason':
-            "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.",
-        })
-        .default('alpha'),
-    },
-    {
-      name: 'liveOnly',
-      in: 'query',
-      schema: z.boolean().default(false),
-    },
-  ],
-  responses: {
-    200: {
-      description: 'A page of artists.',
-      headers: {
-        'Cache-Control': CacheControlPublicHeader,
-        Vary: VaryAuthHeader,
-      },
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              items: z.array(ArtistSummarySchema),
-              page: StorefrontCursorPageInfoSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:02:17.000Z',
-            items: [],
-            page: {
-              hasMore: false,
-              nextCursor: null,
-              prevCursor: null,
-              approximateTotal: 213,
-              totalIsLowerBound: false,
-              emptyReason: EmptyReason.NO_MATCH_WITH_FILTERS,
-              emptyActionCode: 'clear_filters',
-            },
-          },
-        },
-      },
-    },
-    410: GoneResponse,
-  },
-});
-
-export const getArtistDetail: Route<{
-  method: 'get';
-  version: 1;
-  path: '/artists/{artistId}';
-  parameters: readonly [
-    typeof ArtistIdParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StorefrontEnvelopeMetaSchema,
-        z.ZodObject<{ data: typeof ArtistDetailSchema }, z.core.$loose>
-      >
-    >;
-    404: typeof NotFoundResponse;
-  };
-}> = discoveryRoutes.defineRoute({
-  method: 'get',
-  path: '/artists/{artistId}',
-  operationId: 'getArtistDetail',
-  summary: "An artist's page, their dates and their replays in the same response.",
-  description:
-    '**One call**: the page, upcoming dates, past dates, replays and the shop in the same\nresponse. A page served in four calls would paint in four stages, which a screen three\nmetres away makes unreadable.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  'x-arthome-freshness': 300,
-  parameters: [ArtistIdParameter],
-  responses: {
-    200: {
-      description: 'The page.',
-      headers: {
-        'Cache-Control': CacheControlPublicHeader,
-        Vary: VaryAuthHeader,
-      },
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              data: ArtistDetailSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:02:18.000Z',
-            data: {
-              id: '019928a0-7d31-7a10-b8c4-2f9e11a4c333',
-              channelId: '019928a0-7d31-7a10-b8c4-2f9e11a4c222',
-              name: 'Compagnie Verticale',
-              categoryId: 'dance-contemporary',
-              followers: 4120,
-              isLiveNow: true,
-            },
-          },
-        },
-      },
-    },
-    404: NotFoundResponse,
-  },
-});
 
 export const search: Route<{
   method: 'get';

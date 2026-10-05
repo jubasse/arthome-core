@@ -21,6 +21,7 @@ import {
   startSocialSignIn,
   verifyTwoFactor,
 } from './account.js';
+import { getArtistDetail, listArtists } from './artists/routes.js';
 import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
 import { getCategoryScreen, listCategories } from './categories/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
@@ -78,14 +79,7 @@ import {
   ViewerTimezoneParameter,
 } from './components.js';
 import { getDateDetail } from './date.js';
-import {
-  extendRail,
-  getArtistDetail,
-  listArtists,
-  listReplays,
-  resolvePublicLink,
-  search,
-} from './discovery.js';
+import { extendRail, listReplays, resolvePublicLink, search } from './discovery.js';
 import { getHomeScreen } from './home/routes.js';
 import { getLiveScreen } from './live/routes.js';
 import {

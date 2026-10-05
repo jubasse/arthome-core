@@ -1,10 +1,11 @@
 import { changePassword, confirmEmailVerification, contactSupport, disableTwoFactor, enableTwoFactor, exchangeOneTimeToken, requestPasswordReset, resendEmailVerification, resetPassword, signIn, signOut, signUp, startSocialSignIn, verifyTwoFactor } from './account.js';
+import { getArtistDetail, listArtists } from './artists/routes.js';
 import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
 import { getCategoryScreen, listCategories } from './categories/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
 import { addCartLine, cancelSeat, cancelSubscription, checkoutCart, enterSalesQueue, getCart, getOrder, getSalesQueuePosition, joinWaitlist, leaveWaitlist, listPlans, purchaseSeat, quoteCart, quoteSeat, refreshDateAvailability, removeCartLine, setSubscriptionPlan, updateCartLine } from './commerce.js';
 import { getDateDetail } from './date.js';
-import { extendRail, getArtistDetail, listArtists, listReplays, resolvePublicLink, search } from './discovery.js';
+import { extendRail, listReplays, resolvePublicLink, search } from './discovery.js';
 import { getHomeScreen } from './home/routes.js';
 import { getLiveScreen } from './live/routes.js';
 import { addPasskey, addPaymentMethod, addToWatchlist, cancelAccountDeletion, clearReminder, createSavedSearch, deleteSavedSearch, followArtist, getAccountScreen, getExport, listFollowedArtists, listMyOrders, listMyReplays, listMyTickets, listNotifications, listSavedSearches, listWatchlist, markNotificationsRead, recordPlaybackPosition, removeFromWatchlist, removePasskey, removePaymentMethod, requestAccountDeletion, requestExport, revokeDevice, setReminder, signOutProfile, unfollowArtist, updateConsents, updateNotificationPreferences, updatePreferences, updateProfile, updateSavedSearch } from './me/routes.js';

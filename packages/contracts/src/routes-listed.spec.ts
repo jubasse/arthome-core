@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Api, Route } from './http/index.js';
 import * as storefrontAccount from './storefront-api/account.js';
+import * as storefrontArtists from './storefront-api/artists/routes.js';
 import * as storefrontBootstrap from './storefront-api/bootstrap.js';
 import * as storefrontCategories from './storefront-api/categories/routes.js';
 import * as storefrontChat from './storefront-api/chat.js';
@@ -62,6 +63,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       storefrontHome,
       storefrontLive,
       storefrontCategories,
+      storefrontArtists,
       storefrontMe,
       storefrontPairing,
       storefrontPlayback,
