@@ -5104,14 +5104,13 @@ paths:
       - catalog
       - ticketing
       - streaming
-      x-arthome-freshness: 60
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
@@ -5136,11 +5135,6 @@ paths:
       responses:
         '200':
           description: Page of online replays, sorted by shortest remaining window first.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5159,17 +5153,58 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:40.000Z'
-                validUntil: '2026-09-21T18:03:40.000Z'
-                items: []
+                servedAt: '2026-09-21T19:00:00.000Z'
+                items:
+                - id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
+                  channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                  slug: '2026-09-21'
+                  canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+                  title: Nuit blanche
+                  startsAt: '2026-09-21T19:00:00Z'
+                  venueClock:
+                    venueTimezone: Europe/Paris
+                    venueUtcOffsetMin: 120
+                  runtimeMin: 95
+                  roomOpensAt: '2026-09-21T18:30:00Z'
+                  displayState: live
+                  displayStateValidUntil: '2026-09-21T20:35:00Z'
+                  replay:
+                    policy: included
+                    windowHours: 72
+                  rights:
+                    scope: worldwide
+                    blackoutCountries: []
+                  media:
+                    wide: []
+                    poster: []
+                  viewerRelations:
+                    inWatchlist: true
+                    reminderSet: false
+                    followsArtist: false
                 page:
                   hasMore: false
-                  emptyReason: no_replay_available
-                  emptyActionCode: browse_catalog
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '410':
           $ref: '#/components/responses/Gone'
-        '503':
-          $ref: '#/components/responses/Unavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/rails/{railId}:
     get:
       operationId: extendRail

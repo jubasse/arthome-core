@@ -19,7 +19,6 @@ import {
   StorefrontTag,
   SurfaceParameter,
   TraceparentParameter,
-  UnavailableResponse,
   VaryAuthHeader,
   PublicReadSecurity,
   storefrontV1,
@@ -27,105 +26,13 @@ import {
 import { ArtistSummarySchema, DateCardSchema, RailSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
 import type { JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
-import { EmptyReason, StorefrontCursorPageInfoSchema } from '../pagination/index.js';
 
 const discoveryRoutes = storefrontV1
   .tags(StorefrontTag.DISCOVERY)
   .headers(SurfaceParameter, TraceparentParameter)
   .security(...PublicReadSecurity);
 
-const LIST_REPLAYS_SORT = ['expiring_first', 'recent', 'popularity'] as const;
 const RESOLVE_PUBLIC_LINK_KIND = ['date', 'show', 'artist', 'category'] as const;
-
-export const listReplays: Route<{
-  method: 'get';
-  version: 1;
-  path: '/replays';
-  parameters: readonly [
-    typeof CursorParameter,
-    typeof LimitParameter,
-    QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof LIST_REPLAYS_SORT>>>,
-    QueryParameter<'categoryId', z.ZodString>,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StorefrontEnvelopeMetaSchema,
-        z.ZodObject<
-          { items: z.ZodArray<typeof DateCardSchema>; page: typeof StorefrontCursorPageInfoSchema },
-          z.core.$loose
-        >
-      >
-    >;
-    410: typeof GoneResponse;
-    503: typeof UnavailableResponse;
-  };
-}> = discoveryRoutes.defineRoute({
-  method: 'get',
-  path: '/replays',
-  operationId: 'listReplays',
-  summary: 'Replays online, the ones expiring first — a discovery page, public.',
-  description:
-    '**This is a discovery page, not "My replays".** The distinction is not cosmetic: "Replays"\nis a permanent entry in a television\'s sidebar, exactly like "Live" or "Categories", and it\nis not prefixed "My" — unlike "My seats" and "My list", which are. Its content is the\ncatalogue of replays **on sale or included**, including ones never watched: that is the\nwhole point of it.\n\nThree reasons the existing paths were no substitute: `/v1/me/replays` returns what one\n**holds** and answers `401` to a visitor — yet on a television the sidebar is always there,\nand hiding an entry based on the session makes the menu change size under the focus, which\nbreaks focus memory; `/v1/search?tab=replays` requires `q` of at least two characters, so\nit has no empty search; and its paginated unit is the **show**, whereas a replay window\nexpires **per date** — grouping by show makes the "expiring first" sort inexpressible.\n\n**Public read**, like the nine other catalogue operations.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.STREAMING],
-  'x-arthome-freshness': 60,
-  parameters: [
-    CursorParameter,
-    LimitParameter,
-    {
-      name: 'sort',
-      in: 'query',
-      description: '`expiring_first` is the default, and it is the sort the page announces.',
-      schema: vocabularyIn(LIST_REPLAYS_SORT)
-        .meta({
-          'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
-          'x-arthome-vocabulary-reason':
-            "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.",
-        })
-        .default('expiring_first'),
-    },
-    {
-      name: 'categoryId',
-      in: 'query',
-      schema: z.string(),
-    },
-  ],
-  responses: {
-    200: {
-      description: 'Page of online replays, sorted by shortest remaining window first.',
-      headers: {
-        'Cache-Control': CacheControlPublicHeader,
-        Vary: VaryAuthHeader,
-      },
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              items: z.array(DateCardSchema),
-              page: StorefrontCursorPageInfoSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:02:40.000Z',
-            validUntil: '2026-09-21T18:03:40.000Z',
-            items: [],
-            page: {
-              hasMore: false,
-              emptyReason: EmptyReason.NO_REPLAY_AVAILABLE,
-              emptyActionCode: 'browse_catalog',
-            },
-          },
-        },
-      },
-    },
-    410: GoneResponse,
-    503: UnavailableResponse,
-  },
-});
 
 export const extendRail: Route<{
   method: 'get';

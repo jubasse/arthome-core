@@ -1,33 +1,10 @@
 import { z } from 'zod';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
-import { BadRequestResponse, CursorParameter, GoneResponse, LimitParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter, UnavailableResponse } from './components.js';
+import { BadRequestResponse, CursorParameter, GoneResponse, LimitParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter } from './components.js';
 import { ArtistSummarySchema, DateCardSchema, RailSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
 import type { JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
-import { StorefrontCursorPageInfoSchema } from '../pagination/index.js';
-declare const LIST_REPLAYS_SORT: readonly ["expiring_first", "recent", "popularity"];
 declare const RESOLVE_PUBLIC_LINK_KIND: readonly ["date", "show", "artist", "category"];
-export declare const listReplays: Route<{
-    method: 'get';
-    version: 1;
-    path: '/replays';
-    parameters: readonly [
-        typeof CursorParameter,
-        typeof LimitParameter,
-        QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof LIST_REPLAYS_SORT>>>,
-        QueryParameter<'categoryId', z.ZodString>,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            items: z.ZodArray<typeof DateCardSchema>;
-            page: typeof StorefrontCursorPageInfoSchema;
-        }, z.core.$loose>>>;
-        410: typeof GoneResponse;
-        503: typeof UnavailableResponse;
-    };
-}>;
 export declare const extendRail: Route<{
     method: 'get';
     version: 1;

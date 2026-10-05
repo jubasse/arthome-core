@@ -117,6 +117,11 @@
       "reason": "A path segment, GET /live. It shares its spelling with a display state and a publication state without being that vocabulary."
     },
     {
+      "file": "packages/contracts/src/storefront-api/replays/routes.ts",
+      "value": "replays",
+      "reason": "A path segment, GET /replays. It shares its spelling with a plan opening and a navigation entry without being that vocabulary."
+    },
+    {
       "file": "packages/contracts/src/storefront-api/me/routes.ts",
       "value": "tickets",
       "reason": "A path segment, GET /me/tickets. It shares its spelling with a navigation entry and a date pane without being either vocabulary."
