@@ -43,14 +43,6 @@ const statedMaturities = {
     maturity: 'provisional',
     maturityReason: 'the channel ticketing read is new and not built',
   },
-  getChannelDashboard: {
-    maturity: 'provisional',
-    maturityReason: 'the studio statistics (studio-money) are not built',
-  },
-  getChannelStats: {
-    maturity: 'provisional',
-    maturityReason: 'the studio statistics (studio-money) are not built',
-  },
 } satisfies ModuleDocs;
 
 /** The studio document's introduction, and the docs and examples its modules register. */

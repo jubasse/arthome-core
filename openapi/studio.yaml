@@ -1343,6 +1343,9 @@ paths:
       - ticketing
       tags:
       - agenda
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Page'
@@ -1351,6 +1354,7 @@ paths:
       - $ref: '#/components/parameters/SortDir'
       - name: window
         in: query
+        required: false
         schema:
           default: upcoming
           type: string
@@ -1361,6 +1365,7 @@ paths:
           x-arthome-vocabulary-reason: A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.
       - name: states
         in: query
+        required: false
         description: '**Multi-state** filter, comma-separated.'
         schema:
           type: string
@@ -1372,14 +1377,10 @@ paths:
         schema:
           type: string
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: A page of the event board, **projected according to the role**.
-          headers:
-            X-Arthome-Rights-Version:
-              $ref: '#/components/headers/RightsVersion'
           content:
             application/json:
               schema:
@@ -1398,7 +1399,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:01:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 items:
                 - dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
@@ -1417,24 +1418,39 @@ paths:
                 page:
                   page: 1
                   pageSize: 20
-                  totalItems: 84
-                  totalPages: 5
+                  totalItems: 1
+                  totalPages: 1
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: '`api.sort_key_forbidden` when the sort key bears on a field absent from this projection.'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: api.sort_key_forbidden
-                  nature: refused
-                  params:
-                    sortBy: grossRevenue
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:01:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiSortKeyForbiddenError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.sort_key_forbidden:
+                  $ref: '#/components/examples/ApiSortKeyForbiddenError'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/dashboard:
     get:
       operationId: getChannelDashboard
@@ -1454,13 +1470,16 @@ paths:
       - ticketing
       - streaming
       - chat
-      x-arthome-freshness: 300
       tags:
       - agenda
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: period
         in: query
+        required: false
         schema:
           default: last_30_days
           type: string
@@ -1474,7 +1493,7 @@ paths:
           x-arthome-vocabulary-reason: A period selector for this screen. The bounds it resolves to are served (`seasonBounds`, `periodStart`/`periodEnd`); this only names which preset the person chose.
       - name: from
         in: query
-        description: Requis quand `period` vaut `custom`.
+        description: Required when `period` is `custom`.
         schema:
           type: string
           format: date
@@ -1484,7 +1503,6 @@ paths:
           type: string
           format: date
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -1502,7 +1520,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:05:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   period:
@@ -1565,10 +1583,27 @@ paths:
                       gross:
                         amountMinor: 417600
                         currencyCode: EUR
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/stats:
     get:
       operationId: getChannelStats
@@ -1588,13 +1623,16 @@ paths:
       - catalog
       - ticketing
       - streaming
-      x-arthome-freshness: 300
       tags:
       - agenda
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: tab
         in: query
+        required: false
         schema:
           default: audience
           type: string
@@ -1605,6 +1643,7 @@ paths:
           x-arthome-vocabulary-reason: A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.
       - name: period
         in: query
+        required: false
         schema:
           default: last_30_days
           type: string
@@ -1628,12 +1667,12 @@ paths:
           format: date
       - name: showId
         in: query
+        required: false
         description: Restricts the `series` tab to one series. Absent, every series is served.
         schema:
           type: string
           format: uuid
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -1684,10 +1723,27 @@ paths:
                     liveViewersPeak: 1842
                     replayViews: 412
                     fillRateBps: 8700
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/agenda:
     get:
       operationId: getChannelAgenda
@@ -1702,6 +1758,9 @@ paths:
       - ticketing
       tags:
       - agenda
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: from
@@ -1717,11 +1776,10 @@ paths:
           type: string
           format: date
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
-          description: The dates in the period.
+          description: The dates between the two bounds.
           content:
             application/json:
               schema:
@@ -1739,9 +1797,48 @@ paths:
               example:
                 servedAt: '2026-09-21T18:01:20.000Z'
                 rightsVersion: 412
-                items: []
+                items:
+                - dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  title: Nuit blanche
+                  startsAt: '2026-09-21T19:00:00Z'
+                  state: scheduled
+                  orderRank: 3
+                  lowestPrice:
+                    amountMinor: 2400
+                    currencyCode: EUR
+                  fillRateBps: 8700
+                  seatsSold: 174
+                  grossRevenue:
+                    amountMinor: 417600
+                    currencyCode: EUR
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          description: Malformed request, or a mandatory filter missing.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiSchemaInvalidError'
+                - $ref: '#/components/schemas/ApiPeriodFilterRequiredError'
+              examples:
+                api.schema_invalid:
+                  $ref: '#/components/examples/ApiSchemaInvalidError'
+                api.period_filter_required:
+                  $ref: '#/components/examples/ApiPeriodFilterRequiredError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/dates:
     post:
       operationId: createDateDraft
@@ -13409,6 +13506,201 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    ApiSortKeyForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.sort_key_forbidden
+            params:
+              type: object
+              properties:
+                sortBy:
+                  type: string
+              required:
+              - sortBy
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ApiSchemaInvalidError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.schema_invalid
+            params:
+              type: object
+              properties:
+                issues:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      path:
+                        type: array
+                        items:
+                          anyOf:
+                          - type: string
+                          - type: integer
+                            format: int64
+                      rule:
+                        type: string
+                        x-arthome-vocabulary:
+                        - too_small
+                        - too_big
+                        - invalid_type
+                        - invalid_format
+                        - invalid_value
+                        - unrecognized_key
+                        - custom
+                        x-arthome-vocabulary-source: SCHEMA_ISSUE_RULES
+                      minimum:
+                        type: number
+                      maximum:
+                        type: number
+                      inclusive:
+                        type: boolean
+                      format:
+                        type: string
+                      values:
+                        type: array
+                        items:
+                          type:
+                          - string
+                          - number
+                          - boolean
+                          - 'null'
+                    required:
+                    - path
+                    - rule
+                    additionalProperties: {}
+              required:
+              - issues
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ApiPeriodFilterRequiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.period_filter_required
+            params:
+              type: object
+              properties:
+                maxRangeDays:
+                  type: integer
+                  format: int64
+              required:
+              - maxRangeDays
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     ApiRightsVersionStaleError:
       type: object
       properties:
@@ -13850,98 +14142,6 @@ components:
                   format: int64
               required:
               - seatsSold
-              additionalProperties: {}
-            traceId:
-              type: string
-              minLength: 1
-              examples:
-              - 4bf92f3577b34da6a3ce929d0e0e4736
-              description: The one moment left where the person can read out a number and dictate it to support.
-            nature:
-              type: string
-              x-arthome-vocabulary:
-              - refused
-              - unavailable
-              - offline_forbidden
-              x-arthome-vocabulary-source: FAILURE_NATURES
-              x-arthome-unknown-fallback: unavailable
-              description: |
-                `offline_forbidden` is a **local** refusal, never emitted by the server.
-
-                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
-                retryable. A frozen `enum` here would make an earlier version of the application reject the
-                **whole** error envelope — that is, lose the ability to read errors at the precise moment
-                something is wrong, on duty, on an application a store review takes days to replace.
-          required:
-          - code
-          - params
-          - traceId
-          - nature
-          additionalProperties: {}
-        servedAt:
-          type: string
-          format: date-time
-      required:
-      - error
-      - servedAt
-      additionalProperties: {}
-    ApiSchemaInvalidError:
-      type: object
-      properties:
-        error:
-          type: object
-          properties:
-            code:
-              type: string
-              const: api.schema_invalid
-            params:
-              type: object
-              properties:
-                issues:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      path:
-                        type: array
-                        items:
-                          anyOf:
-                          - type: string
-                          - type: integer
-                            format: int64
-                      rule:
-                        type: string
-                        x-arthome-vocabulary:
-                        - too_small
-                        - too_big
-                        - invalid_type
-                        - invalid_format
-                        - invalid_value
-                        - unrecognized_key
-                        - custom
-                        x-arthome-vocabulary-source: SCHEMA_ISSUE_RULES
-                      minimum:
-                        type: number
-                      maximum:
-                        type: number
-                      inclusive:
-                        type: boolean
-                      format:
-                        type: string
-                      values:
-                        type: array
-                        items:
-                          type:
-                          - string
-                          - number
-                          - boolean
-                          - 'null'
-                    required:
-                    - path
-                    - rule
-                    additionalProperties: {}
-              required:
-              - issues
               additionalProperties: {}
             traceId:
               type: string
@@ -14981,58 +15181,6 @@ components:
       - error
       - servedAt
       additionalProperties: {}
-    ApiPeriodFilterRequiredError:
-      type: object
-      properties:
-        error:
-          type: object
-          properties:
-            code:
-              type: string
-              const: api.period_filter_required
-            params:
-              type: object
-              properties:
-                maxRangeDays:
-                  type: integer
-                  format: int64
-              required:
-              - maxRangeDays
-              additionalProperties: {}
-            traceId:
-              type: string
-              minLength: 1
-              examples:
-              - 4bf92f3577b34da6a3ce929d0e0e4736
-              description: The one moment left where the person can read out a number and dictate it to support.
-            nature:
-              type: string
-              x-arthome-vocabulary:
-              - refused
-              - unavailable
-              - offline_forbidden
-              x-arthome-vocabulary-source: FAILURE_NATURES
-              x-arthome-unknown-fallback: unavailable
-              description: |
-                `offline_forbidden` is a **local** refusal, never emitted by the server.
-
-                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
-                retryable. A frozen `enum` here would make an earlier version of the application reject the
-                **whole** error envelope — that is, lose the ability to read errors at the precise moment
-                something is wrong, on duty, on an application a store review takes days to replace.
-          required:
-          - code
-          - params
-          - traceId
-          - nature
-          additionalProperties: {}
-        servedAt:
-          type: string
-          format: date-time
-      required:
-      - error
-      - servedAt
-      additionalProperties: {}
   examples:
     ApiForbiddenError:
       value:
@@ -15097,6 +15245,15 @@ components:
               rule: too_small
               minimum: 1
               inclusive: true
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ApiSortKeyForbiddenError:
+      value:
+        error:
+          code: api.sort_key_forbidden
+          nature: refused
+          params:
+            sortBy: grossRevenue
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     CapacityTierMustWidenError:

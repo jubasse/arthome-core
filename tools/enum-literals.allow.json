@@ -145,6 +145,26 @@
       "file": "packages/contracts/src/studio-api/channels/routes.ts",
       "value": "identity",
       "reason": "A path segment, PATCH /channels/{channelId}/identity. It shares its spelling with a service without being that vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/channels/routes.ts",
+      "value": "events",
+      "reason": "A path segment, GET /channels/{channelId}/events. It shares its spelling with a navigation entry without being that vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/channels/routes.ts",
+      "value": "dashboard",
+      "reason": "A path segment, GET /channels/{channelId}/dashboard. It shares its spelling with a navigation entry without being that vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/channels/routes.ts",
+      "value": "stats",
+      "reason": "A path segment, GET /channels/{channelId}/stats. It shares its spelling with a navigation entry without being that vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/channels/routes.ts",
+      "value": "agenda",
+      "reason": "A path segment, GET /channels/{channelId}/agenda. It shares its spelling with a navigation entry without being that vocabulary."
     }
   ]
 }

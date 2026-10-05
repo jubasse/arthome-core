@@ -1,12 +1,6 @@
 import { MoneyOut } from '@arthome/core/schema';
 
-import {
-  getChannelAgenda,
-  getChannelDashboard,
-  getChannelStats,
-  listChannelEvents,
-  listDuties,
-} from './agenda.js';
+import { listDuties } from './agenda.js';
 import {
   createReauthToken,
   getStudioBootstrap,
@@ -26,8 +20,12 @@ import {
 import { createUploadTicket, deleteChannel } from './channel.js';
 import {
   changeMemberRoles,
+  getChannelAgenda,
+  getChannelDashboard,
   getChannelSettings,
+  getChannelStats,
   inviteMember,
+  listChannelEvents,
   listChannelJournal,
   listChannelMembers,
   listChannelMerchItems,

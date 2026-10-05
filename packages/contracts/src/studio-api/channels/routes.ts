@@ -1,6 +1,8 @@
 import { ApiErrorCode, ChannelErrorCode, DomainErrorCode } from '@arthome/core';
 
 import {
+  AgendaListSchema,
+  AgendaPeriod,
   ChangeMemberRolesBodySchema,
   ChannelDefaultsSchema,
   ChannelMemberPageSchema,
@@ -8,6 +10,10 @@ import {
   ChannelReplaySchema,
   ChannelReplayStateParameter,
   ChannelSettingsSchema,
+  DashboardPeriod,
+  EventSearch,
+  EventStatesParameter,
+  EventsWindowParameter,
   JournalDateParameter,
   JournalNatureParameter,
   InviteMemberBodySchema,
@@ -16,6 +22,11 @@ import {
   MemberSearch,
   OwnershipTransferSchema,
   PersonIdParameter,
+  StatsAnswerSchema,
+  StatsPeriod,
+  StatsPeriodPresetParameter,
+  StatsShowParameter,
+  StatsTabParameter,
   TransferChannelOwnershipBodySchema,
   MerchItemIdParameter,
   MerchItemListSchema,
@@ -25,8 +36,12 @@ import {
 } from './schemas.js';
 import type {
   ChangeMemberRolesRoute,
+  GetChannelAgendaRoute,
+  GetChannelDashboardRoute,
   GetChannelSettingsRoute,
+  GetChannelStatsRoute,
   InviteMemberRoute,
+  ListChannelEventsRoute,
   ListChannelJournalRoute,
   ListChannelMembersRoute,
   ListChannelMerchItemsRoute,
@@ -37,10 +52,11 @@ import type {
   UpdateChannelSettingsRoute,
   UpsertMerchItemRoute,
 } from './types.js';
-import { Deleted, pages, recentAuth } from '../../http/index.js';
+import { Deleted, Freshness, cache, pages, recentAuth } from '../../http/index.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
 import { JournalEntrySchema } from '../../studio-desk/index.js';
-import { MerchItemAdminSchema } from '../../studio-stage/index.js';
+import { DashboardScreenSchema } from '../../studio-money/index.js';
+import { EventsRowSchema, MerchItemAdminSchema } from '../../studio-stage/index.js';
 import {
   ChannelIdParameter,
   StudioTag,
@@ -183,3 +199,58 @@ export const transferChannelOwnership: TransferChannelOwnershipRoute = crewChann
     errors: [ChannelErrorCode.TRANSFER_TARGET_INELIGIBLE],
   },
 );
+
+const agendaChannel = channels
+  .tags(StudioTag.AGENDA)
+  .resource('channels', { id: ChannelIdParameter });
+
+export const listChannelEvents: ListChannelEventsRoute = agendaChannel.single('events').findAll({
+  operationId: 'listChannelEvents',
+  summary: 'The event board — page + total, six sort keys, multi-state filter.',
+  item: EventsRowSchema,
+  parameters: [EventsWindowParameter, EventStatesParameter, EventSearch],
+  errors: [ApiErrorCode.SORT_KEY_FORBIDDEN],
+  answer: 'A page of the event board, **projected according to the role**.',
+});
+
+export const getChannelDashboard: GetChannelDashboardRoute = agendaChannel
+  .single('dashboard')
+  .find({
+    operationId: 'getChannelDashboard',
+    summary: 'The dashboard — tiles aggregated over a period, and the "to handle" list.',
+    item: DashboardScreenSchema,
+    cache: cache(Freshness.FIVE_MINUTES),
+    parameters: [StatsPeriodPresetParameter, ...DashboardPeriod.parameters],
+    answer: 'Tiles and reminders, projected according to the role.',
+  });
+
+export const getChannelStats: GetChannelStatsRoute = agendaChannel.single('stats').find({
+  operationId: 'getChannelStats',
+  summary: 'Audience and revenue, or a comparison of the dates in a series.',
+  cache: cache(Freshness.FIVE_MINUTES),
+  parameters: [
+    StatsTabParameter,
+    StatsPeriodPresetParameter,
+    ...StatsPeriod.parameters,
+    StatsShowParameter,
+  ],
+  responses: {
+    200: {
+      description: 'The tab requested. `audience` and `series` are mutually exclusive.',
+      content: { 'application/json': { schema: StatsAnswerSchema } },
+    },
+  },
+});
+
+export const getChannelAgenda: GetChannelAgendaRoute = agendaChannel.single('agenda').find({
+  operationId: 'getChannelAgenda',
+  summary: "A channel's schedule, over a period.",
+  parameters: [...AgendaPeriod.parameters],
+  errors: [...AgendaPeriod.errors],
+  responses: {
+    200: {
+      description: 'The dates between the two bounds.',
+      content: { 'application/json': { schema: AgendaListSchema } },
+    },
+  },
+});

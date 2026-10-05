@@ -11,11 +11,13 @@ import {
 } from '@arthome/core';
 
 import type {
+  AgendaList,
   ChangeMemberRolesBody,
   ChannelDefaults,
   ChannelMemberPage,
   InviteMemberBody,
   OwnershipTransfer,
+  StatsAnswer,
   TransferChannelOwnershipBody,
   ChannelIdentity,
   ChannelReplay,
@@ -26,11 +28,13 @@ import type {
   UpsertMerchItemBody,
 } from './schemas.js';
 import {
+  AgendaListSchema,
   ChangeMemberRolesBodySchema,
   ChannelDefaultsSchema,
   ChannelMemberPageSchema,
   InviteMemberBodySchema,
   OwnershipTransferSchema,
+  StatsAnswerSchema,
   TransferChannelOwnershipBodySchema,
   ChannelIdentitySchema,
   ChannelReplaySchema,
@@ -43,7 +47,8 @@ import {
 import type { ModuleExamples } from '../../openapi/docs.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
 import { JournalEntrySchema } from '../../studio-desk/index.js';
-import { MerchItemAdminSchema } from '../../studio-stage/index.js';
+import { DashboardScreenSchema } from '../../studio-money/index.js';
+import { EventsRowSchema, MerchItemAdminSchema } from '../../studio-stage/index.js';
 
 const channelReplay: ChannelReplay = {
   dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
@@ -180,6 +185,135 @@ const ownershipTransfer: OwnershipTransfer = {
   expiresAt: '2026-09-28T18:21:00Z',
 };
 
+const eventsRow: z.output<typeof EventsRowSchema> = {
+  dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+  title: 'Nuit blanche',
+  startsAt: '2026-09-21T19:00:00Z',
+  state: DisplayState.SCHEDULED,
+  orderRank: 3,
+  lowestPrice: { amountMinor: 2400, currencyCode: 'EUR' },
+  fillRateBps: 8700,
+  seatsSold: 174,
+  grossRevenue: { amountMinor: 417600, currencyCode: 'EUR' },
+};
+
+const PERIOD_BOUNDS = {
+  preset: 'last_30_days',
+  from: '2026-08-22',
+  to: '2026-09-21',
+  days: 30,
+  datesCovered: 7,
+};
+
+const dashboardScreen: z.output<typeof DashboardScreenSchema> = {
+  period: PERIOD_BOUNDS,
+  tiles: [
+    {
+      id: 'shop_sales',
+      value: 184200,
+      unit: 'currency_minor',
+      currencyCode: 'EUR',
+      seriesGranularity: 'per_date',
+      series: [
+        {
+          at: '2026-09-04T19:00:00Z',
+          value: 42100,
+          dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+        },
+      ],
+    },
+    {
+      id: 'followers_gained',
+      value: 312,
+      unit: 'count',
+      seriesGranularity: 'per_date',
+      series: [{ at: '2026-09-04T19:00:00Z', value: 48 }],
+    },
+    {
+      id: 'replay_views',
+      value: 1840,
+      unit: 'count',
+      seriesGranularity: 'per_date',
+      series: [{ at: '2026-09-04T19:00:00Z', value: 412 }],
+    },
+    {
+      id: 'fill_rate',
+      value: 87,
+      unit: 'percent',
+      seriesGranularity: 'per_date',
+      series: [{ at: '2026-09-04T19:00:00Z', value: 84 }],
+    },
+  ],
+  reminders: [
+    {
+      id: 'rem-1',
+      kind: 'technical_check_missing',
+      severity: 'urgent',
+      textCode: 'dashboard.reminder.technical_check_missing',
+      params: { title: 'Nuit blanche' },
+      targetPage: 'regie',
+      dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+      countdownTo: '2026-09-21T19:00:00Z',
+      actionable: true,
+    },
+  ],
+  revenueByDate: {
+    total: { amountMinor: 14049600, currencyCode: 'EUR' },
+    totalScope: 'channel_period',
+    items: [
+      {
+        dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+        title: 'Nuit blanche',
+        startsAt: '2026-09-21T19:00:00Z',
+        gross: { amountMinor: 417600, currencyCode: 'EUR' },
+      },
+    ],
+  },
+};
+
+const statsAnswer: StatsAnswer = {
+  servedAt: '2026-09-21T18:06:00.000Z',
+  rightsVersion: 412,
+  audience: {
+    period: PERIOD_BOUNDS,
+    headline: {
+      viewersTotal: 18420,
+      averageFillRateBps: 8700,
+      datesCount: 7,
+      netRevenue: { amountMinor: 1240000, currencyCode: 'EUR' },
+    },
+    fillByDate: [
+      {
+        dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+        title: 'Nuit blanche',
+        startsAt: '2026-09-21T19:00:00Z',
+        fillRateBps: 8700,
+        seatsSold: 174,
+        capacityTotal: 200,
+        onSale: true,
+      },
+    ],
+    audienceByDate: [
+      {
+        dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+        title: 'Nuit blanche',
+        startsAt: '2026-09-21T19:00:00Z',
+        displayState: DisplayState.LIVE,
+        seatsSold: 174,
+        liveViewersPeak: 1842,
+        replayViews: 412,
+        fillRateBps: 8700,
+      },
+    ],
+  },
+};
+
+const agendaList: AgendaList = {
+  servedAt: '2026-09-21T18:01:20.000Z',
+  rightsVersion: 412,
+  items: [eventsRow],
+};
+
 export const channelsExamples: ModuleExamples = [
   [ChannelReplaySchema, [channelReplay]],
   [ChannelIdentitySchema, [channelIdentity]],
@@ -197,4 +331,8 @@ export const channelsExamples: ModuleExamples = [
   [ChangeMemberRolesBodySchema, [changeMemberRolesBody]],
   [TransferChannelOwnershipBodySchema, [transferChannelOwnershipBody]],
   [OwnershipTransferSchema, [ownershipTransfer]],
+  [EventsRowSchema, [eventsRow]],
+  [DashboardScreenSchema, [dashboardScreen]],
+  [StatsAnswerSchema, [statsAnswer]],
+  [AgendaListSchema, [agendaList]],
 ];

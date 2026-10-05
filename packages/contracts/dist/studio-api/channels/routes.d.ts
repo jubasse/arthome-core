@@ -1,4 +1,4 @@
-import type { ChangeMemberRolesRoute, GetChannelSettingsRoute, InviteMemberRoute, ListChannelJournalRoute, ListChannelMembersRoute, ListChannelMerchItemsRoute, ListChannelReplaysRoute, RemoveMemberRoute, TransferChannelOwnershipRoute, UpdateChannelIdentityRoute, UpdateChannelSettingsRoute, UpsertMerchItemRoute } from './types.js';
+import type { ChangeMemberRolesRoute, GetChannelAgendaRoute, GetChannelDashboardRoute, GetChannelSettingsRoute, GetChannelStatsRoute, InviteMemberRoute, ListChannelEventsRoute, ListChannelJournalRoute, ListChannelMembersRoute, ListChannelMerchItemsRoute, ListChannelReplaysRoute, RemoveMemberRoute, TransferChannelOwnershipRoute, UpdateChannelIdentityRoute, UpdateChannelSettingsRoute, UpsertMerchItemRoute } from './types.js';
 export declare const listChannelReplays: ListChannelReplaysRoute;
 export declare const getChannelSettings: GetChannelSettingsRoute;
 export declare const updateChannelSettings: UpdateChannelSettingsRoute;
@@ -11,4 +11,8 @@ export declare const inviteMember: InviteMemberRoute;
 export declare const changeMemberRoles: ChangeMemberRolesRoute;
 export declare const removeMember: RemoveMemberRoute;
 export declare const transferChannelOwnership: TransferChannelOwnershipRoute;
+export declare const listChannelEvents: ListChannelEventsRoute;
+export declare const getChannelDashboard: GetChannelDashboardRoute;
+export declare const getChannelStats: GetChannelStatsRoute;
+export declare const getChannelAgenda: GetChannelAgendaRoute;
 //# sourceMappingURL=routes.d.ts.map

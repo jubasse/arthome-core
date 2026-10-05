@@ -6,6 +6,7 @@ import { StudioEnvelopeMetaSchema } from '../../envelope/index.js';
 import type { PathParameter, Period, QueryParameter } from '../../http/index.js';
 import { OffsetPageInfoSchema } from '../../pagination/index.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
+import { StatsAudienceSchema, StatsSeriesSchema } from '../../studio-money/index.js';
 declare const CHANNEL_REPLAY_STATES: readonly ["online", "expired", "archived"];
 export declare const ChannelReplayStateParameter: QueryParameter<'state', VocabularyIn<typeof CHANNEL_REPLAY_STATES>>;
 export declare const ChannelReplaySchema: z.ZodObject<{
@@ -136,5 +137,26 @@ export type InviteMemberBody = z.output<typeof InviteMemberBodySchema>;
 export type ChangeMemberRolesBody = z.output<typeof ChangeMemberRolesBodySchema>;
 export type TransferChannelOwnershipBody = z.output<typeof TransferChannelOwnershipBodySchema>;
 export type OwnershipTransfer = z.output<typeof OwnershipTransferSchema>;
+declare const EVENTS_WINDOWS: readonly ["upcoming", "past"];
+export declare const EventsWindowParameter: QueryParameter<'window', z.ZodDefault<VocabularyIn<typeof EVENTS_WINDOWS>>>;
+export declare const EventStatesParameter: QueryParameter<'states', z.ZodString>;
+export declare const EventSearch: QueryParameter<'q', z.ZodString>;
+declare const STATS_PERIOD_PRESETS: readonly ["last_7_days", "last_30_days", "last_90_days", "season", "custom"];
+export declare const StatsPeriodPresetParameter: QueryParameter<'period', z.ZodDefault<VocabularyIn<typeof STATS_PERIOD_PRESETS>>>;
+export declare const DashboardPeriod: Period<false>;
+export declare const StatsPeriod: Period<false>;
+export declare const AgendaPeriod: Period;
+declare const STATS_TABS: readonly ["audience", "series"];
+export declare const StatsTabParameter: QueryParameter<'tab', z.ZodDefault<VocabularyIn<typeof STATS_TABS>>>;
+export declare const StatsShowParameter: QueryParameter<'showId', z.ZodString>;
+export declare const StatsAnswerSchema: z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
+    audience: z.ZodOptional<typeof StatsAudienceSchema>;
+    series: z.ZodOptional<typeof StatsSeriesSchema>;
+}, z.core.$loose>>;
+export declare const AgendaListSchema: z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
+    items: z.ZodArray<typeof ChannelMemberSchema>;
+}, z.core.$loose>>;
+export type StatsAnswer = z.output<typeof StatsAnswerSchema>;
+export type AgendaList = z.output<typeof AgendaListSchema>;
 export {};
 //# sourceMappingURL=schemas.d.ts.map

@@ -17,7 +17,8 @@ import type { PathParameter, Period, QueryParameter } from '../../http/index.js'
 import { ReauthProof, localVocabulary, period, restricted, searchText } from '../../http/index.js';
 import { OffsetPageInfoSchema } from '../../pagination/index.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
-import { MerchItemAdminSchema } from '../../studio-stage/index.js';
+import { StatsAudienceSchema, StatsSeriesSchema } from '../../studio-money/index.js';
+import { EventsRowSchema, MerchItemAdminSchema } from '../../studio-stage/index.js';
 
 const CHANNEL_REPLAY_STATES = ['online', 'expired', 'archived'] as const;
 const CHANNEL_REPLAY_STATE_REASON =
@@ -429,3 +430,114 @@ export type InviteMemberBody = z.output<typeof InviteMemberBodySchema>;
 export type ChangeMemberRolesBody = z.output<typeof ChangeMemberRolesBodySchema>;
 export type TransferChannelOwnershipBody = z.output<typeof TransferChannelOwnershipBodySchema>;
 export type OwnershipTransfer = z.output<typeof OwnershipTransferSchema>;
+
+const EVENTS_WINDOWS = ['upcoming', 'past'] as const;
+
+export const EventsWindowParameter: QueryParameter<
+  'window',
+  z.ZodDefault<VocabularyIn<typeof EVENTS_WINDOWS>>
+> = {
+  name: 'window',
+  in: 'query',
+  required: false,
+  schema: localVocabulary(
+    EVENTS_WINDOWS,
+    "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.",
+  ).default('upcoming'),
+};
+
+export const EventStatesParameter: QueryParameter<'states', z.ZodString> = {
+  name: 'states',
+  in: 'query',
+  required: false,
+  description: '**Multi-state** filter, comma-separated.',
+  schema: z.string().meta({ examples: ['scheduled,technical'] }),
+};
+
+export const EventSearch: QueryParameter<'q', z.ZodString> = searchText({
+  description: 'Free-text search over the title and the metadata, **server-side**.',
+});
+
+const STATS_PERIOD_PRESETS = [
+  'last_7_days',
+  'last_30_days',
+  'last_90_days',
+  'season',
+  'custom',
+] as const;
+
+export const StatsPeriodPresetParameter: QueryParameter<
+  'period',
+  z.ZodDefault<VocabularyIn<typeof STATS_PERIOD_PRESETS>>
+> = {
+  name: 'period',
+  in: 'query',
+  required: false,
+  schema: localVocabulary(
+    STATS_PERIOD_PRESETS,
+    'A period selector for this screen. The bounds it resolves to are served (`seasonBounds`, `periodStart`/`periodEnd`); this only names which preset the person chose.',
+  ).default('last_30_days'),
+};
+
+export const DashboardPeriod: Period<false> = period({
+  type: 'date',
+  required: false,
+  descriptions: { from: 'Required when `period` is `custom`.' },
+});
+
+export const StatsPeriod: Period<false> = period({ type: 'date', required: false });
+
+export const AgendaPeriod: Period = period({ type: 'date' });
+
+const STATS_TABS = ['audience', 'series'] as const;
+
+export const StatsTabParameter: QueryParameter<
+  'tab',
+  z.ZodDefault<VocabularyIn<typeof STATS_TABS>>
+> = {
+  name: 'tab',
+  in: 'query',
+  required: false,
+  schema: localVocabulary(
+    STATS_TABS,
+    "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.",
+  ).default('audience'),
+};
+
+export const StatsShowParameter: QueryParameter<'showId', z.ZodString> = {
+  name: 'showId',
+  in: 'query',
+  required: false,
+  description: 'Restricts the `series` tab to one series. Absent, every series is served.',
+  schema: uuidIn(),
+};
+
+export const StatsAnswerSchema: z.ZodIntersection<
+  typeof StudioEnvelopeMetaSchema,
+  z.ZodObject<
+    {
+      audience: z.ZodOptional<typeof StatsAudienceSchema>;
+      series: z.ZodOptional<typeof StatsSeriesSchema>;
+    },
+    z.core.$loose
+  >
+> = z.intersection(
+  StudioEnvelopeMetaSchema,
+  z.looseObject({
+    audience: StatsAudienceSchema.optional(),
+    series: StatsSeriesSchema.optional(),
+  }),
+);
+
+export const AgendaListSchema: z.ZodIntersection<
+  typeof StudioEnvelopeMetaSchema,
+  z.ZodObject<{ items: z.ZodArray<typeof ChannelMemberSchema> }, z.core.$loose>
+> = z.intersection(
+  StudioEnvelopeMetaSchema,
+  z.looseObject({
+    items: z.array(EventsRowSchema),
+  }),
+);
+
+export type StatsAnswer = z.output<typeof StatsAnswerSchema>;
+export type AgendaList = z.output<typeof AgendaListSchema>;

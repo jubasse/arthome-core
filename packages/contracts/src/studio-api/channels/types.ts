@@ -23,6 +23,7 @@ import type {
 } from '../../http/index.js';
 import type { ChannelMemberSchema } from '../../studio-access/index.js';
 import type { JournalEntrySchema } from '../../studio-desk/index.js';
+import type { DashboardScreenSchema } from '../../studio-money/index.js';
 import type {
   ChannelIdParameter,
   IdempotencyKeyParameter,
@@ -37,6 +38,7 @@ import type {
   studioConventions,
 } from '../components.js';
 import type {
+  AgendaListSchema,
   ChangeMemberRolesBodySchema,
   ChannelDefaultsSchema,
   ChannelIdentitySchema,
@@ -44,15 +46,20 @@ import type {
   ChannelReplaySchema,
   ChannelReplayStateParameter,
   ChannelSettingsSchema,
+  EventSearch,
+  EventStatesParameter,
+  EventsWindowParameter,
   InviteMemberBodySchema,
   JournalDateParameter,
   JournalNatureParameter,
   MemberRoleParameter,
-  MemberSearch,
   MerchItemIdParameter,
-  MerchItemListSchema,
   OwnershipTransferSchema,
   PersonIdParameter,
+  StatsAnswerSchema,
+  StatsPeriodPresetParameter,
+  StatsShowParameter,
+  StatsTabParameter,
   TransferChannelOwnershipBodySchema,
   UpsertMerchItemBodySchema,
 } from './schemas.js';
@@ -202,7 +209,7 @@ export type ListChannelMerchItemsRoute = Route<{
     200: {
       readonly description: 'The items.';
       readonly content: {
-        readonly 'application/json': { readonly schema: typeof MerchItemListSchema };
+        readonly 'application/json': { readonly schema: typeof AgendaListSchema };
       };
     };
   };
@@ -293,7 +300,7 @@ export type ListChannelMembersRoute = Route<{
     typeof ChannelIdParameter,
     typeof PageParameter,
     typeof PageSizeParameter,
-    typeof MemberSearch,
+    typeof EventSearch,
     typeof MemberRoleParameter,
     typeof SurfaceParameter,
     typeof TraceparentParameter,
@@ -417,5 +424,110 @@ export type TransferChannelOwnershipRoute = Route<{
       | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
       | typeof ChannelErrorCode.TRANSFER_TARGET_INELIGIBLE
     )[];
+  };
+}>;
+
+export type ListChannelEventsRoute = Route<{
+  method: 'get';
+  version: 1;
+  path: '/channels/{channelId}/events';
+  parameters: readonly [
+    typeof ChannelIdParameter,
+    typeof PageParameter,
+    typeof PageSizeParameter,
+    typeof SortByParameter,
+    typeof SortDirParameter,
+    typeof EventsWindowParameter,
+    typeof EventStatesParameter,
+    typeof EventSearch,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+  ];
+  access: IdentifiedAccess<typeof operator, false>;
+  responses: {
+    200: PageResponse<typeof studioConventions, typeof ChannelMemberSchema>;
+  };
+  errorCodes: {
+    400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
+    403: readonly (typeof ApiErrorCode.FORBIDDEN | typeof ApiErrorCode.SORT_KEY_FORBIDDEN)[];
+    404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+  };
+}>;
+
+export type GetChannelDashboardRoute = Route<{
+  method: 'get';
+  version: 1;
+  path: '/channels/{channelId}/dashboard';
+  parameters: readonly [
+    typeof ChannelIdParameter,
+    typeof StatsPeriodPresetParameter,
+    QueryParameter<'from', z.ZodString, false>,
+    QueryParameter<'to', z.ZodString, false>,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+  ];
+  access: IdentifiedAccess<typeof operator, false>;
+  responses: {
+    200: ItemResponse<typeof studioConventions, typeof DashboardScreenSchema, unknown>;
+  };
+  errorCodes: {
+    403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+    404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+  };
+}>;
+
+export type GetChannelStatsRoute = Route<{
+  method: 'get';
+  version: 1;
+  path: '/channels/{channelId}/stats';
+  parameters: readonly [
+    typeof ChannelIdParameter,
+    typeof StatsTabParameter,
+    typeof StatsPeriodPresetParameter,
+    QueryParameter<'from', z.ZodString, false>,
+    QueryParameter<'to', z.ZodString, false>,
+    typeof StatsShowParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+  ];
+  access: IdentifiedAccess<typeof operator, false>;
+  responses: {
+    200: {
+      readonly description: 'The tab requested. `audience` and `series` are mutually exclusive.';
+      readonly content: {
+        readonly 'application/json': { readonly schema: typeof StatsAnswerSchema };
+      };
+    };
+  };
+  errorCodes: {
+    403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+    404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+  };
+}>;
+
+export type GetChannelAgendaRoute = Route<{
+  method: 'get';
+  version: 1;
+  path: '/channels/{channelId}/agenda';
+  parameters: readonly [
+    typeof ChannelIdParameter,
+    QueryParameter<'from', z.ZodString, true>,
+    QueryParameter<'to', z.ZodString, true>,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+  ];
+  access: IdentifiedAccess<typeof operator, false>;
+  responses: {
+    200: {
+      readonly description: 'The dates between the two bounds.';
+      readonly content: {
+        readonly 'application/json': { readonly schema: typeof AgendaListSchema };
+      };
+    };
+  };
+  errorCodes: {
+    400: readonly (typeof ApiErrorCode.PERIOD_FILTER_REQUIRED)[];
+    403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+    404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
   };
 }>;

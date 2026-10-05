@@ -68,4 +68,28 @@ export const channelsDocs: ModuleDocs = {
       '**The recipient must already be a member and have two-factor authentication.** These are\ndomain rules, not interface guards, and the refusal is **served with its reason**. The bank\naccount (`payouts`) and the public page (`catalog`) **follow** the transfer, by event.\n',
     upstream: [Service.IDENTITY],
   },
+  listChannelEvents: {
+    description:
+      '**Page + total**: the design displays "1–8 OF N" and lists the page numbers. You pin a page\nand send it to a colleague — that is an interface affordance, and it is the reason for the\ndecision.\n\n**Sorting by state follows the state machine\'s canonical order**, not the alphabet:\n`orderRank` travels with the state for exactly that.\n\n**Sorting by revenue is refused** (`api.sort_key_forbidden`) to roles without `canRevenue`, and\nthe field is **absent** from their rows. A sort silently accepted would betray the ordering of\nthe very values one is not allowed to show.\n\nThe temporal split (upcoming / past) and the multi-state filter are **contract parameters**,\nnever a filter applied after fetching: "past" bears on the channel\'s whole history.\n',
+    upstream: [Service.CATALOG, Service.TICKETING],
+  },
+  getChannelDashboard: {
+    description:
+      "**It is the default tab of three personas out of six**, and it had no operation at all.\n\nIt carries **only what had no carrier**: the aggregated tiles and the routed list. Everything\nelse on that screen is a recomposition of collections already served — the next dates and the\ncountdown card come from `listChannelEvents`, revenue per date from `listPayouts`, dates held\nin reserve from `listChannelEvents?state=reserve`, and the countdown **is computed locally**\nagainst `startsAt` and the channel's `serverTime`, as the contract prescribes everywhere else.\nAsking for them again here would have been the value composed in two places.\n",
+    upstream: [Service.CATALOG, Service.TICKETING, Service.STREAMING, Service.CHAT],
+    maturity: 'provisional',
+    maturityReason: 'the studio statistics (studio-money) are not built',
+  },
+  getChannelStats: {
+    description:
+      'Two tabs, one path. The `stats_csv` export already existed: **one could export a statistic\none could not read.**\n\nThe screen\'s title varies with the role — "Audience and revenue" under `canRevenue`,\n"Audience" otherwise — and it is the **projection** that decides it: without `canRevenue`, the\nrevenue fields are **absent**, not masked.\n\n**Where viewers came from is not served**: see `StatsAudience`. It is the only point on these\ntwo screens that required a datum the system produces nowhere.\n',
+    upstream: [Service.CATALOG, Service.TICKETING, Service.STREAMING],
+    maturity: 'provisional',
+    maturityReason: 'the studio statistics (studio-money) are not built',
+  },
+  getChannelAgenda: {
+    description:
+      'Composed by `catalog` and fed by `ticketing` for the capacity and the revenue. The revenue is\n**absent** without `canRevenue` — and that is why the schedule served to a control room has no\n`grossRevenue` field, while the one served to the treasury has no stream key.\n',
+    upstream: [Service.CATALOG, Service.TICKETING],
+  },
 };
