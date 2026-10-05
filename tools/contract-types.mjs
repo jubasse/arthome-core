@@ -198,7 +198,8 @@ function exportsOf(pattern) {
   );
 }
 
-const IDENT = /(?<![\w$.'"])([A-Za-z_$][\w$]*)(?![\w$'"])/g;
+// A name followed by a colon is a property key, never a reference: `seatsAvailable` is a key and an export of core.
+const IDENT = /(?<![\w$.'"])([A-Za-z_$][\w$]*)(?![\w$'"]|\??:)/g;
 
 /** `import type` lines for the names a text uses, from the modules that give them. */
 function importsFor(text, { from, contextFiles, dictionary, extra }) {

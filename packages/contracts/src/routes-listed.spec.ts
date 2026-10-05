@@ -3,16 +3,20 @@ import { describe, expect, it } from 'vitest';
 import type { Api, Route } from './http/index.js';
 import * as storefrontAccountDeepLink from './storefront-api/account-deep-link/routes.js';
 import * as storefrontAuth from './storefront-api/auth/routes.js';
+import * as storefrontCart from './storefront-api/cart/routes.js';
 import * as storefrontChanges from './storefront-api/changes/routes.js';
 import * as storefrontChat from './storefront-api/chat.js';
-import * as storefrontCommerce from './storefront-api/commerce.js';
-import * as storefrontDate from './storefront-api/date.js';
+import * as storefrontDates from './storefront-api/dates/routes.js';
 import * as storefrontDevices from './storefront-api/devices/routes.js';
 import * as storefrontDiscovery from './storefront-api/discovery.js';
 import { storefrontApi } from './storefront-api/index.js';
 import * as storefrontMe from './storefront-api/me/routes.js';
+import * as storefrontOrders from './storefront-api/orders/routes.js';
 import * as storefrontPairing from './storefront-api/pairing.js';
+import * as storefrontPlans from './storefront-api/plans/routes.js';
 import * as storefrontPlayback from './storefront-api/playback.js';
+import * as storefrontSeats from './storefront-api/seats/routes.js';
+import * as storefrontSubscription from './storefront-api/subscription/routes.js';
 import * as storefrontSupport from './storefront-api/support/routes.js';
 import * as storefrontViewerContext from './storefront-api/viewer-context/routes.js';
 import * as studioAgenda from './studio-api/agenda.js';
@@ -54,19 +58,23 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
     'storefront-api',
     storefrontApi,
     [
-      storefrontAuth,
-      storefrontViewerContext,
-      storefrontSupport,
-      storefrontChanges,
-      storefrontDevices,
       storefrontAccountDeepLink,
+      storefrontAuth,
+      storefrontCart,
+      storefrontChanges,
       storefrontChat,
-      storefrontCommerce,
-      storefrontDate,
+      storefrontDates,
+      storefrontDevices,
       storefrontDiscovery,
       storefrontMe,
+      storefrontOrders,
       storefrontPairing,
+      storefrontPlans,
       storefrontPlayback,
+      storefrontSeats,
+      storefrontSubscription,
+      storefrontSupport,
+      storefrontViewerContext,
     ],
   ],
   [

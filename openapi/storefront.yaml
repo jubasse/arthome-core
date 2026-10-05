@@ -5638,25 +5638,19 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
-      x-arthome-freshness: 300
       tags:
       - commerce
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: The plans.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5686,8 +5680,23 @@ paths:
                   - one_live_month
                   seatDiscountBps: 1000
                   concurrentStreamsAllowed: 1
-        '503':
-          $ref: '#/components/responses/Unavailable'
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/availability:
     get:
       operationId: refreshDateAvailability
@@ -5706,14 +5715,13 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
-      x-arthome-freshness: 15
       tags:
       - commerce
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/DateId'
       - $ref: '#/components/parameters/Surface'
@@ -5721,11 +5729,6 @@ paths:
       responses:
         '200':
           description: Capacity and prices at the instant of serving.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5756,8 +5759,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:40:00.000Z'
-                validUntil: '2026-09-21T18:41:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   seatsAvailable: 42
                   waitlistCount: 0
@@ -5772,8 +5774,27 @@ paths:
                   serviceFeePerSeat:
                     amountMinor: 150
                     currencyCode: EUR
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/seat-quote:
     post:
       operationId: quoteSeat
@@ -5789,6 +5810,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       x-arthome-idempotency-exemption: |
         **A read disguised as a `POST`: it is a `POST` because its criteria do not fit in a URL, not
         because it writes.** A quote computes, it creates nothing — so there is no effect to
@@ -5802,8 +5825,6 @@ paths:
         replayed quote would be a quote **already part-spent, or expired** — or a price that the
         pro-rata promotion has since made wrong. Same reason as a token renewal: what is being asked
         for is a fresh value.
-      tags:
-      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -5865,8 +5886,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:41:10.000Z'
-                validUntil: '2026-09-21T18:42:10.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   lines:
                   - kind: tier
@@ -5886,12 +5906,48 @@ paths:
                     amountMinor: 4620
                     currencyCode: EUR
                   validUntil: '2026-09-21T18:42:10.000Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/OrderSalesClosedError'
+                - $ref: '#/components/schemas/OrderContributionOutOfRangeError'
+                - $ref: '#/components/schemas/OrderTierUnavailableError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                order.sales_closed:
+                  $ref: '#/components/examples/OrderSalesClosedError'
+                order.contribution_out_of_range:
+                  $ref: '#/components/examples/OrderContributionOutOfRangeError'
+                order.tier_unavailable:
+                  $ref: '#/components/examples/OrderTierUnavailableError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/sales-queue/enter:
     post:
       operationId: enterSalesQueue
@@ -5914,13 +5970,13 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       x-arthome-idempotency-exemption: |
         **Idempotent by construction**: one entry per account and date, so a second call finds the
         first entry and answers its current state. A key would put a durable write per entrant in
         front of the queue built to shed that load, and would replay a position that is stale seconds
         after it was served.
-      tags:
-      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -5932,11 +5988,6 @@ paths:
       responses:
         '200':
           description: The caller's entry, as `getSalesQueuePosition` serves it.
-          headers:
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:
@@ -5950,8 +6001,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:00:02.000Z'
-                validUntil: '2026-09-21T18:00:04.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   armed: true
@@ -5959,12 +6009,20 @@ paths:
                   position: 2841
                   estimatedWaitSec: 95
                   pollIntervalSec: 2
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/sales-queue:
     get:
       operationId: getSalesQueuePosition
@@ -5982,6 +6040,12 @@ paths:
       - ticketing
       tags:
       - commerce
+      x-arthome-requires:
+      - name: throttle
+        bucket: sales-queue
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
       - $ref: '#/components/parameters/Surface'
@@ -5989,11 +6053,6 @@ paths:
       responses:
         '200':
           description: The caller's entry.
-          headers:
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:
@@ -6007,22 +6066,33 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:01:40.000Z'
-                validUntil: '2026-09-21T18:02:40.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   armed: true
-                  state: admitted
-                  pollIntervalSec: 5
-                  admission:
-                    token: adm_v1.eyJkIjoiMDE5OTI4YTAiLCJhIjoiMDE5OTI4ZjQifQ.3kQx
-                    expiresAt: '2026-09-21T18:02:40.000Z'
+                  state: waiting
+                  position: 2841
+                  estimatedWaitSec: 95
+                  pollIntervalSec: 2
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/orders/seats:
     post:
       operationId: purchaseSeat
@@ -6155,10 +6225,10 @@ paths:
         '201':
           description: Seats created, and the updated date.
           headers:
-            X-Arthome-Served-At:
-              $ref: '#/components/headers/ServedAt'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
           content:
             application/json:
               schema:
@@ -6268,44 +6338,91 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:41:30.000Z'
+                servedAt: '2026-09-21T18:47:00.000Z'
                 data:
-                  orderId: 019928f5-0000-7000-8000-0000000000aa
+                  orderId: 019928f7-3333-7000-8000-000000000001
                   state: awaiting_action
-                  paymentIntentRef: pi_3Ab2Cd
-                  clientSecret: pi_3Ab2Cd_secret_9f2
+                  paymentIntentRef: pi_3Ij5Kl
+                  clientSecret: pi_3Ij5Kl_secret_3c4
                   nextAction:
                     kind: redirect_to_url
                     redirectUrl: https://hooks.stripe.com/3ds/authenticate
-                  returnUrl: https://arthome.fr/paiement/retour?order=019928f5-0000-7000-8000-0000000000aa
-                  expiresAt: '2026-09-21T18:56:30Z'
+                  returnUrl: https://arthome.fr/paiement/retour?order=019928f7-3333-7000-8000-000000000001
+                  expiresAt: '2026-09-21T19:02:00Z'
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '403':
-          description: |
-            `order.sales_queue_admission_required`: the date's sales queue is armed and the admission is
-            absent, lapsed, or issued to another account or date. The surface enters the queue
-            (`enterSalesQueue`) and comes back with the admission it is served.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
+        '402':
+          description: Refused with status 402.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: order.sales_queue_admission_required
-                  nature: refused
-                  params:
-                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:00:01.000Z'
+                $ref: '#/components/schemas/OrderPaymentDeclinedError'
+              examples:
+                order.payment_declined:
+                  $ref: '#/components/examples/OrderPaymentDeclinedError'
+        '403':
+          description: |
+            A write with the session cookie came without its `X-Arthome-Csrf` token, or with another
+            session's (`api.forbidden`). A write with a bearer token never meets it.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/OrderSalesQueueAdmissionRequiredError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                order.sales_queue_admission_required:
+                  $ref: '#/components/examples/OrderSalesQueueAdmissionRequiredError'
         '409':
-          $ref: '#/components/responses/Conflict'
-        '503':
-          $ref: '#/components/responses/Unavailable'
+          description: |
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/OrderPriceStaleError'
+                - $ref: '#/components/schemas/OrderSoldOutError'
+                - $ref: '#/components/schemas/OrderSalesClosedError'
+                - $ref: '#/components/schemas/OrderLateEntryUnacknowledgedError'
+                - $ref: '#/components/schemas/OrderContributionOutOfRangeError'
+                - $ref: '#/components/schemas/OrderTierUnavailableError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                order.price_stale:
+                  $ref: '#/components/examples/OrderPriceStaleError'
+                order.sold_out:
+                  $ref: '#/components/examples/OrderSoldOutError'
+                order.sales_closed:
+                  $ref: '#/components/examples/OrderSalesClosedError'
+                order.late_entry_unacknowledged:
+                  $ref: '#/components/examples/OrderLateEntryUnacknowledgedError'
+                order.contribution_out_of_range:
+                  $ref: '#/components/examples/OrderContributionOutOfRangeError'
+                order.tier_unavailable:
+                  $ref: '#/components/examples/OrderTierUnavailableError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/orders/{orderId}:
     get:
       operationId: getOrder
@@ -6322,6 +6439,9 @@ paths:
       - ticketing
       tags:
       - commerce
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - name: orderId
         in: path
@@ -6334,11 +6454,6 @@ paths:
       responses:
         '200':
           description: The order, and what it produced once it is `paid`.
-          headers:
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:
@@ -6365,7 +6480,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:43:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   order:
                     id: 019928f5-0000-7000-8000-0000000000aa
@@ -6375,8 +6490,23 @@ paths:
                     placedAt: '2026-09-21T18:41:30Z'
                     invoiceAvailable: true
                   tickets: []
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/seats/{seatId}/cancel:
     post:
       operationId: cancelSeat
@@ -6455,7 +6585,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T17:10:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   ticket:
                     seatId: 019928f5-0000-7000-8000-000000000001
@@ -6518,12 +6648,45 @@ paths:
                     media:
                       wide: []
                       poster: []
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/SeatCancelDeadlinePassedError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                seat.cancel_deadline_passed:
+                  $ref: '#/components/examples/SeatCancelDeadlinePassedError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/waitlist:
     put:
       operationId: joinWaitlist
@@ -6579,18 +6742,31 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:42:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   joined: true
                   rankDisclosed: false
                   rank: null
                   priorityWindowHours: 2
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     delete:
       operationId: leaveWaitlist
       summary: Leaves the waiting list.
@@ -6629,13 +6805,28 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:43:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   joined: false
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/cart:
     get:
       operationId: getCart
@@ -6649,6 +6840,9 @@ paths:
       - ticketing
       tags:
       - commerce
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
@@ -6668,12 +6862,30 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:44:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
-                  lines: []
-                  vendorGroups: []
+                  lines:
+                  - id: 019928f6-0000-7000-8000-000000000001
+                    itemId: 019928a0-7d31-7a10-b8c4-2f9e11a4d001
+                    variantId: M
+                    channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    quantity: 1
+                    unitPrice:
+                      amountMinor: 2500
+                      currencyCode: EUR
+                    version: 1
+                  vendorGroups:
+                  - channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    lineIds:
+                    - 019928f6-0000-7000-8000-000000000001
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/cart/lines:
     post:
       operationId: addCartLine
@@ -6736,7 +6948,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:44:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   lines:
                   - id: 019928f6-0000-7000-8000-000000000001
@@ -6752,10 +6964,27 @@ paths:
                   - channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
                     lineIds:
                     - 019928f6-0000-7000-8000-000000000001
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '409':
           $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/cart/lines/{lineId}:
     patch:
       operationId: updateCartLine
@@ -6795,12 +7024,13 @@ paths:
                   maximum: 20
                 expectedVersion:
                   type: integer
+                  format: int64
               required:
               - quantity
               - expectedVersion
             example:
               quantity: 2
-              expectedVersion: 1
+              expectedVersion: 7
       responses:
         '200':
           description: The updated cart.
@@ -6819,14 +7049,59 @@ paths:
               example:
                 servedAt: '2026-09-21T18:44:40.000Z'
                 data:
-                  lines: []
-                  vendorGroups: []
+                  lines:
+                  - id: 019928f6-0000-7000-8000-000000000001
+                    itemId: 019928a0-7d31-7a10-b8c4-2f9e11a4d001
+                    variantId: M
+                    channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    quantity: 1
+                    unitPrice:
+                      amountMinor: 2500
+                      currencyCode: EUR
+                    version: 1
+                  vendorGroups:
+                  - channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    lineIds:
+                    - 019928f6-0000-7000-8000-000000000001
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/StateConflictError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     delete:
       operationId: removeCartLine
       summary: Removes a line from the cart.
@@ -6868,14 +7143,41 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:45:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
-                  lines: []
-                  vendorGroups: []
+                  lines:
+                  - id: 019928f6-0000-7000-8000-000000000001
+                    itemId: 019928a0-7d31-7a10-b8c4-2f9e11a4d001
+                    variantId: M
+                    channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    quantity: 1
+                    unitPrice:
+                      amountMinor: 2500
+                      currencyCode: EUR
+                    version: 1
+                  vendorGroups:
+                  - channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    lineIds:
+                    - 019928f6-0000-7000-8000-000000000001
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/cart/quote:
     post:
       operationId: quoteCart
@@ -6887,6 +7189,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       x-arthome-idempotency-exemption: |
         **A read disguised as a `POST`**, for the same reason as `quoteSeat`: the cart and the
         shipping address do not fit in a URL. A quote computes shipping and discounts; it creates
@@ -6897,8 +7201,6 @@ paths:
         and that promise holds for **fifteen minutes**. Serving a memorised quote would return a
         total whose window is part-spent or closed, that is, **a binding quote that no longer
         binds**. A replay therefore produces a fresh quote, with its own window.
-      tags:
-      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -6941,8 +7243,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:45:20.000Z'
-                validUntil: '2026-09-21T19:00:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   validUntil: '2026-09-21T19:00:20.000Z'
                   groups:
@@ -6961,10 +7262,22 @@ paths:
                     total:
                       amountMinor: 4840
                       currencyCode: EUR
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
-        '409':
-          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/orders/merch:
     post:
       operationId: checkoutCart
@@ -7036,9 +7349,6 @@ paths:
       responses:
         '201':
           description: One order per vendor.
-          headers:
-            Idempotency-Replayed:
-              $ref: '#/components/headers/IdempotencyReplayed'
           content:
             application/json:
               schema:
@@ -7074,6 +7384,9 @@ paths:
                   cart:
                     lines: []
                     vendorGroups: []
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '202':
           description: '**Strong authentication required.** See `PaymentHandoff` — the return URL concludes nothing, `getOrder` is authoritative.'
           content:
@@ -7089,43 +7402,69 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:46:00.000Z'
+                servedAt: '2026-09-21T18:47:00.000Z'
                 data:
-                  orderId: 019928f6-2222-7000-8000-000000000001
+                  orderId: 019928f7-3333-7000-8000-000000000001
                   state: awaiting_action
-                  paymentIntentRef: pi_3Ef4Gh
-                  clientSecret: pi_3Ef4Gh_secret_1a2
+                  paymentIntentRef: pi_3Ij5Kl
+                  clientSecret: pi_3Ij5Kl_secret_3c4
                   nextAction:
                     kind: redirect_to_url
                     redirectUrl: https://hooks.stripe.com/3ds/authenticate
-                  returnUrl: https://arthome.fr/paiement/retour?order=019928f6-2222-7000-8000-000000000001
-                  expiresAt: '2026-09-21T19:01:00Z'
+                  returnUrl: https://arthome.fr/paiement/retour?order=019928f7-3333-7000-8000-000000000001
+                  expiresAt: '2026-09-21T19:02:00Z'
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '402':
+          description: Refused with status 402.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPaymentDeclinedError'
+              examples:
+                order.payment_declined:
+                  $ref: '#/components/examples/OrderPaymentDeclinedError'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '409':
           description: |
-            `order.checkout_line_unavailable` (with `unavailableLineIds`), `order.quote_address_mismatch`, or
-            `order.price_stale`.
-
-            **`order.quote_address_mismatch` closes a gap**: the quote computes shipping from a country and a
-            postcode, the payment receives a full address, and nothing required them to match. **A
-            binding quote whose address changes in between no longer binds** — it needs a new quote, not
-            a silently different charge.
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: order.quote_address_mismatch
-                  nature: refused
-                  params:
-                    quotedCountryCode: FR
-                    quotedPostalCode: '75011'
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:46:00.000Z'
-        '410':
-          $ref: '#/components/responses/Gone'
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/OrderCheckoutLineUnavailableError'
+                - $ref: '#/components/schemas/OrderQuoteAddressMismatchError'
+                - $ref: '#/components/schemas/OrderPriceStaleError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                order.checkout_line_unavailable:
+                  $ref: '#/components/examples/OrderCheckoutLineUnavailableError'
+                order.quote_address_mismatch:
+                  $ref: '#/components/examples/OrderQuoteAddressMismatchError'
+                order.price_stale:
+                  $ref: '#/components/examples/OrderPriceStaleError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/subscription/change-plan:
     post:
       operationId: setSubscriptionPlan
@@ -7198,6 +7537,9 @@ paths:
                   startedAt: '2026-09-21T18:47:00Z'
                   currentPeriodEnd: '2026-10-21T18:47:00Z'
                   cancelAtPeriodEnd: false
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '202':
           description: '**Strong authentication required.** See `PaymentHandoff` — the return URL concludes nothing, `getOrder` is authoritative.'
           content:
@@ -7224,24 +7566,52 @@ paths:
                     redirectUrl: https://hooks.stripe.com/3ds/authenticate
                   returnUrl: https://arthome.fr/paiement/retour?order=019928f7-3333-7000-8000-000000000001
                   expiresAt: '2026-09-21T19:02:00Z'
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '402':
-          description: Payment declined by the provider. **Distinct** from a business refusal.
+          description: Refused with status 402.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: order.payment_declined
-                  nature: refused
-                  params:
-                    declineCode: insufficient_funds
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:47:00.000Z'
+                $ref: '#/components/schemas/OrderPaymentDeclinedError'
+              examples:
+                order.payment_declined:
+                  $ref: '#/components/examples/OrderPaymentDeclinedError'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/OrderPlanUnavailableError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                order.plan_unavailable:
+                  $ref: '#/components/examples/OrderPlanUnavailableError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/subscription/cancel:
     post:
       operationId: cancelSubscription
@@ -7281,16 +7651,27 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:48:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   planTier: premium
                   state: active
                   currentPeriodEnd: '2026-10-21T18:47:00Z'
                   cancelAtPeriodEnd: true
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '409':
           $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}:
     get:
       operationId: getDateDetail
@@ -7311,37 +7692,27 @@ paths:
       - ticketing
       - identity
       - streaming
-      x-arthome-freshness: 60
       tags:
       - date
       x-arthome-degradable:
       - viewerProgress
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/DateId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - name: If-None-Match
         in: header
         required: false
         schema:
           type: string
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: The page.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
-            ETag:
-              schema:
-                type: string
-              description: Cache validator, so the TV prefetch is not paid for twice.
           content:
             application/json:
               schema:
@@ -7355,8 +7726,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:21.000Z'
-                validUntil: '2026-09-21T18:03:21.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
@@ -7389,10 +7759,33 @@ paths:
                     denialReasonCode: watch.no_seat
                     fallbackAction: buy_seat
                     validUntil: '2026-09-21T18:03:21.000Z'
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            ETag:
+              description: 'The record''s validator: send it back in `If-None-Match` to learn that nothing changed.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
         '304':
-          description: Unchanged since the `ETag` supplied.
+          description: Unchanged since the validator sent in `If-None-Match`.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/playback/{dateId}/open:
     post:
       operationId: openPlayback
@@ -7834,6 +8227,9 @@ paths:
       - chat
       tags:
       - chat
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
       - $ref: '#/components/parameters/Cursor'
@@ -7867,8 +8263,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:36:00.000Z'
-                lastEventSeq: 41287
+                servedAt: '2026-09-21T19:00:00.000Z'
                 items:
                 - id: 019928f8-0000-7000-8000-000000000001
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
@@ -7881,13 +8276,21 @@ paths:
                     contentLanguage: fr
                     text: Quelle lumière.
                 page:
-                  hasMore: true
-                  nextCursor: null
-                  prevCursor: null
+                  hasMore: false
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
         '410':
           $ref: '#/components/responses/Gone'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     post:
       operationId: sendChatMessage
       summary: Posts a chat message.
@@ -7952,36 +8355,65 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:36:02.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
-                  id: 019928f8-0000-7000-8000-000000000002
+                  id: 019928f8-0000-7000-8000-000000000001
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
-                  seq: 41288
+                  seq: 41287
                   authorHandle: '@marie.j'
                   atMediaSec: 2160
-                  sentAt: '2026-09-21T19:36:02Z'
+                  sentAt: '2026-09-21T19:35:58Z'
                   badge: published
                   body:
                     contentLanguage: fr
                     text: Quelle lumière.
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Chat mode closed, holders only, or the person is sanctioned in this channel.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
+            A write with the session cookie came without its `X-Arthome-Csrf` token, or with another
+            session's (`api.forbidden`). A write with a bearer token never meets it.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: chat.holders_only
-                  nature: refused
-                  params: {}
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T19:36:02.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ChatHoldersOnlyError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                chat.holders_only:
+                  $ref: '#/components/examples/ChatHoldersOnlyError'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
-          $ref: '#/components/responses/TooManyRequests'
+          description: Rate limit reached. `params.retryAfterMs` allows the control to be disabled instead of stacking up refusals.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiRateLimitedError'
+                - $ref: '#/components/schemas/ChatRateLimitedError'
+              examples:
+                api.rate_limited:
+                  $ref: '#/components/examples/ApiRateLimitedError'
+                chat.rate_limited:
+                  $ref: '#/components/examples/ChatRateLimitedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/chat/reactions:
     post:
       operationId: sendReaction
@@ -7993,12 +8425,12 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - chat
+      tags:
+      - chat
       x-arthome-idempotency-exemption: |
         **The quota already bounds the effect**, and it is served with the response. A replayed key
         would return a **stale** quota — "17 left" when 12 are left — which is worse than no response
         at all: the surface disables its control on that number.
-      tags:
-      - chat
       security:
       - sessionCookie: []
         csrfToken: []
@@ -8050,14 +8482,39 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:36:05.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   remaining: 17
                   rechargesAt: '2026-09-21T19:41:05Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
-          $ref: '#/components/responses/TooManyRequests'
+          description: Rate limit reached. `params.retryAfterMs` allows the control to be disabled instead of stacking up refusals.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiRateLimitedError'
+                - $ref: '#/components/schemas/ChatRateLimitedError'
+              examples:
+                api.rate_limited:
+                  $ref: '#/components/examples/ApiRateLimitedError'
+                chat.rate_limited:
+                  $ref: '#/components/examples/ChatRateLimitedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/chat/messages/{messageId}/report:
     post:
       operationId: reportChatMessage
@@ -13732,6 +14189,921 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    OrderSalesClosedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: order.sales_closed
+            params:
+              type: object
+              properties:
+                salesEndAt:
+                  type: string
+              required:
+              - salesEndAt
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    OrderContributionOutOfRangeError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: order.contribution_out_of_range
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    OrderTierUnavailableError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: order.tier_unavailable
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    OrderPaymentDeclinedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: order.payment_declined
+            params:
+              type: object
+              properties:
+                declineCode:
+                  type: string
+                  description: Absent when the payment provider gives none.
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ApiForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.forbidden
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    OrderSalesQueueAdmissionRequiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: order.sales_queue_admission_required
+            params:
+              type: object
+              properties:
+                dateId:
+                  type: string
+              required:
+              - dateId
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    OrderPriceStaleError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: order.price_stale
+            params:
+              type: object
+              properties:
+                expectedAmountMinor:
+                  type: integer
+                  format: int64
+                currentAmountMinor:
+                  type: integer
+                  format: int64
+                currencyCode:
+                  type: string
+              required:
+              - expectedAmountMinor
+              - currentAmountMinor
+              - currencyCode
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    OrderSoldOutError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: order.sold_out
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    OrderLateEntryUnacknowledgedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: order.late_entry_unacknowledged
+            params:
+              type: object
+              properties:
+                startedAt:
+                  type: string
+                minutesElapsed:
+                  type: integer
+                  format: int64
+                salesEndAt:
+                  type: string
+              required:
+              - startedAt
+              - minutesElapsed
+              - salesEndAt
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    SeatCancelDeadlinePassedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: seat.cancel_deadline_passed
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    OrderCheckoutLineUnavailableError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: order.checkout_line_unavailable
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    OrderQuoteAddressMismatchError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: order.quote_address_mismatch
+            params:
+              type: object
+              properties:
+                quotedCountryCode:
+                  type: string
+                quotedPostalCode:
+                  type: string
+              required:
+              - quotedCountryCode
+              - quotedPostalCode
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    OrderPlanUnavailableError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: order.plan_unavailable
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ChatHoldersOnlyError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: chat.holders_only
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ApiRateLimitedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.rate_limited
+            params:
+              type: object
+              properties:
+                retryAfterMs:
+                  type: integer
+                  format: int64
+              required:
+              - retryAfterMs
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ChatRateLimitedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: chat.rate_limited
+            params:
+              type: object
+              properties:
+                retryAfterMs:
+                  type: integer
+                  format: int64
+              required:
+              - retryAfterMs
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
   examples:
     ApiCursorTooOldError:
       value:
@@ -13740,6 +15112,14 @@ components:
           nature: refused
           params:
             maxAgeHours: 24
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ApiForbiddenError:
+      value:
+        error:
+          code: api.forbidden
+          nature: refused
+          params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     ApiIdempotencyInFlightError:
@@ -13759,12 +15139,38 @@ components:
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
+    ApiRateLimitedError:
+      value:
+        error:
+          code: api.rate_limited
+          nature: unavailable
+          params:
+            retryAfterMs: 2000
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     ApiUnauthenticatedError:
       value:
         error:
           code: api.unauthenticated
           nature: refused
           params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ChatHoldersOnlyError:
+      value:
+        error:
+          code: chat.holders_only
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ChatRateLimitedError:
+      value:
+        error:
+          code: chat.rate_limited
+          nature: unavailable
+          params:
+            retryAfterMs: 3000
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     IdentityEmailTakenError:
@@ -13820,6 +15226,113 @@ components:
       value:
         error:
           code: identity.verification_link_invalid
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    OrderCheckoutLineUnavailableError:
+      value:
+        error:
+          code: order.checkout_line_unavailable
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    OrderContributionOutOfRangeError:
+      value:
+        error:
+          code: order.contribution_out_of_range
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    OrderLateEntryUnacknowledgedError:
+      value:
+        error:
+          code: order.late_entry_unacknowledged
+          nature: refused
+          params:
+            startedAt: '2026-11-04T19:30:00Z'
+            minutesElapsed: 12
+            salesEndAt: '2026-11-04T20:00:00Z'
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    OrderPaymentDeclinedError:
+      value:
+        error:
+          code: order.payment_declined
+          nature: refused
+          params:
+            declineCode: insufficient_funds
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    OrderPlanUnavailableError:
+      value:
+        error:
+          code: order.plan_unavailable
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    OrderPriceStaleError:
+      value:
+        error:
+          code: order.price_stale
+          nature: refused
+          params:
+            expectedAmountMinor: 2400
+            currentAmountMinor: 2900
+            currencyCode: EUR
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    OrderQuoteAddressMismatchError:
+      value:
+        error:
+          code: order.quote_address_mismatch
+          nature: refused
+          params:
+            quotedCountryCode: FR
+            quotedPostalCode: '75011'
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    OrderSalesClosedError:
+      value:
+        error:
+          code: order.sales_closed
+          nature: refused
+          params:
+            salesEndAt: '2026-11-04T20:00:00Z'
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    OrderSalesQueueAdmissionRequiredError:
+      value:
+        error:
+          code: order.sales_queue_admission_required
+          nature: refused
+          params:
+            dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    OrderSoldOutError:
+      value:
+        error:
+          code: order.sold_out
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    OrderTierUnavailableError:
+      value:
+        error:
+          code: order.tier_unavailable
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    SeatCancelDeadlinePassedError:
+      value:
+        error:
+          code: seat.cancel_deadline_passed
           nature: refused
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736

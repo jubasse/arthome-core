@@ -1,76 +1,9 @@
 import { z } from 'zod';
 import { MODERATION_REASONS } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { CsrfRefusedResponse, CursorParameter, DateIdParameter, GoneResponse, IdempotencyKeyParameter, LimitParameter, NotFoundResponse, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter } from './components.js';
-import { ChatMessageSchema, ReactionQuotaSchema } from '../engagement/index.js';
-import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
-import { StorefrontCursorPageInfoSchema } from '../pagination/index.js';
-declare const SEND_REACTION_REACTION_ID: readonly ["applause", "heart", "bravo", "laugh", "wow", "sad"];
-export declare const listChatMessages: Route<{
-    method: 'get';
-    version: 1;
-    path: '/dates/{dateId}/chat/messages';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof CursorParameter,
-        typeof LimitParameter,
-        QueryParameter<'sinceSeq', z.ZodNumber>,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            items: z.ZodArray<typeof ChatMessageSchema>;
-            page: typeof StorefrontCursorPageInfoSchema;
-        }, z.core.$loose>>>;
-        404: typeof NotFoundResponse;
-        410: typeof GoneResponse;
-    };
-}>;
-export declare const sendChatMessage: Route<{
-    method: 'post';
-    version: 1;
-    path: '/dates/{dateId}/chat/messages';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        text: z.ZodString;
-        atMediaSec: z.ZodInt;
-    }, z.core.$strip>>;
-    responses: {
-        201: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof ChatMessageSchema;
-        }, z.core.$loose>>>;
-        403: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-        429: typeof TooManyRequestsResponse;
-    };
-}>;
-export declare const sendReaction: Route<{
-    method: 'post';
-    version: 1;
-    path: '/dates/{dateId}/chat/reactions';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        reactionId: VocabularyIn<typeof SEND_REACTION_REACTION_ID>;
-        atMediaSec: z.ZodInt;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof ReactionQuotaSchema;
-        }, z.core.$loose>>>;
-        429: typeof TooManyRequestsResponse;
-        403: typeof CsrfRefusedResponse;
-    };
-}>;
+import { CsrfRefusedResponse, IdempotencyKeyParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter } from './components.js';
+import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
+import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
 export declare const reportChatMessage: Route<{
     method: 'post';
     version: 1;
@@ -94,5 +27,4 @@ export declare const reportChatMessage: Route<{
         403: typeof CsrfRefusedResponse;
     };
 }>;
-export {};
 //# sourceMappingURL=chat.d.ts.map

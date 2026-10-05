@@ -50,9 +50,11 @@ import { z } from 'zod';
 
 import {
   ApiErrorCode,
+  ChatErrorCode,
   DomainErrorCode,
   FailureNature,
   IdentityErrorCode,
+  OrderErrorCode,
   PublicationChecklistItem,
   PublicationPromise,
   PublicationState,
@@ -233,6 +235,20 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   typeof IdentityErrorCode.RESET_TOKEN_EXPIRED,
   typeof IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED,
   typeof IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED,
+  typeof OrderErrorCode.QUOTE_ADDRESS_MISMATCH,
+  typeof OrderErrorCode.SOLD_OUT,
+  typeof OrderErrorCode.TIER_UNAVAILABLE,
+  typeof OrderErrorCode.PAYMENT_DECLINED,
+  typeof OrderErrorCode.PRICE_STALE,
+  typeof OrderErrorCode.PLAN_UNAVAILABLE,
+  typeof OrderErrorCode.CONTRIBUTION_OUT_OF_RANGE,
+  typeof OrderErrorCode.CHECKOUT_LINE_UNAVAILABLE,
+  typeof OrderErrorCode.SALES_QUEUE_ADMISSION_REQUIRED,
+  typeof OrderErrorCode.LATE_ENTRY_UNACKNOWLEDGED,
+  typeof OrderErrorCode.SALES_CLOSED,
+  typeof OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED,
+  typeof ChatErrorCode.HOLDERS_ONLY,
+  typeof ChatErrorCode.RATE_LIMITED,
 ] = [
   ApiErrorCode.SCHEMA_INVALID,
   ApiErrorCode.CURSOR_TOO_OLD,
@@ -249,6 +265,22 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   IdentityErrorCode.RESET_TOKEN_EXPIRED,
   IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED,
   IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED,
+  // The refusals of a purchase, a cart checkout, a plan change and a seat cancellation: the viewer
+  // acts on each (pick another tier, accept the new price, join the waiting list, change the card).
+  OrderErrorCode.QUOTE_ADDRESS_MISMATCH,
+  OrderErrorCode.SOLD_OUT,
+  OrderErrorCode.TIER_UNAVAILABLE,
+  OrderErrorCode.PAYMENT_DECLINED,
+  OrderErrorCode.PRICE_STALE,
+  OrderErrorCode.PLAN_UNAVAILABLE,
+  OrderErrorCode.CONTRIBUTION_OUT_OF_RANGE,
+  OrderErrorCode.CHECKOUT_LINE_UNAVAILABLE,
+  OrderErrorCode.SALES_QUEUE_ADMISSION_REQUIRED,
+  OrderErrorCode.LATE_ENTRY_UNACKNOWLEDGED,
+  OrderErrorCode.SALES_CLOSED,
+  OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED,
+  ChatErrorCode.HOLDERS_ONLY,
+  ChatErrorCode.RATE_LIMITED,
 ];
 
 /** The codes a storefront operation may declare: only what a surface can be handed. */

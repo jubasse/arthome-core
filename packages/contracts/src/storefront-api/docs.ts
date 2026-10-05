@@ -3,38 +3,33 @@ import { MemberRole } from '@arthome/core';
 import { StorefrontTag } from './components.js';
 import { sharedExamples } from './examples.js';
 import type { RouteDefinition } from '../http/index.js';
-import type { ApiDocs, ModuleDocs, OperationDocumentation } from '../openapi/docs.js';
+import type { ApiDocs, OperationDocumentation } from '../openapi/docs.js';
 import { apiDocs, documentationLookup } from '../openapi/docs.js';
 import { accountDeepLinkDocs } from './account-deep-link/docs.js';
 import { accountDeepLinkExamples } from './account-deep-link/examples.js';
 import { authDocs } from './auth/docs.js';
 import { authExamples } from './auth/examples.js';
+import { cartDocs } from './cart/docs.js';
+import { cartExamples } from './cart/examples.js';
 import { changesDocs } from './changes/docs.js';
 import { changesExamples } from './changes/examples.js';
+import { datesDocs } from './dates/docs.js';
+import { datesExamples } from './dates/examples.js';
 import { devicesDocs } from './devices/docs.js';
 import { devicesExamples } from './devices/examples.js';
 import { meDocs } from './me/docs.js';
 import { meExamples } from './me/examples.js';
+import { ordersDocs } from './orders/docs.js';
+import { ordersExamples } from './orders/examples.js';
+import { plansDocs } from './plans/docs.js';
+import { plansExamples } from './plans/examples.js';
+import { seatsDocs } from './seats/docs.js';
+import { seatsExamples } from './seats/examples.js';
+import { subscriptionDocs } from './subscription/docs.js';
+import { subscriptionExamples } from './subscription/examples.js';
 import { supportDocs } from './support/docs.js';
 import { supportExamples } from './support/examples.js';
 import { viewerContextDocs } from './viewer-context/docs.js';
-
-/**
- * The operations whose maturity is not their owning service's (`transport.md` §5.11). Each entry
- * moves into its module's docs when the module converts.
- */
-const statedMaturities = {
-  enterSalesQueue: {
-    maturity: 'provisional',
-    maturityReason:
-      'the sales queue entered the contract at provisional maturity (D-081) and is not built',
-  },
-  getSalesQueuePosition: {
-    maturity: 'provisional',
-    maturityReason:
-      'the sales queue entered the contract at provisional maturity (D-081) and is not built',
-  },
-} satisfies ModuleDocs;
 
 /** The storefront document's introduction, and the docs and examples its modules register. */
 export const storefrontDocs: ApiDocs = apiDocs({
@@ -133,23 +128,34 @@ export const storefrontDocs: ApiDocs = apiDocs({
     },
   },
   modules: [
-    statedMaturities,
-    meDocs,
     accountDeepLinkDocs,
-    devicesDocs,
+    authDocs,
+    cartDocs,
     changesDocs,
+    datesDocs,
+    devicesDocs,
+    meDocs,
+    ordersDocs,
+    plansDocs,
+    seatsDocs,
+    subscriptionDocs,
     supportDocs,
     viewerContextDocs,
-    authDocs,
   ],
   examples: [
     sharedExamples,
-    meExamples,
     accountDeepLinkExamples,
-    devicesExamples,
-    changesExamples,
-    supportExamples,
     authExamples,
+    cartExamples,
+    changesExamples,
+    datesExamples,
+    devicesExamples,
+    meExamples,
+    ordersExamples,
+    plansExamples,
+    seatsExamples,
+    subscriptionExamples,
+    supportExamples,
   ],
 });
 

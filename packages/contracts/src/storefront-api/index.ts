@@ -21,28 +21,9 @@ import {
   startSocialSignIn,
   verifyTwoFactor,
 } from './auth/routes.js';
+import { addCartLine, getCart, quoteCart, removeCartLine, updateCartLine } from './cart/routes.js';
 import { listChanges } from './changes/routes.js';
-import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
-import {
-  addCartLine,
-  cancelSeat,
-  cancelSubscription,
-  checkoutCart,
-  enterSalesQueue,
-  getCart,
-  getOrder,
-  getSalesQueuePosition,
-  joinWaitlist,
-  leaveWaitlist,
-  listPlans,
-  purchaseSeat,
-  quoteCart,
-  quoteSeat,
-  refreshDateAvailability,
-  removeCartLine,
-  setSubscriptionPlan,
-  updateCartLine,
-} from './commerce.js';
+import { reportChatMessage } from './chat.js';
 import {
   AdmissionTokenParameter,
   ArtistIdParameter,
@@ -76,7 +57,18 @@ import {
   VaryAuthHeader,
   ViewerTimezoneParameter,
 } from './components.js';
-import { getDateDetail } from './date.js';
+import {
+  enterSalesQueue,
+  getDateDetail,
+  getSalesQueuePosition,
+  joinWaitlist,
+  leaveWaitlist,
+  listChatMessages,
+  quoteSeat,
+  refreshDateAvailability,
+  sendChatMessage,
+  sendReaction,
+} from './dates/routes.js';
 import { registerDevice } from './devices/routes.js';
 import {
   extendRail,
@@ -125,6 +117,7 @@ import {
   updateProfile,
   updateSavedSearch,
 } from './me/routes.js';
+import { checkoutCart, getOrder, purchaseSeat } from './orders/routes.js';
 import {
   cancelPairing,
   createPairing,
@@ -132,7 +125,10 @@ import {
   engagePairing,
   pollPairing,
 } from './pairing.js';
+import { listPlans } from './plans/routes.js';
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
+import { cancelSeat } from './seats/routes.js';
+import { cancelSubscription, setSubscriptionPlan } from './subscription/routes.js';
 import { contactSupport } from './support/routes.js';
 import { getViewerContext } from './viewer-context/routes.js';
 import {
