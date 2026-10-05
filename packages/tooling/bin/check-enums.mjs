@@ -305,6 +305,16 @@ function main() {
         ) {
           continue;
         }
+        // A URL PATH SEGMENT IS NOT A VOCABULARY MEMBER either: `.single('chat')` names a route,
+        //   not a date pane. Narrow by construction: only the first argument of the route
+        //   builder's calls that write a segment (packages/contracts README, "Resources").
+        if (
+          /\.(?:resource|single|path|action|collectionAction|subresource)\(\s*$/.test(
+            scanned.slice(0, m.index),
+          )
+        ) {
+          continue;
+        }
         if (declaredHere.has(value)) continue;
         if (isAllowed(allow, rel, value)) continue;
         const declarers = byValue.get(value);

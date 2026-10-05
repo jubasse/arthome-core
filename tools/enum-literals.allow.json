@@ -27,34 +27,14 @@
       "reason": "THE ANNOTATION MARKER, not a vocabulary member. `x-arthome-vocabulary-source: none` is how a contract says the domain owns nothing here — a payment provider's state machine, a transport capability. `none` is also a member of five domain vocabularies, and no gate can tell an annotation value from one of them by looking at the string. This is the ONE line that spells it: `vocabularyOutLocal` emits it, and four contract files that had each invented `const LOCAL_VOCABULARY = 'none'` now call that instead. One entry, and it does not grow — a fifth file reaching for the marker imports the function."
     },
     {
-      "file": "packages/contracts/src/storefront-api/support/routes.ts",
-      "value": "support",
-      "reason": "A path segment, POST /support/requests. It shares its spelling with a price tier without being that vocabulary."
-    },
-    {
       "file": "packages/contracts/src/storefront-api/plans/routes.ts",
       "value": "public",
       "reason": "The Cache-Control scope of an anonymous read, `cache(..., { scope: 'public' })`. It shares its spelling with a date pane without being that vocabulary."
     },
     {
-      "file": "packages/contracts/src/storefront-api/subscription/routes.ts",
-      "value": "subscription",
-      "reason": "A path segment, /subscription/cancel. It shares its spelling with a replay policy, an order kind and a tax supply kind without being any of those vocabularies."
-    },
-    {
-      "file": "packages/contracts/src/storefront-api/orders/routes.ts",
-      "value": "merch",
-      "reason": "A path segment, POST /orders/merch. It shares its spelling with an order kind without being that vocabulary: the segment names the checkout of a cart, and the kind of the order it creates is answered in the body."
-    },
-    {
       "file": "packages/contracts/src/storefront-api/dates/routes.ts",
       "value": "public",
       "reason": "The Cache-Control scope of an anonymous read, `cache(..., { scope: 'public' })`. It shares its spelling with a date pane without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/storefront-api/dates/routes.ts",
-      "value": "chat",
-      "reason": "A path segment, /dates/{dateId}/chat/messages. It shares its spelling with a date pane and a service without being either vocabulary."
     },
     {
       "file": "packages/contracts/src/studio-money/index.ts",
@@ -102,11 +82,6 @@
       "reason": "The NAME of a query parameter, `state`, which filters a resource by its own state machine. TAX_JURISDICTION_LEVELS holds the same word for a level of tax jurisdiction, which is a different fact and not what is named here."
     },
     {
-      "file": "packages/contracts/src/studio-api/payouts.ts",
-      "value": "state",
-      "reason": "The NAME of a query parameter, `state`, which filters a resource by its own state machine. TAX_JURISDICTION_LEVELS holds the same word for a level of tax jurisdiction, which is a different fact and not what is named here."
-    },
-    {
       "file": "packages/contracts/src/studio-api/docs.ts",
       "value": "cookie",
       "reason": "OpenAPI's location of an API key, `in: cookie`, in the session cookie's security scheme: the word SESSION_MODES also holds, for a different fact (the same entry as http/index.ts)."
@@ -117,24 +92,9 @@
       "reason": "The HTTP authentication scheme of RFC 6750, `scheme: bearer`, in the bearer token's security scheme. SESSION_MODES holds the word for the session's transport, which is not what an OpenAPI scheme names."
     },
     {
-      "file": "packages/contracts/src/studio-api/dates/routes.ts",
-      "value": "duplicate",
-      "reason": "The last path segment of POST /dates/{dateId}/duplicate, an action name. It shares its spelling with a refund reason without being that vocabulary: importing REFUND_REASONS here would say a date is duplicated for a refund."
-    },
-    {
       "file": "packages/contracts/src/http/policy.ts",
       "value": "public",
       "reason": "The Cache-Control directive `public` (may a shared cache keep this answer), not a date pane. The two share the spelling without being the same vocabulary: importing DATE_PANES here would say a cache is shared with the public pane."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/dates/routes.ts",
-      "value": "chat",
-      "reason": "A path segment, /dates/{dateId}/chat/messages. It shares its spelling with a date pane without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/dates/routes.ts",
-      "value": "crew",
-      "reason": "A path segment, POST /dates/{dateId}/crew. It shares its spelling with a date pane without being that vocabulary."
     },
     {
       "file": "packages/contracts/src/storefront-api/components.ts",
@@ -142,104 +102,9 @@
       "reason": "A cache scope, Cache-Control: public. It shares its spelling with a date pane without being that vocabulary."
     },
     {
-      "file": "packages/contracts/src/storefront-api/live/routes.ts",
-      "value": "live",
-      "reason": "A path segment, GET /live. It shares its spelling with a display state and a publication state without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/storefront-api/replays/routes.ts",
-      "value": "replays",
-      "reason": "A path segment, GET /replays. It shares its spelling with a plan opening and a navigation entry without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/storefront-api/chat/routes.ts",
-      "value": "chat",
-      "reason": "A path segment, /dates/{dateId}/chat/... and /chat/messages/{messageId}/report. It shares its spelling with a date pane and a service without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/storefront-api/playback/routes.ts",
-      "value": "open",
-      "reason": "A path segment, POST /playback/{dateId}/open. It shares its spelling with a chat mode without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/storefront-api/me/routes.ts",
-      "value": "tickets",
-      "reason": "A path segment, GET /me/tickets. It shares its spelling with a navigation entry and a date pane without being either vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/storefront-api/me/routes.ts",
-      "value": "replays",
-      "reason": "A path segment, GET /me/replays. It shares its spelling with a plan opening and a navigation entry without being either vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/storefront-api/me/routes.ts",
-      "value": "notifications",
-      "reason": "A path segment, /me/notifications. It shares its spelling with a service without being that vocabulary: importing SERVICES here would say the viewer's notification centre is the notifications service."
-    },
-    {
       "file": "packages/contracts/src/studio-money/index.ts",
       "value": "custom",
       "reason": "A period preset of the revenue screen, a period the person chose by hand, not a vocabulary of the domain."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/channels/routes.ts",
-      "value": "replays",
-      "reason": "A path segment, GET /channels/{channelId}/replays. It shares its spelling with a plan opening and a navigation entry without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/channels/routes.ts",
-      "value": "settings",
-      "reason": "A path segment, GET /channels/{channelId}/settings. It shares its spelling with a navigation entry without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/channels/routes.ts",
-      "value": "journal",
-      "reason": "A path segment, GET /channels/{channelId}/journal. It shares its spelling with a navigation entry without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/channels/routes.ts",
-      "value": "identity",
-      "reason": "A path segment, PATCH /channels/{channelId}/identity. It shares its spelling with a service without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/channels/routes.ts",
-      "value": "events",
-      "reason": "A path segment, GET /channels/{channelId}/events. It shares its spelling with a navigation entry without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/channels/routes.ts",
-      "value": "dashboard",
-      "reason": "A path segment, GET /channels/{channelId}/dashboard. It shares its spelling with a navigation entry without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/channels/routes.ts",
-      "value": "stats",
-      "reason": "A path segment, GET /channels/{channelId}/stats. It shares its spelling with a navigation entry without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/channels/routes.ts",
-      "value": "agenda",
-      "reason": "A path segment, GET /channels/{channelId}/agenda. It shares its spelling with a navigation entry without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/channels/routes.ts",
-      "value": "payouts",
-      "reason": "A path segment, GET /channels/{channelId}/payouts. It shares its spelling with a navigation entry and a service without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/channels/routes.ts",
-      "value": "moderation",
-      "reason": "A path segment, GET /channels/{channelId}/moderation/queue. It shares its spelling with a member role and a crew role without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/channels/routes.ts",
-      "value": "stream",
-      "reason": "A path segment, GET /channels/{channelId}/stream. It shares its spelling with a navigation entry without being that vocabulary."
-    },
-    {
-      "file": "packages/contracts/src/studio-api/channels/routes.ts",
-      "value": "ticketing",
-      "reason": "A path segment, GET /channels/{channelId}/ticketing. It shares its spelling with a service without being that vocabulary."
     }
   ]
 }

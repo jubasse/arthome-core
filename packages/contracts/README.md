@@ -435,11 +435,10 @@ routes keep their tags and their operation ids; they leave the tag modules they 
    routes in the api's `index.ts` by name, where they were (the document keeps its order), add the
    module to `routes-listed.spec.ts`, its docs and examples to the api's `docs.ts` (`modules`,
    `examples`), and move its `tools/enum-literals.allow.json` entries to `routes.ts`. A path segment
-   that spells a core vocabulary member (`'chat'`, `'crew'`, `'tickets'`) trips `check-enums`: it gets
-   an allow-list entry with its reason, never an import of the vocabulary. Remove the module's routes
-   from the two ratchets: `deny-by-default.spec.ts` and `inline-docs.spec.ts`, whose lists of routes
-   still carrying a description, a doc-only `x-arthome-*` or an example of their own only shrink and
-   end empty with the fan-out.
+   that spells a core vocabulary member (`'chat'`, `'crew'`, `'tickets'`) is written as it is:
+   `check-enums` skips the segment given to the builder, never an import of the vocabulary.
+   `deny-by-default.spec.ts` and `inline-docs.spec.ts` hold every route to an identity and to no
+   description, doc-only `x-arthome-*` or example of its own; their lists of exceptions are empty.
 6. **Generate and check.** `pnpm run generate:contract-types`, `pnpm run fix`, `pnpm -r run build`,
    `pnpm run generate:openapi`, `pnpm exec arthome-generate-map`, `pnpm run verify`.
 7. **Read what moved.** Each operation keeps its path, method, statuses and parameters. Examples,
