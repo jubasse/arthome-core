@@ -1,14 +1,9 @@
 import { MemberRole } from '@arthome/core';
 
 import { StorefrontTag } from './components.js';
+import { sharedExamples } from './examples.js';
 import type { RouteDefinition } from '../http/index.js';
-import { Acknowledged, Deleted, ReauthProof } from '../http/index.js';
-import type {
-  ApiDocs,
-  ModuleDocs,
-  ModuleExamples,
-  OperationDocumentation,
-} from '../openapi/docs.js';
+import type { ApiDocs, ModuleDocs, OperationDocumentation } from '../openapi/docs.js';
 import { apiDocs, documentationLookup } from '../openapi/docs.js';
 import { meDocs } from './me/docs.js';
 import { meExamples } from './me/examples.js';
@@ -33,13 +28,6 @@ const statedMaturities = {
       'the sales queue entered the contract at provisional maturity (D-081) and is not built',
   },
 } satisfies ModuleDocs;
-
-/** The examples of the schemas `./http` shares between modules. */
-const sharedExamples: ModuleExamples = [
-  [Deleted, [{ deleted: true }]],
-  [Acknowledged, [{ accepted: true }]],
-  [ReauthProof, [{ reauthToken: 'ott_9f2ac1' }]],
-];
 
 /** The storefront document's introduction, and the docs and examples its modules register. */
 export const storefrontDocs: ApiDocs = apiDocs({

@@ -370,7 +370,9 @@ routes keep their tags and their operation ids; they leave the tag modules they 
 1. **Docs.** `pnpm -r run build`, then `node tools/route-docs.mjs studio getDateSheet ...` and paste
    its entries into `docs.ts`: the description, the upstream services, the idempotency exemption.
    Move each stated maturity of these operations from the api's `docs.ts` into the module's, with its
-   reason. A route's 4xx prose that the description does not already say goes into the description.
+   reason; a maturity the route states itself is printed, and named on stderr when its owning service
+   gives another: give it a `maturityReason`, or drop it. A route's 4xx prose that the description does
+   not already say goes into the description.
 2. **Schemas.** Move every inline schema of the routes into `schemas.ts`, verbatim, so the document
    does not move for nothing:
    - a request body is `<OperationId>BodySchema`; on `update`, `replace` and `subresource().replace()`
@@ -390,8 +392,10 @@ routes keep their tags and their operation ids; they leave the tag modules they 
    refuses a schema registered twice in one api. Write in the current vocabulary
    (`Surface.STUDIO_MOBILE`, never `'studio-mobile'`). Never write what is derived: the envelope
    (`servedAt`, `rightsVersion`), a versioned write's `expectedVersion`, an error's example (the
-   registry `ERRORS` gives it). A factory's schema (`Deleted`, `Acknowledged`, `ReauthProof`) is
-   registered once, in the api's `docs.ts`.
+   registry `ERRORS` gives it), a page (the convention wraps the item's example). A schema more than
+   one module answers (a factory such as `Deleted`, a subpath's record such as `DateCardSchema`) is
+   registered once, in the api's own `examples.ts` (`sharedExamples`); the module's `examples.ts`
+   holds only what the module alone shows.
 4. **Routes.** One builder for the block, its identity, headers and the errors every route answers
    (`studioV1.identity(operator).headers(...).errors([ApiErrorCode.FORBIDDEN, ApiErrorCode.NOT_FOUND])`),
    then a resource per tag (`.tags(StudioTag.RUN).resource('dates', { id: DateIdParameter })`). Each
@@ -401,20 +405,35 @@ routes keep their tags and their operation ids; they leave the tag modules they 
    - `errors`: every code the route refuses with beyond the derived ones, as a list; a status that
      adds a code becomes a union of references to each code's envelope and example components;
    - `paging`, `sortable`, `filters`, `expand`, `cache(Freshness.X)` (never `x-arthome-freshness`),
-     `requires`, `status` (201 on an action that creates, 202 on a write only accepted),
-     `idempotent: false` (its reason in `docs.ts` as `idempotencyExemption`);
+     `status` (201 on an action that creates, 202 on a write only accepted, with `follow: 'getExport'`
+     when an operation follows its outcome, for `Location` and `Retry-After`), `idempotent: false`
+     (its reason in `docs.ts` as `idempotencyExemption`), and `x-arthome-invalidates`, which stays on
+     the route because a surface reads it;
+   - `requires`: a rule, on the route or on the builder, adds its codes (`throttle('export')` its
+     `429`, `recentAuth()` its `403`); a rate limit is always a `throttle` rule;
+   - a secret in an answer is `sensitive(schema)`, which derives `Cache-Control: no-store`: never a
+     hand header;
+   - a list is `findAll` with its `item`: the convention answers `items` and `page`
+     (`transport.md` §5.5). A list with no route to one record is `single(name).findAll(...)`;
    - an action that only acknowledges answers 204 (no `response`); a removal answers `Deleted`;
      `Acknowledged` only where clients already read `accepted`; a union with a discriminator is
      `tagged(key, variants)`.
 
    Never: a description, `x-arthome-upstream` or `x-arthome-maturity` (they are in `docs.ts`), an
-   inline schema, parameter or example, a `responses` written by hand, `security`, a hand error
-   response.
+   inline schema, parameter or example, `security`, a hand error response. A success is stated in
+   `responses` only where no member gives its shape (a field beside a page such as `unreadCount`, a
+   list without a page, a POST on a collection that creates nothing), with a named schema and the
+   reason in the commit.
 5. **Move them out.** Delete the routes from their old modules, then
    `node tools/prune-unused.mjs <old modules>` drops what nothing uses any more. List the module's
    routes in the api's `index.ts` by name, where they were (the document keeps its order), add the
    module to `routes-listed.spec.ts`, its docs and examples to the api's `docs.ts` (`modules`,
-   `examples`), and move its `tools/enum-literals.allow.json` entries to `routes.ts`.
+   `examples`), and move its `tools/enum-literals.allow.json` entries to `routes.ts`. A path segment
+   that spells a core vocabulary member (`'chat'`, `'crew'`, `'tickets'`) trips `check-enums`: it gets
+   an allow-list entry with its reason, never an import of the vocabulary. Remove the module's routes
+   from the two ratchets: `deny-by-default.spec.ts` and `inline-docs.spec.ts`, whose lists of routes
+   still carrying a description, a doc-only `x-arthome-*` or an example of their own only shrink and
+   end empty with the fan-out.
 6. **Generate and check.** `pnpm run generate:contract-types`, `pnpm run fix`, `pnpm -r run build`,
    `pnpm run generate:openapi`, `pnpm exec arthome-generate-map`, `pnpm run verify`.
 7. **Read what moved.** Each operation keeps its path, method, statuses and parameters. Examples,

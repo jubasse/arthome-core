@@ -2,16 +2,11 @@ import { MemberRole } from '@arthome/core';
 
 import { StudioTag } from './components.js';
 import type { RouteDefinition } from '../http/index.js';
-import { Acknowledged, Deleted, ReauthProof } from '../http/index.js';
-import type {
-  ApiDocs,
-  ModuleDocs,
-  ModuleExamples,
-  OperationDocumentation,
-} from '../openapi/docs.js';
+import type { ApiDocs, ModuleDocs, OperationDocumentation } from '../openapi/docs.js';
 import { apiDocs, documentationLookup } from '../openapi/docs.js';
 import { datesDocs } from './dates/docs.js';
 import { datesExamples } from './dates/examples.js';
+import { sharedExamples } from './examples.js';
 
 /**
  * The operations whose maturity is not their owning service's (`transport.md` §5.11). Each entry
@@ -63,13 +58,6 @@ const statedMaturities = {
     maturityReason: 'the studio statistics (studio-money) are not built',
   },
 } satisfies ModuleDocs;
-
-/** The examples of the schemas `./http` shares between modules. */
-const sharedExamples: ModuleExamples = [
-  [Deleted, [{ deleted: true }]],
-  [Acknowledged, [{ accepted: true }]],
-  [ReauthProof, [{ reauthToken: 'ott_9f2ac1' }]],
-];
 
 /** The studio document's introduction, and the docs and examples its modules register. */
 export const studioDocs: ApiDocs = apiDocs({
