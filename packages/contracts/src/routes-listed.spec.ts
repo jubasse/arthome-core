@@ -29,12 +29,12 @@ import * as storefrontViewerContext from './storefront-api/viewer-context/routes
 import * as studioAgenda from './studio-api/agenda.js';
 import * as studioBootstrap from './studio-api/bootstrap.js';
 import * as studioChannel from './studio-api/channel.js';
+import * as studioChannels from './studio-api/channels/routes.js';
 import * as studioCrew from './studio-api/crew.js';
 import * as studioDates from './studio-api/dates/routes.js';
 import { studioApi } from './studio-api/index.js';
 import * as studioModeration from './studio-api/moderation.js';
 import * as studioPayouts from './studio-api/payouts.js';
-import * as studioPublication from './studio-api/publication.js';
 import * as studioRun from './studio-api/run.js';
 import * as studioTicketing from './studio-api/ticketing.js';
 
@@ -98,11 +98,11 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       studioAgenda,
       studioBootstrap,
       studioChannel,
+      studioChannels,
       studioCrew,
       studioDates,
       studioModeration,
       studioPayouts,
-      studioPublication,
       studioRun,
       studioTicketing,
     ],

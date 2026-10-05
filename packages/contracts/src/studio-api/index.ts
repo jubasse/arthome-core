@@ -1,12 +1,6 @@
 import { MoneyOut } from '@arthome/core/schema';
 
-import {
-  getChannelAgenda,
-  getChannelDashboard,
-  getChannelStats,
-  listChannelEvents,
-  listDuties,
-} from './agenda.js';
+import { listDuties } from './agenda.js';
 import {
   createReauthToken,
   getStudioBootstrap,
@@ -23,17 +17,38 @@ import {
   updateStudioPreferences,
   verifyTwoFactorStudio,
 } from './bootstrap.js';
+import { createUploadTicket } from './channel.js';
 import {
-  createUploadTicket,
+  addBannedWord,
+  changeMemberRoles,
+  closeReconciliationPeriod,
+  createDateDraft,
   deleteChannel,
+  getChannelAgenda,
+  getChannelDashboard,
   getChannelSettings,
+  getChannelStats,
+  getChannelStreamSettings,
+  getChannelTicketing,
+  inviteMember,
+  listChannelEvents,
   listChannelJournal,
+  listChannelMembers,
   listChannelMerchItems,
   listChannelReplays,
+  listModerationQueue,
+  listPayouts,
+  removeBannedWord,
+  removeMember,
+  requestBankChange,
+  requestChannelExport,
+  sanctionAudienceMember,
+  searchAudience,
+  transferChannelOwnership,
   updateChannelIdentity,
   updateChannelSettings,
   upsertMerchItem,
-} from './channel.js';
+} from './channels/routes.js';
 import {
   BadRequestResponse,
   ChannelIdParameter,
@@ -64,15 +79,7 @@ import {
   BadGatewayResponse,
   GatewayTimeoutResponse,
 } from './components.js';
-import {
-  changeMemberRoles,
-  inviteMember,
-  listChannelMembers,
-  removeMember,
-  respondToInvitation,
-  revokeDateAccess,
-  transferChannelOwnership,
-} from './crew.js';
+import { respondToInvitation, revokeDateAccess } from './crew.js';
 import {
   decideDateOutcome,
   deleteDate,
@@ -110,27 +117,10 @@ import {
   setTechnicalProvision,
   submitHealthSample,
 } from './dates/routes.js';
-import {
-  addBannedWord,
-  claimModerationItem,
-  listModerationQueue,
-  releaseModerationItem,
-  removeBannedWord,
-  sanctionAudienceMember,
-  searchAudience,
-  settleModerationItem,
-} from './moderation.js';
-import {
-  closeReconciliationPeriod,
-  countersignBankChange,
-  getChannelExport,
-  listPayouts,
-  requestBankChange,
-  requestChannelExport,
-} from './payouts.js';
-import { createDateDraft } from './publication.js';
-import { escalateIncidentToProduction, getChannelStreamSettings, resolveIncident } from './run.js';
-import { getChannelTicketing, refundSeat } from './ticketing.js';
+import { claimModerationItem, releaseModerationItem, settleModerationItem } from './moderation.js';
+import { countersignBankChange, getChannelExport } from './payouts.js';
+import { escalateIncidentToProduction, resolveIncident } from './run.js';
+import { refundSeat } from './ticketing.js';
 import {
   StudioEnvelopeMetaSchema,
   StudioErrorEnvelopeSchema,

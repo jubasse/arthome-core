@@ -1,0 +1,32 @@
+import type { AddBannedWordRoute, ChangeMemberRolesRoute, CloseReconciliationPeriodRoute, CreateDateDraftRoute, DeleteChannelRoute, GetChannelAgendaRoute, GetChannelDashboardRoute, GetChannelSettingsRoute, GetChannelStatsRoute, GetChannelStreamSettingsRoute, GetChannelTicketingRoute, InviteMemberRoute, ListChannelEventsRoute, ListChannelJournalRoute, ListChannelMembersRoute, ListChannelMerchItemsRoute, ListChannelReplaysRoute, ListModerationQueueRoute, ListPayoutsRoute, RemoveBannedWordRoute, RemoveMemberRoute, RequestBankChangeRoute, RequestChannelExportRoute, SanctionAudienceMemberRoute, SearchAudienceRoute, TransferChannelOwnershipRoute, UpdateChannelIdentityRoute, UpdateChannelSettingsRoute, UpsertMerchItemRoute } from './types.js';
+export declare const listChannelReplays: ListChannelReplaysRoute;
+export declare const getChannelSettings: GetChannelSettingsRoute;
+export declare const updateChannelSettings: UpdateChannelSettingsRoute;
+export declare const listChannelJournal: ListChannelJournalRoute;
+export declare const listChannelMerchItems: ListChannelMerchItemsRoute;
+export declare const upsertMerchItem: UpsertMerchItemRoute;
+export declare const updateChannelIdentity: UpdateChannelIdentityRoute;
+export declare const listChannelMembers: ListChannelMembersRoute;
+export declare const inviteMember: InviteMemberRoute;
+export declare const changeMemberRoles: ChangeMemberRolesRoute;
+export declare const removeMember: RemoveMemberRoute;
+export declare const transferChannelOwnership: TransferChannelOwnershipRoute;
+export declare const listChannelEvents: ListChannelEventsRoute;
+export declare const getChannelDashboard: GetChannelDashboardRoute;
+export declare const getChannelStats: GetChannelStatsRoute;
+export declare const getChannelAgenda: GetChannelAgendaRoute;
+export declare const listPayouts: ListPayoutsRoute;
+export declare const requestBankChange: RequestBankChangeRoute;
+export declare const closeReconciliationPeriod: CloseReconciliationPeriodRoute;
+export declare const requestChannelExport: RequestChannelExportRoute;
+export declare const listModerationQueue: ListModerationQueueRoute;
+export declare const searchAudience: SearchAudienceRoute;
+export declare const sanctionAudienceMember: SanctionAudienceMemberRoute;
+export declare const addBannedWord: AddBannedWordRoute;
+export declare const removeBannedWord: RemoveBannedWordRoute;
+export declare const getChannelStreamSettings: GetChannelStreamSettingsRoute;
+export declare const getChannelTicketing: GetChannelTicketingRoute;
+export declare const createDateDraft: CreateDateDraftRoute;
+/** The resource layer has no delete that takes a body: this one carries the re-authentication proof. */
+export declare const deleteChannel: DeleteChannelRoute;
+//# sourceMappingURL=routes.d.ts.map

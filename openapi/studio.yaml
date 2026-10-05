@@ -1343,6 +1343,9 @@ paths:
       - ticketing
       tags:
       - agenda
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Page'
@@ -1351,6 +1354,7 @@ paths:
       - $ref: '#/components/parameters/SortDir'
       - name: window
         in: query
+        required: false
         schema:
           default: upcoming
           type: string
@@ -1361,6 +1365,7 @@ paths:
           x-arthome-vocabulary-reason: A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.
       - name: states
         in: query
+        required: false
         description: '**Multi-state** filter, comma-separated.'
         schema:
           type: string
@@ -1372,14 +1377,10 @@ paths:
         schema:
           type: string
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: A page of the event board, **projected according to the role**.
-          headers:
-            X-Arthome-Rights-Version:
-              $ref: '#/components/headers/RightsVersion'
           content:
             application/json:
               schema:
@@ -1398,7 +1399,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:01:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 items:
                 - dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
@@ -1417,24 +1418,39 @@ paths:
                 page:
                   page: 1
                   pageSize: 20
-                  totalItems: 84
-                  totalPages: 5
+                  totalItems: 1
+                  totalPages: 1
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: '`api.sort_key_forbidden` when the sort key bears on a field absent from this projection.'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: api.sort_key_forbidden
-                  nature: refused
-                  params:
-                    sortBy: grossRevenue
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:01:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiSortKeyForbiddenError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.sort_key_forbidden:
+                  $ref: '#/components/examples/ApiSortKeyForbiddenError'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/dashboard:
     get:
       operationId: getChannelDashboard
@@ -1454,13 +1470,16 @@ paths:
       - ticketing
       - streaming
       - chat
-      x-arthome-freshness: 300
       tags:
       - agenda
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: period
         in: query
+        required: false
         schema:
           default: last_30_days
           type: string
@@ -1474,7 +1493,7 @@ paths:
           x-arthome-vocabulary-reason: A period selector for this screen. The bounds it resolves to are served (`seasonBounds`, `periodStart`/`periodEnd`); this only names which preset the person chose.
       - name: from
         in: query
-        description: Requis quand `period` vaut `custom`.
+        description: Required when `period` is `custom`.
         schema:
           type: string
           format: date
@@ -1484,7 +1503,6 @@ paths:
           type: string
           format: date
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -1502,7 +1520,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:05:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   period:
@@ -1565,10 +1583,27 @@ paths:
                       gross:
                         amountMinor: 417600
                         currencyCode: EUR
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/stats:
     get:
       operationId: getChannelStats
@@ -1588,13 +1623,16 @@ paths:
       - catalog
       - ticketing
       - streaming
-      x-arthome-freshness: 300
       tags:
       - agenda
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: tab
         in: query
+        required: false
         schema:
           default: audience
           type: string
@@ -1605,6 +1643,7 @@ paths:
           x-arthome-vocabulary-reason: A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.
       - name: period
         in: query
+        required: false
         schema:
           default: last_30_days
           type: string
@@ -1628,12 +1667,12 @@ paths:
           format: date
       - name: showId
         in: query
+        required: false
         description: Restricts the `series` tab to one series. Absent, every series is served.
         schema:
           type: string
           format: uuid
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -1684,10 +1723,27 @@ paths:
                     liveViewersPeak: 1842
                     replayViews: 412
                     fillRateBps: 8700
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/agenda:
     get:
       operationId: getChannelAgenda
@@ -1702,6 +1758,9 @@ paths:
       - ticketing
       tags:
       - agenda
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: from
@@ -1717,11 +1776,10 @@ paths:
           type: string
           format: date
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
-          description: The dates in the period.
+          description: The dates between the two bounds.
           content:
             application/json:
               schema:
@@ -1739,9 +1797,48 @@ paths:
               example:
                 servedAt: '2026-09-21T18:01:20.000Z'
                 rightsVersion: 412
-                items: []
+                items:
+                - dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  title: Nuit blanche
+                  startsAt: '2026-09-21T19:00:00Z'
+                  state: scheduled
+                  orderRank: 3
+                  lowestPrice:
+                    amountMinor: 2400
+                    currencyCode: EUR
+                  fillRateBps: 8700
+                  seatsSold: 174
+                  grossRevenue:
+                    amountMinor: 417600
+                    currencyCode: EUR
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          description: Malformed request, or a mandatory filter missing.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiSchemaInvalidError'
+                - $ref: '#/components/schemas/ApiPeriodFilterRequiredError'
+              examples:
+                api.schema_invalid:
+                  $ref: '#/components/examples/ApiSchemaInvalidError'
+                api.period_filter_required:
+                  $ref: '#/components/examples/ApiPeriodFilterRequiredError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/dates:
     post:
       operationId: createDateDraft
@@ -1818,11 +1915,6 @@ paths:
       responses:
         '201':
           description: Draft created, with its publication and its checklist.
-          headers:
-            X-Arthome-Rights-Version:
-              $ref: '#/components/headers/RightsVersion'
-            Idempotency-Replayed:
-              $ref: '#/components/headers/IdempotencyReplayed'
           content:
             application/json:
               schema:
@@ -1836,64 +1928,53 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
-                  dateId: 019928c0-0000-7000-8000-000000000001
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
                   title: Nuit blanche
-                  startsAt: '2026-11-04T19:30:00Z'
+                  startsAt: '2026-09-21T19:00:00Z'
                   venueClock:
                     venueTimezone: Europe/Paris
-                    venueUtcOffsetMin: 60
+                    venueUtcOffsetMin: 120
                   runtimeMin: 95
                   openPanes:
                   - public
                   - tickets
-                  - chat
                   - tech
-                  - crew
-                  - replay
                   publication:
-                    dateId: 019928c0-0000-7000-8000-000000000001
-                    state: draft
-                    orderRank: 1
-                    version: 1
-                    checklist:
-                    - id: title_and_discipline
-                      satisfied: true
-                      source: catalog
-                      blocking: true
-                    - id: poster
-                      satisfied: false
-                      source: catalog
-                      blocking: true
-                    - id: at_least_one_active_price
-                      satisfied: false
-                      source: ticketing
-                      blocking: true
-                    - id: technical_check_passed
-                      satisfied: false
-                      source: streaming
-                      blocking: true
-                    - id: chapters_planned
-                      satisfied: false
-                      source: catalog
-                      blocking: false
-                    offeredTransitions:
-                    - from: draft
-                      to: reserve
-                      irreversible: false
-                    - from: draft
-                      to: scheduled
-                      irreversible: true
-                      promiseCode: prices_engaged
+                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                    state: scheduled
+                    orderRank: 3
+                    version: 7
+                    checklist: []
+                    offeredTransitions: []
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -3770,6 +3851,9 @@ paths:
       - ticketing
       tags:
       - ticketing
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: from
@@ -3785,7 +3869,6 @@ paths:
           type: string
           format: date
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -3894,7 +3977,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:14:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   byTier:
@@ -3917,8 +4000,34 @@ paths:
                       currencyCode: EUR
                     openedAt: '2026-09-21T09:00:00Z'
                     respondBy: '2026-09-22T09:00:00Z'
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          description: Malformed request, or a mandatory filter missing.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiSchemaInvalidError'
+                - $ref: '#/components/schemas/ApiPeriodFilterRequiredError'
+              examples:
+                api.schema_invalid:
+                  $ref: '#/components/examples/ApiSchemaInvalidError'
+                api.period_filter_required:
+                  $ref: '#/components/examples/ApiPeriodFilterRequiredError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/panes/chat:
     get:
       operationId: getDateChatPane
@@ -4155,17 +4264,29 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Cursor'
-      - $ref: '#/components/parameters/Limit'
+      - name: limit
+        in: query
+        required: false
+        schema:
+          default: 20
+          type: integer
+          minimum: 1
+          maximum: 200
       - name: dateId
         in: query
+        required: false
         schema:
           type: string
           format: uuid
       - name: filter
         in: query
+        required: false
         schema:
           default: pending
           type: string
@@ -4181,7 +4302,6 @@ paths:
         schema:
           type: string
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -4204,9 +4324,8 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:30:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
-                lastEventSeq: 8812
                 items:
                 - id: 019928e0-0000-7000-8000-000000000001
                   messageId: 019928f8-0000-7000-8000-000000000009
@@ -4225,13 +4344,29 @@ paths:
                   origin: human_verdict
                   version: 1
                 page:
-                  hasMore: true
-                  nextCursor: eyJjIjoiMjAyNi0wOS0yMVQxOTozMCJ9
-                  pendingCount: 14
+                  page: 1
+                  pageSize: 20
+                  totalItems: 1
+                  totalPages: 1
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '410':
           $ref: '#/components/responses/Gone'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/moderation/items/{itemId}/claim:
     post:
       operationId: claimModerationItem
@@ -4500,6 +4635,9 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Page'
@@ -4510,11 +4648,13 @@ paths:
           type: string
       - name: presentOnDateId
         in: query
+        required: false
         schema:
           type: string
           format: uuid
       - name: sanction
         in: query
+        required: false
         schema:
           type: string
           enum:
@@ -4523,7 +4663,6 @@ paths:
           - banned
           x-arthome-vocabulary-source: AUDIENCE_SANCTIONS
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -4546,7 +4685,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:32:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 items:
                 - id: 019928e1-0000-7000-8000-000000000001
@@ -4561,10 +4700,25 @@ paths:
                 page:
                   page: 1
                   pageSize: 20
-                  totalItems: 934
-                  totalPages: 47
+                  totalItems: 1
+                  totalPages: 1
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/audience/{memberId}/sanction:
     post:
       operationId: sanctionAudienceMember
@@ -4582,6 +4736,9 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: memberId
@@ -4590,10 +4747,10 @@ paths:
         schema:
           type: string
           format: uuid
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -4645,7 +4802,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:33:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   id: 019928e1-0000-7000-8000-000000000001
@@ -4653,11 +4810,49 @@ paths:
                   sanction: muted
                   sanctionExpiresAt: '2026-09-21T20:30:00Z'
                   messagesCount: 0
+                  firstSeenAt: '2026-02-11T20:10:00Z'
+                  subscriberTier: pass
+                  holdsSeat: true
                   present: true
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/moderation/banned-words:
     post:
       operationId: addBannedWord
@@ -4675,12 +4870,15 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -4722,14 +4920,51 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:34:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   word: exemple
                   reprocessing: true
                   estimatedAffectedMessages: 312
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/moderation/banned-words/{word}:
     delete:
       operationId: removeBannedWord
@@ -4740,6 +4975,9 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: word
@@ -4747,10 +4985,16 @@ paths:
         required: true
         schema:
           type: string
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - name: expectedVersion
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       responses:
         '200':
           description: Word removed.
@@ -4769,12 +5013,45 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:35:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   deleted: true
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/chat/messages:
     get:
       operationId: listStudioChatMessages
@@ -6828,10 +7105,12 @@ paths:
       - streaming
       tags:
       - run
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -6906,7 +7185,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:12:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   ingestUrl: rtmps://ingest.arthome.fr/live
@@ -6922,8 +7201,23 @@ paths:
                     holdScreenAutoAfterSec: 15
                   recentChecks: []
                   preflightPending: 1
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/panes/crew:
     get:
       operationId: getDateCrewPane
@@ -7076,6 +7370,9 @@ paths:
       - identity
       tags:
       - crew
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Page'
@@ -7086,6 +7383,7 @@ paths:
           type: string
       - name: role
         in: query
+        required: false
         schema:
           type: string
           enum:
@@ -7099,7 +7397,6 @@ paths:
           - treasury
           x-arthome-vocabulary-source: MEMBER_ROLES
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -7149,8 +7446,23 @@ paths:
                   pageSize: 20
                   totalItems: 11
                   totalPages: 1
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/invitations:
     post:
       operationId: inviteMember
@@ -7171,12 +7483,15 @@ paths:
       - identity
       tags:
       - crew
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -7231,36 +7546,60 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:16:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
-                  personId: 019928b2-0000-7000-8000-000000000001
-                  displayName: yann@example.org
+                  personId: 019928b0-0000-7000-8000-000000000001
+                  displayName: Claire D.
+                  email: claire@example.org
                   roles:
-                  - video
+                  - production
+                  - coordination
                   isOwner: false
-                  joinedAt: '2026-09-21T18:16:00Z'
-                  invitationState: pending
-                  version: 1
+                  joinedAt: '2025-11-02T09:00:00Z'
+                  version: 2
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: '`channel.role_not_assignable`, with the assignable roles and whom to ask.'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: channel.role_not_assignable
-                  nature: refused
-                  params:
-                    assignableRoles:
-                    - video
-                    - sound
-                    contactRoles:
-                    - artist
-                    - production
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:16:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+                - $ref: '#/components/schemas/ChannelRoleNotAssignableError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+                channel.role_not_assignable:
+                  $ref: '#/components/examples/ChannelRoleNotAssignableError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/invitations/{invitationId}/response:
     post:
       operationId: respondToInvitation
@@ -7359,6 +7698,9 @@ paths:
       - identity
       tags:
       - crew
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: personId
@@ -7367,10 +7709,10 @@ paths:
         schema:
           type: string
           format: uuid
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -7419,21 +7761,57 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:18:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
-                  personId: 019928b2-0000-7000-8000-000000000001
-                  displayName: Yann P.
+                  personId: 019928b0-0000-7000-8000-000000000001
+                  displayName: Claire D.
+                  email: claire@example.org
                   roles:
-                  - video
-                  - sound
+                  - production
+                  - coordination
                   isOwner: false
-                  joinedAt: '2026-09-21T18:16:00Z'
-                  version: 3
+                  joinedAt: '2025-11-02T09:00:00Z'
+                  version: 2
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/members/{personId}:
     delete:
       operationId: removeMember
@@ -7444,6 +7822,9 @@ paths:
       - identity
       tags:
       - crew
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: personId
@@ -7452,10 +7833,16 @@ paths:
         schema:
           type: string
           format: uuid
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - name: expectedVersion
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       responses:
         '200':
           description: Member removed.
@@ -7469,19 +7856,50 @@ paths:
                     data:
                       type: object
                       properties:
-                        removed:
+                        deleted:
                           type: boolean
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:19:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
-                  removed: true
+                  deleted: true
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/crew:
     post:
       operationId: grantDateAccess
@@ -7673,12 +8091,20 @@ paths:
       - identity
       tags:
       - crew
+      x-arthome-requires:
+      - name: recentAuth
+        proof:
+          in: body
+          name: reauthToken
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -7686,20 +8112,23 @@ paths:
             schema:
               type: object
               properties:
+                reauthToken:
+                  type: string
+                  format: password
+                  x-arthome-sensitive: true
+                  description: Single-use re-authentication token, short-lived.
                 toPersonId:
                   type: string
                   format: uuid
-                reauthToken:
-                  type: string
               required:
-              - toPersonId
               - reauthToken
+              - toPersonId
             example:
               toPersonId: 019928b2-0000-7000-8000-000000000001
               reauthToken: ott_9f2ac1
       responses:
         '202':
-          description: Transfert en attente d'acceptation.
+          description: Transfer pending acceptance.
           content:
             application/json:
               schema:
@@ -7718,25 +8147,74 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:21:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   state: pending_acceptance
                   expiresAt: '2026-09-28T18:21:00Z'
-        '409':
-          description: '`channel.transfer_target_ineligible` — not a member, or without two-factor authentication.'
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: channel.transfer_target_ineligible
-                  nature: refused
-                  params:
-                    reasonCode: two_factor_missing
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:21:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+                - $ref: '#/components/schemas/ApiReauthenticationRequiredError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+                api.reauthentication_required:
+                  $ref: '#/components/examples/ApiReauthenticationRequiredError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/ChannelTransferTargetIneligibleError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                channel.transfer_target_ineligible:
+                  $ref: '#/components/examples/ChannelTransferTargetIneligibleError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}:
     delete:
       operationId: deleteChannel
@@ -7756,12 +8234,15 @@ paths:
         proof:
           in: body
           name: reauthToken
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -7800,25 +8281,73 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:22:00.000Z'
-                rightsVersion: 413
+                servedAt: '2026-09-21T19:00:00.000Z'
+                rightsVersion: 412
                 data:
                   deleted: true
-        '409':
-          description: '`channel.has_open_obligations`, with the detail.'
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: channel.has_open_obligations
-                  nature: refused
-                  params:
-                    datesOnSale: 3
-                    payoutsDue: 1
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:22:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+                - $ref: '#/components/schemas/ApiReauthenticationRequiredError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+                api.reauthentication_required:
+                  $ref: '#/components/examples/ApiReauthenticationRequiredError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/ChannelHasOpenObligationsError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                channel.has_open_obligations:
+                  $ref: '#/components/examples/ChannelHasOpenObligationsError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/replays:
     get:
       operationId: listChannelReplays
@@ -7836,6 +8365,9 @@ paths:
       - ticketing
       tags:
       - channel
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Page'
@@ -7844,6 +8376,7 @@ paths:
       - $ref: '#/components/parameters/SortDir'
       - name: state
         in: query
+        required: false
         schema:
           type: string
           enum:
@@ -7853,7 +8386,6 @@ paths:
           x-arthome-vocabulary-source: none
           x-arthome-vocabulary-reason: 'A state machine local to this resource. It is the contract''s own, not the domain''s: the domain owns the facts, this owns how far a request has got.'
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -7899,6 +8431,7 @@ paths:
                           revenue:
                             description: '**Absent** without `canRevenue`.'
                             x-arthome-tax-basis: inclusive
+                            x-arthome-restricted: canRevenue
                             $ref: '#/components/schemas/Money'
                         required:
                         - dateId
@@ -7912,7 +8445,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:13:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 items:
                 - dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
@@ -7924,10 +8457,25 @@ paths:
                 page:
                   page: 1
                   pageSize: 20
-                  totalItems: 18
+                  totalItems: 1
                   totalPages: 1
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/settings:
     get:
       operationId: getChannelSettings
@@ -7951,10 +8499,12 @@ paths:
       - ticketing
       tags:
       - channel
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -8047,7 +8597,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:49:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   identity:
@@ -8064,8 +8614,23 @@ paths:
                     chatMode: open
                     version: 2
                   merchIntegration: null
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     patch:
       operationId: updateChannelSettings
       summary: Writes a channel's moderation and broadcast defaults.
@@ -8079,18 +8644,23 @@ paths:
 
         **The defaults are inherited when a date is created, never applied retroactively**: a channel
         setting does not change the regime of a live show in progress.
+
+        The `version` answered is the one `expectedVersion` is checked against: the moderation defaults'.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - chat
       - streaming
       tags:
       - channel
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -8098,8 +8668,6 @@ paths:
             schema:
               type: object
               properties:
-                expectedVersion:
-                  type: integer
                 moderationDefaults:
                   type: object
                   properties:
@@ -8141,13 +8709,16 @@ paths:
                       type: integer
                       minimum: 5
                       maximum: 120
+                expectedVersion:
+                  type: integer
+                  format: int64
               required:
               - expectedVersion
             example:
-              expectedVersion: 2
               moderationDefaults:
                 filterSeverity: high
                 slowModeSec: 5
+              expectedVersion: 7
       responses:
         '200':
           description: Settings up to date.
@@ -8160,11 +8731,62 @@ paths:
                   properties:
                     data:
                       type: object
-                      properties: {}
+                      properties:
+                        moderationDefaults:
+                          type: object
+                          properties:
+                            filterSeverity:
+                              type: string
+                              x-arthome-vocabulary:
+                              - low
+                              - medium
+                              - high
+                              x-arthome-vocabulary-source: FILTER_SEVERITIES
+                            slowModeSec:
+                              type: integer
+                            holdersOnly:
+                              type: boolean
+                            retroactiveFilter:
+                              type: boolean
+                            chatMode:
+                              type: string
+                              x-arthome-vocabulary:
+                              - open
+                              - emoji
+                              - read_only
+                              - 'off'
+                              x-arthome-vocabulary-source: CHAT_MODES
+                            version:
+                              type: integer
+                          additionalProperties: {}
+                          description: |
+                            **Inherited by a new date at creation**, never applied retroactively
+                            to an existing date — otherwise a channel setting would change the
+                            regime of a live show in progress.
+                        broadcastDefaults:
+                          type: object
+                          properties:
+                            ingestProtocol:
+                              type: string
+                              x-arthome-vocabulary:
+                              - rtmps
+                              - srt
+                              - whip
+                              x-arthome-vocabulary-source: none
+                              x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+                            holdScreenAutoAfterSec:
+                              type: integer
+                          additionalProperties: {}
+                        version:
+                          type: integer
+                      required:
+                      - version
                       additionalProperties: {}
+                  required:
+                  - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:49:30.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   moderationDefaults:
@@ -8174,10 +8796,46 @@ paths:
                     retroactiveFilter: true
                     chatMode: open
                     version: 3
+                  version: 3
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/journal:
     get:
       operationId: listChannelJournal
@@ -8198,6 +8856,9 @@ paths:
       - identity
       tags:
       - channel
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Page'
@@ -8216,6 +8877,7 @@ paths:
           format: date-time
       - name: nature
         in: query
+        required: false
         schema:
           type: string
           enum:
@@ -8228,11 +8890,11 @@ paths:
           x-arthome-vocabulary-reason: 'A vocabulary local to this contract: four of the five are endpoint concerns and a vocabulary of query filters does not belong in the domain. The exception is `money`, which @arthome/core does not produce but DOES reason about — data-model.md:624 and context-map.md:402 key the redaction rule to it, so the `money` kind is absent from the response without canRevenue. Renaming that one member silently falsifies two domain documents; the other four are ours alone.'
       - name: dateId
         in: query
+        required: false
         schema:
           type: string
           format: uuid
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -8255,7 +8917,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:38:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 items:
                 - id: 019928e7-0000-7000-8000-000000000001
@@ -8273,12 +8935,36 @@ paths:
                 page:
                   page: 1
                   pageSize: 20
-                  totalItems: 812
-                  totalPages: 41
+                  totalItems: 1
+                  totalPages: 1
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Malformed request, or a mandatory filter missing.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiSchemaInvalidError'
+                - $ref: '#/components/schemas/ApiPeriodFilterRequiredError'
+              examples:
+                api.schema_invalid:
+                  $ref: '#/components/examples/ApiSchemaInvalidError'
+                api.period_filter_required:
+                  $ref: '#/components/examples/ApiPeriodFilterRequiredError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/uploads:
     post:
       operationId: createUploadTicket
@@ -8370,10 +9056,12 @@ paths:
       - ticketing
       tags:
       - channel
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -8409,9 +9097,24 @@ paths:
                       currencyCode: EUR
                   state: on_sale
                   source: arthome
-                  version: 3
+                  version: 4
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/merch-items/{itemId}:
     put:
       operationId: upsertMerchItem
@@ -8425,6 +9128,9 @@ paths:
       - ticketing
       tags:
       - channel
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: itemId
@@ -8433,10 +9139,10 @@ paths:
         schema:
           type: string
           format: uuid
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -8523,7 +9229,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:47:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   id: 019928a0-7d31-7a10-b8c4-2f9e11a4d001
@@ -8540,8 +9246,45 @@ paths:
                   state: on_sale
                   source: arthome
                   version: 4
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/merch-pin:
     post:
       operationId: pinMerchDuringLive
@@ -8781,12 +9524,15 @@ paths:
       - catalog
       tags:
       - channel
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -8794,8 +9540,6 @@ paths:
             schema:
               type: object
               properties:
-                expectedVersion:
-                  type: integer
                 publicName:
                   type: string
                   maxLength: 120
@@ -8822,12 +9566,15 @@ paths:
                   - type: string
                     format: uuid
                   - type: 'null'
+                expectedVersion:
+                  type: integer
+                  format: int64
               required:
               - expectedVersion
             example:
-              expectedVersion: 5
               publicName: Compagnie Verticale
               categoryId: dance-contemporary
+              expectedVersion: 7
       responses:
         '200':
           description: Public identity up to date.
@@ -8838,25 +9585,71 @@ paths:
                 - $ref: '#/components/schemas/EnvelopeMeta'
                 - type: object
                   properties:
-                    version:
-                      type: integer
                     data:
                       type: object
-                      properties: {}
+                      properties:
+                        publicName:
+                          type: string
+                        slug:
+                          type: string
+                        categoryId:
+                          type: string
+                        verified:
+                          type: boolean
+                        version:
+                          type: integer
                       additionalProperties: {}
+                  required:
+                  - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:50:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
-                version: 6
                 data:
                   publicName: Compagnie Verticale
                   slug: compagnie-verticale
                   categoryId: dance-contemporary
+                  verified: true
+                  version: 5
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/payouts:
     get:
       operationId: listPayouts
@@ -8873,6 +9666,9 @@ paths:
       - payouts
       tags:
       - payouts
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Page'
@@ -8881,6 +9677,7 @@ paths:
       - $ref: '#/components/parameters/SortDir'
       - name: state
         in: query
+        required: false
         schema:
           type: string
           enum:
@@ -8891,7 +9688,6 @@ paths:
           - suspended
           x-arthome-vocabulary-source: PAYOUT_STATES
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -8963,8 +9759,23 @@ paths:
                   pageSize: 20
                   totalItems: 42
                   totalPages: 3
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/bank-change-requests:
     post:
       operationId: requestBankChange
@@ -8985,12 +9796,20 @@ paths:
       - payouts
       tags:
       - payouts
+      x-arthome-requires:
+      - name: recentAuth
+        proof:
+          in: body
+          name: reauthToken
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -8998,14 +9817,17 @@ paths:
             schema:
               type: object
               properties:
+                reauthToken:
+                  type: string
+                  format: password
+                  x-arthome-sensitive: true
+                  description: Single-use re-authentication token, short-lived.
                 stripeSetupRef:
                   type: string
                   description: '**Opaque** reference to the hosted flow. No provider identifier crosses the domain.,'
-                reauthToken:
-                  type: string
               required:
-              - stripeSetupRef
               - reauthToken
+              - stripeSetupRef
             example:
               stripeSetupRef: seti_1Ab2Cd
               reauthToken: ott_9f2ac1
@@ -9025,7 +9847,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:26:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   requestId: 019928e6-0000-7000-8000-000000000001
@@ -9039,10 +9861,48 @@ paths:
                   expiresAt: '2026-09-28T18:26:00Z'
                   suspendsPayoutIds:
                   - 019928e5-0000-7000-8000-000000000001
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+                - $ref: '#/components/schemas/ApiReauthenticationRequiredError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+                api.reauthentication_required:
+                  $ref: '#/components/examples/ApiReauthenticationRequiredError'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/bank-change-requests/{requestId}/countersign:
     post:
       operationId: countersignBankChange
@@ -9145,6 +10005,9 @@ paths:
       - payouts
       tags:
       - payouts
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: periodId
@@ -9152,10 +10015,10 @@ paths:
         required: true
         schema:
           type: string
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: false
         content:
@@ -9196,28 +10059,71 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-10-01T09:00:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   periodId: 2026-09
                   closedAt: '2026-10-01T09:00:00Z'
-        '409':
-          description: '`payout.reconciliation_discrepancy_unexplained`, with the gap and the lines.'
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: payout.reconciliation_discrepancy_unexplained
-                  nature: refused
-                  params:
-                    discrepancyMinor: -1240
-                    currencyCode: EUR
-                    payoutIds:
-                    - 019928e5-0000-7000-8000-000000000001
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-10-01T09:00:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/PayoutReconciliationDiscrepancyUnexplainedError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                payout.reconciliation_discrepancy_unexplained:
+                  $ref: '#/components/examples/PayoutReconciliationDiscrepancyUnexplainedError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/exports:
     post:
       operationId: requestChannelExport
@@ -9234,12 +10140,15 @@ paths:
       - chat
       tags:
       - payouts
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -9276,7 +10185,7 @@ paths:
               to: '2026-09-30'
       responses:
         '202':
-          description: Export mis en file.
+          description: Export queued.
           content:
             application/json:
               schema:
@@ -9290,15 +10199,63 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:39:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   exportId: 019928e8-0000-7000-8000-000000000001
                   kind: fec
                   state: queued
                   requestedAt: '2026-09-21T18:39:00Z'
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            Location:
+              description: Where to follow the outcome, `getChannelExport`.
+              schema:
+                type: string
+            Retry-After:
+              description: Seconds to wait before asking for the outcome.
+              schema:
+                type: integer
+                minimum: 0
+                maximum: 9007199254740991
+          x-arthome-operation: getChannelExport
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/exports/{exportId}:
     get:
       operationId: getChannelExport
@@ -12907,6 +13864,201 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    ApiSortKeyForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.sort_key_forbidden
+            params:
+              type: object
+              properties:
+                sortBy:
+                  type: string
+              required:
+              - sortBy
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ApiSchemaInvalidError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.schema_invalid
+            params:
+              type: object
+              properties:
+                issues:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      path:
+                        type: array
+                        items:
+                          anyOf:
+                          - type: string
+                          - type: integer
+                            format: int64
+                      rule:
+                        type: string
+                        x-arthome-vocabulary:
+                        - too_small
+                        - too_big
+                        - invalid_type
+                        - invalid_format
+                        - invalid_value
+                        - unrecognized_key
+                        - custom
+                        x-arthome-vocabulary-source: SCHEMA_ISSUE_RULES
+                      minimum:
+                        type: number
+                      maximum:
+                        type: number
+                      inclusive:
+                        type: boolean
+                      format:
+                        type: string
+                      values:
+                        type: array
+                        items:
+                          type:
+                          - string
+                          - number
+                          - boolean
+                          - 'null'
+                    required:
+                    - path
+                    - rule
+                    additionalProperties: {}
+              required:
+              - issues
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ApiPeriodFilterRequiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.period_filter_required
+            params:
+              type: object
+              properties:
+                maxRangeDays:
+                  type: integer
+                  format: int64
+              required:
+              - maxRangeDays
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     ApiRightsVersionStaleError:
       type: object
       properties:
@@ -13348,98 +14500,6 @@ components:
                   format: int64
               required:
               - seatsSold
-              additionalProperties: {}
-            traceId:
-              type: string
-              minLength: 1
-              examples:
-              - 4bf92f3577b34da6a3ce929d0e0e4736
-              description: The one moment left where the person can read out a number and dictate it to support.
-            nature:
-              type: string
-              x-arthome-vocabulary:
-              - refused
-              - unavailable
-              - offline_forbidden
-              x-arthome-vocabulary-source: FAILURE_NATURES
-              x-arthome-unknown-fallback: unavailable
-              description: |
-                `offline_forbidden` is a **local** refusal, never emitted by the server.
-
-                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
-                retryable. A frozen `enum` here would make an earlier version of the application reject the
-                **whole** error envelope — that is, lose the ability to read errors at the precise moment
-                something is wrong, on duty, on an application a store review takes days to replace.
-          required:
-          - code
-          - params
-          - traceId
-          - nature
-          additionalProperties: {}
-        servedAt:
-          type: string
-          format: date-time
-      required:
-      - error
-      - servedAt
-      additionalProperties: {}
-    ApiSchemaInvalidError:
-      type: object
-      properties:
-        error:
-          type: object
-          properties:
-            code:
-              type: string
-              const: api.schema_invalid
-            params:
-              type: object
-              properties:
-                issues:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      path:
-                        type: array
-                        items:
-                          anyOf:
-                          - type: string
-                          - type: integer
-                            format: int64
-                      rule:
-                        type: string
-                        x-arthome-vocabulary:
-                        - too_small
-                        - too_big
-                        - invalid_type
-                        - invalid_format
-                        - invalid_value
-                        - unrecognized_key
-                        - custom
-                        x-arthome-vocabulary-source: SCHEMA_ISSUE_RULES
-                      minimum:
-                        type: number
-                      maximum:
-                        type: number
-                      inclusive:
-                        type: boolean
-                      format:
-                        type: string
-                      values:
-                        type: array
-                        items:
-                          type:
-                          - string
-                          - number
-                          - boolean
-                          - 'null'
-                    required:
-                    - path
-                    - rule
-                    additionalProperties: {}
-              required:
-              - issues
               additionalProperties: {}
             traceId:
               type: string
@@ -14311,6 +15371,64 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    ChannelRoleNotAssignableError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: channel.role_not_assignable
+            params:
+              type: object
+              properties:
+                assignableRoles:
+                  type: array
+                  items:
+                    type: string
+                contactRoles:
+                  type: array
+                  items:
+                    type: string
+              required:
+              - assignableRoles
+              - contactRoles
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     ChannelCrewRoleReservedError:
       type: object
       properties:
@@ -14335,6 +15453,173 @@ components:
               - crewRole
               - reservedTo
               - reasonCode
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ChannelTransferTargetIneligibleError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: channel.transfer_target_ineligible
+            params:
+              type: object
+              properties:
+                reasonCode:
+                  type: string
+              required:
+              - reasonCode
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ChannelHasOpenObligationsError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: channel.has_open_obligations
+            params:
+              type: object
+              properties:
+                datesOnSale:
+                  type: integer
+                  format: int64
+                payoutsDue:
+                  type: integer
+                  format: int64
+              required:
+              - datesOnSale
+              - payoutsDue
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    PayoutReconciliationDiscrepancyUnexplainedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: payout.reconciliation_discrepancy_unexplained
+            params:
+              type: object
+              properties:
+                discrepancyMinor:
+                  type: integer
+                  format: int64
+                currencyCode:
+                  type: string
+                payoutIds:
+                  type: array
+                  items:
+                    type: string
+              required:
+              - discrepancyMinor
+              - currencyCode
+              - payoutIds
               additionalProperties: {}
             traceId:
               type: string
@@ -14396,6 +15681,15 @@ components:
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
+    ApiPeriodFilterRequiredError:
+      value:
+        error:
+          code: api.period_filter_required
+          nature: refused
+          params:
+            maxRangeDays: 92
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     ApiReauthenticationRequiredError:
       value:
         error:
@@ -14427,6 +15721,15 @@ components:
               inclusive: true
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
+    ApiSortKeyForbiddenError:
+      value:
+        error:
+          code: api.sort_key_forbidden
+          nature: refused
+          params:
+            sortBy: grossRevenue
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     CapacityTierMustWidenError:
       value:
         error:
@@ -14448,6 +15751,39 @@ components:
             - artist
             - production
             reasonCode: grants_stream_key_access
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ChannelHasOpenObligationsError:
+      value:
+        error:
+          code: channel.has_open_obligations
+          nature: refused
+          params:
+            datesOnSale: 3
+            payoutsDue: 1
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ChannelRoleNotAssignableError:
+      value:
+        error:
+          code: channel.role_not_assignable
+          nature: refused
+          params:
+            assignableRoles:
+            - video
+            - sound
+            contactRoles:
+            - artist
+            - production
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ChannelTransferTargetIneligibleError:
+      value:
+        error:
+          code: channel.transfer_target_ineligible
+          nature: refused
+          params:
+            reasonCode: two_factor_missing
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     DateAlreadyEndedError:
@@ -14598,6 +15934,18 @@ components:
             threshold: 10000
             capacityTotal: 10050
             revisableUntil: '2026-09-18T19:00:00Z'
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    PayoutReconciliationDiscrepancyUnexplainedError:
+      value:
+        error:
+          code: payout.reconciliation_discrepancy_unexplained
+          nature: refused
+          params:
+            discrepancyMinor: -1240
+            currencyCode: EUR
+            payoutIds:
+            - 019928e5-0000-7000-8000-000000000001
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     PublicationChecklistIncompleteError:
