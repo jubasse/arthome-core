@@ -6708,11 +6708,14 @@ paths:
                 anyOf:
                 - $ref: '#/components/schemas/ApiForbiddenError'
                 - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+                - $ref: '#/components/schemas/ApiReauthenticationRequiredError'
               examples:
                 api.forbidden:
                   $ref: '#/components/examples/ApiForbiddenError'
                 api.rights_version_stale:
                   $ref: '#/components/examples/ApiRightsVersionStaleError'
+                api.reauthentication_required:
+                  $ref: '#/components/examples/ApiReauthenticationRequiredError'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -6822,11 +6825,14 @@ paths:
                 anyOf:
                 - $ref: '#/components/schemas/ApiForbiddenError'
                 - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+                - $ref: '#/components/schemas/ApiReauthenticationRequiredError'
               examples:
                 api.forbidden:
                   $ref: '#/components/examples/ApiForbiddenError'
                 api.rights_version_stale:
                   $ref: '#/components/examples/ApiRightsVersionStaleError'
+                api.reauthentication_required:
+                  $ref: '#/components/examples/ApiReauthenticationRequiredError'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -14261,6 +14267,53 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    ApiReauthenticationRequiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.reauthentication_required
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     DateStreamKeyRotationDuringRunError:
       type: object
       properties:
@@ -14393,6 +14446,14 @@ components:
       value:
         error:
           code: api.idempotency_key_reused
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ApiReauthenticationRequiredError:
+      value:
+        error:
+          code: api.reauthentication_required
           nature: refused
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736

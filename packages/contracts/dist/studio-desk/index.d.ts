@@ -61,7 +61,7 @@ export declare const JournalEntrySchema: z.ZodObject<{
     occurredAt: z.ZodString;
     actor: typeof ActorSchema;
     code: z.ZodString;
-    params: z.ZodObject<Record<string, never>, z.core.$loose>;
+    params: z.ZodObject<Record<never, never>, z.core.$loose>;
     dateId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$loose>;
 /** One notification of the studio inbox. */

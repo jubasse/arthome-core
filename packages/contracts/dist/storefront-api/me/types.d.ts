@@ -4,11 +4,11 @@ import type { ApiErrorCode, DomainErrorCode, NOTIFICATION_CHANNELS } from '@arth
 import type { VocabularyIn } from '@arthome/core/schema';
 import type { ArtistSummarySchema, DateCardSchema, SavedSearchSchema } from '../../catalog/index.js';
 import type { NotificationPreferencesSchema } from '../../engagement/index.js';
-import type { Deleted, IdentifiedAccess, ItemResponse, JsonRequestBody, JsonResponse, PageResponse, Route } from '../../http/index.js';
+import type { Deleted, IdentifiedAccess, ItemResponse, JsonRequestBody, PageResponse, Route } from '../../http/index.js';
 import type { AccountScreenSchema, ConsentsSchema, ViewerContextSchema, ViewerPreferencesSchema } from '../../identity/index.js';
 import type { ExportRequestSchema, TicketCardSchema } from '../../ticketing/index.js';
 import type { ArtistIdParameter, CursorDirectionParameter, CursorParameter, DateIdParameter, IdempotencyKeyParameter, LimitParameter, SurfaceParameter, TraceparentParameter, storefrontConventions, viewer } from '../components.js';
-import type { AccountDeletionSchema, AddPasskeyBodySchema, AddPaymentMethodBodySchema, CreateSavedSearchBodySchema, DeletionCancellationSchema, DeviceIdParameter, DeviceRevocationSchema, DeviceSessionIdParameter, ExportIdParameter, ExportRequestAcceptedSchema, FollowArtistBodySchema, FollowedArtistsSortParameter, LiveOnlyParameter, MarkNotificationsReadBodySchema, NotificationBadgeAnswerSchema, NotificationPageSchema, OrderEntrySchema, PasskeyEnrolmentSchema, PasskeyIdParameter, PaymentMethodIdParameter, PaymentMethodSetupSchema, PlaybackPositionSchema, ProfileUpdateAnswerSchema, RecordPlaybackPositionBodySchema, ReminderSchema, RequestAccountDeletionBodySchema, RequestExportBodySchema, SavedSearchIdParameter, SavedSearchListSchema, TicketWindowParameter } from './schemas.js';
+import type { AccountDeletionSchema, AddPasskeyBodySchema, AddPaymentMethodBodySchema, CreateSavedSearchBodySchema, DeletionCancellationSchema, DeviceIdParameter, DeviceRevocationSchema, DeviceSessionIdParameter, ExportIdParameter, FollowArtistBodySchema, FollowedArtistsSortParameter, LiveOnlyParameter, MarkNotificationsReadBodySchema, NotificationBadgeAnswerSchema, NotificationPageSchema, OrderEntrySchema, PasskeyEnrolmentSchema, PasskeyIdParameter, PaymentMethodIdParameter, PaymentMethodSetupSchema, PlaybackPositionSchema, ProfileUpdateAnswerSchema, RecordPlaybackPositionBodySchema, ReminderSchema, RequestAccountDeletionBodySchema, RequestExportBodySchema, SavedSearchIdParameter, SavedSearchListSchema, TicketWindowParameter } from './schemas.js';
 export type AddPasskeyRoute = Route<{
     method: 'post';
     version: 1;
@@ -586,7 +586,7 @@ export type RequestExportRoute = Route<{
     requestBody: JsonRequestBody<typeof RequestExportBodySchema, true>;
     access: IdentifiedAccess<typeof viewer, false>;
     responses: {
-        202: JsonResponse<typeof ExportRequestAcceptedSchema>;
+        202: ItemResponse<typeof storefrontConventions, typeof ExportRequestSchema, unknown>;
     };
     errorCodes: {
         409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];

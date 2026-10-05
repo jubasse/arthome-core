@@ -8,6 +8,7 @@ import { identity, recentAuth, requirement, roles, throttle } from './access.js'
 import { routeBuilder } from './builder.js';
 import { defineErrorModel } from './errors.js';
 import type { Response } from './index.js';
+import { errorCodesOf } from './index.js';
 import { restricted, restrictedFieldsOf, sensitive, sensitivePathsOf } from './marks.js';
 import { Freshness, cache, DEFAULT_BODY_LIMIT } from './policy.js';
 import { accepted } from './responses.js';
@@ -188,6 +189,19 @@ describe('derived errors', () => {
     expect(Object.keys(route.responses)).toEqual(expect.arrayContaining(['403', '429']));
     expect(route.requires?.map((rule) => rule.name)).toEqual(['roles', 'recentAuth', 'throttle']);
     expect(route.requires?.[0]?.params).toEqual({ allowed: ['production'], on: 'channelId' });
+  });
+
+  it('adds the codes of a rule the route requires itself', () => {
+    const route = builder.defineRoute({
+      method: 'post',
+      path: '/a',
+      operationId: 'a',
+      requires: [recentAuth()],
+      requestBody: { content: { 'application/json': { schema: ReauthProof } } },
+      responses: ok,
+    });
+
+    expect(errorCodesOf(route, 403)).toContain(ApiErrorCode.REAUTHENTICATION_REQUIRED);
   });
 
   it('refuses a route whose body lacks the proof a rule reads', () => {

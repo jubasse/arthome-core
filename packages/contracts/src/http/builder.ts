@@ -378,6 +378,7 @@ function derivedCodes(
     readonly method: string;
     readonly parameters: readonly Parameter[];
     readonly requestBody?: unknown;
+    readonly requires: readonly Requirement[];
   },
 ): CodesByStatus {
   const out: CodesByStatus = {};
@@ -410,7 +411,7 @@ function derivedCodes(
     add(access.identity.errors);
     if (write) add(access.identity.writeErrors);
   }
-  for (const rule of settings.requires) add(rule.errors);
+  for (const rule of definition.requires) add(rule.errors);
   if (access !== undefined) {
     add({ 500: [ApiErrorCode.INTERNAL] });
     if (settings.model?.upstreams === true) {
@@ -633,6 +634,7 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
         method: rest.method,
         parameters,
         requestBody: rest.requestBody,
+        requires,
       });
       const built = responsesOf(settings, ownCodes, ownBases, derived, identityBases);
       const errorCodes = Object.fromEntries(

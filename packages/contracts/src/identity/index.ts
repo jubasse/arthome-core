@@ -343,7 +343,7 @@ export const ConsentsSchema: z.ZodObject<
       >
     >;
     cookieCategories: z.ZodOptional<
-      z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodBoolean>>
+      z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodBoolean>>
     >;
     textVersion: z.ZodOptional<z.ZodNumber>;
     recordedAt: z.ZodOptional<z.ZodString>;

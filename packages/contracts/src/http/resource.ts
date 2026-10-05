@@ -25,6 +25,7 @@ import {
   type SortKey,
 } from './paging.js';
 import { BATCH_BODY_LIMIT } from './policy.js';
+import { accepted } from './responses.js';
 
 type PathParameterOf = Parameter & { readonly in: 'path' };
 
@@ -694,6 +695,8 @@ export interface Resource<C extends ResourceContext> {
         readonly idempotent?: false;
         /** `202` for a write that is only accepted, not yet applied. */
         readonly status?: 202;
+        /** On a `202`, the operation that follows the outcome: its `Location` names it. */
+        readonly follow?: string;
       }
     >,
   >(
@@ -853,6 +856,12 @@ function filterParameter(schema: z.ZodObject): Parameter {
 const SORT_PARAMETERS: readonly string[] = ['sortBy', 'sortDir'];
 
 const NOT_FOUND: ErrorsInput<string> = { 404: [ApiErrorCode.NOT_FOUND] };
+/** What a `202` that names its follow-up adds to its answer: `Location` and `Retry-After`. */
+function acceptedParts(follow: string): Omit<Response, 'description'> {
+  const { description: _accepted, ...parts } = accepted({ operation: follow });
+  return parts;
+}
+
 /** The version a write's example expects the record to be at. */
 const EXAMPLE_VERSION = 7;
 
@@ -882,6 +891,7 @@ const OPTION_KEYS = [
   'fields',
   'method',
   'status',
+  'follow',
   'idempotent',
   'example',
   'optionalBody',
@@ -1141,7 +1151,9 @@ export function makeResource(
       }
       listParameters = convention.parameters(paging);
       page = convention.page(item);
-      if (paging.kind === 'cursor') errors[410] = [ApiErrorCode.CURSOR_TOO_OLD];
+    }
+    if ((paging ?? conventions.paging)?.kind === 'cursor') {
+      errors[410] = [ApiErrorCode.CURSOR_TOO_OLD];
     }
     if (sortable !== undefined) {
       const keys = sortable.map(sortKeyName) as [string, ...string[]];
@@ -1209,12 +1221,17 @@ export function makeResource(
       docs,
       parameters: [...parents, ...(docs.idempotent === false ? [] : conventions.writeParameters)],
       responses: {
-        [(docs.status as number | undefined) ?? 201]: jsonResponse(
-          said(docs, 'Created.'),
-          docs.response !== undefined ? conventions.item(docs.response as z.ZodType) : itemOf(docs),
-          undefined,
-          shown((docs.response ?? docs.item) as z.ZodType | undefined),
-        ),
+        [(docs.status as number | undefined) ?? 201]: {
+          ...jsonResponse(
+            said(docs, 'Created.'),
+            docs.response !== undefined
+              ? conventions.item(docs.response as z.ZodType)
+              : itemOf(docs),
+            undefined,
+            shown((docs.response ?? docs.item) as z.ZodType | undefined),
+          ),
+          ...(docs.follow !== undefined && acceptedParts(docs.follow as string)),
+        },
       },
       errors: docs.idempotent === false ? {} : { 409: IDEMPOTENCY },
       body: docs.body as z.ZodType,

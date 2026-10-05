@@ -10,7 +10,6 @@ import {
   DeviceRevocationSchema,
   DeviceSessionIdParameter,
   ExportIdParameter,
-  ExportRequestAcceptedSchema,
   FollowArtistBodySchema,
   FollowedArtistsSortParameter,
   LiveOnlyParameter,
@@ -74,7 +73,7 @@ import type {
 } from './types.js';
 import { ArtistSummarySchema, DateCardSchema, SavedSearchSchema } from '../../catalog/index.js';
 import { NotificationPreferencesSchema } from '../../engagement/index.js';
-import { Deleted, Freshness, accepted, cache, cursor, throttle } from '../../http/index.js';
+import { Deleted, Freshness, cache, cursor, throttle } from '../../http/index.js';
 import {
   AccountScreenSchema,
   ConsentsSchema,
@@ -393,13 +392,10 @@ export const requestExport: RequestExportRoute = account
     operationId: 'requestExport',
     summary: 'Requests an export — personal data or invoices.',
     body: RequestExportBodySchema,
-    responses: {
-      202: accepted({
-        operation: 'getExport',
-        description: 'Request accepted.',
-        body: ExportRequestAcceptedSchema,
-      }),
-    },
+    item: ExportRequestSchema,
+    status: 202,
+    follow: 'getExport',
+    answer: 'Request accepted.',
   });
 
 export const getExport: GetExportRoute = account

@@ -95,7 +95,7 @@ export declare const ConsentsSchema: z.ZodObject<{
         partners: z.ZodOptional<z.ZodBoolean>;
         ads: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
     }, z.core.$loose>>;
-    cookieCategories: z.ZodOptional<z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodBoolean>>>;
+    cookieCategories: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodBoolean>>>;
     textVersion: z.ZodOptional<z.ZodNumber>;
     recordedAt: z.ZodOptional<z.ZodString>;
 }, z.core.$loose>;

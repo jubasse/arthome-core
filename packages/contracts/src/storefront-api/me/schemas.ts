@@ -11,7 +11,7 @@ import type { PathParameter, QueryParameter } from '../../http/index.js';
 import { localVocabulary, sensitive } from '../../http/index.js';
 import { DeviceSchema } from '../../identity/index.js';
 import { StorefrontCursorPageInfoSchema } from '../../pagination/index.js';
-import { ExportRequestSchema, ExternalOrderRefSchema, OrderSchema } from '../../ticketing/index.js';
+import { ExternalOrderRefSchema, OrderSchema } from '../../ticketing/index.js';
 
 const SORT_OR_FILTER_KEY =
   "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.";
@@ -429,16 +429,6 @@ export const RequestExportBodySchema: z.ZodObject<
     .optional(),
 });
 
-export const ExportRequestAcceptedSchema: z.ZodIntersection<
-  typeof StorefrontEnvelopeMetaSchema,
-  z.ZodObject<{ data: typeof ExportRequestSchema }, z.core.$loose>
-> = z.intersection(
-  StorefrontEnvelopeMetaSchema,
-  z.looseObject({
-    data: ExportRequestSchema,
-  }),
-);
-
 export const RequestAccountDeletionBodySchema: z.ZodObject<
   { confirmHandle: z.ZodString },
   z.core.$strip
@@ -518,7 +508,6 @@ export type UpdateNotificationPreferencesBody = z.output<
 export type UpdateConsentsBody = z.output<typeof UpdateConsentsBodySchema>;
 export type DeviceRevocation = z.output<typeof DeviceRevocationSchema>;
 export type RequestExportBody = z.output<typeof RequestExportBodySchema>;
-export type ExportRequestAccepted = z.output<typeof ExportRequestAcceptedSchema>;
 export type RequestAccountDeletionBody = z.output<typeof RequestAccountDeletionBodySchema>;
 export type AccountDeletion = z.output<typeof AccountDeletionSchema>;
 export type DeletionCancellation = z.output<typeof DeletionCancellationSchema>;

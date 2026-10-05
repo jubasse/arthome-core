@@ -7,7 +7,7 @@ import { StorefrontEnvelopeMetaSchema } from '../../envelope/index.js';
 import type { PathParameter, QueryParameter } from '../../http/index.js';
 import { DeviceSchema } from '../../identity/index.js';
 import { StorefrontCursorPageInfoSchema } from '../../pagination/index.js';
-import { ExportRequestSchema, ExternalOrderRefSchema, OrderSchema } from '../../ticketing/index.js';
+import { ExternalOrderRefSchema, OrderSchema } from '../../ticketing/index.js';
 declare const TICKET_WINDOWS: readonly ["upcoming", "past"];
 declare const FOLLOWED_ARTISTS_SORTS: readonly ["alpha", "followers", "next_date"];
 declare const SAVED_SEARCH_SCOPES: readonly ["search", "category"];
@@ -121,9 +121,6 @@ export declare const RequestExportBodySchema: z.ZodObject<{
     fromDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     toDate: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$strip>;
-export declare const ExportRequestAcceptedSchema: z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-    data: typeof ExportRequestSchema;
-}, z.core.$loose>>;
 export declare const RequestAccountDeletionBodySchema: z.ZodObject<{
     confirmHandle: z.ZodString;
 }, z.core.$strip>;
@@ -164,7 +161,6 @@ export type UpdateNotificationPreferencesBody = z.output<typeof UpdateNotificati
 export type UpdateConsentsBody = z.output<typeof UpdateConsentsBodySchema>;
 export type DeviceRevocation = z.output<typeof DeviceRevocationSchema>;
 export type RequestExportBody = z.output<typeof RequestExportBodySchema>;
-export type ExportRequestAccepted = z.output<typeof ExportRequestAcceptedSchema>;
 export type RequestAccountDeletionBody = z.output<typeof RequestAccountDeletionBodySchema>;
 export type AccountDeletion = z.output<typeof AccountDeletionSchema>;
 export type DeletionCancellation = z.output<typeof DeletionCancellationSchema>;

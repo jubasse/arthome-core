@@ -454,6 +454,8 @@ export interface Resource<C extends ResourceContext> {
         readonly idempotent?: false;
         /** `202` for a write that is only accepted, not yet applied. */
         readonly status?: 202;
+        /** On a `202`, the operation that follows the outcome: its `Location` names it. */
+        readonly follow?: string;
     }>>(docs: D): CreateRoute<C, D>;
     /**
      * PATCH: a partial change of one or several properties, with no business rule. An absent field

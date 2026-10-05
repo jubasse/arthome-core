@@ -20,7 +20,6 @@ import type {
   CreateSavedSearchBody,
   DeletionCancellation,
   DeviceRevocation,
-  ExportRequestAccepted,
   FollowArtistBody,
   MarkNotificationsReadBody,
   NotificationBadgeAnswer,
@@ -48,7 +47,6 @@ import {
   CreateSavedSearchBodySchema,
   DeletionCancellationSchema,
   DeviceRevocationSchema,
-  ExportRequestAcceptedSchema,
   FollowArtistBodySchema,
   MarkNotificationsReadBodySchema,
   NotificationBadgeAnswerSchema,
@@ -301,16 +299,6 @@ const requestExportBody: RequestExportBody = {
   toDate: '2026-09-21',
 };
 
-const exportRequestAccepted: ExportRequestAccepted = {
-  servedAt: '2026-09-21T19:07:00.000Z',
-  data: {
-    exportId: EXPORT_ID,
-    kind: 'invoices',
-    state: 'queued',
-    requestedAt: '2026-09-21T19:07:00Z',
-  },
-};
-
 const exportRequest: z.output<typeof ExportRequestSchema> = {
   exportId: EXPORT_ID,
   kind: 'invoices',
@@ -368,7 +356,6 @@ export const meExamples: ModuleExamples = [
   [DeviceRevocationSchema, [deviceRevocation]],
   [ViewerContextSchema, [viewerContext]],
   [RequestExportBodySchema, [requestExportBody]],
-  [ExportRequestAcceptedSchema, [exportRequestAccepted]],
   [ExportRequestSchema, [exportRequest]],
   [RequestAccountDeletionBodySchema, [requestAccountDeletionBody]],
   [AccountDeletionSchema, [accountDeletion]],

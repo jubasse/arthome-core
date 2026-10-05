@@ -1123,7 +1123,7 @@ export const DateDetailSchema: z.ZodIntersection<
       spokenLanguages: z.ZodOptional<z.ZodArray<z.ZodString>>;
       subtitleLanguages: z.ZodOptional<z.ZodArray<z.ZodString>>;
       surtitleLanguages: z.ZodOptional<z.ZodArray<z.ZodString>>;
-      attributes: z.ZodOptional<z.ZodObject<Record<string, never>, z.core.$loose>>;
+      attributes: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$loose>>;
       priceTiers: z.ZodOptional<z.ZodArray<typeof PriceTierSchema>>;
       serviceFee: z.ZodOptional<
         z.ZodNullable<

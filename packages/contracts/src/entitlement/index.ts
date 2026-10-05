@@ -50,7 +50,7 @@ export const WatchVerdictSchema: z.ZodObject<
     scope: z.ZodOptional<VocabularyOut>;
     advisory: z.ZodBoolean;
     denialReasonCode: z.ZodOptional<VocabularyOutNullable>;
-    reasonParams: z.ZodOptional<z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodUnknown>>>;
+    reasonParams: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodUnknown>>>;
     fallbackAction: z.ZodOptional<VocabularyOut>;
     previewSecondsLeft: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     validUntil: z.ZodString;

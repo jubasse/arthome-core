@@ -2,8 +2,9 @@
 /**
  * Prints the docs entries of routes still on their old declaration, ready for a module's `docs.ts`:
  * the description, the upstream services and the idempotency exemption, read from the BUILT api
- * so no long description is copied by hand. A stated maturity stays with the api's `docs.ts`
- * until it is moved by hand, with its reason.
+ * so no long description is copied by hand. A maturity the route states and its owning service does
+ * not give is printed too, and named on stderr: it needs a `maturityReason`, or it goes. A stated
+ * maturity already in the api's `docs.ts` moves from there by hand, with its reason.
  *
  *   pnpm -r run build
  *   node tools/route-docs.mjs studio getDateSheet getDatePublicPane ...
@@ -21,6 +22,7 @@ if (surface === undefined || operationIds.length === 0) {
 const dist = resolve('packages/contracts/dist');
 const apiModule = await import(pathToFileURL(resolve(dist, `${surface}-api/index.js`)).href);
 const api = apiModule[`${surface}Api`];
+const { maturityOf } = await import(pathToFileURL(resolve(dist, 'openapi/index.js')).href);
 const { Service, Upstream } = await import(
   pathToFileURL(resolve('packages/core/dist/index.js')).href
 );
@@ -46,6 +48,15 @@ const entries = operationIds.map((operationId) => {
   }
   const upstream = route['x-arthome-upstream'];
   if (upstream !== undefined) lines.push(`    upstream: [${upstream.map(accessorOf).join(', ')}],`);
+  const stated = route['x-arthome-maturity'];
+  const derived = maturityOf(upstream ?? []);
+  if (stated !== undefined && stated !== derived) {
+    lines.push(`    maturity: '${stated}',`);
+    console.error(
+      `route-docs: ${operationId} states ${stated} where its owning service gives ${derived ?? 'none'}: ` +
+        'give it a maturityReason, or drop the maturity if the derived one is right.',
+    );
+  }
   const exemption = route['x-arthome-idempotency-exemption'];
   if (exemption !== undefined)
     lines.push(`    idempotencyExemption: ${JSON.stringify(exemption)},`);

@@ -4010,6 +4010,27 @@ paths:
       responses:
         '202':
           description: Request accepted.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/ExportRequest'
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  exportId: 019928fc-0000-7000-8000-000000000001
+                  kind: invoices
+                  state: ready
+                  requestedAt: '2026-09-21T19:07:00Z'
+                  downloadUrl: https://files.arthome.fr/exports/019928fc?sig=abc
+                  downloadExpiresAt: '2026-09-21T20:12:00Z'
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
@@ -4024,25 +4045,6 @@ paths:
                 minimum: 0
                 maximum: 9007199254740991
           x-arthome-operation: getExport
-          content:
-            application/json:
-              schema:
-                allOf:
-                - $ref: '#/components/schemas/EnvelopeMeta'
-                - type: object
-                  properties:
-                    data:
-                      $ref: '#/components/schemas/ExportRequest'
-                  required:
-                  - data
-                  additionalProperties: {}
-              example:
-                servedAt: '2026-09-21T19:07:00.000Z'
-                data:
-                  exportId: 019928fc-0000-7000-8000-000000000001
-                  kind: invoices
-                  state: queued
-                  requestedAt: '2026-09-21T19:07:00Z'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
