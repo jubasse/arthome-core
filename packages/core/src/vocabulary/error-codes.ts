@@ -306,7 +306,7 @@ export const PayoutErrorCode = {
  */
 export const ORDER_ERROR_CODES = [
   'order.quote_address_mismatch',
-  // The binding quote is past its fifteen minutes (data-model 3.5): a new quote, then checkout again.
+  // The binding quote has expired (data-model 3.5): a new quote, then checkout again.
   'order.quote_expired',
   'order.sold_out',
   // A price tier the date no longer sells.

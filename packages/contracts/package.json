@@ -50,7 +50,7 @@
     "  ./http ./http-client ./openapi                — routes as TypeScript, their client, the document they emit",
     "  ./storefront-api ./studio-api                 — every route of each document, from which the document is generated",
     "",
-    "Fourteen, not the seven planned here. `./chat`, `./payouts` and `./notifications`",
+    "Fourteen bounded contexts, not the seven planned here. `./chat`, `./payouts` and `./notifications`",
     "were named as plans and never existed: chat and notifications are served to a",
     "VIEWER so they live in ./engagement, and payouts are OPERATED so they live in",
     "./studio-money. The bounded context that matters at a contract boundary is the",

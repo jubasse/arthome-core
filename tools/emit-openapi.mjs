@@ -3,7 +3,7 @@
 //
 //   node tools/emit-openapi.mjs <built module exporting an api> [--docs <built docs module>]
 //
-// It reads BUILT modules (`dist/`), like emit-contracts.mjs, and takes the emitter from
+// It reads BUILT modules (`dist/`) and takes the emitter from
 // packages/contracts/dist so the emitter and the api share one zod: a second copy would register
 // the components in a registry the api's schemas never reach.
 

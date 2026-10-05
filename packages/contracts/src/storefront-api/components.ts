@@ -529,18 +529,6 @@ export const viewerOrDevice: Identity<
   writeResponses: { 403: CsrfRefusedResponse },
 });
 
-/** The television, paired to an account: it holds a device token and no session. */
-export const device: Identity<
-  'paired_device',
-  typeof DevicePrincipalSchema,
-  never,
-  readonly [],
-  readonly []
-> = identity('paired_device', {
-  schemes: { read: [{ deviceToken: [] }], write: [{ deviceToken: [] }] },
-  principal: DevicePrincipalSchema,
-});
-
 export const storefrontV1: RouteBuilder<
   1,
   readonly [],
