@@ -75,7 +75,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
 
 const STUDIO_STILL_INLINE: readonly string[] = [
   'addBannedWord',
-  'changeMemberRoles',
   'claimModerationItem',
   'closeReconciliationPeriod',
   'countersignBankChange',
@@ -91,9 +90,7 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'getChannelStreamSettings',
   'getChannelTicketing',
   'getStudioBootstrap',
-  'inviteMember',
   'listChannelEvents',
-  'listChannelMembers',
   'listDuties',
   'listInbox',
   'listModerationQueue',
@@ -106,7 +103,6 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'registerStudioPushToken',
   'releaseModerationItem',
   'removeBannedWord',
-  'removeMember',
   'requestBankChange',
   'requestChannelExport',
   'requestPasswordResetStudio',
@@ -119,7 +115,6 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'settleModerationItem',
   'signInStudio',
   'signOutStudio',
-  'transferChannelOwnership',
   'updateStudioPreferences',
   'verifyTwoFactorStudio',
 ];

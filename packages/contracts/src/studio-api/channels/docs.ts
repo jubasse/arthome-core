@@ -44,4 +44,28 @@ export const channelsDocs: ModuleDocs = {
       '**A pure `catalog` write.** A channel has two faces, and the contract separates them: the\nchannel **as an organisation** — members, roles, invitations, stream key — is authorisation,\nhence `identity`; the channel **as a public page** — name, biography, avatar, discipline — is\ncatalogue, hence `catalog.Artist`, in a 1:1 relation by `channelId`.\n\n**No studio command crosses the two**, and that is the proof the cut is right: the Settings\nscreen shows two blocks that never mix.\n',
     upstream: [Service.CATALOG],
   },
+  listChannelMembers: {
+    description:
+      'The **per-role counter** is a **served aggregation**, not a count over the current page: the\nrole filter displays "production (4)", and that number bears on the whole team.\n\nThe search covers the name, the email, the note and the role, **server-side**: the directory\nof contributors runs into the thousands, freelancers included.\n',
+    upstream: [Service.IDENTITY],
+  },
+  inviteMember: {
+    description:
+      '**`role ∈ assignableRoles` of the inviter**, a projection of `grants` onto the roles they\nhold. The refusal carries **the list of roles assignable from this level and whom to ask** — a\nbare refusal would force the person to guess.\n\n`director` can invite `video` and `sound`; `video`, `sound`, `moderation` and `treasury`\ninvite nobody. **The fallback to six personas erases that right**, and that is why it appears\nin no response.\n\n**A two-stage command**: the invitation stays pending until the invitee answers, and it is\n**visible as such** in the member list.\n',
+    upstream: [Service.IDENTITY],
+  },
+  changeMemberRoles: {
+    description:
+      '**A set, never a single role.** The owner can be **neither removed nor have their roles\nchanged**: `transferOwnership` moves the flag, and it requires the recipient to be **already a\nmember** and to have two-factor authentication.\n',
+    upstream: [Service.IDENTITY],
+  },
+  removeMember: {
+    description: '**The owner is never removable**: the refusal carries `OWNER_NOT_REMOVABLE`.',
+    upstream: [Service.IDENTITY],
+  },
+  transferChannelOwnership: {
+    description:
+      '**The recipient must already be a member and have two-factor authentication.** These are\ndomain rules, not interface guards, and the refusal is **served with its reason**. The bank\naccount (`payouts`) and the public page (`catalog`) **follow** the transfer, by event.\n',
+    upstream: [Service.IDENTITY],
+  },
 };

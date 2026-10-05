@@ -1,10 +1,11 @@
 import { z } from 'zod';
-import { CHAT_MODES, FILTER_SEVERITIES } from '@arthome/core';
+import { CHAT_MODES, FILTER_SEVERITIES, MEMBER_ROLES } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
 import { StudioEnvelopeMetaSchema } from '../../envelope/index.js';
 import type { PathParameter, Period, QueryParameter } from '../../http/index.js';
-import { MerchItemAdminSchema } from '../../studio-stage/index.js';
+import { OffsetPageInfoSchema } from '../../pagination/index.js';
+import { ChannelMemberSchema } from '../../studio-access/index.js';
 declare const CHANNEL_REPLAY_STATES: readonly ["online", "expired", "archived"];
 export declare const ChannelReplayStateParameter: QueryParameter<'state', VocabularyIn<typeof CHANNEL_REPLAY_STATES>>;
 export declare const ChannelReplaySchema: z.ZodObject<{
@@ -94,7 +95,7 @@ export declare const UpdateChannelIdentityBodySchema: z.ZodObject<{
     avatarAssetId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$strip>;
 export declare const MerchItemListSchema: z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-    items: z.ZodArray<typeof MerchItemAdminSchema>;
+    items: z.ZodArray<typeof ChannelMemberSchema>;
 }, z.core.$loose>>;
 export type ChannelReplay = z.output<typeof ChannelReplaySchema>;
 export type ChannelIdentity = z.output<typeof ChannelIdentitySchema>;
@@ -105,5 +106,35 @@ export type UpsertMerchItemBody = z.output<typeof UpsertMerchItemBodySchema>;
 export type UpdateChannelIdentityBody = z.output<typeof UpdateChannelIdentityBodySchema>;
 export type MerchItemList = z.output<typeof MerchItemListSchema>;
 export type ModerationDefaults = z.output<typeof ModerationDefaultsSchema>;
+export declare const MemberRoleParameter: QueryParameter<'role', VocabularyIn<typeof MEMBER_ROLES>>;
+export declare const MemberSearch: QueryParameter<'q', z.ZodString>;
+export declare const PersonIdParameter: PathParameter<'personId', z.ZodString>;
+export declare const ChannelMemberPageSchema: z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
+    items: z.ZodArray<typeof ChannelMemberSchema>;
+    roleCounts: z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodInt>>;
+    page: typeof OffsetPageInfoSchema;
+}, z.core.$loose>>;
+export declare const InviteMemberBodySchema: z.ZodObject<{
+    email: z.ZodString;
+    roles: z.ZodArray<VocabularyIn<typeof MEMBER_ROLES>>;
+    note: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+}, z.core.$strip>;
+export declare const ChangeMemberRolesBodySchema: z.ZodObject<{
+    roles: z.ZodArray<VocabularyIn<typeof MEMBER_ROLES>>;
+    expectedVersion: z.ZodInt;
+}, z.core.$strip>;
+export declare const TransferChannelOwnershipBodySchema: z.ZodObject<{
+    reauthToken: z.ZodString;
+    toPersonId: z.ZodString;
+}, z.core.$strip>;
+export declare const OwnershipTransferSchema: z.ZodOptional<z.ZodObject<{
+    state: z.ZodOptional<z.ZodString>;
+    expiresAt: z.ZodOptional<z.ZodString>;
+}, z.core.$loose>>;
+export type ChannelMemberPage = z.output<typeof ChannelMemberPageSchema>;
+export type InviteMemberBody = z.output<typeof InviteMemberBodySchema>;
+export type ChangeMemberRolesBody = z.output<typeof ChangeMemberRolesBodySchema>;
+export type TransferChannelOwnershipBody = z.output<typeof TransferChannelOwnershipBodySchema>;
+export type OwnershipTransfer = z.output<typeof OwnershipTransferSchema>;
 export {};
 //# sourceMappingURL=schemas.d.ts.map

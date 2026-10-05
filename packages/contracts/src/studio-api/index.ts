@@ -25,10 +25,15 @@ import {
 } from './bootstrap.js';
 import { createUploadTicket, deleteChannel } from './channel.js';
 import {
+  changeMemberRoles,
   getChannelSettings,
+  inviteMember,
   listChannelJournal,
+  listChannelMembers,
   listChannelMerchItems,
   listChannelReplays,
+  removeMember,
+  transferChannelOwnership,
   updateChannelIdentity,
   updateChannelSettings,
   upsertMerchItem,
@@ -63,15 +68,7 @@ import {
   BadGatewayResponse,
   GatewayTimeoutResponse,
 } from './components.js';
-import {
-  changeMemberRoles,
-  inviteMember,
-  listChannelMembers,
-  removeMember,
-  respondToInvitation,
-  revokeDateAccess,
-  transferChannelOwnership,
-} from './crew.js';
+import { respondToInvitation, revokeDateAccess } from './crew.js';
 import {
   decideDateOutcome,
   deleteDate,

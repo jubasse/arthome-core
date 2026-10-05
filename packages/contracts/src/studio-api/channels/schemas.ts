@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CHAT_MODES, FILTER_SEVERITIES } from '@arthome/core';
+import { CHAT_MODES, FILTER_SEVERITIES, MEMBER_ROLES } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import {
   InstantOut,
@@ -14,7 +14,9 @@ import {
 
 import { StudioEnvelopeMetaSchema } from '../../envelope/index.js';
 import type { PathParameter, Period, QueryParameter } from '../../http/index.js';
-import { localVocabulary, period, restricted } from '../../http/index.js';
+import { ReauthProof, localVocabulary, period, restricted, searchText } from '../../http/index.js';
+import { OffsetPageInfoSchema } from '../../pagination/index.js';
+import { ChannelMemberSchema } from '../../studio-access/index.js';
 import { MerchItemAdminSchema } from '../../studio-stage/index.js';
 
 const CHANNEL_REPLAY_STATES = ['online', 'expired', 'archived'] as const;
@@ -324,7 +326,7 @@ export const UpdateChannelIdentityBodySchema: z.ZodObject<
 
 export const MerchItemListSchema: z.ZodIntersection<
   typeof StudioEnvelopeMetaSchema,
-  z.ZodObject<{ items: z.ZodArray<typeof MerchItemAdminSchema> }, z.core.$loose>
+  z.ZodObject<{ items: z.ZodArray<typeof ChannelMemberSchema> }, z.core.$loose>
 > = z.intersection(
   StudioEnvelopeMetaSchema,
   z.looseObject({
@@ -342,3 +344,88 @@ export type UpdateChannelIdentityBody = z.output<typeof UpdateChannelIdentityBod
 export type MerchItemList = z.output<typeof MerchItemListSchema>;
 
 export type ModerationDefaults = z.output<typeof ModerationDefaultsSchema>;
+
+export const MemberRoleParameter: QueryParameter<'role', VocabularyIn<typeof MEMBER_ROLES>> = {
+  name: 'role',
+  in: 'query',
+  required: false,
+  schema: vocabularyIn(MEMBER_ROLES).meta({ 'x-arthome-vocabulary-source': 'MEMBER_ROLES' }),
+};
+
+export const MemberSearch: QueryParameter<'q', z.ZodString> = searchText();
+
+export const PersonIdParameter: PathParameter<'personId', z.ZodString> = {
+  name: 'personId',
+  in: 'path',
+  required: true,
+  schema: uuidIn(),
+};
+
+export const ChannelMemberPageSchema: z.ZodIntersection<
+  typeof StudioEnvelopeMetaSchema,
+  z.ZodObject<
+    {
+      items: z.ZodArray<typeof ChannelMemberSchema>;
+      roleCounts: z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodInt>>;
+      page: typeof OffsetPageInfoSchema;
+    },
+    z.core.$loose
+  >
+> = z.intersection(
+  StudioEnvelopeMetaSchema,
+  z.looseObject({
+    items: z.array(ChannelMemberSchema),
+    roleCounts: z.object({}).catchall(z.int().meta({ minimum: undefined, maximum: undefined })),
+    page: OffsetPageInfoSchema,
+  }),
+);
+
+export const InviteMemberBodySchema: z.ZodObject<
+  {
+    email: z.ZodString;
+    roles: z.ZodArray<VocabularyIn<typeof MEMBER_ROLES>>;
+    note: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+  },
+  z.core.$strip
+> = z.object({
+  email: z.string().meta({ format: 'email' }),
+  roles: z
+    .array(vocabularyIn(MEMBER_ROLES).meta({ 'x-arthome-vocabulary-source': 'MEMBER_ROLES' }))
+    .min(1),
+  note: z.string().max(200).nullable().optional(),
+});
+
+export const ChangeMemberRolesBodySchema: z.ZodObject<
+  { roles: z.ZodArray<VocabularyIn<typeof MEMBER_ROLES>>; expectedVersion: z.ZodInt },
+  z.core.$strip
+> = z.object({
+  roles: z
+    .array(vocabularyIn(MEMBER_ROLES).meta({ 'x-arthome-vocabulary-source': 'MEMBER_ROLES' }))
+    .min(1),
+  expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
+});
+
+export const TransferChannelOwnershipBodySchema: z.ZodObject<
+  { reauthToken: z.ZodString; toPersonId: z.ZodString },
+  z.core.$strip
+> = ReauthProof.extend({
+  toPersonId: uuidOut(),
+});
+
+export const OwnershipTransferSchema: z.ZodOptional<
+  z.ZodObject<
+    { state: z.ZodOptional<z.ZodString>; expiresAt: z.ZodOptional<z.ZodString> },
+    z.core.$loose
+  >
+> = z
+  .looseObject({
+    state: z.string().optional(),
+    expiresAt: InstantOut.optional(),
+  })
+  .optional();
+
+export type ChannelMemberPage = z.output<typeof ChannelMemberPageSchema>;
+export type InviteMemberBody = z.output<typeof InviteMemberBodySchema>;
+export type ChangeMemberRolesBody = z.output<typeof ChangeMemberRolesBodySchema>;
+export type TransferChannelOwnershipBody = z.output<typeof TransferChannelOwnershipBodySchema>;
+export type OwnershipTransfer = z.output<typeof OwnershipTransferSchema>;

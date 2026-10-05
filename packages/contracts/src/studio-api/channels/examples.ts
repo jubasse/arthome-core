@@ -1,9 +1,22 @@
 import type { z } from 'zod';
 
-import { ChatMode, DisplayState, FilterSeverity, Locale, Surface } from '@arthome/core';
+import {
+  ChatMode,
+  CrewRole,
+  DisplayState,
+  FilterSeverity,
+  Locale,
+  MemberRole,
+  Surface,
+} from '@arthome/core';
 
 import type {
+  ChangeMemberRolesBody,
   ChannelDefaults,
+  ChannelMemberPage,
+  InviteMemberBody,
+  OwnershipTransfer,
+  TransferChannelOwnershipBody,
   ChannelIdentity,
   ChannelReplay,
   ChannelSettings,
@@ -13,7 +26,12 @@ import type {
   UpsertMerchItemBody,
 } from './schemas.js';
 import {
+  ChangeMemberRolesBodySchema,
   ChannelDefaultsSchema,
+  ChannelMemberPageSchema,
+  InviteMemberBodySchema,
+  OwnershipTransferSchema,
+  TransferChannelOwnershipBodySchema,
   ChannelIdentitySchema,
   ChannelReplaySchema,
   ChannelSettingsSchema,
@@ -23,6 +41,7 @@ import {
   UpsertMerchItemBodySchema,
 } from './schemas.js';
 import type { ModuleExamples } from '../../openapi/docs.js';
+import { ChannelMemberSchema } from '../../studio-access/index.js';
 import { JournalEntrySchema } from '../../studio-desk/index.js';
 import { MerchItemAdminSchema } from '../../studio-stage/index.js';
 
@@ -122,6 +141,45 @@ const updateChannelIdentityBody: UpdateChannelIdentityBody = {
   categoryId: 'dance-contemporary',
 };
 
+const channelMember: z.output<typeof ChannelMemberSchema> = {
+  personId: '019928b0-0000-7000-8000-000000000001',
+  displayName: 'Claire D.',
+  email: 'claire@example.org',
+  roles: [MemberRole.PRODUCTION, MemberRole.COORDINATION],
+  isOwner: false,
+  joinedAt: '2025-11-02T09:00:00Z',
+  version: 2,
+};
+
+const channelMemberPage: ChannelMemberPage = {
+  servedAt: '2026-09-21T18:15:00.000Z',
+  rightsVersion: 412,
+  items: [channelMember],
+  roleCounts: { production: 4, coordination: 2, director: 3 },
+  page: { page: 1, pageSize: 20, totalItems: 11, totalPages: 1 },
+};
+
+const inviteMemberBody: InviteMemberBody = {
+  email: 'yann@example.org',
+  roles: [CrewRole.VIDEO],
+  note: 'Renfort captation novembre',
+};
+
+const changeMemberRolesBody: ChangeMemberRolesBody = {
+  roles: [CrewRole.VIDEO, CrewRole.SOUND],
+  expectedVersion: 2,
+};
+
+const transferChannelOwnershipBody: TransferChannelOwnershipBody = {
+  toPersonId: '019928b2-0000-7000-8000-000000000001',
+  reauthToken: 'ott_9f2ac1',
+};
+
+const ownershipTransfer: OwnershipTransfer = {
+  state: 'pending_acceptance',
+  expiresAt: '2026-09-28T18:21:00Z',
+};
+
 export const channelsExamples: ModuleExamples = [
   [ChannelReplaySchema, [channelReplay]],
   [ChannelIdentitySchema, [channelIdentity]],
@@ -133,4 +191,10 @@ export const channelsExamples: ModuleExamples = [
   [MerchItemListSchema, [merchItemList]],
   [UpsertMerchItemBodySchema, [upsertMerchItemBody]],
   [UpdateChannelIdentityBodySchema, [updateChannelIdentityBody]],
+  [ChannelMemberSchema, [channelMember]],
+  [ChannelMemberPageSchema, [channelMemberPage]],
+  [InviteMemberBodySchema, [inviteMemberBody]],
+  [ChangeMemberRolesBodySchema, [changeMemberRolesBody]],
+  [TransferChannelOwnershipBodySchema, [transferChannelOwnershipBody]],
+  [OwnershipTransferSchema, [ownershipTransfer]],
 ];

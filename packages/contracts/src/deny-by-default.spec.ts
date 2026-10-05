@@ -75,7 +75,6 @@ const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
 
 const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'addBannedWord',
-  'changeMemberRoles',
   'claimModerationItem',
   'closeReconciliationPeriod',
   'countersignBankChange',
@@ -90,9 +89,7 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'getChannelStreamSettings',
   'getChannelTicketing',
   'getStudioBootstrap',
-  'inviteMember',
   'listChannelEvents',
-  'listChannelMembers',
   'listDuties',
   'listInbox',
   'listModerationQueue',
@@ -105,7 +102,6 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'registerStudioPushToken',
   'releaseModerationItem',
   'removeBannedWord',
-  'removeMember',
   'requestBankChange',
   'requestChannelExport',
   'requestPasswordResetStudio',
@@ -118,7 +114,6 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'settleModerationItem',
   'signInStudio',
   'signOutStudio',
-  'transferChannelOwnership',
   'updateStudioPreferences',
   'verifyTwoFactorStudio',
 ];

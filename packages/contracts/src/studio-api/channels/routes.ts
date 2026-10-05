@@ -1,14 +1,22 @@
-import { ApiErrorCode, DomainErrorCode } from '@arthome/core';
+import { ApiErrorCode, ChannelErrorCode, DomainErrorCode } from '@arthome/core';
 
 import {
+  ChangeMemberRolesBodySchema,
   ChannelDefaultsSchema,
+  ChannelMemberPageSchema,
   ChannelIdentitySchema,
   ChannelReplaySchema,
   ChannelReplayStateParameter,
   ChannelSettingsSchema,
   JournalDateParameter,
   JournalNatureParameter,
+  InviteMemberBodySchema,
   JournalPeriod,
+  MemberRoleParameter,
+  MemberSearch,
+  OwnershipTransferSchema,
+  PersonIdParameter,
+  TransferChannelOwnershipBodySchema,
   MerchItemIdParameter,
   MerchItemListSchema,
   UpdateChannelIdentityBodySchema,
@@ -16,15 +24,21 @@ import {
   UpsertMerchItemBodySchema,
 } from './schemas.js';
 import type {
+  ChangeMemberRolesRoute,
   GetChannelSettingsRoute,
+  InviteMemberRoute,
   ListChannelJournalRoute,
+  ListChannelMembersRoute,
   ListChannelMerchItemsRoute,
   ListChannelReplaysRoute,
+  RemoveMemberRoute,
+  TransferChannelOwnershipRoute,
   UpdateChannelIdentityRoute,
   UpdateChannelSettingsRoute,
   UpsertMerchItemRoute,
 } from './types.js';
-import { pages } from '../../http/index.js';
+import { Deleted, pages, recentAuth } from '../../http/index.js';
+import { ChannelMemberSchema } from '../../studio-access/index.js';
 import { JournalEntrySchema } from '../../studio-desk/index.js';
 import { MerchItemAdminSchema } from '../../studio-stage/index.js';
 import {
@@ -114,3 +128,58 @@ export const updateChannelIdentity: UpdateChannelIdentityRoute = channelFace
     item: ChannelIdentitySchema,
     answer: 'Public identity up to date.',
   });
+
+const crewChannel = channels.tags(StudioTag.CREW).resource('channels', { id: ChannelIdParameter });
+const members = crewChannel.resource('members', { id: PersonIdParameter });
+
+export const listChannelMembers: ListChannelMembersRoute = members.findAll({
+  operationId: 'listChannelMembers',
+  summary: 'The team — page + total, with a served counter per role.',
+  item: ChannelMemberSchema,
+  paging: pages({ maxPageSize: 100 }),
+  parameters: [MemberSearch, MemberRoleParameter],
+  responses: {
+    200: {
+      description: 'A page of members, plus the head count per role.',
+      content: { 'application/json': { schema: ChannelMemberPageSchema } },
+    },
+  },
+});
+
+export const inviteMember: InviteMemberRoute = crewChannel.single('invitations').create({
+  operationId: 'inviteMember',
+  summary: 'Invites a person, into a role the inviter has the right to assign.',
+  body: InviteMemberBodySchema,
+  item: ChannelMemberSchema,
+  answer: 'Invitation sent, pending.',
+  errors: [ChannelErrorCode.ROLE_NOT_ASSIGNABLE],
+});
+
+export const changeMemberRoles: ChangeMemberRolesRoute = members.action('change-roles', {
+  operationId: 'changeMemberRoles',
+  summary: "Changes a member's set of roles.",
+  body: ChangeMemberRolesBodySchema,
+  response: ChannelMemberSchema,
+  answer: 'Member up to date.',
+});
+
+export const removeMember: RemoveMemberRoute = members.delete({
+  operationId: 'removeMember',
+  summary: 'Removes a member from the channel.',
+  response: Deleted,
+  answer: 'Member removed.',
+});
+
+export const transferChannelOwnership: TransferChannelOwnershipRoute = crewChannel.action(
+  'ownership-transfer',
+  {
+    operationId: 'transferChannelOwnership',
+    summary: 'Transfers ownership of the channel — two-stage.',
+    requires: [recentAuth()],
+    body: TransferChannelOwnershipBodySchema,
+    response: OwnershipTransferSchema,
+    status: 202,
+    answer: 'Transfer pending acceptance.',
+    errors: [ChannelErrorCode.TRANSFER_TARGET_INELIGIBLE],
+  },
+);
