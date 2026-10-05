@@ -321,13 +321,17 @@ export const viewer = identity('viewer', {
   errors: { 401: [ApiErrorCode.UNAUTHENTICATED] },
 });
 export const device = identity('device', { schemes: { read: [DeviceToken], write: [DeviceToken] }, principal: DevicePrincipalSchema });
-export const operator = identity('operator', { schemes: { read: [SessionCookie, BearerToken], write: [SessionCookie, BearerToken] }, principal: OperatorPrincipalSchema });
+export const operator = identity('operator', { schemes: { read: [SessionCookie, BearerToken], write: [SessionCookieWithCsrf, BearerToken] }, principal: OperatorPrincipalSchema });
 ```
 
 - **What is identified:** the principal is what the server knows once a caller is identified. Its
   fields are those the BFFs attach today (`attachViewer`), written as a schema.
 - **Which credentials, and when:** the schemes say what a read and a write accept, so the CSRF
   token on a cookie write is derived rather than restated.
+- **The `operator` takes the viewer's treatment** (D2, adr-auth §8.2.3 item 6): its cookie write is
+  `{ sessionCookie, csrfToken }` (cookie `__Host-arthome_studio_csrf`, header `X-Arthome-Csrf`), bearer
+  stays alone, and every cookie write derives the `403`. `If-Rights-Version` is optional, so it is no
+  CSRF defence. `signOutStudio` is `csrfExempt` like the storefront's `signOut`.
 
 ### 4.2 The identity, and the shortcuts
 

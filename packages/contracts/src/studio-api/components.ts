@@ -213,6 +213,13 @@ export const UnauthorizedResponse: JsonResponse<typeof StudioErrorEnvelopeSchema
   code: ApiErrorCode.UNAUTHENTICATED,
 });
 
+export const CsrfRefusedResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> &
+  CodedResponse<typeof ApiErrorCode.FORBIDDEN> = errorResponse(StudioErrorEnvelopeSchema, {
+  description:
+    "Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.\n",
+  code: ApiErrorCode.FORBIDDEN,
+});
+
 export const ForbiddenResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> &
   CodedResponse<typeof ApiErrorCode.RIGHTS_VERSION_STALE> = errorResponse(
   StudioErrorEnvelopeSchema,
@@ -454,21 +461,22 @@ export const OperatorPrincipalSchema: z.ZodObject<
   z.core.$strip
 > = z.object({ personId: z.string(), rightsVersion: int64(), rights: z.array(z.string()) });
 
-/** A signed-in channel member, by session cookie or bearer token; a write carries the rights version it holds. */
+/** A signed-in channel member, by session cookie (a write carries its CSRF token) or bearer token; a write carries the rights version it holds. */
 export const operator: Identity<
   'operator',
   typeof OperatorPrincipalSchema,
-  typeof ApiErrorCode.RIGHTS_VERSION_STALE,
+  typeof ApiErrorCode.RIGHTS_VERSION_STALE | typeof ApiErrorCode.FORBIDDEN,
   readonly [],
   readonly [typeof IfRightsVersionParameter]
 > = identity('operator', {
   schemes: {
     read: [{ sessionCookie: [] }, { bearerToken: [] }],
-    write: [{ sessionCookie: [] }, { bearerToken: [] }],
+    write: [{ sessionCookie: [], csrfToken: [] }, { bearerToken: [] }],
   },
   principal: OperatorPrincipalSchema,
   writeParameters: [IfRightsVersionParameter],
-  writeErrors: [ApiErrorCode.RIGHTS_VERSION_STALE],
+  writeErrors: [ApiErrorCode.RIGHTS_VERSION_STALE, ApiErrorCode.FORBIDDEN],
+  writeResponses: { 403: CsrfRefusedResponse },
   responseHeaders: { 'X-Arthome-Rights-Version': RightsVersionHeader },
 });
 

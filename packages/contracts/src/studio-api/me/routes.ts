@@ -78,6 +78,10 @@ export const revokeStudioDevice: RevokeStudioDeviceRoute = account
   });
 
 export const signOutStudio: SignOutStudioRoute = account
+  .identity(operator, {
+    csrfExempt:
+      'A forged sign-out ends a session and grants nothing, and a browser that lost its CSRF cookie must still be able to sign out.',
+  })
   .single('session', { owner: 'caller' })
   .delete({
     operationId: 'signOutStudio',

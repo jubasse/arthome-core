@@ -41,6 +41,7 @@ import {
   ConflictResponse,
   CursorParameter,
   DateIdParameter,
+  CsrfRefusedResponse,
   ForbiddenResponse,
   GoneResponse,
   IdempotencyKeyParameter,
@@ -392,6 +393,7 @@ export const studioApi: Api<{
     responses: {
       BadRequest: BadRequestResponse,
       Unauthorized: UnauthorizedResponse,
+      CsrfRefused: CsrfRefusedResponse,
       Forbidden: ForbiddenResponse,
       NotFound: NotFoundResponse,
       Conflict: ConflictResponse,

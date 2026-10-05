@@ -744,6 +744,7 @@ paths:
       - bootstrap
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -800,9 +801,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -859,6 +858,7 @@ paths:
         bucket: reauth
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -960,9 +960,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -1176,6 +1174,7 @@ paths:
       - bootstrap
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - name: deviceId
@@ -1226,9 +1225,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -1265,6 +1262,7 @@ paths:
       - identity
       tags:
       - bootstrap
+      x-arthome-csrf-exempt: A forged sign-out ends a session and grants nothing, and a browser that lost its CSRF cookie must still be able to sign out.
       security:
       - sessionCookie: []
       - bearerToken: []
@@ -1304,22 +1302,6 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '403':
-          description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
-          content:
-            application/json:
-              schema:
-                anyOf:
-                - $ref: '#/components/schemas/ApiForbiddenError'
-                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
-              examples:
-                api.forbidden:
-                  $ref: '#/components/examples/ApiForbiddenError'
-                api.rights_version_stale:
-                  $ref: '#/components/examples/ApiRightsVersionStaleError'
         '409':
           $ref: '#/components/responses/Conflict'
         '500':
@@ -1352,6 +1334,7 @@ paths:
       - bootstrap
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -1435,9 +1418,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -1583,6 +1564,7 @@ paths:
       - bootstrap
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -1645,9 +1627,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -2312,6 +2292,7 @@ paths:
       - publication
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -2414,9 +2395,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -2792,6 +2771,7 @@ paths:
       - publication
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -2887,9 +2867,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -2961,6 +2939,7 @@ paths:
       - publication
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -3039,9 +3018,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -3105,6 +3082,7 @@ paths:
       - publication
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -3151,9 +3129,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -3213,6 +3189,7 @@ paths:
       - publication
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -3293,9 +3270,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -3347,6 +3322,7 @@ paths:
       - publication
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -3459,9 +3435,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -3626,6 +3600,7 @@ paths:
       - ticketing
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -3734,9 +3709,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -3813,6 +3786,7 @@ paths:
       - ticketing
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -3893,9 +3867,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -3972,6 +3944,7 @@ paths:
       - ticketing
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -4050,9 +4023,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -4121,6 +4092,7 @@ paths:
       - ticketing
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - name: seatId
@@ -4206,9 +4178,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -4250,6 +4220,7 @@ paths:
       - ticketing
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -4327,9 +4298,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -4658,6 +4627,7 @@ paths:
       - moderation
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -4741,9 +4711,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -4914,6 +4882,7 @@ paths:
       - moderation
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - name: itemId
@@ -4972,9 +4941,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -5030,6 +4997,7 @@ paths:
       - moderation
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - name: itemId
@@ -5094,9 +5062,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -5146,6 +5112,7 @@ paths:
       - moderation
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - name: itemId
@@ -5252,9 +5219,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -5421,6 +5386,7 @@ paths:
       - moderation
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -5508,9 +5474,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -5557,6 +5521,7 @@ paths:
       - moderation
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -5622,9 +5587,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -5664,6 +5627,7 @@ paths:
       - moderation
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -5715,9 +5679,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -6126,6 +6088,7 @@ paths:
       - run
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -6185,9 +6148,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -6223,6 +6184,7 @@ paths:
       - run
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -6302,9 +6264,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -6350,6 +6310,7 @@ paths:
       - run
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -6429,9 +6390,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -6492,6 +6451,7 @@ paths:
       - run
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -6571,9 +6531,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -6613,6 +6571,7 @@ paths:
       - run
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -6692,9 +6651,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -6734,6 +6691,7 @@ paths:
       - run
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -6832,9 +6790,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -6977,6 +6933,7 @@ paths:
         not replayed — that is already the channel's resume rule.
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -7043,9 +7000,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -7088,6 +7043,7 @@ paths:
       - run
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -7158,9 +7114,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -7200,6 +7154,7 @@ paths:
       - run
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -7252,9 +7207,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -7302,6 +7255,7 @@ paths:
       - run
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -7402,9 +7356,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -7446,6 +7398,7 @@ paths:
       - run
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - name: incidentId
@@ -7492,9 +7445,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -7533,6 +7484,7 @@ paths:
       - run
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - name: incidentId
@@ -7596,9 +7548,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -7655,6 +7605,7 @@ paths:
           name: reauthToken
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -7716,9 +7667,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -7770,6 +7719,7 @@ paths:
           name: reauthToken
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -7835,9 +7785,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -8292,6 +8240,7 @@ paths:
       - crew
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -8376,9 +8325,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -8424,6 +8371,7 @@ paths:
       - crew
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - name: invitationId
@@ -8501,9 +8449,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -8546,6 +8492,7 @@ paths:
       - crew
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -8630,9 +8577,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -8672,6 +8617,7 @@ paths:
       - crew
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -8724,9 +8670,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -8772,6 +8716,7 @@ paths:
       - crew
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -8849,9 +8794,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -8897,6 +8840,7 @@ paths:
       - crew
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - name: grantId
@@ -8948,9 +8892,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -8994,6 +8936,7 @@ paths:
           name: reauthToken
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -9059,9 +9002,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -9134,6 +9075,7 @@ paths:
           name: reauthToken
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -9194,9 +9136,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -9558,6 +9498,7 @@ paths:
       - channel
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -9712,9 +9653,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -9888,6 +9827,7 @@ paths:
       - channel
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -9966,9 +9906,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -10082,6 +10020,7 @@ paths:
       - channel
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -10209,9 +10148,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -10251,6 +10188,7 @@ paths:
       - channel
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -10309,9 +10247,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -10355,6 +10291,7 @@ paths:
       - channel
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
@@ -10414,9 +10351,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -10484,6 +10419,7 @@ paths:
       - channel
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -10580,9 +10516,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -10765,6 +10699,7 @@ paths:
           name: reauthToken
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -10834,9 +10769,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -10887,6 +10820,7 @@ paths:
           name: reauthToken
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - name: requestId
@@ -10965,9 +10899,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -11029,6 +10961,7 @@ paths:
       - payouts
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -11097,9 +11030,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -11166,6 +11097,7 @@ paths:
       - payouts
       security:
       - sessionCookie: []
+        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
@@ -11252,9 +11184,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
-            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
-            whether to reload, to phone someone, or to give up.
+            Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
           content:
             application/json:
               schema:
@@ -11354,6 +11284,19 @@ components:
       name: arthome_studio_session
       description: |
         Opaque session, `HttpOnly`/`Secure`/`SameSite=Lax` cookie. This is `studio-web`'s form.
+
+        **In this mode, a request that writes carries `X-Arthome-Csrf`**: the value of the
+        `__Host-arthome_studio_csrf` cookie the BFF sets beside the session cookie, readable by the page and
+        bound to that session. Without it, or with another session's, the BFF answers `403`
+        `api.forbidden`. Each such write declares it: the `csrfToken` scheme beside this one, and the
+        `CsrfRefused` response. `If-Rights-Version` is optional and is no defence against it.
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-Arthome-Csrf
+      description: |
+        The `__Host-arthome_studio_csrf` cookie's value, echoed by a write made with the session
+        cookie (see `sessionCookie`). Required together with it, never with a bearer token.
     bearerToken:
       type: http
       scheme: bearer
@@ -11552,6 +11495,20 @@ components:
           example:
             error:
               code: api.unauthenticated
+              nature: refused
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    CsrfRefused:
+      description: |
+        Right absent, rights stale, access revoked, channel left, or — on a write with the session cookie — no `X-Arthome-Csrf` token, or another session's. Distinct codes — `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know whether to reload, to phone someone, or to give up. A write with a bearer token never meets the CSRF refusal.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.forbidden
               nature: refused
               params: {}
               traceId: 4bf92f3577b34da6a3ce929d0e0e4736
