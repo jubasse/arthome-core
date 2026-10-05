@@ -69,10 +69,9 @@ import {
   inviteMember,
   listChannelMembers,
   removeMember,
-  respondToInvitation,
-  revokeDateAccess,
   transferChannelOwnership,
 } from './crew.js';
+import { revokeDateAccess } from './date-access-grants/routes.js';
 import {
   decideDateOutcome,
   deleteDate,
@@ -111,6 +110,7 @@ import {
   submitHealthSample,
 } from './dates/routes.js';
 import { getChannelExport } from './exports/routes.js';
+import { respondToInvitation } from './invitations/routes.js';
 import {
   addBannedWord,
   claimModerationItem,

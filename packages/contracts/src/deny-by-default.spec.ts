@@ -111,8 +111,6 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'requestChannelExport',
   'requestPasswordResetStudio',
   'resolveIncident',
-  'respondToInvitation',
-  'revokeDateAccess',
   'revokeStudioDevice',
   'sanctionAudienceMember',
   'searchAudience',

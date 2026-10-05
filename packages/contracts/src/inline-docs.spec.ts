@@ -112,8 +112,6 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'requestChannelExport',
   'requestPasswordResetStudio',
   'resolveIncident',
-  'respondToInvitation',
-  'revokeDateAccess',
   'revokeStudioDevice',
   'sanctionAudienceMember',
   'searchAudience',

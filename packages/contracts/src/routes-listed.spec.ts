@@ -16,9 +16,11 @@ import * as studioBankChangeRequests from './studio-api/bank-change-requests/rou
 import * as studioBootstrap from './studio-api/bootstrap.js';
 import * as studioChannel from './studio-api/channel.js';
 import * as studioCrew from './studio-api/crew.js';
+import * as studioDateAccessGrants from './studio-api/date-access-grants/routes.js';
 import * as studioDates from './studio-api/dates/routes.js';
 import * as studioExports from './studio-api/exports/routes.js';
 import { studioApi } from './studio-api/index.js';
+import * as studioInvitations from './studio-api/invitations/routes.js';
 import * as studioModeration from './studio-api/moderation.js';
 import * as studioPayouts from './studio-api/payouts.js';
 import * as studioPublication from './studio-api/publication.js';
@@ -81,6 +83,8 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       studioExports,
       studioBankChangeRequests,
       studioUploads,
+      studioDateAccessGrants,
+      studioInvitations,
     ],
   ],
 ];

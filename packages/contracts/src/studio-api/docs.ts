@@ -6,10 +6,14 @@ import type { ApiDocs, ModuleDocs, OperationDocumentation } from '../openapi/doc
 import { apiDocs, documentationLookup } from '../openapi/docs.js';
 import { bankChangeRequestsDocs } from './bank-change-requests/docs.js';
 import { bankChangeRequestsExamples } from './bank-change-requests/examples.js';
+import { dateAccessGrantsDocs } from './date-access-grants/docs.js';
+import { dateAccessGrantsExamples } from './date-access-grants/examples.js';
 import { datesDocs } from './dates/docs.js';
 import { datesExamples } from './dates/examples.js';
 import { sharedExamples } from './examples.js';
 import { exportsDocs } from './exports/docs.js';
+import { invitationsDocs } from './invitations/docs.js';
+import { invitationsExamples } from './invitations/examples.js';
 import { uploadsDocs } from './uploads/docs.js';
 import { uploadsExamples } from './uploads/examples.js';
 
@@ -151,8 +155,23 @@ export const studioDocs: ApiDocs = apiDocs({
         '**`studio-mobile` cannot hold its session in a cookie**: `capacitor://localhost` is a\nthird-party context on iOS. The studio BFF therefore offers a **bearer-token** session\nalongside the cookie session — a refresh token bound to the device, kept in the native store\n(`@capacitor/preferences`, **never `localStorage`**), a short access token, revocation per\ndevice.\n\nOn returning from the background with an expired token: **silent refresh**. A\nre-authentication while on duty is an operational fault. It is required only for\n**sensitive operations** — revealing or rotating a stream key, transferring ownership of a\nchannel, changing a payout method — and it is then asked for **at the moment of the\noperation**, not on returning to a screen.\n\nAllowed origins on the CORS side, as **literal strings**: `capacitor://localhost` and\n`https://localhost`. A bare `localhost` entry covers neither, `*` is illegal with credentialed\nrequests, and a framework that normalises the origin through a URL parser would reject\n`capacitor://`.\n',
     },
   },
-  modules: [statedMaturities, datesDocs, exportsDocs, bankChangeRequestsDocs, uploadsDocs],
-  examples: [sharedExamples, datesExamples, bankChangeRequestsExamples, uploadsExamples],
+  modules: [
+    statedMaturities,
+    datesDocs,
+    exportsDocs,
+    bankChangeRequestsDocs,
+    uploadsDocs,
+    dateAccessGrantsDocs,
+    invitationsDocs,
+  ],
+  examples: [
+    sharedExamples,
+    datesExamples,
+    bankChangeRequestsExamples,
+    uploadsExamples,
+    dateAccessGrantsExamples,
+    invitationsExamples,
+  ],
 });
 
 /** Each studio operation's prose and doc-only metadata, by route: for a server's own docs. Server only. */
