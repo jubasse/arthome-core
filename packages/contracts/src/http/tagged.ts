@@ -39,17 +39,28 @@ export type ClientView<T> = T extends readonly (infer Item)[]
       ? { [K in keyof T]: ClientView<T[K]> }
       : T;
 
-function tagOf(keys: readonly string[]): z.ZodType {
+/**
+ * Several tag values are a string that accepts exactly them, not an enum: a response schema never
+ * freezes a closed list into the document (`check-openapi` R14), and the union still routes on it.
+ * A field the variant declared lends its metadata (description, vocabulary).
+ */
+function tagField(keys: readonly string[], declared: z.ZodType | undefined): z.ZodType {
+  const meta = declared?.meta() ?? {};
   const [only, ...others] = keys;
-  return only !== undefined && others.length === 0
-    ? z.literal(only)
-    : z.enum(keys as [string, ...string[]]);
+  if (only !== undefined && others.length === 0) return z.literal(only).meta(meta);
+  const field = z
+    .string()
+    .check(z.refine((value) => keys.includes(value)))
+    .meta(meta);
+  field._zod.values = new Set(keys);
+  return field;
 }
 
 /**
  * `tagged('outcome', { succeeded: Succeeded, declined: Declined })`: each variant is an object
  * schema without the tag, and the helper adds it. Two keys may name one schema (a variant that
- * serves two tag values), and its tag then takes both.
+ * serves two tag values), and its tag then takes both. A variant that declares the tag field itself
+ * lends the metadata of that field (its description and vocabulary) to the tag the helper writes.
  */
 export function tagged<const Tag extends string, const V extends Variants>(
   tag: Tag,
@@ -59,10 +70,26 @@ export function tagged<const Tag extends string, const V extends Variants>(
   for (const [key, schema] of Object.entries(variants)) {
     byVariant.set(schema, [...(byVariant.get(schema) ?? []), key]);
   }
-  const options = [...byVariant].map(([schema, keys]) => schema.extend({ [tag]: tagOf(keys) }));
+  const options = [...byVariant].map(([schema, keys]) =>
+    schema
+      .extend({ [tag]: tagField(keys, schema.shape[tag] as z.ZodType | undefined) })
+      .meta(schema.meta() ?? {}),
+  );
   return z
     .discriminatedUnion(tag, options as unknown as [z.ZodObject, ...z.ZodObject[]])
     .meta({ discriminator: { propertyName: tag } }) as unknown as TaggedSchema<Tag, V>;
+}
+
+/** The variant a tag value selects, as the union holds it: the schema to register as that variant's component. */
+export function variantOf(union: z.ZodType, key: string): z.ZodObject {
+  const { discriminator, options } = (
+    union as unknown as {
+      _zod: { def: { discriminator: string; options: readonly z.ZodObject[] } };
+    }
+  )._zod.def;
+  const found = options.find((option) => option._zod.propValues?.[discriminator]?.has(key));
+  if (found === undefined) throw new Error(`variantOf: no variant is selected by '${key}'`);
+  return found;
 }
 
 export type TolerantParse =

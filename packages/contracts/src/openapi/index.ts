@@ -343,9 +343,18 @@ function mapped(json: unknown, schemas: Readonly<Record<string, unknown>>): unkn
       const ref = option.$ref;
       if (!ref?.startsWith(SCHEMA_REF_PREFIX)) return out;
       const target = schemas[ref.slice(SCHEMA_REF_PREFIX.length)] as
-        { properties?: Record<string, { const?: unknown; enum?: readonly unknown[] }> } | undefined;
+        | {
+            properties?: Record<
+              string,
+              { const?: unknown; enum?: readonly unknown[]; 'x-arthome-vocabulary'?: readonly unknown[] }
+            >;
+          }
+        | undefined;
       const property = target?.properties?.[discriminator.propertyName];
-      const values = property?.const !== undefined ? [property.const] : (property?.enum ?? []);
+      const values =
+        property?.const !== undefined
+          ? [property.const]
+          : (property?.enum ?? property?.['x-arthome-vocabulary'] ?? []);
       for (const value of values) mapping[String(value)] = ref;
     }
     out.discriminator = { ...discriminator, mapping };

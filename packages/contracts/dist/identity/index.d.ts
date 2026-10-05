@@ -26,6 +26,7 @@ import { z } from 'zod';
 import { MoneyOut, type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
 import { DomainConstantsSchema, ImageRenditionSchema, LabelArtifactRefSchema } from '../catalog/index.js';
 import { NotificationPreferencesSchema } from '../engagement/index.js';
+import type { TaggedSchema } from '../http/tagged.js';
 import { OrderSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
 export declare const ProfileSummarySchema: z.ZodObject<{
     id: z.ZodString;
@@ -144,7 +145,11 @@ export declare const StorefrontSessionModeSchema: z.ZodEnum<{
     bearer: 'bearer';
     device: 'device';
 }>;
-export declare const StorefrontSessionEstablishedSchema: z.ZodXor<readonly [typeof SessionEstablishedCookieSchema, typeof SessionEstablishedBearerSchema]>;
+export declare const StorefrontSessionEstablishedSchema: TaggedSchema<'mode', {
+    cookie: typeof SessionEstablishedCookieSchema;
+    bearer: typeof SessionEstablishedBearerSchema;
+    device: typeof SessionEstablishedBearerSchema;
+}>;
 export declare const AccountDeepLinkSchema: z.ZodObject<{
     url: z.ZodString;
 }, z.core.$loose>;

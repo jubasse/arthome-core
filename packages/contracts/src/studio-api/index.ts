@@ -129,8 +129,9 @@ import {
   StudioErrorEnvelopeSchema,
   StudioErrorSchema,
 } from '../envelope/index.js';
-import { defineApi } from '../http/index.js';
+import { defineApi, variantOf } from '../http/index.js';
 import type { Api } from '../http/index.js';
+import { SessionMode } from '../identity/index.js';
 import { OffsetPageInfoSchema, StudioCursorPageInfoSchema } from '../pagination/index.js';
 import {
   ActorSchema,
@@ -140,8 +141,6 @@ import {
   EffectiveRightsSchema,
   StudioBootstrapSchema,
   StudioCountersSchema,
-  StudioSessionEstablishedBearerSchema,
-  StudioSessionEstablishedCookieSchema,
   StudioSessionEstablishedSchema,
   StudioSessionModeSchema,
 } from '../studio-access/index.js';
@@ -420,8 +419,8 @@ export const studioApi: Api<{
       Actor: ActorSchema,
       SessionMode: StudioSessionModeSchema,
       SessionEstablished: StudioSessionEstablishedSchema,
-      SessionEstablishedCookie: StudioSessionEstablishedCookieSchema,
-      SessionEstablishedBearer: StudioSessionEstablishedBearerSchema,
+      SessionEstablishedCookie: variantOf(StudioSessionEstablishedSchema, SessionMode.COOKIE),
+      SessionEstablishedBearer: variantOf(StudioSessionEstablishedSchema, SessionMode.BEARER),
       // rights and bootstrap
       EffectiveRights: EffectiveRightsSchema,
       StudioCounters: StudioCountersSchema,

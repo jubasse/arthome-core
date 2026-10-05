@@ -291,7 +291,8 @@ status in its type: `errors: [PRICE_STALE, SOLD_OUT]` gives `errorCodes: { 409: 
   `public` scope and the `Vary` of every credential and the surface.
 - **`tagged('outcome', { succeeded, declined })`** (an exported one is annotated `TaggedSchema<'outcome', { succeeded: typeof Succeeded, declined: typeof Declined }>`) is a strict union for the server, a `oneOf` with its
   `discriminator` and its mapping for the document, and `parseTolerant` for a client that keeps a
-  variant it does not know. **`accepted({ operation })`** is a `202` that names the operation to follow.
+  variant it does not know. A variant may declare its own tag field to document it or to share a named component (the sessions' `mode`).
+  **`accepted({ operation })`** is a `202` that names the operation to follow.
 - **`restricted(schema, right)`** is a field only some callers see: optional in the type and the
   document, absent from the answer otherwise.
 
