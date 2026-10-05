@@ -28,7 +28,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
   'enterSalesQueue',
   'exchangeOneTimeToken',
   'extendRail',
-  'getAccountDeepLink',
   'getArtistDetail',
   'getCart',
   'getCategoryScreen',

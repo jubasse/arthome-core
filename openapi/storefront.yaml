@@ -8321,6 +8321,9 @@ paths:
       - identity
       tags:
       - pairing
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
@@ -8340,11 +8343,17 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:54:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   url: https://arthome.fr/compte
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
 components:
   securitySchemes:
     sessionCookie:

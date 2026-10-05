@@ -28,7 +28,6 @@ const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
   'enterSalesQueue',
   'exchangeOneTimeToken',
   'extendRail',
-  'getAccountDeepLink',
   'getArtistDetail',
   'getCart',
   'getCategoryScreen',

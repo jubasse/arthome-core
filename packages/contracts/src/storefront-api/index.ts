@@ -5,6 +5,7 @@ import {
   VenueClockSchema,
 } from '@arthome/core/schema';
 
+import { getAccountDeepLink } from './account-deep-link/routes.js';
 import {
   changePassword,
   confirmEmailVerification,
@@ -129,7 +130,6 @@ import {
   createPairing,
   decidePairing,
   engagePairing,
-  getAccountDeepLink,
   pollPairing,
 } from './pairing.js';
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';

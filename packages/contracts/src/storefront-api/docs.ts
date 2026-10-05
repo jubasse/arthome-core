@@ -5,6 +5,8 @@ import { sharedExamples } from './examples.js';
 import type { RouteDefinition } from '../http/index.js';
 import type { ApiDocs, ModuleDocs, OperationDocumentation } from '../openapi/docs.js';
 import { apiDocs, documentationLookup } from '../openapi/docs.js';
+import { accountDeepLinkDocs } from './account-deep-link/docs.js';
+import { accountDeepLinkExamples } from './account-deep-link/examples.js';
 import { meDocs } from './me/docs.js';
 import { meExamples } from './me/examples.js';
 
@@ -125,8 +127,8 @@ export const storefrontDocs: ApiDocs = apiDocs({
         'ES256 JWT, `aud: "arthome.device"`, 180 days, **rotated on every use**, carrying `device_id`\nand nothing else. Obtained on first launch through `registerDevice`, **before any session**.\nIt is not a session: it opens only pairing, pairing polling and the public bootstrap, and\n**opens no personal data** — in particular not the real-time channel (`adr-auth.md` §4/Q3,\n§5.3).\n',
     },
   },
-  modules: [statedMaturities, meDocs],
-  examples: [sharedExamples, meExamples],
+  modules: [statedMaturities, meDocs, accountDeepLinkDocs],
+  examples: [sharedExamples, meExamples, accountDeepLinkExamples],
 });
 
 /** Each storefront operation's prose and doc-only metadata, by route: for a server's own docs. Server only. */
