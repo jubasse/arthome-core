@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 173 exported names.
+Declarations: `dist/http/index.d.ts` — 176 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
@@ -120,17 +120,20 @@ Declarations: `dist/http/index.d.ts` — 173 exported names.
 - `Endpoints` (type) — One method per operation id of a block of routes, each taking its 'HandlerInput' and returning its 'HandlerOutput'.
 - `EnvelopeOf` (type) — `type EnvelopeOf<K> = K extends { readonly meta?: infer M extends object; } ? M : object;` — The fields an api's envelope carries on every answer, from its conventions.
 - `ErrorBody` (type) — The body of a failure carrying 'C': a union over the members of 'C', discriminated on 'error.code'.
+- `ErrorCodesIn` (type) — `type ErrorCodesIn<R> = { readonly [S in keyof R as [CodesInResponse<R[S]>] extends [never] ? never : S]: readonly CodesInResponse<R[S]>[]; };` — The codes each error response of 'R' names in its type, by status: what a route's 'errorCodes' holds.
 - `ErrorDefinition` (interface)
-- `ErrorList` (type) — `type ErrorList<Allowed extends string> = readonly Allowed[];` — The errors a route declares: a list of codes, each answered with its status from 'ERROR_STATUS'.
+- `ErrorList` (type) — `type ErrorList<Allowed extends string> = readonly Allowed[];` — The errors a route declares: a list of codes, each answered with its status from 'ERRORS'.
 - `ErrorModel` (interface) — An api's error vocabulary: the response it documents once per status (a component, so a route that adds nothing keeps its '$ref'), the code…
 - `ErrorResponse` (type) — `type ErrorResponse<C extends string> = JsonResponse<z.ZodType<ErrorBody<C>>>;` — An error response whose body is one of the envelopes of 'C'.
 - `ErrorStatus` (type) — `type ErrorStatus = 400 | 401 | 402 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;`
+- `ErrorStatusMap` (interface) — The status of each code, as a type, so a route's codes are grouped by status at compile time.
 - `ErrorsInput` (type) — `type ErrorsInput<Allowed extends string> = Readonly<Partial<Record<ErrorStatus, Response | readonly Allowed[]>>>;` — What a group declares where a response must be written whole (a foreign error format), keyed by status.
 - `ExpectedVersionQuery` (type) — `type ExpectedVersionQuery = QueryParameter<'expectedVersion', z.ZodType, true>;`
 - `Extensions` (type) — `type Extensions = Readonly<Record<'x-${string}', unknown>>;` — OpenAPI's specification extensions, carried into the document verbatim.
 - `FindAllRoute` (type)
 - `FindRoute` (type)
 - `Freshness` (type+const) — What a route promises about time and size: the freshness of its answer, the latency budget the typed client times out under, and the body c…
+- `GroupedByStatus` (type) — `type GroupedByStatus<C extends string> = { readonly [S in StatusOfCode<C>]: readonly CodesAnsweredWith<C, S>[]; };` — A list of codes grouped by the status each is answered with, as 'groupByStatus' does at run time.
 - `HandlerInput` (interface)
 - `HandlerOutput` (type) — One success status: the body itself.
 - `Header` (interface)
@@ -246,7 +249,7 @@ Declarations: `dist/http/index.d.ts` — 173 exported names.
 - `service` (const) — `service: Identity<'service', typeof ServicePrincipalSchema, never, readonly [typeof DeadlineParameter], readonly []>`
 - `sortDirectionSchema` (function) — `function sortDirectionSchema(): z.ZodDefault<z.ZodEnum<{ readonly [K in SortDirection]: K; }>>;` — The 'sortDir' schema: ascending unless asked otherwise.
 - `sortKeyName` (function) — `function sortKeyName(key: SortKey): string;`
-- `statusOf` (function) — `function statusOf(code: ErrorCode): ErrorStatus;`
+- `statusOf` (function) — `function statusOf<C extends ErrorCode>(code: C): ErrorStatusMap[C];`
 - `stripping` (function) — `function stripping(schema: z.ZodType): z.ZodType;` — The schema with each loose object turned into a stripping one.
 - `strippingBodiesOf` (function) — `function strippingBodiesOf(route: RouteShape): Readonly<Record<string, z.ZodType>>;` — The stripping schema of each success response of a route that has a JSON body, by status.
 - `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
@@ -262,7 +265,7 @@ Declarations: `dist/http-client/index.d.ts` — 12 exported names.
 - `ClientInput` (type)
 - `ClientMethod` (type)
 - `ClientOptions` (interface)
-- `ClientResponse` (type) — What a call answers: the statuses the route declares, typed by the route, and the derived errors (400, 401, 403, 413, 415, 429, 500, 502, 5…
+- `ClientResponse` (type) — What a call answers: the statuses the route declares, typed by the route; the codes it declares, by status ('errorCodes'); and the derived …
 - `FetchInit` (interface)
 - `FetchLike` (type) — `type FetchLike<Init extends object> = (url: string, init: FetchInit & Init) => Promise<FetchResponseLike>;` — 'Init' is what a caller adds per call and the 'fetch' understands — an 'AbortSignal', say.
 - `FetchResponseLike` (interface)

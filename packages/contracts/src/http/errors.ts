@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { ApiErrorCode, type ErrorCode } from '@arthome/core';
 import type { ErrorParamsRead } from '@arthome/core/schema';
 
+import type { ErrorStatusMap } from './error-registry.js';
 import { exampleOf, natureOf, statusOf } from './error-registry.js';
 import type { JsonResponse, Response } from './index.js';
 
@@ -59,10 +60,40 @@ export type CodesOf<R> =
     : never;
 
 /**
- * The errors a route declares: a list of codes, each answered with its status from `ERROR_STATUS`.
- * The document groups them by status.
+ * The errors a route declares: a list of codes, each answered with its status from `ERRORS`.
+ * The document and the route's type group them by status.
  */
 export type ErrorList<Allowed extends string> = readonly Allowed[];
+
+type StatusOfCode<C> = C extends ErrorCode ? ErrorStatusMap[C] : never;
+
+type CodesAnsweredWith<C, S> = C extends ErrorCode
+  ? ErrorStatusMap[C] extends S
+    ? C
+    : never
+  : never;
+
+/** A list of codes grouped by the status each is answered with, as `groupByStatus` does at run time. */
+export type GroupedByStatus<C extends string> = {
+  readonly [S in StatusOfCode<C>]: readonly CodesAnsweredWith<C, S>[];
+};
+
+type NamedCode<R> = R extends { readonly '~code'?: infer C }
+  ? C extends string
+    ? string extends C
+      ? never
+      : C
+    : never
+  : never;
+
+type CodesInResponse<R> = CodesOf<R> | NamedCode<R>;
+
+/** The codes each error response of `R` names in its type, by status: what a route's `errorCodes` holds. */
+export type ErrorCodesIn<R> = {
+  readonly [
+    S in keyof R as [CodesInResponse<R[S]>] extends [never] ? never : S
+  ]: readonly CodesInResponse<R[S]>[];
+};
 
 /**
  * What a group declares where a response must be written whole (a foreign error format), keyed by

@@ -210,7 +210,8 @@ still on a bare builder is unchanged. Nothing the server can answer is undocumen
 
 A response the group or the route writes whole is kept over the derived one. The derived errors are
 **not** in the route's annotation: the annotation lists the route's own statuses, and the server and
-the typed client read `route.responses` at run time.
+the typed client read `route.responses` at run time. The codes the route declares are: its type
+carries them in `errorCodes`, grouped by status.
 
 ### Resources
 
@@ -259,7 +260,10 @@ disappears is a `DELETE` even when guarded.
 already documents keeps its shared response; a status that adds a code gets a `oneOf` of one envelope
 per code, each with the `params` schema of `ERROR_PARAMS` in `@arthome/core/schema`, which is what
 `check-openapi` R10 accepts. A storefront operation may declare only a code of
-`STOREFRONT_RELAYED_CODES`. Each code has one status, `ERROR_STATUS` (and `statusOf(code)`) in `./http`, which a test holds the generated documents to; `ErrorParamsMap` in `@arthome/core` types each code's params.
+`STOREFRONT_RELAYED_CODES`. Each code has one status, `ERRORS` (and `statusOf(code)`) in `./http`, which a test holds the generated documents to; `ErrorParamsMap` in `@arthome/core` types each code's params.
+`ErrorStatusMap` restates each code's status as a type, and `ERRORS` is held to it entry by entry
+(`isolatedDeclarations` cannot infer the table's literals), so the codes a route lists are grouped by
+status in its type: `errors: [PRICE_STALE, SOLD_OUT]` gives `errorCodes: { 409: readonly (...)[] }`.
 
 ### Reads and responses
 
@@ -326,13 +330,16 @@ compile errors that name the operation. Measured on the 32 routes under a date, 
   only as `z.ZodObject<z.ZodRawShape, ...>` has no known fields: the handler's type is then `{}`.
 - **The `service` identity** (`./http`, the internal token: the calling service and the end user) marks
   its routes internal, takes `x-arthome-deadline` on every call and answers `504 api.deadline_exceeded`.
-- **How a consumer reads the error codes at run time.** `route.errorCodes[status]` (or
+- **How a consumer reads the error codes.** `route.errorCodes[status]` (or
   `errorCodesOf(route, status)`) lists the codes a status stands for, including the shared standard
-  responses; a status the route wrote whole has none listed. `DERIVED_ERROR_CODES` lists the derived
+  responses; a status the route wrote whole has none listed. Its type names the codes the route
+  declares, by status, which is what the platform's `refuse(route, code, params)` checks; at run time
+  the list also holds the derived codes of that status. `DERIVED_ERROR_CODES` lists the derived
   statuses and their codes.
-- **The typed client types the derived errors**: `ClientResponse<R>` is the route's declared statuses
-  plus 400, 401, 403, 413, 415, 429, 500, 502 and 504 (those not declared by the route), each an
-  `ErrorBody` of the api's codes. The full derived set is added rather than the subset a route
+- **The typed client types the errors**: `ClientResponse<R>` is the route's declared statuses, the
+  statuses of its `errorCodes`, plus 400, 401, 403, 413, 415, 429, 500, 502 and 504 (those not
+  declared by the route), each an `ErrorBody` of its codes: a union discriminated on `error.code`, so
+  a surface narrows on a code and reads its params typed. The full derived set is added rather than the subset a route
   implies, so a surface switches on a `401` or a `429` with types on any route, and the cost is one
   union per call. A status that is neither declared nor derived throws `UndeclaredStatusError`.
 - **Deny by default is a ratchet**: `deny-by-default.spec.ts` lists the routes not yet declared through

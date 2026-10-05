@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ApiErrorCode, DomainErrorCode } from '@arthome/core';
 import type { Access } from './access.js';
 import type { BuiltRoute, BuiltRouteDefinition, RouteBuilder, Scope } from './builder.js';
+import type { GroupedByStatus } from './errors.js';
 import type { Header, JsonRequestBody, JsonResponse, Parameter, QueryParameter, Response } from './index.js';
 import { type Paging, type PagingConventions, type SortDirection, type SortKey } from './paging.js';
 type PathParameterOf = Parameter & {
@@ -112,7 +113,7 @@ type JoinErrors<Convention, Own> = {
 };
 type OwnErrors<D> = D extends {
     readonly errors: infer R;
-} ? R extends readonly unknown[] ? Record<never, never> : R : Record<never, never>;
+} ? R extends readonly (infer C extends string)[] ? GroupedByStatus<C> : R : Record<never, never>;
 type OwnParameters<D> = D extends {
     readonly parameters: infer X extends readonly Parameter[];
 } ? X : readonly [];

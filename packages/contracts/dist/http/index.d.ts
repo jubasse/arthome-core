@@ -91,7 +91,8 @@ export interface RouteDefinition extends RouteShape, Extensions {
     /**
      * The error codes each error status stands for, so a consumer can check a response's
      * `error.code` without reading the schema. A status the route wrote whole is absent: its codes
-     * are not known.
+     * are not known. A route's type names the codes it declares; at run time a list also holds the
+     * derived codes of its status.
      */
     readonly errorCodes?: Readonly<Record<string, readonly string[]>>;
     /** How a list is paged. */

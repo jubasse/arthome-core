@@ -1,5 +1,5 @@
 import type { Access, IdentifiedAccess, Identity, PublicAccess, Requirement } from './access.js';
-import type { CodesOf, ErrorList, ErrorModel, ErrorResponse, ErrorsInput } from './errors.js';
+import type { GroupedByStatus, CodesOf, ErrorCodesIn, ErrorList, ErrorModel, ErrorResponse, ErrorsInput } from './errors.js';
 import type { Parameter, RequestBody, Response, Route, RouteDefinition, SecurityRequirement } from './index.js';
 import type { CachePolicy } from './policy.js';
 import type { Resource, ResourceConventions, ResourceOptions, SingleOptions } from './resource.js';
@@ -41,12 +41,19 @@ type OwnBody<D> = D extends {
     readonly requestBody: B;
 } : unknown;
 /** The error responses a set of `errors` declarations makes, over those already held. */
-export type MergedErrors<E extends Responses, R> = R extends readonly unknown[] ? E : Omit<E, keyof R> & {
+export type MergedErrors<E extends Responses, R> = R extends readonly (infer C extends string)[] ? MergedErrors<E, GroupedByStatus<C>> : Omit<E, keyof R> & {
     readonly [S in keyof R]: R[S] extends readonly (infer C extends string)[] ? ErrorResponse<C | (S extends keyof E ? CodesOf<E[S]> : never)> : R[S];
 };
 type OwnErrors<D> = D extends {
     readonly errors: infer R;
-} ? R extends readonly unknown[] ? Record<never, never> : R : Record<never, never>;
+} ? R extends readonly (infer C extends string)[] ? GroupedByStatus<C> : R : Record<never, never>;
+type BuiltResponses<E extends Responses, D extends {
+    readonly responses: Responses;
+}> = Omit<MergedErrors<E, OwnErrors<D>>, keyof D['responses']> & D['responses'];
+/** The codes of each error status the route declares, where any: what the server may refuse with. */
+type ErrorCodesMember<R> = [keyof ErrorCodesIn<R>] extends [never] ? unknown : {
+    readonly errorCodes: ErrorCodesIn<R>;
+};
 /** The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors. */
 export type BuiltRoute<V extends number, P extends readonly Parameter[], E extends Responses, D extends Omit<BuiltRouteDefinition, 'errors'> & {
     readonly errors?: unknown;
@@ -60,8 +67,8 @@ export type BuiltRoute<V extends number, P extends readonly Parameter[], E exten
         ...P,
         ...IdentityParameters<X, D['method']>
     ];
-    readonly responses: Omit<MergedErrors<E, OwnErrors<D>>, keyof D['responses']> & D['responses'];
-} & OwnBody<D> & AccessOf<X> & OwnDegradable<D>>;
+    readonly responses: BuiltResponses<E, D>;
+} & OwnBody<D> & AccessOf<X> & OwnDegradable<D> & ErrorCodesMember<BuiltResponses<E, D>>>;
 /** The parameters an identity adds to every route, and to a write. */
 type IdentityParameters<X, Method> = X extends {
     readonly identity: {

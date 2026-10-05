@@ -1,8 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
+
+import type { ApiErrorCode } from '@arthome/core';
+import { DomainErrorCode, OrderErrorCode } from '@arthome/core';
+import type { ErrorParamsRead } from '@arthome/core/schema';
 
 import { createClient, UndeclaredStatusError, type FetchInit } from './index.js';
 import { defineApi, defineRoute } from '../http/index.js';
+import { studioV1 } from '../studio-api/components.js';
 
 const Dates = z.looseObject({ items: z.array(z.string()) });
 
@@ -147,5 +152,50 @@ describe('createClient', () => {
     const response = await client.listDates({ params: { channelId: 'c' } });
 
     expect(response.status).toBe(429);
+  });
+
+  it('narrows a refusal on error.code, its params typed, from the codes the route lists', async () => {
+    const quoteId = { name: 'quoteId', in: 'path', required: true, schema: z.string() } as const;
+    const confirmQuote = studioV1
+      .errors([OrderErrorCode.SOLD_OUT])
+      .resource('quotes', { id: quoteId })
+      .action('confirm', { errors: [OrderErrorCode.PRICE_STALE, DomainErrorCode.STATE_CONFLICT] });
+    const quotes = defineApi({
+      openapi: '3.1.1',
+      info: { title: 'test', version: '1' },
+      routes: { confirmQuote },
+      components: {},
+    });
+    const stale = {
+      error: {
+        code: OrderErrorCode.PRICE_STALE,
+        nature: 'refused',
+        params: { expectedAmountMinor: 2400, currentAmountMinor: 2900, currencyCode: 'EUR' },
+        traceId: 't',
+      },
+      servedAt: '2026-10-05T10:00:00Z',
+    };
+    const client = createClient(quotes, {
+      baseUrl: 'https://api.test',
+      fetch: answering(409, JSON.stringify(stale)).fetch,
+    });
+
+    const response = await client.confirmQuote({ params: { quoteId: 'q' } });
+
+    expectTypeOf(confirmQuote.errorCodes[409]).toEqualTypeOf<
+      readonly (
+        | typeof OrderErrorCode.SOLD_OUT
+        | typeof OrderErrorCode.PRICE_STALE
+        | typeof DomainErrorCode.STATE_CONFLICT
+        | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+        | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
+      )[]
+    >();
+    expect(response.status).toBe(409);
+    if (response.status !== 409) return;
+    const { error } = response.body;
+    if (error.code !== OrderErrorCode.PRICE_STALE) throw new Error(error.code);
+    expectTypeOf(error.params).toEqualTypeOf<ErrorParamsRead<typeof OrderErrorCode.PRICE_STALE>>();
+    expect(error.params.currentAmountMinor).toBe(2900);
   });
 });

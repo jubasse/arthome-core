@@ -1,7 +1,15 @@
 import { ApiErrorCode } from '@arthome/core';
 
 import type { Access, IdentifiedAccess, Identity, PublicAccess, Requirement } from './access.js';
-import type { CodesOf, ErrorList, ErrorModel, ErrorResponse, ErrorsInput } from './errors.js';
+import type {
+  GroupedByStatus,
+  CodesOf,
+  ErrorCodesIn,
+  ErrorList,
+  ErrorModel,
+  ErrorResponse,
+  ErrorsInput,
+} from './errors.js';
 import { groupByStatus, errorResponseFor } from './errors.js';
 import type {
   Header,
@@ -74,8 +82,8 @@ type OwnBody<D> = D extends { readonly requestBody: infer B extends RequestBody 
   : unknown;
 
 /** The error responses a set of `errors` declarations makes, over those already held. */
-export type MergedErrors<E extends Responses, R> = R extends readonly unknown[]
-  ? E
+export type MergedErrors<E extends Responses, R> = R extends readonly (infer C extends string)[]
+  ? MergedErrors<E, GroupedByStatus<C>>
   : Omit<E, keyof R> & {
       readonly [S in keyof R]: R[S] extends readonly (infer C extends string)[]
         ? ErrorResponse<C | (S extends keyof E ? CodesOf<E[S]> : never)>
@@ -83,10 +91,21 @@ export type MergedErrors<E extends Responses, R> = R extends readonly unknown[]
     };
 
 type OwnErrors<D> = D extends { readonly errors: infer R }
-  ? R extends readonly unknown[]
-    ? Record<never, never>
+  ? R extends readonly (infer C extends string)[]
+    ? GroupedByStatus<C>
     : R
   : Record<never, never>;
+
+type BuiltResponses<E extends Responses, D extends { readonly responses: Responses }> = Omit<
+  MergedErrors<E, OwnErrors<D>>,
+  keyof D['responses']
+> &
+  D['responses'];
+
+/** The codes of each error status the route declares, where any: what the server may refuse with. */
+type ErrorCodesMember<R> = [keyof ErrorCodesIn<R>] extends [never]
+  ? unknown
+  : { readonly errorCodes: ErrorCodesIn<R> };
 
 /** The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors. */
 export type BuiltRoute<
@@ -107,10 +126,11 @@ export type BuiltRoute<
       ...P,
       ...IdentityParameters<X, D['method']>,
     ];
-    readonly responses: Omit<MergedErrors<E, OwnErrors<D>>, keyof D['responses']> & D['responses'];
+    readonly responses: BuiltResponses<E, D>;
   } & OwnBody<D> &
     AccessOf<X> &
-    OwnDegradable<D>
+    OwnDegradable<D> &
+    ErrorCodesMember<BuiltResponses<E, D>>
 >;
 
 /** The parameters an identity adds to every route, and to a write. */

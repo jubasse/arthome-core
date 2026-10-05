@@ -21,12 +21,13 @@
  * they need are written with them.
  */
 
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, relative, resolve } from 'node:path';
 
 const require = createRequire(`${process.cwd()}/`);
+const { ESLint } = require('eslint');
+const prettier = require('prettier');
 const ts = require('typescript');
 
 const args = process.argv.slice(2);
@@ -98,14 +99,6 @@ function shortened(text, dictionary, used) {
     .replace(/\{\}(?=[,;>)\]])/g, 'Record<never, never>');
 }
 
-function prettier(text, file) {
-  return execFileSync('npx', ['prettier', '--stdin-filepath', file], {
-    input: text,
-    encoding: 'utf8',
-    stdio: ['pipe', 'pipe', 'ignore'],
-  });
-}
-
 /** The import statements of the module files, by imported name: where a name in a type comes from. */
 function importMap(files) {
   const map = new Map();
@@ -158,6 +151,7 @@ function importsFor(text, { from, contextFiles, dictionary, extra }) {
       want(relativeSpec(from, byOrigin.get(name)), name);
     } else if (imported.has(name)) want(imported.get(name), name);
     else if (httpExports.has(name)) want(relativeSpec(from, httpIndex.fileName), name);
+    else if (ERROR_CODE_ACCESSORS.has(name)) want('@arthome/core', name);
   }
   return [...specs]
     .sort(([a], [b]) => a.localeCompare(b))
@@ -165,6 +159,39 @@ function importsFor(text, { from, contextFiles, dictionary, extra }) {
       ([spec, list]) => `import type { ${[...new Set(list)].sort().join(', ')} } from '${spec}';`,
     )
     .join('\n');
+}
+
+/** Each error code's accessor, `'order.sold_out'` to `OrderErrorCode.SOLD_OUT`, read from `ErrorStatusMap`. */
+const ERROR_CODE_NAMES = (() => {
+  const names = new Map();
+  const registry = program
+    .getSourceFiles()
+    .find((sf) => sf.fileName.endsWith('/contracts/src/http/error-registry.ts'));
+  const map = registry?.statements.find(
+    (st) => ts.isInterfaceDeclaration(st) && st.name.text === 'ErrorStatusMap',
+  );
+  for (const member of map?.members ?? []) {
+    if (member.name === undefined || !ts.isComputedPropertyName(member.name)) continue;
+    const type = checker.getTypeAtLocation(member.name.expression);
+    if (type.isStringLiteral()) names.set(type.value, member.name.expression.getText(registry));
+  }
+  return names;
+})();
+const ERROR_CODE_ACCESSORS = new Set([...ERROR_CODE_NAMES.values()].map((n) => n.split('.')[0]));
+
+/**
+ * `errorCodes` written out status by status, each code through its accessor as `check-enums` asks:
+ * the checker would print the alias that computes it.
+ */
+function errorCodesText(type, at) {
+  const statuses = type.getProperties().map((status) => {
+    const list = checker.getTypeOfSymbolAtLocation(status, at);
+    const element = checker.getIndexTypeOfType(list, ts.IndexKind.Number);
+    const codes = (element.isUnion() ? element.types : [element]).map((code) => code.value).sort();
+    const named = codes.map((code) => `typeof ${ERROR_CODE_NAMES.get(code)}`);
+    return `    ${status.getName()}: readonly (${named.join(' | ')})[];`;
+  });
+  return `{\n${statuses.join('\n')}\n  }`;
 }
 
 const outputsDiffer = (schemaType, at) => {
@@ -179,18 +206,8 @@ const outputsDiffer = (schemaType, at) => {
   return !(checker.isTypeAssignableTo(a, b) && checker.isTypeAssignableTo(b, a));
 };
 
-let stale = 0;
-const write = (file, text, label) => {
-  const current = existsSync(file) ? readFileSync(file, 'utf8') : '';
-  if (current === text) return;
-  stale += 1;
-  if (check) {
-    console.error(`${file}: ${label} is stale`);
-    return;
-  }
-  writeFileSync(file, text);
-  console.log(`${file}: ${label} written`);
-};
+const written = [];
+const write = (file, text, label) => written.push({ file, text, label });
 
 /** The schemas file: an explicit type on each exported schema, and its z.output and z.input names. */
 function schemasJob(file) {
@@ -245,7 +262,7 @@ function schemasJob(file) {
       );
     if (missing.length > 0) text = `${missing.join('\n')}\n${text}`;
   }
-  write(file, prettier(text, file), 'schemas');
+  write(file, text, 'schemas');
 }
 
 /** The types file: one alias per exported route, and the routes' annotations pointing at them. */
@@ -266,6 +283,7 @@ function typesJob(file) {
     'access',
     'degradable',
     'responses',
+    'errorCodes',
   ];
   for (const statement of sf.statements) {
     if (!ts.isVariableStatement(statement)) continue;
@@ -298,6 +316,8 @@ function typesJob(file) {
           )
           .map(({ name: status, text }) => `    ${status}: ${text};`);
         members.push(`  responses: {\n${own.join('\n')}\n  };`);
+      } else if (member === 'errorCodes') {
+        members.push(`  errorCodes: ${errorCodesText(type, declaration)};`);
       } else if (type.isStringLiteral()) {
         members.push(`  ${member}: '${type.value}';`);
       } else if (type.isNumberLiteral()) {
@@ -317,7 +337,7 @@ function typesJob(file) {
     dictionary,
     extra: new Set(aliases.map((a) => a.match(/type (\w+)/)[1])),
   });
-  write(typesFile, prettier(`${header}${imports}\n\n${body}\n`, typesFile), 'types');
+  write(typesFile, `${header}${imports}\n\n${body}\n`, 'types');
 
   // The routes file: each route annotated with its alias, and the aliases imported.
   let text = readFileSync(file, 'utf8');
@@ -346,7 +366,7 @@ function typesJob(file) {
     .join(', ')} } from './${base}.types.js';`;
   const existing = text.match(/import type \{[^}]*\} from '\.\/[\w.-]+\.types\.js';\n/);
   text = existing ? text.replace(existing[0], `${importLine}\n`) : `${importLine}\n${text}`;
-  write(file, prettier(text, file), 'routes');
+  write(file, text, 'routes');
 }
 
 const sibling = (file) => {
@@ -358,5 +378,33 @@ const sibling = (file) => {
 for (const job of jobs) {
   if (job.kind === 'schemas') schemasJob(job.file);
   else typesJob(job.file);
+}
+
+const importOrder = new ESLint({
+  fix: true,
+  ruleFilter: ({ ruleId }) => ruleId === 'import-x/order',
+  overrideConfig: { languageOptions: { parserOptions: { projectService: false, project: null } } },
+});
+
+/** The text as `pnpm run fix` leaves it: Prettier, the import order ESLint fixes, Prettier again. */
+async function formatted(text, file) {
+  const options = { ...(await prettier.resolveConfig(file)), filepath: file };
+  const once = await prettier.format(text, options);
+  const [result] = await importOrder.lintText(once, { filePath: file });
+  return result?.output === undefined ? once : prettier.format(result.output, options);
+}
+
+let stale = 0;
+for (const { file, text, label } of written) {
+  const next = await formatted(text, file);
+  const current = existsSync(file) ? readFileSync(file, 'utf8') : '';
+  if (current === next) continue;
+  stale += 1;
+  if (check) {
+    console.error(`${file}: ${label} is stale`);
+    continue;
+  }
+  writeFileSync(file, next);
+  console.log(`${file}: ${label} written`);
 }
 if (check && stale > 0) process.exit(1);

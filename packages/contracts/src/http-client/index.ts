@@ -50,28 +50,45 @@ export interface ClientOptions<Init extends object> {
 
 type DeclaredStatus<R extends RouteShape> = keyof R['responses'] & number;
 
-type DerivedResponse<R extends RouteShape> = {
-  [S in Exclude<DerivedStatus, DeclaredStatus<R>>]: {
+type ErrorCodesOf<R> = R extends { readonly errorCodes: infer M } ? M : Record<never, never>;
+
+type CodedStatus<R> = keyof ErrorCodesOf<R> & number;
+
+type CodesAt<R, S> = ErrorCodesOf<R>[S & keyof ErrorCodesOf<R>] extends readonly (infer C extends
+  string)[]
+  ? C
+  : never;
+
+type DerivedCodesAt<S> = S extends DerivedStatus ? (typeof DERIVED_ERROR_CODES)[S][number] : never;
+
+type ResponseStatus<R extends RouteShape> = Exclude<DeclaredStatus<R>, CodedStatus<R>>;
+
+type ErrorStatusOf<R extends RouteShape> =
+  CodedStatus<R> | Exclude<DerivedStatus, DeclaredStatus<R>>;
+
+type ErrorAnswer<R extends RouteShape> = {
+  [S in ErrorStatusOf<R>]: {
     readonly status: S;
-    readonly body: ErrorBody<(typeof DERIVED_ERROR_CODES)[S][number]>;
+    readonly body: ErrorBody<CodesAt<R, S> | DerivedCodesAt<S>>;
     readonly headers: FetchResponseLike['headers'];
   };
-}[Exclude<DerivedStatus, DeclaredStatus<R>>];
+}[ErrorStatusOf<R>];
 
 /**
- * What a call answers: the statuses the route declares, typed by the route, and the derived errors
- * (400, 401, 403, 413, 415, 429, 500, 502, 504), typed by the api's own codes. A surface can switch
- * on a 401 or a 429 with types, and a status that is neither throws `UndeclaredStatusError`.
+ * What a call answers: the statuses the route declares, typed by the route; the codes it declares,
+ * by status (`errorCodes`); and the derived errors (400, 401, 403, 413, 415, 429, 500, 502, 504).
+ * An error body is a union discriminated on `error.code`, so a surface switches on a code with its
+ * params typed, and a status that is none of these throws `UndeclaredStatusError`.
  */
 export type ClientResponse<R extends RouteShape> =
   | {
-      [S in DeclaredStatus<R>]: {
+      [S in ResponseStatus<R>]: {
         readonly status: S;
         readonly body: ClientView<RouteResponseBody<R, S>> & Degraded<R>;
         readonly headers: FetchResponseLike['headers'];
       };
-    }[DeclaredStatus<R>]
-  | DerivedResponse<R>;
+    }[ResponseStatus<R>]
+  | ErrorAnswer<R>;
 
 type Optional<Key extends string, T> =
   Record<never, never> extends T ? Readonly<Partial<Record<Key, T>>> : Readonly<Record<Key, T>>;

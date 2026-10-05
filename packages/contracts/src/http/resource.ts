@@ -4,7 +4,7 @@ import { ApiErrorCode, DomainErrorCode } from '@arthome/core';
 
 import type { Access } from './access.js';
 import type { BuiltRoute, BuiltRouteDefinition, RouteBuilder, Scope } from './builder.js';
-import type { ErrorList, ErrorsInput } from './errors.js';
+import type { ErrorList, ErrorsInput, GroupedByStatus } from './errors.js';
 import { groupByStatus } from './errors.js';
 import type {
   DerivedExample,
@@ -173,8 +173,8 @@ type JoinErrors<Convention, Own> = {
       : never;
 };
 type OwnErrors<D> = D extends { readonly errors: infer R }
-  ? R extends readonly unknown[]
-    ? Record<never, never>
+  ? R extends readonly (infer C extends string)[]
+    ? GroupedByStatus<C>
     : R
   : Record<never, never>;
 type OwnParameters<D> = D extends { readonly parameters: infer X extends readonly Parameter[] }

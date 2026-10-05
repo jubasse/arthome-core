@@ -127,7 +127,7 @@ describe('resource members', () => {
 
     expect(publish.path).toBe('/things/{savedSearchId}/publish');
     expect(publish.operationId).toBe('publishThing');
-    expectTypeOf<Conflict>().toMatchTypeOf<
+    expectTypeOf<Conflict>().toEqualTypeOf<
       ErrorBody<
         | typeof CatalogErrorCode.PRICES_LOCKED
         | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
