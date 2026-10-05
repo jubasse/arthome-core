@@ -4,6 +4,8 @@ import { DEVICE_KINDS } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { InstantOut, uuidOut, vocabularyIn } from '@arthome/core/schema';
 
+import { sensitive } from '../../http/index.js';
+
 export const RegisterDeviceBodySchema: z.ZodObject<
   {
     kind: VocabularyIn<typeof DEVICE_KINDS>;
@@ -26,7 +28,7 @@ export const DeviceRegistrationSchema: z.ZodObject<
   z.core.$loose
 > = z.looseObject({
   deviceId: uuidOut(),
-  deviceToken: z.string(),
+  deviceToken: sensitive(z.string()),
   expiresAt: InstantOut,
 });
 
