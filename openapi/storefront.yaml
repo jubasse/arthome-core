@@ -4402,14 +4402,13 @@ paths:
       - ticketing
       - identity
       - streaming
-      x-arthome-freshness: 60
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/ViewerTimezone'
       - $ref: '#/components/parameters/Surface'
@@ -4417,11 +4416,6 @@ paths:
       responses:
         '200':
           description: Home.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -4435,10 +4429,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:13.900Z'
-                validUntil: '2026-09-21T18:03:13.900Z'
-                lastEventSeq: 918233
-                degraded: []
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   billboard:
                     previewStartsAfterSec: 4
@@ -4475,10 +4466,23 @@ paths:
                     cardForm: wide
                     items: []
                     nextCursor: null
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '503':
-          $ref: '#/components/responses/Unavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/live:
     get:
       operationId: getLiveScreen
@@ -10391,102 +10395,171 @@ components:
       - atMediaSec
       additionalProperties: {}
     Rail:
-      type: object
-      properties:
-        id:
-          type: string
-        titleCode:
-          type: string
-          examples:
-          - home.rail.resume
-          description: An i18n **code**, never an authored title.
-        kind:
-          type: string
-          x-arthome-vocabulary:
-          - resume
-          - live_now
-          - my_seats
-          - upcoming_tonight
-          - followed
-          - editorial
-          - category
-          - replay_expiring
-          - artists_to_follow
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.
-          description: |
-            `my_seats` carries "Your seats": it is **not** editorial but personal, and its behaviour is
-            its own — the card becomes "Enter the room" when the room opens. Filing it under `editorial`
-            would have erased that difference.
-        itemKind:
-          type: string
-          x-arthome-vocabulary:
-          - date
-          - artist
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.
-          examples:
-          - date
-          description: |
-            **What the rail carries.** Without this field, an artist rail is inexpressible:
-            `ArtistSummary` exists in the contract but no rail could transport it, and the surface would
-            have had to guess the type from the rail identifier — that is, from a parallel literal.
-        cardForm:
-          type: string
-          x-arthome-vocabulary:
-          - wide
-          - poster
-          - portrait
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it.
-          examples:
-          - wide
-          description: |
-            **The card form is an editorial choice, hence server-side**, exactly like the order of the
-            rails. `poster` serves the "Posters" rail in vertical 2:3, `portrait` the artists as circles.
-            Without this field the surface would choose from the rail identifier, and *"variety of format
-            is what stops the screen looking like a spreadsheet"* — nine rails of identical 16:9 cards is
-            a television's defect number one.
-        items:
-          type: array
+      oneOf:
+      - type: object
+        properties:
+          id:
+            type: string
+          titleCode:
+            type: string
+            examples:
+            - home.rail.resume
+            description: An i18n **code**, never an authored title.
+          kind:
+            type: string
+            x-arthome-vocabulary:
+            - resume
+            - live_now
+            - my_seats
+            - upcoming_tonight
+            - followed
+            - editorial
+            - category
+            - replay_expiring
+            - artists_to_follow
+            x-arthome-vocabulary-source: none
+            x-arthome-vocabulary-reason: A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.
+            description: |
+              `my_seats` carries "Your seats": it is **not** editorial but personal, and its behaviour is
+              its own — the card becomes "Enter the room" when the room opens. Filing it under `editorial`
+              would have erased that difference.
+          cardForm:
+            type: string
+            x-arthome-vocabulary:
+            - wide
+            - poster
+            - portrait
+            x-arthome-vocabulary-source: none
+            x-arthome-vocabulary-reason: A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it.
+            examples:
+            - wide
+            description: |
+              **The card form is an editorial choice, hence server-side**, exactly like the order of the
+              rails. `poster` serves the "Posters" rail in vertical 2:3, `portrait` the artists as circles.
+              Without this field the surface would choose from the rail identifier, and *"variety of format
+              is what stops the screen looking like a spreadsheet"* — nine rails of identical 16:9 cards is
+              a television's defect number one.
           items:
-            oneOf:
-            - $ref: '#/components/schemas/DateCard'
-            - $ref: '#/components/schemas/ArtistSummary'
-          description: |
-            **Union discriminated by `itemKind`**: `DateCard` when `itemKind` is `date`,
-            `ArtistSummary` when it is `artist`.
-        total:
-          description: |
-            **The rail's count, not the served slice's.** Every rail displays a counter to the right of
-            its title; without this field it can only display `items.length`, that is, the page size — a
-            false number. Same guarantee as `CursorPageInfo.approximateTotal`: exact up to the served
-            threshold, a lower bound beyond it.
-          anyOf:
-          - type: integer
-          - type: 'null'
-        totalIsLowerBound:
-          default: false
-          type: boolean
-        nextCursor:
-          description: |
-            **Per-rail** cursor, consumed by `extendRail`. A rail is an excerpt; it does not paginate on
-            screen, it extends.
-          type:
-          - string
-          - 'null'
-      required:
-      - id
-      - titleCode
-      - kind
-      - itemKind
-      - cardForm
-      - items
-      additionalProperties: {}
+            type: array
+            items:
+              $ref: '#/components/schemas/DateCard'
+            description: The dates the rail carries.
+          total:
+            description: |
+              **The rail's count, not the served slice's.** Every rail displays a counter to the right of
+              its title; without this field it can only display `items.length`, that is, the page size — a
+              false number. Same guarantee as `CursorPageInfo.approximateTotal`: exact up to the served
+              threshold, a lower bound beyond it.
+            anyOf:
+            - type: integer
+            - type: 'null'
+          totalIsLowerBound:
+            default: false
+            type: boolean
+          nextCursor:
+            description: |
+              **Per-rail** cursor, consumed by `extendRail`. A rail is an excerpt; it does not paginate on
+              screen, it extends.
+            type:
+            - string
+            - 'null'
+          itemKind:
+            type: string
+            const: date
+        required:
+        - id
+        - titleCode
+        - kind
+        - cardForm
+        - items
+        - itemKind
+        additionalProperties: {}
+      - type: object
+        properties:
+          id:
+            type: string
+          titleCode:
+            type: string
+            examples:
+            - home.rail.resume
+            description: An i18n **code**, never an authored title.
+          kind:
+            type: string
+            x-arthome-vocabulary:
+            - resume
+            - live_now
+            - my_seats
+            - upcoming_tonight
+            - followed
+            - editorial
+            - category
+            - replay_expiring
+            - artists_to_follow
+            x-arthome-vocabulary-source: none
+            x-arthome-vocabulary-reason: A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.
+            description: |
+              `my_seats` carries "Your seats": it is **not** editorial but personal, and its behaviour is
+              its own — the card becomes "Enter the room" when the room opens. Filing it under `editorial`
+              would have erased that difference.
+          cardForm:
+            type: string
+            x-arthome-vocabulary:
+            - wide
+            - poster
+            - portrait
+            x-arthome-vocabulary-source: none
+            x-arthome-vocabulary-reason: A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it.
+            examples:
+            - wide
+            description: |
+              **The card form is an editorial choice, hence server-side**, exactly like the order of the
+              rails. `poster` serves the "Posters" rail in vertical 2:3, `portrait` the artists as circles.
+              Without this field the surface would choose from the rail identifier, and *"variety of format
+              is what stops the screen looking like a spreadsheet"* — nine rails of identical 16:9 cards is
+              a television's defect number one.
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/ArtistSummary'
+            description: The artists the rail carries.
+          total:
+            description: |
+              **The rail's count, not the served slice's.** Every rail displays a counter to the right of
+              its title; without this field it can only display `items.length`, that is, the page size — a
+              false number. Same guarantee as `CursorPageInfo.approximateTotal`: exact up to the served
+              threshold, a lower bound beyond it.
+            anyOf:
+            - type: integer
+            - type: 'null'
+          totalIsLowerBound:
+            default: false
+            type: boolean
+          nextCursor:
+            description: |
+              **Per-rail** cursor, consumed by `extendRail`. A rail is an excerpt; it does not paginate on
+              screen, it extends.
+            type:
+            - string
+            - 'null'
+          itemKind:
+            type: string
+            const: artist
+        required:
+        - id
+        - titleCode
+        - kind
+        - cardForm
+        - items
+        - itemKind
+        additionalProperties: {}
+      discriminator:
+        propertyName: itemKind
       description: |
-        A home rail. **Composition and order are server-side**: the design loads 1,814 dates
-        (1.79 MB) and filters client-side, which the contract must make impossible on a device that
-        has 300 to 500 MB for everything, video included.
+        A home rail, tagged by `itemKind`, **what the rail carries**: `date` for `DateCard`s, `artist` for
+        `ArtistSummary`s. Without the tag an artist rail is inexpressible, and the surface would guess
+        the type from the rail identifier, that is, from a parallel literal. **Composition and order are
+        server-side**: the design loads 1,814 dates (1.79 MB) and filters client-side, which the contract
+        must make impossible on a device that has 300 to 500 MB for everything, video included.
     HomeScreen:
       type: object
       properties:

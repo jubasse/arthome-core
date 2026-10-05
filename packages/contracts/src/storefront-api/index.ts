@@ -81,7 +81,6 @@ import {
   extendRail,
   getArtistDetail,
   getCategoryScreen,
-  getHomeScreen,
   getLiveScreen,
   listArtists,
   listCategories,
@@ -89,6 +88,7 @@ import {
   resolvePublicLink,
   search,
 } from './discovery.js';
+import { getHomeScreen } from './home/routes.js';
 import {
   addPasskey,
   addPaymentMethod,

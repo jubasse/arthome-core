@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { DisplayState, ReplayPolicy, RightsScope, Service } from '@arthome/core';
+import { Service } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
 import {
   VOCABULARY_SOURCE_LOCAL,
@@ -22,7 +22,6 @@ import {
   StorefrontTag,
   SurfaceParameter,
   TraceparentParameter,
-  UnauthorizedResponse,
   UnavailableResponse,
   VaryAuthHeader,
   ViewerTimezoneParameter,
@@ -36,7 +35,6 @@ import {
   CategoryTileSchema,
   DateCardSchema,
   FacetSchema,
-  HomeScreenSchema,
   LiveScreenSchema,
   RailSchema,
   SearchCriteriaSchema,
@@ -64,111 +62,6 @@ const LIST_ARTISTS_SORT = ['alpha', 'followers'] as const;
 const SEARCH_TAB = ['best', 'lives', 'replays', 'artists'] as const;
 const LIST_REPLAYS_SORT = ['expiring_first', 'recent', 'popularity'] as const;
 const RESOLVE_PUBLIC_LINK_KIND = ['date', 'show', 'artist', 'category'] as const;
-
-export const getHomeScreen: Route<{
-  method: 'get';
-  version: 1;
-  path: '/home';
-  parameters: readonly [
-    typeof ViewerTimezoneParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StorefrontEnvelopeMetaSchema,
-        z.ZodObject<{ data: typeof HomeScreenSchema }, z.core.$loose>
-      >
-    >;
-    401: typeof UnauthorizedResponse;
-    503: typeof UnavailableResponse;
-  };
-}> = discoveryRoutes.defineRoute({
-  method: 'get',
-  path: '/home',
-  operationId: 'getHomeScreen',
-  summary: 'Billboard and rails, composed and ordered by the server.',
-  description:
-    '**One call.** Ten to thirteen rails, six to eight visible cards each, a cursor per rail:\n60 to 100 cards, on the order of 50 to 90 KB raw, under 15 KB once compressed.\n\nThe BFF composes this model with **three per-viewer overlays, batched by id lists** — never\none call per card. In steady state, the per-profile Redis cache (30 s TTL) brings the screen\ndown to one or two internal calls.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common cache.\nThe three per-viewer overlays (`watchVerdict`, `viewerRelations`, `viewerProgress`) are then\n**absent**, never null. Called with a session or a bearer token, it returns the public body\n**plus** the overlays, and becomes private.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  'x-arthome-freshness': 60,
-  parameters: [ViewerTimezoneParameter],
-  responses: {
-    200: {
-      description: 'Home.',
-      headers: {
-        'Cache-Control': CacheControlPublicHeader,
-        Vary: VaryAuthHeader,
-      },
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              data: HomeScreenSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:02:13.900Z',
-            validUntil: '2026-09-21T18:03:13.900Z',
-            lastEventSeq: 918233,
-            degraded: [],
-            data: {
-              billboard: {
-                previewStartsAfterSec: 4,
-                date: {
-                  id: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
-                  showId: '019928a0-7d31-7a10-b8c4-2f9e11a4c111',
-                  channelId: '019928a0-7d31-7a10-b8c4-2f9e11a4c222',
-                  slug: '2026-09-21',
-                  canonicalUrl: 'https://arthome.fr/show/nuit-blanche/date/2026-09-21',
-                  title: 'Nuit blanche',
-                  startsAt: '2026-09-21T19:00:00Z',
-                  venueClock: {
-                    venueTimezone: 'Europe/Paris',
-                    venueUtcOffsetMin: 120,
-                  },
-                  runtimeMin: 95,
-                  roomOpensAt: '2026-09-21T18:30:00Z',
-                  displayState: DisplayState.LIVE,
-                  displayStateValidUntil: '2026-09-21T20:35:00Z',
-                  replay: {
-                    policy: ReplayPolicy.INCLUDED,
-                    windowHours: 72,
-                  },
-                  rights: {
-                    scope: RightsScope.WORLDWIDE,
-                    blackoutCountries: [],
-                  },
-                  media: {
-                    wide: [],
-                    poster: [],
-                  },
-                  viewers: 1842,
-                },
-              },
-              rails: [
-                {
-                  id: 'resume',
-                  titleCode: 'home.rail.resume',
-                  kind: 'resume',
-                  itemKind: 'date',
-                  cardForm: 'wide',
-                  items: [],
-                  nextCursor: null,
-                },
-              ],
-            },
-          },
-        },
-      },
-    },
-    401: UnauthorizedResponse,
-    503: UnavailableResponse,
-  },
-});
 
 export const getLiveScreen: Route<{
   method: 'get';

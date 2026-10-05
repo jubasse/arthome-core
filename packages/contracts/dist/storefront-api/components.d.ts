@@ -3,7 +3,7 @@ import { ApiErrorCode, ChatErrorCode, OrderErrorCode, Surface } from '@arthome/c
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { StorefrontRelayedCode } from '../envelope/index.js';
-import type { AccessorOf, ErrorBody, ErrorModel, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement, CodedResponse } from '../http/index.js';
+import type { AccessorOf, CachePolicy, ErrorBody, ErrorModel, Freshness, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement, CodedResponse } from '../http/index.js';
 declare const SURFACE: readonly [
     typeof Surface.STOREFRONT_WEB,
     typeof Surface.STOREFRONT_MOBILE,
@@ -36,6 +36,8 @@ export declare const ServedAtHeader: Header;
 export declare const IdempotencyReplayedHeader: Header;
 export declare const RetryAfterMsHeader: Header;
 export declare const CacheControlPublicHeader: Header;
+/** The freshness of a public read: `public` for an anonymous caller, varying on every credential and the surface. */
+export declare function publicRead(freshness: Freshness): CachePolicy;
 export declare const VaryAuthHeader: Header;
 /** `api.schema_invalid`'s envelope, so the document says what a refused field carries. */
 declare const SchemaInvalidEnvelopeSchema: z.ZodType<ErrorBody<typeof ApiErrorCode.SCHEMA_INVALID>>;

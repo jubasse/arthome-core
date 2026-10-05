@@ -18,6 +18,9 @@ type Union<Tag extends string, V extends Variants> = {
   [K in keyof V & string]: z.output<V[K]> & Readonly<Record<Tag, K>> & TaggedBrand<Tag>;
 }[keyof V & string];
 
+/** What `tagged` returns: the explicit type of an exported union, under `isolatedDeclarations`. */
+export type TaggedSchema<Tag extends string, V extends Variants> = z.ZodType<Union<Tag, V>>;
+
 /** A variant the client does not know yet: kept raw, and treated as neutral (`transport.md` §5.11). */
 export type UnknownVariant<Tag extends string> = Readonly<Record<Tag, string & {}>> &
   Readonly<Record<string, unknown>>;
@@ -51,7 +54,7 @@ function tagOf(keys: readonly string[]): z.ZodType {
 export function tagged<const Tag extends string, const V extends Variants>(
   tag: Tag,
   variants: V,
-): z.ZodType<Union<Tag, V>> {
+): TaggedSchema<Tag, V> {
   const byVariant = new Map<z.ZodObject, string[]>();
   for (const [key, schema] of Object.entries(variants)) {
     byVariant.set(schema, [...(byVariant.get(schema) ?? []), key]);
@@ -59,7 +62,7 @@ export function tagged<const Tag extends string, const V extends Variants>(
   const options = [...byVariant].map(([schema, keys]) => schema.extend({ [tag]: tagOf(keys) }));
   return z
     .discriminatedUnion(tag, options as unknown as [z.ZodObject, ...z.ZodObject[]])
-    .meta({ discriminator: { propertyName: tag } }) as unknown as z.ZodType<Union<Tag, V>>;
+    .meta({ discriminator: { propertyName: tag } }) as unknown as TaggedSchema<Tag, V>;
 }
 
 export type TolerantParse =

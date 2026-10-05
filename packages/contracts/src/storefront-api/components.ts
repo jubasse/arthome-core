@@ -21,8 +21,10 @@ import {
 import type { StorefrontRelayedCode } from '../envelope/index.js';
 import type {
   AccessorOf,
+  CachePolicy,
   ErrorBody,
   ErrorModel,
+  Freshness,
   Header,
   Identity,
   Paging,
@@ -38,6 +40,7 @@ import type {
 } from '../http/index.js';
 import {
   accessorOf,
+  cache,
   cursor,
   defineErrorModel,
   errorResponse,
@@ -242,6 +245,18 @@ export const CacheControlPublicHeader: Header = {
     examples: ['public, max-age=60'],
   }),
 };
+
+const PUBLIC_READ_VARY: readonly string[] = [
+  'Cookie',
+  'Authorization',
+  'X-Arthome-Device-Token',
+  'X-Arthome-Surface',
+];
+
+/** The freshness of a public read: `public` for an anonymous caller, varying on every credential and the surface. */
+export function publicRead(freshness: Freshness): CachePolicy {
+  return cache(freshness, { scope: 'public', vary: PUBLIC_READ_VARY });
+}
 
 export const VaryAuthHeader: Header = {
   description:
