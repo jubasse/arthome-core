@@ -728,9 +728,9 @@ evolution, security, tooling).
   hand-kept map from operation to intent; a route that requires it without an intent does not
   compile.
 
-  Three of the ten are not `recentAuth` routes as built: `enableTwoFactor` and `disableTwoFactor`
-  prove the caller by a password in the body, and `listReauthFactors` lists the factors to prove
-  with.
+  Four of the ten are not `recentAuth` routes as built: `enableTwoFactor` and `disableTwoFactor`
+  prove the caller by a password in the body, `listReauthFactors` lists the factors to prove with,
+  and `createReauthToken` mints the token the other six require.
 - **Sensitive fields.** `sensitive(schema)` marks a password, a token or a stream key:
   - `writeOnly` in the document, or `format: password`;
   - redacted from the server's logs and traces;
