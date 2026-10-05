@@ -27,9 +27,7 @@ here, and a skill for one of them would be the wrong instrument.
 | `pnpm run generate:openapi` | writes `openapi/storefront.yaml` and `openapi/studio.yaml` from the route declarations. Run it after any change to `packages/contracts` that reaches a document, and commit both |
 | `pnpm run fix` | Prettier, then ESLint `--fix`, then Prettier again |
 | `pnpm run generate:contract-types` | writes the `types.ts` of every module folder (`<api>/<module>/`) from its `routes.ts`, and the explicit types of its `schemas.ts`. Run it after any change to a module folder, and commit what it writes |
-| `node tools/route-docs.mjs <api> <operationId>...` | prints the `docs.ts` entries of routes still on their old declaration, read from the built api: converting a module (`packages/contracts/README.md`, "Converting a module") |
 | `node tools/prune-unused.mjs <module.ts>...` | drops the imports and top-level consts a module no longer uses once its routes moved out; `pnpm run fix` after it |
-| `node tools/sync-route-annotations.mjs <module.ts>` | after a route moves under a scope, an identity or a resource: rewrites the `method`, `path`, `parameters` and `access` of its explicit annotation (`--check` only reports) |
 | `pnpm run measure:surface-bundle` | what a surface ships for `createClient(api)`, minified and gzipped, part by part. A report, not a gate |
 
 The gates, and what each proves: `check-versions` (one version per dependency across manifests) ·
