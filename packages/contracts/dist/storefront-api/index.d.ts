@@ -2,8 +2,7 @@ import { changePassword, confirmEmailVerification, contactSupport, disableTwoFac
 import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
 import { addCartLine, getCart, quoteCart, removeCartLine, updateCartLine } from './cart/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
-import { enterSalesQueue, getSalesQueuePosition, joinWaitlist, leaveWaitlist, quoteSeat, refreshDateAvailability } from './commerce.js';
-import { getDateDetail } from './date.js';
+import { enterSalesQueue, getDateDetail, getSalesQueuePosition, joinWaitlist, leaveWaitlist, quoteSeat, refreshDateAvailability } from './dates/routes.js';
 import { extendRail, getArtistDetail, getCategoryScreen, getHomeScreen, getLiveScreen, listArtists, listCategories, listReplays, resolvePublicLink, search } from './discovery.js';
 import { addPasskey, addPaymentMethod, addToWatchlist, cancelAccountDeletion, clearReminder, createSavedSearch, deleteSavedSearch, followArtist, getAccountScreen, getExport, listFollowedArtists, listMyOrders, listMyReplays, listMyTickets, listNotifications, listSavedSearches, listWatchlist, markNotificationsRead, recordPlaybackPosition, removeFromWatchlist, removePasskey, removePaymentMethod, requestAccountDeletion, requestExport, revokeDevice, setReminder, signOutProfile, unfollowArtist, updateConsents, updateNotificationPreferences, updatePreferences, updateProfile, updateSavedSearch } from './me/routes.js';
 import { checkoutCart, getOrder, purchaseSeat } from './orders/routes.js';

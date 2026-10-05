@@ -5378,14 +5378,13 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
-      x-arthome-freshness: 15
       tags:
       - commerce
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/DateId'
       - $ref: '#/components/parameters/Surface'
@@ -5393,11 +5392,6 @@ paths:
       responses:
         '200':
           description: Capacity and prices at the instant of serving.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5428,8 +5422,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:40:00.000Z'
-                validUntil: '2026-09-21T18:41:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   seatsAvailable: 42
                   waitlistCount: 0
@@ -5444,8 +5437,27 @@ paths:
                   serviceFeePerSeat:
                     amountMinor: 150
                     currencyCode: EUR
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/seat-quote:
     post:
       operationId: quoteSeat
@@ -5461,6 +5473,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       x-arthome-idempotency-exemption: |
         **A read disguised as a `POST`: it is a `POST` because its criteria do not fit in a URL, not
         because it writes.** A quote computes, it creates nothing — so there is no effect to
@@ -5474,8 +5488,6 @@ paths:
         replayed quote would be a quote **already part-spent, or expired** — or a price that the
         pro-rata promotion has since made wrong. Same reason as a token renewal: what is being asked
         for is a fresh value.
-      tags:
-      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -5537,8 +5549,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:41:10.000Z'
-                validUntil: '2026-09-21T18:42:10.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   lines:
                   - kind: tier
@@ -5558,12 +5569,24 @@ paths:
                     amountMinor: 4620
                     currencyCode: EUR
                   validUntil: '2026-09-21T18:42:10.000Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/sales-queue/enter:
     post:
       operationId: enterSalesQueue
@@ -5586,13 +5609,13 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - ticketing
+      tags:
+      - commerce
       x-arthome-idempotency-exemption: |
         **Idempotent by construction**: one entry per account and date, so a second call finds the
         first entry and answers its current state. A key would put a durable write per entrant in
         front of the queue built to shed that load, and would replay a position that is stale seconds
         after it was served.
-      tags:
-      - commerce
       security:
       - sessionCookie: []
         csrfToken: []
@@ -5604,11 +5627,6 @@ paths:
       responses:
         '200':
           description: The caller's entry, as `getSalesQueuePosition` serves it.
-          headers:
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:
@@ -5622,8 +5640,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:00:02.000Z'
-                validUntil: '2026-09-21T18:00:04.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   armed: true
@@ -5631,12 +5648,20 @@ paths:
                   position: 2841
                   estimatedWaitSec: 95
                   pollIntervalSec: 2
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/sales-queue:
     get:
       operationId: getSalesQueuePosition
@@ -5654,6 +5679,12 @@ paths:
       - ticketing
       tags:
       - commerce
+      x-arthome-requires:
+      - name: throttle
+        bucket: sales-queue
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
       - $ref: '#/components/parameters/Surface'
@@ -5661,11 +5692,6 @@ paths:
       responses:
         '200':
           description: The caller's entry.
-          headers:
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:
@@ -5679,22 +5705,33 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:01:40.000Z'
-                validUntil: '2026-09-21T18:02:40.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   armed: true
-                  state: admitted
-                  pollIntervalSec: 5
-                  admission:
-                    token: adm_v1.eyJkIjoiMDE5OTI4YTAiLCJhIjoiMDE5OTI4ZjQifQ.3kQx
-                    expiresAt: '2026-09-21T18:02:40.000Z'
+                  state: waiting
+                  position: 2841
+                  estimatedWaitSec: 95
+                  pollIntervalSec: 2
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/orders/seats:
     post:
       operationId: purchaseSeat
@@ -6275,18 +6312,31 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:42:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   joined: true
                   rankDisclosed: false
                   rank: null
                   priorityWindowHours: 2
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     delete:
       operationId: leaveWaitlist
       summary: Leaves the waiting list.
@@ -6325,13 +6375,28 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:43:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   joined: false
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/cart:
     get:
       operationId: getCart
@@ -7141,37 +7206,27 @@ paths:
       - ticketing
       - identity
       - streaming
-      x-arthome-freshness: 60
       tags:
       - date
       x-arthome-degradable:
       - viewerProgress
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/DateId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/Traceparent'
       - name: If-None-Match
         in: header
         required: false
         schema:
           type: string
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: The page.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
-            ETag:
-              schema:
-                type: string
-              description: Cache validator, so the TV prefetch is not paid for twice.
           content:
             application/json:
               schema:
@@ -7185,8 +7240,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:21.000Z'
-                validUntil: '2026-09-21T18:03:21.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
@@ -7219,10 +7273,33 @@ paths:
                     denialReasonCode: watch.no_seat
                     fallbackAction: buy_seat
                     validUntil: '2026-09-21T18:03:21.000Z'
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            ETag:
+              description: 'The record''s validator: send it back in `If-None-Match` to learn that nothing changed.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
         '304':
-          description: Unchanged since the `ETag` supplied.
+          description: Unchanged since the validator sent in `If-None-Match`.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/playback/{dateId}/open:
     post:
       operationId: openPlayback

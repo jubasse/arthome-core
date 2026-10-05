@@ -7,6 +7,8 @@ import type { ApiDocs, ModuleDocs, OperationDocumentation } from '../openapi/doc
 import { apiDocs, documentationLookup } from '../openapi/docs.js';
 import { cartDocs } from './cart/docs.js';
 import { cartExamples } from './cart/examples.js';
+import { datesDocs } from './dates/docs.js';
+import { datesExamples } from './dates/examples.js';
 import { meDocs } from './me/docs.js';
 import { meExamples } from './me/examples.js';
 import { ordersDocs } from './orders/docs.js';
@@ -26,16 +28,6 @@ const statedMaturities = {
   listChanges: {
     maturity: 'stable',
     maturityReason: 'realtime is not a service, and the change feed is a shape the BFF owns',
-  },
-  enterSalesQueue: {
-    maturity: 'provisional',
-    maturityReason:
-      'the sales queue entered the contract at provisional maturity (D-081) and is not built',
-  },
-  getSalesQueuePosition: {
-    maturity: 'provisional',
-    maturityReason:
-      'the sales queue entered the contract at provisional maturity (D-081) and is not built',
   },
 } satisfies ModuleDocs;
 
@@ -135,10 +127,20 @@ export const storefrontDocs: ApiDocs = apiDocs({
         'ES256 JWT, `aud: "arthome.device"`, 180 days, **rotated on every use**, carrying `device_id`\nand nothing else. Obtained on first launch through `registerDevice`, **before any session**.\nIt is not a session: it opens only pairing, pairing polling and the public bootstrap, and\n**opens no personal data** — in particular not the real-time channel (`adr-auth.md` §4/Q3,\n§5.3).\n',
     },
   },
-  modules: [statedMaturities, cartDocs, meDocs, ordersDocs, plansDocs, seatsDocs, subscriptionDocs],
+  modules: [
+    statedMaturities,
+    cartDocs,
+    datesDocs,
+    meDocs,
+    ordersDocs,
+    plansDocs,
+    seatsDocs,
+    subscriptionDocs,
+  ],
   examples: [
     sharedExamples,
     cartExamples,
+    datesExamples,
     meExamples,
     ordersExamples,
     plansExamples,

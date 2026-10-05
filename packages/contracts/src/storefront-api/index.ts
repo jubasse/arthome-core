@@ -25,14 +25,6 @@ import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
 import { addCartLine, getCart, quoteCart, removeCartLine, updateCartLine } from './cart/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
 import {
-  enterSalesQueue,
-  getSalesQueuePosition,
-  joinWaitlist,
-  leaveWaitlist,
-  quoteSeat,
-  refreshDateAvailability,
-} from './commerce.js';
-import {
   AdmissionTokenParameter,
   ArtistIdParameter,
   BadRequestResponse,
@@ -65,7 +57,15 @@ import {
   VaryAuthHeader,
   ViewerTimezoneParameter,
 } from './components.js';
-import { getDateDetail } from './date.js';
+import {
+  enterSalesQueue,
+  getDateDetail,
+  getSalesQueuePosition,
+  joinWaitlist,
+  leaveWaitlist,
+  quoteSeat,
+  refreshDateAvailability,
+} from './dates/routes.js';
 import {
   extendRail,
   getArtistDetail,
