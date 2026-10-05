@@ -19,6 +19,7 @@ import * as studioCrew from './studio-api/crew.js';
 import * as studioDateAccessGrants from './studio-api/date-access-grants/routes.js';
 import * as studioDates from './studio-api/dates/routes.js';
 import * as studioExports from './studio-api/exports/routes.js';
+import * as studioIncidents from './studio-api/incidents/routes.js';
 import { studioApi } from './studio-api/index.js';
 import * as studioInvitations from './studio-api/invitations/routes.js';
 import * as studioModeration from './studio-api/moderation.js';
@@ -87,6 +88,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       studioDateAccessGrants,
       studioInvitations,
       studioSeats,
+      studioIncidents,
     ],
   ],
 ];

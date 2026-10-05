@@ -12,6 +12,8 @@ import { datesDocs } from './dates/docs.js';
 import { datesExamples } from './dates/examples.js';
 import { sharedExamples } from './examples.js';
 import { exportsDocs } from './exports/docs.js';
+import { incidentsDocs } from './incidents/docs.js';
+import { incidentsExamples } from './incidents/examples.js';
 import { invitationsDocs } from './invitations/docs.js';
 import { invitationsExamples } from './invitations/examples.js';
 import { seatsDocs } from './seats/docs.js';
@@ -166,6 +168,7 @@ export const studioDocs: ApiDocs = apiDocs({
     dateAccessGrantsDocs,
     invitationsDocs,
     seatsDocs,
+    incidentsDocs,
   ],
   examples: [
     sharedExamples,
@@ -175,6 +178,7 @@ export const studioDocs: ApiDocs = apiDocs({
     dateAccessGrantsExamples,
     invitationsExamples,
     seatsExamples,
+    incidentsExamples,
   ],
 });
 

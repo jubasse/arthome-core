@@ -110,6 +110,7 @@ import {
   submitHealthSample,
 } from './dates/routes.js';
 import { getChannelExport } from './exports/routes.js';
+import { resolveIncident, escalateIncidentToProduction } from './incidents/routes.js';
 import { respondToInvitation } from './invitations/routes.js';
 import {
   addBannedWord,
@@ -128,7 +129,7 @@ import {
   requestChannelExport,
 } from './payouts.js';
 import { createDateDraft } from './publication.js';
-import { escalateIncidentToProduction, getChannelStreamSettings, resolveIncident } from './run.js';
+import { getChannelStreamSettings } from './run.js';
 import { refundSeat } from './seats/routes.js';
 import { getChannelTicketing } from './ticketing.js';
 import { createUploadTicket } from './uploads/routes.js';
