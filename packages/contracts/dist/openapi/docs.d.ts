@@ -28,7 +28,6 @@ interface StatedMaturity {
     readonly maturityReason: string;
 }
 export type OperationDoc = {
-    /** Absent while the route still carries its own. */
     readonly description?: string;
     readonly upstream?: readonly Upstream[];
     /** Why a write that takes no `Idempotency-Key` (`idempotent: false`) is safe without one. */
@@ -67,6 +66,8 @@ export interface ApiDocsDefinition extends DocumentDocs {
 }
 /** Gathers an api's modules, and refuses an operation documented twice. */
 export declare function apiDocs(definition: ApiDocsDefinition): ApiDocs;
+/** The extensions only a module's `docs.ts` writes of an operation, never its route; so is its prose. */
+export declare const DOC_ONLY_EXTENSIONS: readonly `x-${string}`[];
 /** What a document says of one operation beyond its route's runtime fields. */
 export interface OperationDocumentation {
     readonly description?: string;
@@ -75,9 +76,9 @@ export interface OperationDocumentation {
     readonly 'x-arthome-idempotency-exemption'?: string;
 }
 /**
- * The prose and doc-only `x-arthome-*` of `route`: what its module registered, over what the route
- * still carries itself. A registered operation's maturity is the stated one, else its owning
- * service's; a route not yet registered keeps its own.
+ * The prose and doc-only `x-arthome-*` of `route`, from what its module registered: the registry is
+ * the only source, and a route carrying its own is refused. A registered operation's maturity is
+ * the stated one, else its owning service's.
  */
 export declare function documentationOf(route: RouteDefinition, doc: OperationDoc | undefined): OperationDocumentation;
 /** The documentation of each route of an api, looked up by route: what a server's own docs show. */

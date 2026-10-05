@@ -1,15 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Api, Route } from './http/index.js';
+import { DOC_ONLY_EXTENSIONS } from './openapi/index.js';
 import { storefrontApi } from './storefront-api/index.js';
 import { studioApi } from './studio-api/index.js';
-
-const DOC_ONLY_KEYS = [
-  'x-arthome-maturity',
-  'x-arthome-upstream',
-  'x-arthome-freshness',
-  'x-arthome-idempotency-exemption',
-] as const;
 
 /** An example written in place: an example by reference, or derived from a registered one, is not. */
 function writesAnExample(route: Route, shared: ReadonlySet<unknown>): boolean {
@@ -39,7 +33,7 @@ describe.each([
       .filter(
         (route) =>
           route.description !== undefined ||
-          DOC_ONLY_KEYS.some((key) => key in route) ||
+          DOC_ONLY_EXTENSIONS.some((key) => route[key] !== undefined) ||
           writesAnExample(route, shared),
       )
       .map((route) => route.operationId);

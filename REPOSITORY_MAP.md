@@ -312,10 +312,11 @@ Declarations: `dist/money/index.d.ts` — 4 exported names.
 
 #### @arthome/contracts/openapi
 
-Declarations: `dist/openapi/index.d.ts` — 17 exported names.
+Declarations: `dist/openapi/index.d.ts` — 18 exported names.
 
 - `ApiDocs` (interface)
 - `ApiDocsDefinition` (interface)
+- `DOC_ONLY_EXTENSIONS` (const) — `DOC_ONLY_EXTENSIONS: readonly 'x-${string}'[]` — The extensions only a module's 'docs.ts' writes of an operation, never its route; so is its prose.
 - `DocumentDocs` (interface) — The parts of an api's document no consumer reads: its introduction and the names it documents.
 - `ExampleEntry` (type) — `type ExampleEntry = readonly [schema: z.ZodType, examples: readonly unknown[]];`
 - `ExampleRegistry` (class) — The examples of each schema, registered once.
@@ -328,7 +329,7 @@ Declarations: `dist/openapi/index.d.ts` — 17 exported names.
 - `OperationDocumentation` (interface) — What a document says of one operation beyond its route's runtime fields.
 - `apiDocs` (function) — `function apiDocs(definition: ApiDocsDefinition): ApiDocs;` — Gathers an api's modules, and refuses an operation documented twice.
 - `documentationLookup` (function) — `function documentationLookup(docs: ApiDocs): (route: RouteDefinition) => OperationDocumentation;` — The documentation of each route of an api, looked up by route: what a server's own docs show.
-- `documentationOf` (function) — `function documentationOf(route: RouteDefinition, doc: OperationDoc | undefined): OperationDocumentation;` — The prose and doc-only 'x-arthome-*' of 'route': what its module registered, over what the route still carries itself.
+- `documentationOf` (function) — `function documentationOf(route: RouteDefinition, doc: OperationDoc | undefined): OperationDocumentation;` — The prose and doc-only 'x-arthome-*' of 'route', from what its module registered: the registry is the only source, and a route carrying its…
 - `maturityOf` (function) — `function maturityOf(upstream: readonly Upstream[]): Maturity | undefined;` — The regime of the operation's owning service, the first service in its upstream: a BFF keeps its own shape stable over a provisional servic…
 - `openApiDocumentOf` (function) — `function openApiDocumentOf(api: Api, docs?: ApiDocs): OpenApiDocument;`
 

@@ -52,7 +52,6 @@ interface StatedMaturity {
 }
 
 export type OperationDoc = {
-  /** Absent while the route still carries its own. */
   readonly description?: string;
   readonly upstream?: readonly Upstream[];
   /** Why a write that takes no `Idempotency-Key` (`idempotent: false`) is safe without one. */
@@ -124,6 +123,14 @@ export function apiDocs(definition: ApiDocsDefinition): ApiDocs {
   return { ...document, operations, examples: new ExampleRegistry(examples) };
 }
 
+/** The extensions only a module's `docs.ts` writes of an operation, never its route; so is its prose. */
+export const DOC_ONLY_EXTENSIONS: readonly `x-${string}`[] = [
+  'x-arthome-maturity',
+  'x-arthome-upstream',
+  'x-arthome-freshness',
+  'x-arthome-idempotency-exemption',
+];
+
 /** What a document says of one operation beyond its route's runtime fields. */
 export interface OperationDocumentation {
   readonly description?: string;
@@ -133,39 +140,43 @@ export interface OperationDocumentation {
 }
 
 /**
- * The prose and doc-only `x-arthome-*` of `route`: what its module registered, over what the route
- * still carries itself. A registered operation's maturity is the stated one, else its owning
- * service's; a route not yet registered keeps its own.
+ * The prose and doc-only `x-arthome-*` of `route`, from what its module registered: the registry is
+ * the only source, and a route carrying its own is refused. A registered operation's maturity is
+ * the stated one, else its owning service's.
  */
 export function documentationOf(
   route: RouteDefinition,
   doc: OperationDoc | undefined,
 ): OperationDocumentation {
-  const upstream =
-    doc?.upstream ?? (route['x-arthome-upstream'] as readonly Upstream[] | undefined);
-  const derived = maturityOf(upstream ?? []);
-  if (doc?.maturity !== undefined && doc.maturity === derived) {
+  const carried = [
+    ...(route.description === undefined ? [] : ['prose']),
+    ...DOC_ONLY_EXTENSIONS.filter((key) => route[key] !== undefined),
+  ];
+  if (carried.length > 0) {
+    throw new Error(
+      `openapi: "${route.operationId}" carries its own ${carried.join(', ')}; register it in its module's docs.ts.`,
+    );
+  }
+  if (doc === undefined) return {};
+  const derived = maturityOf(doc.upstream ?? []);
+  if (doc.maturity !== undefined && doc.maturity === derived) {
     throw new Error(
       `openapi: "${route.operationId}" states the maturity its owning service gives; leave it out.`,
     );
   }
-  const maturity =
-    doc === undefined
-      ? ((route['x-arthome-maturity'] as Maturity | undefined) ?? derived)
-      : (doc.maturity ?? derived);
-  if (doc !== undefined && maturity === undefined) {
+  const maturity = doc.maturity ?? derived;
+  if (maturity === undefined) {
     throw new Error(
       `openapi: "${route.operationId}" calls no service a maturity derives from; state its maturity.`,
     );
   }
-  const description = doc?.description ?? route.description;
-  const exemption =
-    doc?.idempotencyExemption ?? (route['x-arthome-idempotency-exemption'] as string | undefined);
   return {
-    ...(description !== undefined && { description }),
-    ...(maturity !== undefined && { 'x-arthome-maturity': maturity }),
-    ...(upstream !== undefined && { 'x-arthome-upstream': upstream }),
-    ...(exemption !== undefined && { 'x-arthome-idempotency-exemption': exemption }),
+    ...(doc.description !== undefined && { description: doc.description }),
+    'x-arthome-maturity': maturity,
+    ...(doc.upstream !== undefined && { 'x-arthome-upstream': doc.upstream }),
+    ...(doc.idempotencyExemption !== undefined && {
+      'x-arthome-idempotency-exemption': doc.idempotencyExemption,
+    }),
   };
 }
 

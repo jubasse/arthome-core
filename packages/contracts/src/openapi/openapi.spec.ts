@@ -20,7 +20,7 @@ const quote = defineRoute({
   version: 1,
   path: '/quotes',
   operationId: 'createQuote',
-  'x-arthome-maturity': 'stable',
+  'x-arthome-invalidates': ['quotes'],
   parameters: [Surface, { name: 'dry', in: 'query', schema: z.boolean().default(false) }],
   requestBody: {
     required: true,
@@ -107,7 +107,7 @@ describe('openApiDocumentOf', () => {
   });
 
   it('keeps the operation’s extensions and its example, and groups two methods under one path', () => {
-    expect(operation['x-arthome-maturity']).toBe('stable');
+    expect(operation['x-arthome-invalidates']).toEqual(['quotes']);
     expect(Object.keys(document.paths['/v1/quotes'] ?? {})).toEqual(['post', 'get']);
   });
 });

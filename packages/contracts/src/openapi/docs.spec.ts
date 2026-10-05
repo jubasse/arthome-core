@@ -54,15 +54,12 @@ describe('apiDocs', () => {
 const Body = z.object({ name: z.string() });
 const Item = z.looseObject({ id: z.string(), name: z.string() });
 
-const legacy = defineRoute({
+const createItem = defineRoute({
   method: 'post',
   version: 1,
   path: '/items',
   operationId: 'createItem',
   summary: 'Creates an item.',
-  description: 'Inline prose.',
-  'x-arthome-maturity': 'provisional',
-  'x-arthome-upstream': [Upstream.CHAT],
   'x-arthome-invalidates': ['items'],
   requestBody: {
     required: true,
@@ -71,14 +68,21 @@ const legacy = defineRoute({
   responses: { 204: { description: 'Done.' } },
 });
 
-const untouched = defineRoute({
+const getFeed = defineRoute({
   method: 'get',
   version: 1,
-  path: '/legacy',
-  operationId: 'getLegacy',
-  description: 'Kept as written.',
+  path: '/feed',
+  operationId: 'getFeed',
+  responses: { 204: { description: 'Done.' } },
+});
+
+const inlineDocs = defineRoute({
+  method: 'get',
+  version: 1,
+  path: '/inline',
+  operationId: 'getInline',
+  description: 'Inline prose.',
   'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Upstream.REALTIME],
   responses: { 204: { description: 'Done.' } },
 });
 
@@ -90,7 +94,7 @@ const { findItem } = items.crud({ item: Item, pick: ['find'] });
 const api = defineApi({
   openapi: '3.1.1',
   security: [],
-  routes: { createItem: legacy, getLegacy: untouched, findItem },
+  routes: { createItem, getFeed, findItem },
   components: {},
 });
 
@@ -102,7 +106,12 @@ const operationDocs = {
     maturity: 'provisional',
     maturityReason: 'not built',
   },
-  getLegacy: { maturity: 'stable', maturityReason: 'realtime is not a service' },
+  getFeed: {
+    description: 'A feed.',
+    upstream: [Upstream.REALTIME],
+    maturity: 'stable',
+    maturityReason: 'realtime is not a service',
+  },
 } satisfies ModuleDocs;
 
 const itemExamples = [
@@ -175,18 +184,39 @@ describe('openApiDocumentOf with docs', () => {
     expect(found['x-arthome-maturity']).toBe('provisional');
   });
 
-  it('keeps what the route carries where its docs entry says nothing', () => {
-    expect(document.paths['/v1/legacy']?.get).toMatchObject({
-      description: 'Kept as written.',
+  it('writes the maturity stated for an operation that calls no service', () => {
+    expect(document.paths['/v1/feed']?.get).toMatchObject({
+      description: 'A feed.',
       'x-arthome-maturity': 'stable',
       'x-arthome-upstream': [Upstream.REALTIME],
     });
   });
 
+  it('refuses a route that carries its own prose or doc-only x-arthome-*', () => {
+    const carrying = defineApi({
+      openapi: '3.1.1',
+      security: [],
+      routes: { getInline: inlineDocs },
+      components: {},
+    });
+
+    expect(() => openApiDocumentOf(carrying, apiDocs({ info: { title: 'test', version: '1' } }))).toThrow(
+      '"getInline" carries its own prose, x-arthome-maturity;',
+    );
+  });
+
   it('refuses a stated maturity the owning service already gives', () => {
     const redundant = apiDocs({
       info: { title: 'test', version: '1' },
-      modules: [{ createItem: { maturity: 'provisional', maturityReason: 'none needed' } }],
+      modules: [
+        {
+          createItem: {
+            upstream: [Upstream.CHAT],
+            maturity: 'provisional',
+            maturityReason: 'none needed',
+          },
+        },
+      ],
     });
 
     expect(() => openApiDocumentOf(api, redundant)).toThrow('leave it out');
@@ -212,7 +242,7 @@ describe('openApiDocumentOf with docs', () => {
   it('refuses a documented operation whose maturity nothing gives', () => {
     const silent = apiDocs({
       info: { title: 'test', version: '1' },
-      modules: [{ getLegacy: { description: 'A feed.', upstream: [Upstream.REALTIME] } }],
+      modules: [{ getFeed: { description: 'A feed.', upstream: [Upstream.REALTIME] } }],
     });
 
     expect(() => openApiDocumentOf(api, silent)).toThrow('state its maturity');
@@ -224,12 +254,16 @@ describe('openApiDocumentOf with docs', () => {
 });
 
 describe('studioDocsOf', () => {
-  it('gives a converted route the docs its module registered, and another its own prose', () => {
+  it('gives a route the docs its module registered, nothing to a route it does not serve', () => {
     expect(studioDocsOf(getDateSheet)).toEqual({
       description: datesDocs.getDateSheet?.description,
       'x-arthome-maturity': 'stable',
       'x-arthome-upstream': datesDocs.getDateSheet?.upstream,
     });
-    expect(studioDocsOf(legacy).description).toBe('Inline prose.');
+    expect(studioDocsOf(createItem)).toEqual({});
+  });
+
+  it('refuses a route that carries its own prose', () => {
+    expect(() => studioDocsOf(inlineDocs)).toThrow('register it in its module');
   });
 });

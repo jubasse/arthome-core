@@ -108,8 +108,9 @@ What only the document reads is registered per module, beside the routes:
 
 `openApiDocumentOf(api, docs)` reads both:
 
-- **What is registered wins** over what a route carries itself, and a test refuses an operation
-  documented in both places.
+- **The registry is the only source** of an operation's prose and doc-only `x-arthome-*`
+  (`DOC_ONLY_EXTENSIONS`): the emitter, `storefrontDocsOf` and `studioDocsOf` refuse a route that carries
+  its own.
 - **The maturity is derived** from the upstream: the regime of the owning service, the first one the
   operation calls (`maturityOf`, `MATURITY_BY_SERVICE`, `transport.md` §5.11). A module states
   `maturity` only where an operation differs, always with its `maturityReason` in one phrase, and the

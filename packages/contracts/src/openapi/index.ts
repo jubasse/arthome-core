@@ -186,7 +186,7 @@ class DocumentBuilder {
   public operation(route: Route, doc: OperationDoc | undefined): Record<string, unknown> {
     const declared: Readonly<Record<string, unknown>> = {
       ...route,
-      ...(doc === undefined ? {} : documentationOf(route, doc)),
+      ...documentationOf(route, doc),
     };
     const out: Record<string, unknown> = {};
     for (const key of FIRST) if (declared[key] !== undefined) out[key] = declared[key];
