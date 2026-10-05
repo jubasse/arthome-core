@@ -20,7 +20,6 @@ import * as studioDates from './studio-api/dates/routes.js';
 import { studioApi } from './studio-api/index.js';
 import * as studioModeration from './studio-api/moderation.js';
 import * as studioPayouts from './studio-api/payouts.js';
-import * as studioPublication from './studio-api/publication.js';
 import * as studioRun from './studio-api/run.js';
 import * as studioTicketing from './studio-api/ticketing.js';
 
@@ -74,7 +73,6 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       studioDates,
       studioModeration,
       studioPayouts,
-      studioPublication,
       studioRun,
       studioTicketing,
     ],

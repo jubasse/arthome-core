@@ -1915,11 +1915,6 @@ paths:
       responses:
         '201':
           description: Draft created, with its publication and its checklist.
-          headers:
-            X-Arthome-Rights-Version:
-              $ref: '#/components/headers/RightsVersion'
-            Idempotency-Replayed:
-              $ref: '#/components/headers/IdempotencyReplayed'
           content:
             application/json:
               schema:
@@ -1933,64 +1928,53 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
-                  dateId: 019928c0-0000-7000-8000-000000000001
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
                   title: Nuit blanche
-                  startsAt: '2026-11-04T19:30:00Z'
+                  startsAt: '2026-09-21T19:00:00Z'
                   venueClock:
                     venueTimezone: Europe/Paris
-                    venueUtcOffsetMin: 60
+                    venueUtcOffsetMin: 120
                   runtimeMin: 95
                   openPanes:
                   - public
                   - tickets
-                  - chat
                   - tech
-                  - crew
-                  - replay
                   publication:
-                    dateId: 019928c0-0000-7000-8000-000000000001
-                    state: draft
-                    orderRank: 1
-                    version: 1
-                    checklist:
-                    - id: title_and_discipline
-                      satisfied: true
-                      source: catalog
-                      blocking: true
-                    - id: poster
-                      satisfied: false
-                      source: catalog
-                      blocking: true
-                    - id: at_least_one_active_price
-                      satisfied: false
-                      source: ticketing
-                      blocking: true
-                    - id: technical_check_passed
-                      satisfied: false
-                      source: streaming
-                      blocking: true
-                    - id: chapters_planned
-                      satisfied: false
-                      source: catalog
-                      blocking: false
-                    offeredTransitions:
-                    - from: draft
-                      to: reserve
-                      irreversible: false
-                    - from: draft
-                      to: scheduled
-                      irreversible: true
-                      promiseCode: prices_engaged
+                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                    state: scheduled
+                    orderRank: 3
+                    version: 7
+                    checklist: []
+                    offeredTransitions: []
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
@@ -3861,6 +3845,9 @@ paths:
       - ticketing
       tags:
       - ticketing
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: from
@@ -3876,7 +3863,6 @@ paths:
           type: string
           format: date
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -3985,7 +3971,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:14:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   byTier:
@@ -4008,8 +3994,34 @@ paths:
                       currencyCode: EUR
                     openedAt: '2026-09-21T09:00:00Z'
                     respondBy: '2026-09-22T09:00:00Z'
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          description: Malformed request, or a mandatory filter missing.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiSchemaInvalidError'
+                - $ref: '#/components/schemas/ApiPeriodFilterRequiredError'
+              examples:
+                api.schema_invalid:
+                  $ref: '#/components/examples/ApiSchemaInvalidError'
+                api.period_filter_required:
+                  $ref: '#/components/examples/ApiPeriodFilterRequiredError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/panes/chat:
     get:
       operationId: getDateChatPane
@@ -7150,10 +7162,12 @@ paths:
       - streaming
       tags:
       - run
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -7228,7 +7242,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:12:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   ingestUrl: rtmps://ingest.arthome.fr/live
@@ -7244,8 +7258,23 @@ paths:
                     holdScreenAutoAfterSec: 15
                   recentChecks: []
                   preflightPending: 1
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/panes/crew:
     get:
       operationId: getDateCrewPane

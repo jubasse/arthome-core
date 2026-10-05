@@ -16,6 +16,9 @@ import {
   ChannelReplaySchema,
   ChannelReplayStateParameter,
   ChannelSettingsSchema,
+  ChannelStreamSettingsSchema,
+  ChannelTicketingSchema,
+  CreateDateDraftBodySchema,
   CloseReconciliationPeriodBodySchema,
   DashboardPeriod,
   EventSearch,
@@ -45,6 +48,7 @@ import {
   StatsPeriodPresetParameter,
   StatsShowParameter,
   StatsTabParameter,
+  TicketingPeriod,
   TransferChannelOwnershipBodySchema,
   MerchItemIdParameter,
   MerchItemListSchema,
@@ -56,10 +60,13 @@ import type {
   AddBannedWordRoute,
   ChangeMemberRolesRoute,
   CloseReconciliationPeriodRoute,
+  CreateDateDraftRoute,
   GetChannelAgendaRoute,
   GetChannelDashboardRoute,
   GetChannelSettingsRoute,
   GetChannelStatsRoute,
+  GetChannelStreamSettingsRoute,
+  GetChannelTicketingRoute,
   InviteMemberRoute,
   ListChannelEventsRoute,
   ListChannelJournalRoute,
@@ -92,9 +99,14 @@ import {
   ExportJobSchema,
   PayoutLineSchema,
 } from '../../studio-money/index.js';
-import { EventsRowSchema, MerchItemAdminSchema } from '../../studio-stage/index.js';
+import {
+  DateSheetSchema,
+  EventsRowSchema,
+  MerchItemAdminSchema,
+} from '../../studio-stage/index.js';
 import {
   ChannelIdParameter,
+  DateIdParameter,
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
@@ -394,3 +406,40 @@ export const removeBannedWord: RemoveBannedWordRoute = bannedWords.delete({
   response: Deleted,
   answer: 'Word removed.',
 });
+
+export const getChannelStreamSettings: GetChannelStreamSettingsRoute = channels
+  .tags(StudioTag.RUN)
+  .resource('channels', { id: ChannelIdParameter })
+  .single('stream')
+  .find({
+    operationId: 'getChannelStreamSettings',
+    summary: "A channel's Broadcast page — ingest server, recommended profile, test history.",
+    item: ChannelStreamSettingsSchema,
+    answer: 'Ingest, recommended profile, measured bitrate, check history.',
+  });
+
+export const getChannelTicketing: GetChannelTicketingRoute = channels
+  .tags(StudioTag.TICKETING)
+  .resource('channels', { id: ChannelIdParameter })
+  .single('ticketing')
+  .find({
+    operationId: 'getChannelTicketing',
+    summary: 'Ticketing at channel level — breakdown, waiting list, and the requests in flight.',
+    item: ChannelTicketingSchema,
+    parameters: [...TicketingPeriod.parameters],
+    errors: [...TicketingPeriod.errors],
+    answer: 'Breakdown by price tier, waiting lists, complimentary tickets, requests in flight.',
+  });
+
+export const createDateDraft: CreateDateDraftRoute = channels
+  .tags(StudioTag.PUBLICATION)
+  .resource('channels', { id: ChannelIdParameter })
+  .resource('dates', { id: DateIdParameter })
+  .create({
+    operationId: 'createDateDraft',
+    summary: 'Creates a draft date — the identifier comes from the domain.',
+    body: CreateDateDraftBodySchema,
+    item: DateSheetSchema,
+    answer: 'Draft created, with its publication and its checklist.',
+    errors: [DomainErrorCode.STATE_CONFLICT],
+  });

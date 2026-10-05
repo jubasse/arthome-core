@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AUDIENCE_SANCTIONS, CHAT_MODES, FILTER_SEVERITIES, MEMBER_ROLES, MODERATION_REASONS, PAYOUT_STATES } from '@arthome/core';
+import { AUDIENCE_SANCTIONS, CHAT_MODES, FILTER_SEVERITIES, MEMBER_ROLES, MODERATION_REASONS, PAYOUT_STATES, REPLAY_POLICIES } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
 import { StudioEnvelopeMetaSchema } from '../../envelope/index.js';
@@ -217,5 +217,60 @@ export declare const BannedWordAdditionSchema: z.ZodOptional<z.ZodObject<{
 export type SanctionAudienceMemberBody = z.output<typeof SanctionAudienceMemberBodySchema>;
 export type AddBannedWordBody = z.output<typeof AddBannedWordBodySchema>;
 export type BannedWordAddition = z.output<typeof BannedWordAdditionSchema>;
+export declare const ChannelStreamSettingsSchema: z.ZodObject<{
+    ingestUrl: z.ZodOptional<z.ZodString>;
+    recommendedProtocol: z.ZodOptional<z.ZodString>;
+    recommendedBitrateKbps: z.ZodOptional<z.ZodInt>;
+    lastMeasuredUpKbps: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
+    defaults: z.ZodOptional<z.ZodObject<{
+        ingestProtocol: z.ZodOptional<z.ZodString>;
+        qualityLadder: z.ZodOptional<z.ZodArray<z.ZodString>>;
+        holdScreenAutoAfterSec: z.ZodOptional<z.ZodInt>;
+    }, z.core.$loose>>;
+    recentChecks: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        dateId: z.ZodOptional<z.ZodString>;
+        passed: z.ZodOptional<z.ZodBoolean>;
+        passedAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    }, z.core.$loose>>>;
+    preflightPending: z.ZodOptional<z.ZodInt>;
+}, z.core.$loose>;
+export declare const TicketingPeriod: Period;
+export declare const ChannelTicketingSchema: z.ZodObject<{
+    byTier: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        tier: z.ZodOptional<z.ZodString>;
+        seatsSold: z.ZodOptional<z.ZodInt>;
+        gross: z.ZodOptional<typeof MoneyOut>;
+    }, z.core.$loose>>>;
+    waitlistByDate: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        dateId: z.ZodOptional<z.ZodString>;
+        title: z.ZodOptional<z.ZodString>;
+        waitlistCount: z.ZodOptional<z.ZodInt>;
+    }, z.core.$loose>>>;
+    complimentaries: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        categoryId: z.ZodOptional<z.ZodString>;
+        issued: z.ZodOptional<z.ZodInt>;
+        allocated: z.ZodOptional<z.ZodInt>;
+    }, z.core.$loose>>>;
+    pendingRequests: z.ZodOptional<z.ZodArray<z.ZodObject<{
+        requestId: z.ZodString;
+        kind: z.ZodString;
+        dateId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        seatId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        amount: z.ZodOptional<typeof MoneyOut>;
+        openedAt: z.ZodString;
+        respondBy: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    }, z.core.$loose>>>;
+}, z.core.$loose>;
+export declare const CreateDateDraftBodySchema: z.ZodObject<{
+    dateId: z.ZodString;
+    showId: z.ZodString;
+    venueId: z.ZodString;
+    startsAt: z.ZodString;
+    replayPolicy: VocabularyIn<typeof REPLAY_POLICIES>;
+    replayWindowHours: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
+}, z.core.$strip>;
+export type ChannelStreamSettings = z.output<typeof ChannelStreamSettingsSchema>;
+export type ChannelTicketing = z.output<typeof ChannelTicketingSchema>;
+export type CreateDateDraftBody = z.output<typeof CreateDateDraftBodySchema>;
 export {};
 //# sourceMappingURL=schemas.d.ts.map

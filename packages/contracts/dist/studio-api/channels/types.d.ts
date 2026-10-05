@@ -7,7 +7,7 @@ import type { ChannelMemberSchema } from '../../studio-access/index.js';
 import type { AudienceMemberSchema, JournalEntrySchema, ModerationItemSchema } from '../../studio-desk/index.js';
 import type { BankChangeRequestSchema, DashboardScreenSchema, ExportJobSchema } from '../../studio-money/index.js';
 import type { ChannelIdParameter, CursorParameter, IdempotencyKeyParameter, IfRightsVersionParameter, LimitParameter, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter, operator, studioConventions } from '../components.js';
-import type { AddBannedWordBodySchema, AgendaListSchema, AudienceMemberIdParameter, AudienceSanctionParameter, AudienceSearch, BannedWordAdditionSchema, BannedWordParameter, ChangeMemberRolesBodySchema, ChannelDefaultsSchema, ChannelIdentitySchema, ChannelMemberPageSchema, ChannelReplaySchema, ChannelReplayStateParameter, ChannelSettingsSchema, CloseReconciliationPeriodBodySchema, EventStatesParameter, EventsWindowParameter, InviteMemberBodySchema, JournalDateParameter, JournalNatureParameter, MemberRoleParameter, MerchItemIdParameter, ModerationQueueFilterParameter, OwnershipTransferSchema, PayoutPageSchema, PayoutStateParameter, PersonIdParameter, PresentOnDateParameter, ReconciliationClosureSchema, ReconciliationPeriodIdParameter, RequestBankChangeBodySchema, RequestChannelExportBodySchema, SanctionAudienceMemberBodySchema, StatsAnswerSchema, StatsPeriodPresetParameter, StatsShowParameter, StatsTabParameter, TransferChannelOwnershipBodySchema, UpsertMerchItemBodySchema } from './schemas.js';
+import type { AddBannedWordBodySchema, AgendaListSchema, AudienceMemberIdParameter, AudienceSanctionParameter, AudienceSearch, BannedWordAdditionSchema, BannedWordParameter, ChangeMemberRolesBodySchema, ChannelDefaultsSchema, ChannelIdentitySchema, ChannelMemberPageSchema, ChannelReplaySchema, ChannelReplayStateParameter, ChannelSettingsSchema, ChannelStreamSettingsSchema, ChannelTicketingSchema, CloseReconciliationPeriodBodySchema, CreateDateDraftBodySchema, EventStatesParameter, EventsWindowParameter, InviteMemberBodySchema, JournalDateParameter, JournalNatureParameter, MemberRoleParameter, MerchItemIdParameter, ModerationQueueFilterParameter, OwnershipTransferSchema, PayoutPageSchema, PayoutStateParameter, PersonIdParameter, PresentOnDateParameter, ReconciliationClosureSchema, ReconciliationPeriodIdParameter, RequestBankChangeBodySchema, RequestChannelExportBodySchema, SanctionAudienceMemberBodySchema, StatsAnswerSchema, StatsPeriodPresetParameter, StatsShowParameter, StatsTabParameter, TransferChannelOwnershipBodySchema, UpsertMerchItemBodySchema } from './schemas.js';
 export type ListChannelReplaysRoute = Route<{
     method: 'get';
     version: 1;
@@ -624,6 +624,67 @@ export type RemoveBannedWordRoute = Route<{
     access: IdentifiedAccess<typeof operator, false>;
     responses: {
         200: ItemResponse<typeof studioConventions, typeof Deleted, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof DomainErrorCode.STATE_CONFLICT)[];
+    };
+}>;
+export type GetChannelStreamSettingsRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/stream';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof ChannelStreamSettingsSchema, unknown>;
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type GetChannelTicketingRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/channels/{channelId}/ticketing';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        QueryParameter<'from', z.ZodString, true>,
+        QueryParameter<'to', z.ZodString, true>,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: ItemResponse<typeof studioConventions, typeof ChannelTicketingSchema, unknown>;
+    };
+    errorCodes: {
+        400: readonly (typeof ApiErrorCode.PERIOD_FILTER_REQUIRED)[];
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
+export type CreateDateDraftRoute = Route<{
+    method: 'post';
+    version: 1;
+    path: '/channels/{channelId}/dates';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: JsonRequestBody<typeof CreateDateDraftBodySchema, true>;
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        201: ItemResponse<typeof studioConventions, typeof ChannelMemberSchema, unknown>;
     };
     errorCodes: {
         403: readonly (typeof ApiErrorCode.FORBIDDEN)[];

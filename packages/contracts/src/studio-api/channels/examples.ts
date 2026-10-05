@@ -9,6 +9,8 @@ import {
   Locale,
   MemberRole,
   ModerationReason,
+  PriceTier,
+  ReplayPolicy,
   PlanTier,
   Surface,
   TaxJurisdictionLevel,
@@ -17,6 +19,9 @@ import {
 
 import type {
   AddBannedWordBody,
+  ChannelStreamSettings,
+  ChannelTicketing,
+  CreateDateDraftBody,
   AgendaList,
   BannedWordAddition,
   SanctionAudienceMemberBody,
@@ -42,6 +47,9 @@ import type {
 } from './schemas.js';
 import {
   AddBannedWordBodySchema,
+  ChannelStreamSettingsSchema,
+  ChannelTicketingSchema,
+  CreateDateDraftBodySchema,
   AgendaListSchema,
   BannedWordAdditionSchema,
   SanctionAudienceMemberBodySchema,
@@ -410,6 +418,57 @@ const bannedWordAddition: BannedWordAddition = {
   estimatedAffectedMessages: 312,
 };
 
+const channelStreamSettings: ChannelStreamSettings = {
+  ingestUrl: 'rtmps://ingest.arthome.fr/live',
+  recommendedProtocol: 'rtmps',
+  recommendedBitrateKbps: 6000,
+  lastMeasuredUpKbps: 8900,
+  defaults: {
+    ingestProtocol: 'rtmps',
+    qualityLadder: ['1080p', '720p', '360p'],
+    holdScreenAutoAfterSec: 15,
+  },
+  recentChecks: [],
+  preflightPending: 1,
+};
+
+const channelTicketing: ChannelTicketing = {
+  byTier: [
+    {
+      tier: PriceTier.FULL,
+      seatsSold: 174,
+      gross: { amountMinor: 417600, currencyCode: 'EUR' },
+    },
+  ],
+  waitlistByDate: [
+    {
+      dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+      title: 'Nuit blanche',
+      waitlistCount: 12,
+    },
+  ],
+  complimentaries: [],
+  pendingRequests: [
+    {
+      requestId: '019928ea-0000-7000-8000-000000000001',
+      kind: 'chargeback',
+      seatId: '019928f5-0000-7000-8000-000000000001',
+      amount: { amountMinor: 2400, currencyCode: 'EUR' },
+      openedAt: '2026-09-21T09:00:00Z',
+      respondBy: '2026-09-22T09:00:00Z',
+    },
+  ],
+};
+
+const createDateDraftBody: CreateDateDraftBody = {
+  dateId: '019928c0-0000-7000-8000-000000000001',
+  showId: '019928a0-7d31-7a10-b8c4-2f9e11a4c111',
+  venueId: '019928a0-7d31-7a10-b8c4-2f9e11a4c444',
+  startsAt: '2026-11-04T19:30:00Z',
+  replayPolicy: ReplayPolicy.INCLUDED,
+  replayWindowHours: 72,
+};
+
 export const channelsExamples: ModuleExamples = [
   [ChannelReplaySchema, [channelReplay]],
   [ChannelIdentitySchema, [channelIdentity]],
@@ -432,6 +491,9 @@ export const channelsExamples: ModuleExamples = [
   [StatsAnswerSchema, [statsAnswer]],
   [AgendaListSchema, [agendaList]],
   [PayoutLineSchema, [payoutLine]],
+  [ChannelStreamSettingsSchema, [channelStreamSettings]],
+  [ChannelTicketingSchema, [channelTicketing]],
+  [CreateDateDraftBodySchema, [createDateDraftBody]],
   [AudienceMemberSchema, [audienceMember]],
   [SanctionAudienceMemberBodySchema, [sanctionAudienceMemberBody]],
   [AddBannedWordBodySchema, [addBannedWordBody]],

@@ -81,8 +81,6 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'deleteChannel',
   'escalateIncidentToProduction',
   'getChannelExport',
-  'getChannelStreamSettings',
-  'getChannelTicketing',
   'getStudioBootstrap',
   'listDuties',
   'listInbox',

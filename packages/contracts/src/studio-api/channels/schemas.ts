@@ -8,6 +8,8 @@ import {
   MODERATION_REASONS,
   OrderState,
   PAYOUT_STATES,
+  PRICE_TIERS,
+  REPLAY_POLICIES,
 } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import {
@@ -777,3 +779,207 @@ export const BannedWordAdditionSchema: z.ZodOptional<
 export type SanctionAudienceMemberBody = z.output<typeof SanctionAudienceMemberBodySchema>;
 export type AddBannedWordBody = z.output<typeof AddBannedWordBodySchema>;
 export type BannedWordAddition = z.output<typeof BannedWordAdditionSchema>;
+
+export const ChannelStreamSettingsSchema: z.ZodObject<
+  {
+    ingestUrl: z.ZodOptional<z.ZodString>;
+    recommendedProtocol: z.ZodOptional<z.ZodString>;
+    recommendedBitrateKbps: z.ZodOptional<z.ZodInt>;
+    lastMeasuredUpKbps: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
+    defaults: z.ZodOptional<
+      z.ZodObject<
+        {
+          ingestProtocol: z.ZodOptional<z.ZodString>;
+          qualityLadder: z.ZodOptional<z.ZodArray<z.ZodString>>;
+          holdScreenAutoAfterSec: z.ZodOptional<z.ZodInt>;
+        },
+        z.core.$loose
+      >
+    >;
+    recentChecks: z.ZodOptional<
+      z.ZodArray<
+        z.ZodObject<
+          {
+            dateId: z.ZodOptional<z.ZodString>;
+            passed: z.ZodOptional<z.ZodBoolean>;
+            passedAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+    preflightPending: z.ZodOptional<z.ZodInt>;
+  },
+  z.core.$loose
+> = z.looseObject({
+  ingestUrl: z.string().meta({ format: 'uri' }).optional(),
+  recommendedProtocol: vocabularyOutLocal(INGEST_PROTOCOLS, INGEST_PROTOCOL_REASON).optional(),
+  recommendedBitrateKbps: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
+  lastMeasuredUpKbps: z
+    .int()
+    .meta({ minimum: undefined, maximum: undefined })
+    .nullable()
+    .optional(),
+  defaults: z
+    .looseObject({
+      ingestProtocol: vocabularyOutLocal(INGEST_PROTOCOLS, INGEST_PROTOCOL_REASON).optional(),
+      qualityLadder: z.array(z.string()).optional(),
+      holdScreenAutoAfterSec: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
+    })
+    .meta({ description: 'Applied to **new** dates, never retroactively.' })
+    .optional(),
+  recentChecks: z
+    .array(
+      z.looseObject({
+        dateId: uuidOut().optional(),
+        passed: z.boolean().optional(),
+        passedAt: InstantOut.nullable().optional(),
+      }),
+    )
+    .optional(),
+  preflightPending: z
+    .int()
+    .meta({ minimum: undefined, maximum: undefined })
+    .meta({ description: 'The `preflightBadge`, **served** — it had no source at all.' })
+    .optional(),
+});
+
+const PENDING_REQUEST_KINDS = ['refund', 'seat_transfer', 'chargeback'] as const;
+
+export const TicketingPeriod: Period = period({ type: 'date' });
+
+export const ChannelTicketingSchema: z.ZodObject<
+  {
+    byTier: z.ZodOptional<
+      z.ZodArray<
+        z.ZodObject<
+          {
+            tier: z.ZodOptional<z.ZodString>;
+            seatsSold: z.ZodOptional<z.ZodInt>;
+            gross: z.ZodOptional<typeof MoneyOut>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+    waitlistByDate: z.ZodOptional<
+      z.ZodArray<
+        z.ZodObject<
+          {
+            dateId: z.ZodOptional<z.ZodString>;
+            title: z.ZodOptional<z.ZodString>;
+            waitlistCount: z.ZodOptional<z.ZodInt>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+    complimentaries: z.ZodOptional<
+      z.ZodArray<
+        z.ZodObject<
+          {
+            categoryId: z.ZodOptional<z.ZodString>;
+            issued: z.ZodOptional<z.ZodInt>;
+            allocated: z.ZodOptional<z.ZodInt>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+    pendingRequests: z.ZodOptional<
+      z.ZodArray<
+        z.ZodObject<
+          {
+            requestId: z.ZodString;
+            kind: z.ZodString;
+            dateId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            seatId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+            amount: z.ZodOptional<typeof MoneyOut>;
+            openedAt: z.ZodString;
+            respondBy: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+          },
+          z.core.$loose
+        >
+      >
+    >;
+  },
+  z.core.$loose
+> = z.looseObject({
+  byTier: z
+    .array(
+      z.looseObject({
+        tier: vocabularyOut(PRICE_TIERS).optional(),
+        seatsSold: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
+        gross: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }).optional(),
+      }),
+    )
+    .optional(),
+  waitlistByDate: z
+    .array(
+      z.looseObject({
+        dateId: uuidOut().optional(),
+        title: z.string().optional(),
+        waitlistCount: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
+      }),
+    )
+    .optional(),
+  complimentaries: z
+    .array(
+      z.looseObject({
+        categoryId: z.string().optional(),
+        issued: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
+        allocated: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
+      }),
+    )
+    .optional(),
+  pendingRequests: z
+    .array(
+      z.looseObject({
+        requestId: uuidOut(),
+        kind: vocabularyOutLocal(
+          PENDING_REQUEST_KINDS,
+          'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.',
+        ),
+        dateId: uuidOut().nullable().optional(),
+        seatId: uuidOut().nullable().optional(),
+        amount: MoneyOut.meta({ 'x-arthome-tax-basis': 'inherited' }).optional(),
+        openedAt: InstantOut,
+        respondBy: InstantOut.nullable().optional(),
+      }),
+    )
+    .meta({
+      description:
+        '**The three kinds, in a single collection**: a refund requested, a\nseat transfer to authorise, a bank dispute to answer within 24 h.\nTwo of them had no read path.\n',
+    })
+    .optional(),
+});
+
+export const CreateDateDraftBodySchema: z.ZodObject<
+  {
+    dateId: z.ZodString;
+    showId: z.ZodString;
+    venueId: z.ZodString;
+    startsAt: z.ZodString;
+    replayPolicy: VocabularyIn<typeof REPLAY_POLICIES>;
+    replayWindowHours: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
+  },
+  z.core.$strip
+> = z.object({
+  dateId: uuidOut().meta({
+    description: '**Generated by the client** from `@arthome/core` (UUIDv7).',
+  }),
+  showId: uuidOut(),
+  venueId: uuidOut(),
+  startsAt: z
+    .string()
+    .regex(new RegExp('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$'))
+    .meta({ format: 'date-time' }),
+  replayPolicy: vocabularyIn(REPLAY_POLICIES).meta({
+    'x-arthome-vocabulary-source': 'REPLAY_POLICIES',
+  }),
+  replayWindowHours: z.int().meta({ minimum: undefined, maximum: undefined }).nullable().optional(),
+});
+
+export type ChannelStreamSettings = z.output<typeof ChannelStreamSettingsSchema>;
+export type ChannelTicketing = z.output<typeof ChannelTicketingSchema>;
+export type CreateDateDraftBody = z.output<typeof CreateDateDraftBodySchema>;

@@ -1,4 +1,4 @@
-import type { AddBannedWordRoute, ChangeMemberRolesRoute, CloseReconciliationPeriodRoute, GetChannelAgendaRoute, GetChannelDashboardRoute, GetChannelSettingsRoute, GetChannelStatsRoute, InviteMemberRoute, ListChannelEventsRoute, ListChannelJournalRoute, ListChannelMembersRoute, ListChannelMerchItemsRoute, ListChannelReplaysRoute, ListModerationQueueRoute, ListPayoutsRoute, RemoveBannedWordRoute, RemoveMemberRoute, RequestBankChangeRoute, RequestChannelExportRoute, SanctionAudienceMemberRoute, SearchAudienceRoute, TransferChannelOwnershipRoute, UpdateChannelIdentityRoute, UpdateChannelSettingsRoute, UpsertMerchItemRoute } from './types.js';
+import type { AddBannedWordRoute, ChangeMemberRolesRoute, CloseReconciliationPeriodRoute, CreateDateDraftRoute, GetChannelAgendaRoute, GetChannelDashboardRoute, GetChannelSettingsRoute, GetChannelStatsRoute, GetChannelStreamSettingsRoute, GetChannelTicketingRoute, InviteMemberRoute, ListChannelEventsRoute, ListChannelJournalRoute, ListChannelMembersRoute, ListChannelMerchItemsRoute, ListChannelReplaysRoute, ListModerationQueueRoute, ListPayoutsRoute, RemoveBannedWordRoute, RemoveMemberRoute, RequestBankChangeRoute, RequestChannelExportRoute, SanctionAudienceMemberRoute, SearchAudienceRoute, TransferChannelOwnershipRoute, UpdateChannelIdentityRoute, UpdateChannelSettingsRoute, UpsertMerchItemRoute } from './types.js';
 export declare const listChannelReplays: ListChannelReplaysRoute;
 export declare const getChannelSettings: GetChannelSettingsRoute;
 export declare const updateChannelSettings: UpdateChannelSettingsRoute;
@@ -24,4 +24,7 @@ export declare const searchAudience: SearchAudienceRoute;
 export declare const sanctionAudienceMember: SanctionAudienceMemberRoute;
 export declare const addBannedWord: AddBannedWordRoute;
 export declare const removeBannedWord: RemoveBannedWordRoute;
+export declare const getChannelStreamSettings: GetChannelStreamSettingsRoute;
+export declare const getChannelTicketing: GetChannelTicketingRoute;
+export declare const createDateDraft: CreateDateDraftRoute;
 //# sourceMappingURL=routes.d.ts.map

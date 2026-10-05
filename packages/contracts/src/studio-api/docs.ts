@@ -39,10 +39,6 @@ const statedMaturities = {
     maturity: 'provisional',
     maturityReason: 'studio device sessions (D-118) are not built',
   },
-  getChannelTicketing: {
-    maturity: 'provisional',
-    maturityReason: 'the channel ticketing read is new and not built',
-  },
 } satisfies ModuleDocs;
 
 /** The studio document's introduction, and the docs and examples its modules register. */
