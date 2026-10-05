@@ -24,7 +24,14 @@ import {
 
 import { StudioEnvelopeMetaSchema } from '../../envelope/index.js';
 import type { PathParameter, Period, QueryParameter } from '../../http/index.js';
-import { ReauthProof, localVocabulary, period, restricted, searchText } from '../../http/index.js';
+import {
+  Deleted,
+  ReauthProof,
+  localVocabulary,
+  period,
+  restricted,
+  searchText,
+} from '../../http/index.js';
 import { OffsetPageInfoSchema } from '../../pagination/index.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
 import {
@@ -983,3 +990,22 @@ export const CreateDateDraftBodySchema: z.ZodObject<
 export type ChannelStreamSettings = z.output<typeof ChannelStreamSettingsSchema>;
 export type ChannelTicketing = z.output<typeof ChannelTicketingSchema>;
 export type CreateDateDraftBody = z.output<typeof CreateDateDraftBodySchema>;
+
+export const DeleteChannelBodySchema: z.ZodObject<
+  { reauthToken: z.ZodString; confirmName: z.ZodString },
+  z.core.$strip
+> = ReauthProof.extend({ confirmName: z.string() });
+
+export type DeleteChannelBody = z.output<typeof DeleteChannelBodySchema>;
+
+export const ChannelDeletionAnswerSchema: z.ZodIntersection<
+  typeof StudioEnvelopeMetaSchema,
+  z.ZodObject<{ data: typeof Deleted }, z.core.$loose>
+> = z.intersection(
+  StudioEnvelopeMetaSchema,
+  z.looseObject({
+    data: Deleted,
+  }),
+);
+
+export type ChannelDeletionAnswer = z.output<typeof ChannelDeletionAnswerSchema>;

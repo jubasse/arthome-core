@@ -11,6 +11,7 @@ import {
   BannedWordParameter,
   ChangeMemberRolesBodySchema,
   ChannelDefaultsSchema,
+  ChannelDeletionAnswerSchema,
   ChannelMemberPageSchema,
   ChannelIdentitySchema,
   ChannelReplaySchema,
@@ -19,6 +20,7 @@ import {
   ChannelStreamSettingsSchema,
   ChannelTicketingSchema,
   CreateDateDraftBodySchema,
+  DeleteChannelBodySchema,
   CloseReconciliationPeriodBodySchema,
   DashboardPeriod,
   EventSearch,
@@ -61,6 +63,7 @@ import type {
   ChangeMemberRolesRoute,
   CloseReconciliationPeriodRoute,
   CreateDateDraftRoute,
+  DeleteChannelRoute,
   GetChannelAgendaRoute,
   GetChannelDashboardRoute,
   GetChannelSettingsRoute,
@@ -107,10 +110,12 @@ import {
 import {
   ChannelIdParameter,
   DateIdParameter,
+  IdempotencyKeyParameter,
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
   operator,
+  studioConventions,
   studioV1,
 } from '../components.js';
 
@@ -443,3 +448,34 @@ export const createDateDraft: CreateDateDraftRoute = channels
     answer: 'Draft created, with its publication and its checklist.',
     errors: [DomainErrorCode.STATE_CONFLICT],
   });
+
+/** The resource layer has no delete that takes a body: this one carries the re-authentication proof. */
+export const deleteChannel: DeleteChannelRoute = channels.tags(StudioTag.CHANNEL).defineRoute({
+  method: 'delete',
+  path: '/channels/{channelId}',
+  operationId: 'deleteChannel',
+  summary: 'Deletes a channel.',
+  requires: [recentAuth()],
+  parameters: [ChannelIdParameter, IdempotencyKeyParameter],
+  requestBody: {
+    required: true,
+    content: {
+      'application/json': {
+        schema: DeleteChannelBodySchema,
+        exampleFrom: { of: DeleteChannelBodySchema, as: (example) => example },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Channel deleted.',
+      content: {
+        'application/json': {
+          schema: ChannelDeletionAnswerSchema,
+          exampleFrom: { of: Deleted, as: studioConventions.itemExample },
+        },
+      },
+    },
+  },
+  errors: [ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS],
+});

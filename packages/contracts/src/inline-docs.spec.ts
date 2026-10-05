@@ -78,7 +78,6 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'countersignBankChange',
   'createReauthToken',
   'createUploadTicket',
-  'deleteChannel',
   'escalateIncidentToProduction',
   'getChannelExport',
   'getStudioBootstrap',

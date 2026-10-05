@@ -1,4 +1,4 @@
-import type { AddBannedWordRoute, ChangeMemberRolesRoute, CloseReconciliationPeriodRoute, CreateDateDraftRoute, GetChannelAgendaRoute, GetChannelDashboardRoute, GetChannelSettingsRoute, GetChannelStatsRoute, GetChannelStreamSettingsRoute, GetChannelTicketingRoute, InviteMemberRoute, ListChannelEventsRoute, ListChannelJournalRoute, ListChannelMembersRoute, ListChannelMerchItemsRoute, ListChannelReplaysRoute, ListModerationQueueRoute, ListPayoutsRoute, RemoveBannedWordRoute, RemoveMemberRoute, RequestBankChangeRoute, RequestChannelExportRoute, SanctionAudienceMemberRoute, SearchAudienceRoute, TransferChannelOwnershipRoute, UpdateChannelIdentityRoute, UpdateChannelSettingsRoute, UpsertMerchItemRoute } from './types.js';
+import type { AddBannedWordRoute, ChangeMemberRolesRoute, CloseReconciliationPeriodRoute, CreateDateDraftRoute, DeleteChannelRoute, GetChannelAgendaRoute, GetChannelDashboardRoute, GetChannelSettingsRoute, GetChannelStatsRoute, GetChannelStreamSettingsRoute, GetChannelTicketingRoute, InviteMemberRoute, ListChannelEventsRoute, ListChannelJournalRoute, ListChannelMembersRoute, ListChannelMerchItemsRoute, ListChannelReplaysRoute, ListModerationQueueRoute, ListPayoutsRoute, RemoveBannedWordRoute, RemoveMemberRoute, RequestBankChangeRoute, RequestChannelExportRoute, SanctionAudienceMemberRoute, SearchAudienceRoute, TransferChannelOwnershipRoute, UpdateChannelIdentityRoute, UpdateChannelSettingsRoute, UpsertMerchItemRoute } from './types.js';
 export declare const listChannelReplays: ListChannelReplaysRoute;
 export declare const getChannelSettings: GetChannelSettingsRoute;
 export declare const updateChannelSettings: UpdateChannelSettingsRoute;
@@ -27,4 +27,6 @@ export declare const removeBannedWord: RemoveBannedWordRoute;
 export declare const getChannelStreamSettings: GetChannelStreamSettingsRoute;
 export declare const getChannelTicketing: GetChannelTicketingRoute;
 export declare const createDateDraft: CreateDateDraftRoute;
+/** The resource layer has no delete that takes a body: this one carries the re-authentication proof. */
+export declare const deleteChannel: DeleteChannelRoute;
 //# sourceMappingURL=routes.d.ts.map

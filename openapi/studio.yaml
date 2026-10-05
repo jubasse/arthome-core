@@ -8291,12 +8291,15 @@ paths:
         proof:
           in: body
           name: reauthToken
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -8335,25 +8338,73 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:22:00.000Z'
-                rightsVersion: 413
+                servedAt: '2026-09-21T19:00:00.000Z'
+                rightsVersion: 412
                 data:
                   deleted: true
-        '409':
-          description: '`channel.has_open_obligations`, with the detail.'
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: channel.has_open_obligations
-                  nature: refused
-                  params:
-                    datesOnSale: 3
-                    payoutsDue: 1
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:22:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+                - $ref: '#/components/schemas/ApiReauthenticationRequiredError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+                api.reauthentication_required:
+                  $ref: '#/components/examples/ApiReauthenticationRequiredError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/ChannelHasOpenObligationsError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                channel.has_open_obligations:
+                  $ref: '#/components/examples/ChannelHasOpenObligationsError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/replays:
     get:
       operationId: listChannelReplays
@@ -15542,6 +15593,62 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    ChannelHasOpenObligationsError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: channel.has_open_obligations
+            params:
+              type: object
+              properties:
+                datesOnSale:
+                  type: integer
+                  format: int64
+                payoutsDue:
+                  type: integer
+                  format: int64
+              required:
+              - datesOnSale
+              - payoutsDue
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     PayoutReconciliationDiscrepancyUnexplainedError:
       type: object
       properties:
@@ -15698,6 +15805,16 @@ components:
             - artist
             - production
             reasonCode: grants_stream_key_access
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ChannelHasOpenObligationsError:
+      value:
+        error:
+          code: channel.has_open_obligations
+          nature: refused
+          params:
+            datesOnSale: 3
+            payoutsDue: 1
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     ChannelRoleNotAssignableError:

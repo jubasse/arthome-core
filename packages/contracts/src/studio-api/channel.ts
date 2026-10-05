@@ -1,12 +1,11 @@
 import { z } from 'zod';
 
-import { ChannelErrorCode, FailureNature, PublicationChecklistItem, Service } from '@arthome/core';
+import { PublicationChecklistItem, Service } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { VOCABULARY_SOURCE_LOCAL, vocabularyIn } from '@arthome/core/schema';
 
 import {
   BadRequestResponse,
-  ChannelIdParameter,
   IdempotencyKeyParameter,
   IfRightsVersionParameter,
   StudioTag,
@@ -14,9 +13,8 @@ import {
   TraceparentParameter,
   studioV1,
 } from './components.js';
-import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
+import { StudioEnvelopeMetaSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, Route } from '../http/index.js';
-import { ReauthProof, recentAuth } from '../http/index.js';
 import { UploadTicketSchema } from '../studio-stage/index.js';
 
 const channelRoutes = studioV1
@@ -27,107 +25,6 @@ const channelWrites = channelRoutes.headers(IdempotencyKeyParameter);
 
 const CREATE_UPLOAD_TICKET_PURPOSE = ['poster', 'wide', 'avatar', 'merch_image'] as const;
 const CREATE_UPLOAD_TICKET_CONTENT_TYPE = ['image/jpeg', 'image/png', 'image/webp'] as const;
-
-export const deleteChannel: Route<{
-  method: 'delete';
-  version: 1;
-  path: '/channels/{channelId}';
-  parameters: readonly [
-    typeof ChannelIdParameter,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
-    typeof IdempotencyKeyParameter,
-  ];
-  requestBody: JsonRequestBody<
-    z.ZodObject<{ reauthToken: z.ZodString; confirmName: z.ZodString }, z.core.$strip>
-  >;
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<
-          {
-            data: z.ZodOptional<
-              z.ZodObject<{ deleted: z.ZodOptional<z.ZodBoolean> }, z.core.$loose>
-            >;
-          },
-          z.core.$loose
-        >
-      >
-    >;
-    409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-  };
-}> = channelWrites.defineRoute({
-  method: 'delete',
-  path: '/channels/{channelId}',
-  operationId: 'deleteChannel',
-  summary: 'Deletes a channel.',
-  description:
-    '**Refused while a date remains on sale or a payout is owed.** These facts are **projected\nand held locally** by `identity` (`channel_dues`), never asked of `ticketing` or `payouts`\nsynchronously: that is precisely the kind of call "no synchronous call between services"\nforbids.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.IDENTITY],
-  requires: [recentAuth()],
-  parameters: [ChannelIdParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: ReauthProof.extend({ confirmName: z.string() }),
-        example: {
-          reauthToken: 'ott_9f2ac1',
-          confirmName: 'Compagnie Verticale',
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Channel deleted.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              data: z
-                .looseObject({
-                  deleted: z.boolean().optional(),
-                })
-                .optional(),
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:22:00.000Z',
-            rightsVersion: 413,
-            data: {
-              deleted: true,
-            },
-          },
-        },
-      },
-    },
-    409: {
-      description: '`channel.has_open_obligations`, with the detail.',
-      content: {
-        'application/json': {
-          schema: StudioErrorEnvelopeSchema,
-          example: {
-            error: {
-              code: ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS,
-              nature: FailureNature.REFUSED,
-              params: {
-                datesOnSale: 3,
-                payoutsDue: 1,
-              },
-              traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-            },
-            servedAt: '2026-09-21T18:22:00.000Z',
-          },
-        },
-      },
-    },
-  },
-});
 
 export const createUploadTicket: Route<{
   method: 'post';

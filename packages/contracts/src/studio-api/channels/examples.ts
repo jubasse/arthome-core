@@ -19,6 +19,7 @@ import {
 
 import type {
   AddBannedWordBody,
+  DeleteChannelBody,
   ChannelStreamSettings,
   ChannelTicketing,
   CreateDateDraftBody,
@@ -47,6 +48,7 @@ import type {
 } from './schemas.js';
 import {
   AddBannedWordBodySchema,
+  DeleteChannelBodySchema,
   ChannelStreamSettingsSchema,
   ChannelTicketingSchema,
   CreateDateDraftBodySchema,
@@ -469,6 +471,11 @@ const createDateDraftBody: CreateDateDraftBody = {
   replayWindowHours: 72,
 };
 
+const deleteChannelBody: DeleteChannelBody = {
+  reauthToken: 'ott_9f2ac1',
+  confirmName: 'Compagnie Verticale',
+};
+
 export const channelsExamples: ModuleExamples = [
   [ChannelReplaySchema, [channelReplay]],
   [ChannelIdentitySchema, [channelIdentity]],
@@ -491,6 +498,7 @@ export const channelsExamples: ModuleExamples = [
   [StatsAnswerSchema, [statsAnswer]],
   [AgendaListSchema, [agendaList]],
   [PayoutLineSchema, [payoutLine]],
+  [DeleteChannelBodySchema, [deleteChannelBody]],
   [ChannelStreamSettingsSchema, [channelStreamSettings]],
   [ChannelTicketingSchema, [channelTicketing]],
   [CreateDateDraftBodySchema, [createDateDraftBody]],

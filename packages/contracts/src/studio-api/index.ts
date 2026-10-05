@@ -17,12 +17,13 @@ import {
   updateStudioPreferences,
   verifyTwoFactorStudio,
 } from './bootstrap.js';
-import { createUploadTicket, deleteChannel } from './channel.js';
+import { createUploadTicket } from './channel.js';
 import {
   addBannedWord,
   changeMemberRoles,
   closeReconciliationPeriod,
   createDateDraft,
+  deleteChannel,
   getChannelAgenda,
   getChannelDashboard,
   getChannelSettings,

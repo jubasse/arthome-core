@@ -78,7 +78,6 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'countersignBankChange',
   'createReauthToken',
   'createUploadTicket',
-  'deleteChannel',
   'escalateIncidentToProduction',
   'getChannelExport',
   'getStudioBootstrap',

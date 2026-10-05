@@ -4,6 +4,7 @@ import type { VocabularyIn } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
 import { StudioEnvelopeMetaSchema } from '../../envelope/index.js';
 import type { PathParameter, Period, QueryParameter } from '../../http/index.js';
+import { Deleted } from '../../http/index.js';
 import { OffsetPageInfoSchema } from '../../pagination/index.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
 import { BankChangeRequestSchema, PayoutLineSchema, StatsAudienceSchema, StatsSeriesSchema } from '../../studio-money/index.js';
@@ -272,5 +273,14 @@ export declare const CreateDateDraftBodySchema: z.ZodObject<{
 export type ChannelStreamSettings = z.output<typeof ChannelStreamSettingsSchema>;
 export type ChannelTicketing = z.output<typeof ChannelTicketingSchema>;
 export type CreateDateDraftBody = z.output<typeof CreateDateDraftBodySchema>;
+export declare const DeleteChannelBodySchema: z.ZodObject<{
+    reauthToken: z.ZodString;
+    confirmName: z.ZodString;
+}, z.core.$strip>;
+export type DeleteChannelBody = z.output<typeof DeleteChannelBodySchema>;
+export declare const ChannelDeletionAnswerSchema: z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
+    data: typeof Deleted;
+}, z.core.$loose>>;
+export type ChannelDeletionAnswer = z.output<typeof ChannelDeletionAnswerSchema>;
 export {};
 //# sourceMappingURL=schemas.d.ts.map

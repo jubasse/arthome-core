@@ -7,7 +7,7 @@ import type { ChannelMemberSchema } from '../../studio-access/index.js';
 import type { AudienceMemberSchema, JournalEntrySchema, ModerationItemSchema } from '../../studio-desk/index.js';
 import type { BankChangeRequestSchema, DashboardScreenSchema, ExportJobSchema } from '../../studio-money/index.js';
 import type { ChannelIdParameter, CursorParameter, IdempotencyKeyParameter, IfRightsVersionParameter, LimitParameter, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter, operator, studioConventions } from '../components.js';
-import type { AddBannedWordBodySchema, AgendaListSchema, AudienceMemberIdParameter, AudienceSanctionParameter, AudienceSearch, BannedWordAdditionSchema, BannedWordParameter, ChangeMemberRolesBodySchema, ChannelDefaultsSchema, ChannelIdentitySchema, ChannelMemberPageSchema, ChannelReplaySchema, ChannelReplayStateParameter, ChannelSettingsSchema, ChannelStreamSettingsSchema, ChannelTicketingSchema, CloseReconciliationPeriodBodySchema, CreateDateDraftBodySchema, EventStatesParameter, EventsWindowParameter, InviteMemberBodySchema, JournalDateParameter, JournalNatureParameter, MemberRoleParameter, MerchItemIdParameter, ModerationQueueFilterParameter, OwnershipTransferSchema, PayoutPageSchema, PayoutStateParameter, PersonIdParameter, PresentOnDateParameter, ReconciliationClosureSchema, ReconciliationPeriodIdParameter, RequestBankChangeBodySchema, RequestChannelExportBodySchema, SanctionAudienceMemberBodySchema, StatsAnswerSchema, StatsPeriodPresetParameter, StatsShowParameter, StatsTabParameter, TransferChannelOwnershipBodySchema, UpsertMerchItemBodySchema } from './schemas.js';
+import type { AddBannedWordBodySchema, AgendaListSchema, AudienceMemberIdParameter, AudienceSanctionParameter, AudienceSearch, BannedWordAdditionSchema, BannedWordParameter, ChangeMemberRolesBodySchema, ChannelDefaultsSchema, ChannelDeletionAnswerSchema, ChannelIdentitySchema, ChannelMemberPageSchema, ChannelReplaySchema, ChannelReplayStateParameter, ChannelSettingsSchema, ChannelStreamSettingsSchema, ChannelTicketingSchema, CloseReconciliationPeriodBodySchema, CreateDateDraftBodySchema, DeleteChannelBodySchema, EventStatesParameter, EventsWindowParameter, InviteMemberBodySchema, JournalDateParameter, JournalNatureParameter, MemberRoleParameter, MerchItemIdParameter, ModerationQueueFilterParameter, OwnershipTransferSchema, PayoutPageSchema, PayoutStateParameter, PersonIdParameter, PresentOnDateParameter, ReconciliationClosureSchema, ReconciliationPeriodIdParameter, RequestBankChangeBodySchema, RequestChannelExportBodySchema, SanctionAudienceMemberBodySchema, StatsAnswerSchema, StatsPeriodPresetParameter, StatsShowParameter, StatsTabParameter, TransferChannelOwnershipBodySchema, UpsertMerchItemBodySchema } from './schemas.js';
 export type ListChannelReplaysRoute = Route<{
     method: 'get';
     version: 1;
@@ -690,6 +690,50 @@ export type CreateDateDraftRoute = Route<{
         403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
         409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof DomainErrorCode.STATE_CONFLICT)[];
+    };
+}>;
+export type DeleteChannelRoute = Route<{
+    method: 'delete';
+    version: 1;
+    path: '/channels/{channelId}';
+    parameters: readonly [
+        typeof ChannelIdParameter,
+        typeof IdempotencyKeyParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter,
+        typeof IfRightsVersionParameter
+    ];
+    requestBody: {
+        readonly required: true;
+        readonly content: {
+            readonly 'application/json': {
+                readonly schema: typeof DeleteChannelBodySchema;
+                readonly exampleFrom: {
+                    readonly of: typeof DeleteChannelBodySchema;
+                    readonly as: (example: unknown) => unknown;
+                };
+            };
+        };
+    };
+    access: IdentifiedAccess<typeof operator, false>;
+    responses: {
+        200: {
+            readonly description: 'Channel deleted.';
+            readonly content: {
+                readonly 'application/json': {
+                    readonly schema: typeof ChannelDeletionAnswerSchema;
+                    readonly exampleFrom: {
+                        readonly of: typeof Deleted;
+                        readonly as: (data: unknown) => unknown;
+                    };
+                };
+            };
+        };
+    };
+    errorCodes: {
+        403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        409: readonly (typeof ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS)[];
     };
 }>;
 //# sourceMappingURL=types.d.ts.map

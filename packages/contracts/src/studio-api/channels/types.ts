@@ -58,6 +58,7 @@ import type {
   BannedWordParameter,
   ChangeMemberRolesBodySchema,
   ChannelDefaultsSchema,
+  ChannelDeletionAnswerSchema,
   ChannelIdentitySchema,
   ChannelMemberPageSchema,
   ChannelReplaySchema,
@@ -67,6 +68,7 @@ import type {
   ChannelTicketingSchema,
   CloseReconciliationPeriodBodySchema,
   CreateDateDraftBodySchema,
+  DeleteChannelBodySchema,
   EventStatesParameter,
   EventsWindowParameter,
   InviteMemberBodySchema,
@@ -863,5 +865,50 @@ export type CreateDateDraftRoute = Route<{
       | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
       | typeof DomainErrorCode.STATE_CONFLICT
     )[];
+  };
+}>;
+
+export type DeleteChannelRoute = Route<{
+  method: 'delete';
+  version: 1;
+  path: '/channels/{channelId}';
+  parameters: readonly [
+    typeof ChannelIdParameter,
+    typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+    typeof IfRightsVersionParameter,
+  ];
+  requestBody: {
+    readonly required: true;
+    readonly content: {
+      readonly 'application/json': {
+        readonly schema: typeof DeleteChannelBodySchema;
+        readonly exampleFrom: {
+          readonly of: typeof DeleteChannelBodySchema;
+          readonly as: (example: unknown) => unknown;
+        };
+      };
+    };
+  };
+  access: IdentifiedAccess<typeof operator, false>;
+  responses: {
+    200: {
+      readonly description: 'Channel deleted.';
+      readonly content: {
+        readonly 'application/json': {
+          readonly schema: typeof ChannelDeletionAnswerSchema;
+          readonly exampleFrom: {
+            readonly of: typeof Deleted;
+            readonly as: (data: unknown) => unknown;
+          };
+        };
+      };
+    };
+  };
+  errorCodes: {
+    403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
+    404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    409: readonly (typeof ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS)[];
   };
 }>;
