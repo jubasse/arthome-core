@@ -26,10 +26,18 @@ def envelope_shaped(schema, schemas):
     if ref.startswith("#/components/schemas/"):
         target = schemas.get(ref.rsplit("/", 1)[-1])
         return target is not None and envelope_shaped(target, schemas)
+    branches = schema.get("oneOf") if "oneOf" in schema else schema.get("anyOf")
     if "oneOf" in schema or "anyOf" in schema:
-        return all(envelope_shaped(branch, schemas) for branch in schema.get("oneOf") or schema.get("anyOf"))
+        return bool(branches) and all(envelope_shaped(branch, schemas) for branch in branches)
     props = schema.get("properties") or {}
-    return "error" in props and "servedAt" in props
+    required = schema.get("required") or []
+    if not all(name in props and name in required for name in ("error", "servedAt")):
+        return False
+    error = props["error"]
+    if "$ref" in error:
+        return error["$ref"] == "#/components/schemas/Error"
+    inner = error.get("properties") or {}
+    return "code" in inner and "code" in (error.get("required") or [])
 
 def err(doc, msg): ERRS.append(f"{doc}: {msg}")
 

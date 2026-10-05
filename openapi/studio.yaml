@@ -11418,7 +11418,8 @@ components:
       required: false
       description: |
         **The rights version the client holds**, symmetric to `X-Arthome-Rights-Version` in the
-        response. Without it, the server cannot tell "you never had that right" from "you had it two
+        response, and **sent on a write only**: a read does not take it, since its response already tells
+        the client the version moved. Without it on a write, the server cannot tell "you never had that right" from "you had it two
         hundred milliseconds ago": **two of the three refusal codes were out of reach**, and only
         `api.forbidden` was left — that is, the very indistinction the three codes existed to remove.
 

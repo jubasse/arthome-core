@@ -381,6 +381,8 @@ function isExplodedObject(parameter: Parameter): boolean {
   return parameter.in === 'query' && unwrapped(parameter.schema) instanceof z.ZodObject;
 }
 
+const DECIMAL_NUMBER = /^-?\d+(\.\d+)?$/;
+
 type WireKind = 'number' | 'boolean' | 'list' | 'text';
 
 function wireKindOf(schema: z.ZodType): WireKind {
@@ -393,7 +395,7 @@ function wireKindOf(schema: z.ZodType): WireKind {
 
 function scalarFromWire(kind: WireKind, value: unknown): unknown {
   if (typeof value !== 'string') return value;
-  if (kind === 'number') return value === '' ? value : Number(value);
+  if (kind === 'number') return DECIMAL_NUMBER.test(value) ? Number(value) : value;
   if (kind === 'boolean') return value === 'true' ? true : value === 'false' ? false : value;
   return value;
 }

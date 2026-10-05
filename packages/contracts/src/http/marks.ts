@@ -8,6 +8,8 @@
 
 import { z } from 'zod';
 
+import { childrenOf, pathBelow } from './schema-kinds.js';
+
 export const SENSITIVE_KEY = 'x-arthome-sensitive';
 export const RESTRICTED_KEY = 'x-arthome-restricted';
 
@@ -35,41 +37,24 @@ function metaOf(schema: z.ZodType): Readonly<Record<string, unknown>> {
   return z.globalRegistry.get(schema) ?? {};
 }
 
-function inner(schema: z.ZodType): z.ZodType | undefined {
-  if (
-    schema instanceof z.ZodOptional ||
-    schema instanceof z.ZodNullable ||
-    schema instanceof z.ZodDefault ||
-    schema instanceof z.ZodReadonly
-  ) {
-    return schema.unwrap() as z.ZodType;
-  }
-  return undefined;
-}
-
 type Visit = (path: string, meta: Readonly<Record<string, unknown>>) => void;
 
-function walk(schema: z.ZodType, path: string, visit: Visit, seen: Set<z.ZodType>): void {
-  if (seen.has(schema)) return;
-  seen.add(schema);
+function walk(
+  schema: z.ZodType,
+  path: string,
+  visit: Visit,
+  seen: Map<z.ZodType, Set<string>>,
+  ancestors: ReadonlySet<z.ZodType>,
+): void {
+  if (ancestors.has(schema)) return;
+  const paths = seen.get(schema) ?? new Set<string>();
+  if (paths.has(path)) return;
+  paths.add(path);
+  seen.set(schema, paths);
   visit(path, metaOf(schema));
-  const unwrapped = inner(schema);
-  if (unwrapped !== undefined) {
-    walk(unwrapped, path, visit, seen);
-  } else if (schema instanceof z.ZodObject) {
-    const shape: Readonly<Record<string, z.ZodType>> = schema.shape;
-    for (const [key, field] of Object.entries(shape)) {
-      walk(field, path === '' ? key : `${path}.${key}`, visit, seen);
-    }
-  } else if (schema instanceof z.ZodArray) {
-    walk(schema.element as z.ZodType, `${path}[]`, visit, seen);
-  } else if (schema instanceof z.ZodIntersection) {
-    walk(schema.def.left as z.ZodType, path, visit, seen);
-    walk(schema.def.right as z.ZodType, path, visit, seen);
-  } else if (schema instanceof z.ZodUnion) {
-    for (const option of schema.options as readonly z.ZodType[]) walk(option, path, visit, seen);
-  } else if (schema instanceof z.ZodRecord) {
-    walk(schema.valueType as z.ZodType, `${path}.*`, visit, seen);
+  const within = new Set(ancestors).add(schema);
+  for (const child of childrenOf('the marks walker', schema)) {
+    walk(child.schema, pathBelow(path, child), visit, seen, within);
   }
 }
 
@@ -82,6 +67,7 @@ export function sensitivePathsOf(schema: z.ZodType): readonly string[] {
     (path, meta) => {
       if (meta[SENSITIVE_KEY] === true) out.push(path);
     },
+    new Map(),
     new Set(),
   );
   return out;
@@ -102,6 +88,7 @@ export function restrictedFieldsOf(schema: z.ZodType): readonly RestrictedField[
       const right = meta[RESTRICTED_KEY];
       if (typeof right === 'string') out.push({ path, right });
     },
+    new Map(),
     new Set(),
   );
   return out;

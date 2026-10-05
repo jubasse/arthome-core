@@ -329,19 +329,21 @@ export const operator = identity('operator', { schemes: { read: [SessionCookie, 
 - **Which credentials, and when:** the schemes say what a read and a write accept, so the CSRF
   token on a cookie write is derived rather than restated.
 
-### 4.2 The default, and the shortcuts
+### 4.2 The identity, and the shortcuts
 
 ```ts
-export const storefrontV1 = routeBuilder().version(1).identity(viewer);   // every route requires a viewer
+export const storefrontV1 = routeBuilder(errors).version(1).conventions(conventions);   // no identity yet
 
-storefrontV1.public()          // no identity: sign-in, sign-up, public links (9 + 3 routes)
-storefrontV1.optionalAuth()    // anonymous allowed, personalised when signed in (13 routes); the principal may be null
-storefrontV1.identity(device)  // the television (4 routes)
+storefrontV1.identity(viewer)         // every route requires a viewer
+storefrontV1.public()                 // no identity: sign-in, sign-up, public links
+storefrontV1.identity(viewerOrDevice) // a viewer, or a device that holds only its device token
 ```
 
-These are shortcuts over §4.3: `.optionalAuth()` is
-`requires(authenticated(viewer).optional())`. The builder writes each route's `security` from its
-identity and its method, so **the 50 restated security lists disappear**.
+There is no default identity on the root builder: a route with neither `.identity(...)` nor
+`.public()` is refused when it is defined, so a route cannot be left open by omission. The shortcuts
+are over §4.3: `.optionalAuth()` is `requires(authenticated(viewer).optional())`, for a route open
+to anonymous callers and personalised when signed in. The builder writes each route's `security` from
+its identity and its method, so **the 50 restated security lists disappear**.
 
 ### 4.3 `requires(rule)`: the extension point
 
@@ -666,6 +668,9 @@ The rule "never one identifier at a time" stays in `definition-of-done.md`.
   - `X-Arthome-Rights-Version` on every response;
   - `If-Rights-Version` on every write, with `403 api.rights_version_stale`.
 
+  `If-Rights-Version` is for writes only: a read declares no such header, and the client learns that
+  its rights moved from `X-Arthome-Rights-Version` in the answer.
+
 ### 9.4 Budgets, freshness, size, rate
 
 - **`budget(ms)`** declares the latency budget of §5.9. The typed client uses it as its timeout,
@@ -702,6 +707,10 @@ evolution, security, tooling).
 
   `requires(recentAuth())` declares the proof it takes and its `403` (a code to add), so a client
   knows before calling.
+
+  Three of the ten are not `recentAuth` routes as built: `enableTwoFactor` and `disableTwoFactor`
+  prove the caller by a password in the body, and `listReauthFactors` lists the factors to prove
+  with.
 - **Sensitive fields.** `sensitive(schema)` marks a password, a token or a stream key:
   - `writeOnly` in the document, or `format: password`;
   - redacted from the server's logs and traces;
