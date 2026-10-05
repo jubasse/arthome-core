@@ -76,6 +76,7 @@ runs `.github/workflows/release.yml`: install, `pnpm run verify`, then `tools/pa
 which refuses a tag that disagrees with the three package versions and packs `@arthome/core`,
 `@arthome/contracts` and `@arthome/tooling`. `gh release create` attaches the tarballs
 (`arthome-<package>-<version>.tgz`) to the GitHub release. Nothing is published to a registry.
+Every pull request to `develop` or `main` runs `pnpm run verify` in CI (`.github/workflows/verify.yml`).
 
 The other repositories install those tarballs by URL (`pnpm run use-core <version>` in
 arthome-platform). To see what a release would carry without tagging anything:
