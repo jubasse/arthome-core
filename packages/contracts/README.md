@@ -74,7 +74,7 @@ is part of `pnpm run verify`.
 
 Every operation of both contracts is declared once, in `src/storefront-api/` or `src/studio-api/`:
 a module folder per URL block (`studio-api/dates/`, below) or, until it converts, one module per tag
-(`discovery.ts`, `payouts.ts`), the shared parameters, headers and responses in
+(`payouts.ts`), the shared parameters, headers and responses in
 `components.ts`, the api itself and its component names in `index.ts`, and the document's
 introduction (`info`, `servers`, `tags`, the security schemes) in `docs.ts`, which also gathers what
 each module documents (below).
