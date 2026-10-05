@@ -31,6 +31,11 @@ here, and a skill for one of them would be the wrong instrument.
 | `node tools/prune-unused.mjs <module.ts>...` | drops the imports and top-level consts a module no longer uses once its routes moved out; `pnpm run fix` after it |
 | `pnpm run measure:surface-bundle` | what a surface ships for `createClient(api)`, minified and gzipped, part by part. A report, not a gate |
 
+**GitHub Actions are pinned by commit SHA**, with the version in a comment (`uses:
+actions/checkout@<sha> # v7.0.1`). A tag can be moved to other code; a commit cannot. To bump an
+action, resolve the new release's commit (`gh api repos/<owner>/<action>/commits/<tag> -q .sha`) and
+update the SHA and the comment together. Python dependencies of the workflows are pinned by version.
+
 The gates, and what each proves: `check-versions` (one version per dependency across manifests) ·
 `check-tsconfig` (the compiler locks are intact) · `check-enums` (no enumeration value copied as a
 literal — the project's dominant fault, E2) · `check-language` (no French *sentence* in a committed
