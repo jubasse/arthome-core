@@ -7,6 +7,8 @@ import type { ApiDocs, ModuleDocs, OperationDocumentation } from '../openapi/doc
 import { apiDocs, documentationLookup } from '../openapi/docs.js';
 import { meDocs } from './me/docs.js';
 import { meExamples } from './me/examples.js';
+import { plansDocs } from './plans/docs.js';
+import { plansExamples } from './plans/examples.js';
 
 /**
  * The operations whose maturity is not their owning service's (`transport.md` §5.11). Each entry
@@ -125,8 +127,8 @@ export const storefrontDocs: ApiDocs = apiDocs({
         'ES256 JWT, `aud: "arthome.device"`, 180 days, **rotated on every use**, carrying `device_id`\nand nothing else. Obtained on first launch through `registerDevice`, **before any session**.\nIt is not a session: it opens only pairing, pairing polling and the public bootstrap, and\n**opens no personal data** — in particular not the real-time channel (`adr-auth.md` §4/Q3,\n§5.3).\n',
     },
   },
-  modules: [statedMaturities, meDocs],
-  examples: [sharedExamples, meExamples],
+  modules: [statedMaturities, meDocs, plansDocs],
+  examples: [sharedExamples, meExamples, plansExamples],
 });
 
 /** Each storefront operation's prose and doc-only metadata, by route: for a server's own docs. Server only. */

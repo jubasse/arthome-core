@@ -34,7 +34,6 @@ import {
   getSalesQueuePosition,
   joinWaitlist,
   leaveWaitlist,
-  listPlans,
   purchaseSeat,
   quoteCart,
   quoteSeat,
@@ -132,6 +131,7 @@ import {
   getAccountDeepLink,
   pollPairing,
 } from './pairing.js';
+import { listPlans } from './plans/routes.js';
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
 import {
   ArtistDetailSchema,

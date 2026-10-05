@@ -5301,25 +5301,19 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
-      x-arthome-freshness: 300
       tags:
       - commerce
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: The plans.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5349,8 +5343,23 @@ paths:
                   - one_live_month
                   seatDiscountBps: 1000
                   concurrentStreamsAllowed: 1
-        '503':
-          $ref: '#/components/responses/Unavailable'
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/availability:
     get:
       operationId: refreshDateAvailability

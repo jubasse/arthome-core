@@ -44,7 +44,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
   'listCategories',
   'listChanges',
   'listChatMessages',
-  'listPlans',
   'listReplays',
   'openPlayback',
   'pollPairing',

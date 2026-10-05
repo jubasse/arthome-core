@@ -4,12 +4,10 @@ import {
   AccountStatus,
   DisplayState,
   FailureNature,
-  NavigationEntry,
   OrderErrorCode,
   OrderKind,
   OrderState,
   PLAN_TIERS,
-  PlanOpening,
   PlanTier,
   PRICE_TIERS,
   PriceTier,
@@ -58,7 +56,6 @@ import {
   CartSchema,
   OrderSchema,
   PaymentHandoffSchema,
-  PlanSchema,
   SalesQueuePositionSchema,
   SeatQuoteSchema,
   SubscriptionSchema,
@@ -86,74 +83,6 @@ const SeatIdParameter: PathParameter<'seatId', z.ZodString> = {
 const seats = commerceWrites.resource('seats', { id: SeatIdParameter });
 
 const CANCEL_SEAT_CANCEL_REASON_CODE = ['viewer_request'] as const;
-
-export const listPlans: Route<{
-  method: 'get';
-  version: 1;
-  path: '/plans';
-  parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StorefrontEnvelopeMetaSchema,
-        z.ZodObject<{ items: z.ZodArray<typeof PlanSchema> }, z.core.$loose>
-      >
-    >;
-    503: typeof UnavailableResponse;
-  };
-}> = commerceRoutes.defineRoute({
-  method: 'get',
-  path: '/plans',
-  operationId: 'listPlans',
-  summary: 'The three plans, what they open, and the discount on seats.',
-  description:
-    'Three plans, their nine possible openings, the discount on seats and the concurrent-screen\nceiling. **The ceiling is published here and enforced by `streaming`**: it is an execution\nconstraint, not a marketing line.\n\n**Public read.** Called **with no authentication at all**, this operation returns the\n**public body** — identical for every anonymous caller, hence shareable in a common\ncache. The three per-viewer overlays (`watchVerdict`, `viewerRelations`,\n`viewerProgress`) are then **absent**, never null. Called with a session or a bearer\ntoken, it returns the public body **plus** the overlays, and becomes private.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.TICKETING],
-  security: PublicReadSecurity,
-  'x-arthome-freshness': 300,
-  responses: {
-    200: {
-      description: 'The plans.',
-      headers: {
-        'Cache-Control': CacheControlPublicHeader,
-        Vary: VaryAuthHeader,
-      },
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              items: z.array(PlanSchema),
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:02:20.000Z',
-            items: [
-              {
-                tier: PlanTier.PASS,
-                price: {
-                  amountMinor: 1200,
-                  currencyCode: 'EUR',
-                },
-                opens: [
-                  PlanOpening.BROWSE,
-                  PlanOpening.TRAILERS,
-                  PlanOpening.FREE_DATES,
-                  NavigationEntry.REPLAYS,
-                  PlanOpening.ONE_LIVE_MONTH,
-                ],
-                seatDiscountBps: 1000,
-                concurrentStreamsAllowed: 1,
-              },
-            ],
-          },
-        },
-      },
-    },
-    503: UnavailableResponse,
-  },
-});
 
 export const refreshDateAvailability: Route<{
   method: 'get';

@@ -6,20 +6,8 @@ import { AdmissionTokenParameter, BadRequestResponse, ConflictResponse, CsrfRefu
 import { DateCardSchema, PriceTierSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
-import { CartQuoteSchema, CartSchema, OrderSchema, PaymentHandoffSchema, PlanSchema, SalesQueuePositionSchema, SeatQuoteSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
+import { CartQuoteSchema, CartSchema, OrderSchema, PaymentHandoffSchema, SalesQueuePositionSchema, SeatQuoteSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
 declare const CANCEL_SEAT_CANCEL_REASON_CODE: readonly ["viewer_request"];
-export declare const listPlans: Route<{
-    method: 'get';
-    version: 1;
-    path: '/plans';
-    parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            items: z.ZodArray<typeof PlanSchema>;
-        }, z.core.$loose>>>;
-        503: typeof UnavailableResponse;
-    };
-}>;
 export declare const refreshDateAvailability: Route<{
     method: 'get';
     version: 1;
