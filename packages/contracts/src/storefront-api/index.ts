@@ -24,7 +24,12 @@ import {
 import { getArtistDetail, listArtists } from './artists/routes.js';
 import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
 import { getCategoryScreen, listCategories } from './categories/routes.js';
-import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
+import {
+  listChatMessages,
+  reportChatMessage,
+  sendChatMessage,
+  sendReaction,
+} from './chat/routes.js';
 import {
   addCartLine,
   cancelSeat,

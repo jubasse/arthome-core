@@ -7629,6 +7629,9 @@ paths:
       - chat
       tags:
       - chat
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
       - $ref: '#/components/parameters/Cursor'
@@ -7662,8 +7665,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:36:00.000Z'
-                lastEventSeq: 41287
+                servedAt: '2026-09-21T19:00:00.000Z'
                 items:
                 - id: 019928f8-0000-7000-8000-000000000001
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
@@ -7676,13 +7678,21 @@ paths:
                     contentLanguage: fr
                     text: Quelle lumière.
                 page:
-                  hasMore: true
-                  nextCursor: null
-                  prevCursor: null
+                  hasMore: false
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
         '410':
           $ref: '#/components/responses/Gone'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     post:
       operationId: sendChatMessage
       summary: Posts a chat message.
@@ -7702,6 +7712,9 @@ paths:
       - chat
       tags:
       - chat
+      x-arthome-requires:
+      - name: throttle
+        bucket: chat_message
       security:
       - sessionCookie: []
         csrfToken: []
@@ -7747,36 +7760,54 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:36:02.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
-                  id: 019928f8-0000-7000-8000-000000000002
+                  id: 019928f8-0000-7000-8000-000000000001
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
-                  seq: 41288
+                  seq: 41287
                   authorHandle: '@marie.j'
                   atMediaSec: 2160
-                  sentAt: '2026-09-21T19:36:02Z'
+                  sentAt: '2026-09-21T19:35:58Z'
                   badge: published
                   body:
                     contentLanguage: fr
                     text: Quelle lumière.
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Chat mode closed, holders only, or the person is sanctioned in this channel.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
+            A write with the session cookie came without its `X-Arthome-Csrf` token, or with another
+            session's (`api.forbidden`). A write with a bearer token never meets it.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: chat.holders_only
-                  nature: refused
-                  params: {}
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T19:36:02.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ChatHoldersOnlyError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                chat.holders_only:
+                  $ref: '#/components/examples/ChatHoldersOnlyError'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/chat/reactions:
     post:
       operationId: sendReaction
@@ -7788,12 +7819,15 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - chat
+      tags:
+      - chat
       x-arthome-idempotency-exemption: |
         **The quota already bounds the effect**, and it is served with the response. A replayed key
         would return a **stale** quota — "17 left" when 12 are left — which is worse than no response
         at all: the surface disables its control on that number.
-      tags:
-      - chat
+      x-arthome-requires:
+      - name: throttle
+        bucket: chat_reaction
       security:
       - sessionCookie: []
         csrfToken: []
@@ -7845,14 +7879,28 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:36:05.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   remaining: 17
                   rechargesAt: '2026-09-21T19:41:05Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/chat/messages/{messageId}/report:
     post:
       operationId: reportChatMessage
@@ -7905,29 +7953,30 @@ paths:
               reason: harassment
       responses:
         '202':
-          description: Report recorded. A second report from the same account does not create another.
-          content:
-            application/json:
-              schema:
-                allOf:
-                - $ref: '#/components/schemas/EnvelopeMeta'
-                - type: object
-                  properties:
-                    data:
-                      type: object
-                      properties:
-                        reported:
-                          type: boolean
-                      additionalProperties: {}
-                  additionalProperties: {}
-              example:
-                servedAt: '2026-09-21T19:37:00.000Z'
-                data:
-                  reported: true
+          description: Done.
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/pairings:
     post:
       operationId: createPairing
@@ -13089,7 +13138,123 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    ApiForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.forbidden
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ChatHoldersOnlyError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: chat.holders_only
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
   examples:
+    ApiForbiddenError:
+      value:
+        error:
+          code: api.forbidden
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     ApiIdempotencyInFlightError:
       value:
         error:
@@ -13103,6 +13268,14 @@ components:
       value:
         error:
           code: api.idempotency_key_reused
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ChatHoldersOnlyError:
+      value:
+        error:
+          code: chat.holders_only
           nature: refused
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736

@@ -50,6 +50,7 @@ import { z } from 'zod';
 
 import {
   ApiErrorCode,
+  ChatErrorCode,
   DomainErrorCode,
   FailureNature,
   IdentityErrorCode,
@@ -229,6 +230,7 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   typeof IdentityErrorCode.EMAIL_TAKEN,
   typeof IdentityErrorCode.INVALID_CREDENTIALS,
   typeof IdentityErrorCode.VERIFICATION_LINK_INVALID,
+  typeof ChatErrorCode.HOLDERS_ONLY,
 ] = [
   ApiErrorCode.SCHEMA_INVALID,
   ApiErrorCode.CURSOR_TOO_OLD,
@@ -241,6 +243,7 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   IdentityErrorCode.EMAIL_TAKEN,
   IdentityErrorCode.INVALID_CREDENTIALS,
   IdentityErrorCode.VERIFICATION_LINK_INVALID,
+  ChatErrorCode.HOLDERS_ONLY,
 ];
 
 /** The codes a storefront operation may declare: only what a surface can be handed. */

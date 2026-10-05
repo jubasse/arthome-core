@@ -9,6 +9,8 @@ import { artistsDocs } from './artists/docs.js';
 import { artistsExamples } from './artists/examples.js';
 import { categoriesDocs } from './categories/docs.js';
 import { categoriesExamples } from './categories/examples.js';
+import { chatDocs } from './chat/docs.js';
+import { chatExamples } from './chat/examples.js';
 import { homeDocs } from './home/docs.js';
 import { homeExamples } from './home/examples.js';
 import { liveDocs } from './live/docs.js';
@@ -142,6 +144,7 @@ export const storefrontDocs: ApiDocs = apiDocs({
   },
   modules: [
     statedMaturities,
+    chatDocs,
     resolveDocs,
     railsDocs,
     replaysDocs,
@@ -154,6 +157,7 @@ export const storefrontDocs: ApiDocs = apiDocs({
   ],
   examples: [
     sharedExamples,
+    chatExamples,
     resolveExamples,
     railsExamples,
     searchExamples,

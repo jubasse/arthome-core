@@ -2,7 +2,7 @@ import { changePassword, confirmEmailVerification, contactSupport, disableTwoFac
 import { getArtistDetail, listArtists } from './artists/routes.js';
 import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
 import { getCategoryScreen, listCategories } from './categories/routes.js';
-import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
+import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat/routes.js';
 import { addCartLine, cancelSeat, cancelSubscription, checkoutCart, enterSalesQueue, getCart, getOrder, getSalesQueuePosition, joinWaitlist, leaveWaitlist, listPlans, purchaseSeat, quoteCart, quoteSeat, refreshDateAvailability, removeCartLine, setSubscriptionPlan, updateCartLine } from './commerce.js';
 import { getDateDetail } from './date.js';
 import { getHomeScreen } from './home/routes.js';
