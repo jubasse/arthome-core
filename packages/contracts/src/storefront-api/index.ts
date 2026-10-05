@@ -22,7 +22,7 @@ import {
   startSocialSignIn,
   verifyTwoFactor,
 } from './account.js';
-import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
+import { getViewerContext, listChanges } from './bootstrap.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
 import {
   addCartLine,
@@ -78,6 +78,7 @@ import {
   ViewerTimezoneParameter,
 } from './components.js';
 import { getDateDetail } from './date.js';
+import { registerDevice } from './devices/routes.js';
 import {
   extendRail,
   getArtistDetail,

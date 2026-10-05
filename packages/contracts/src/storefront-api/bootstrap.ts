@@ -1,27 +1,11 @@
 import { z } from 'zod';
 
-import {
-  AccountStatus,
-  DEVICE_KINDS,
-  DeviceKind,
-  Locale,
-  MessageDomain,
-  PlanTier,
-  Service,
-  Upstream,
-} from '@arthome/core';
+import { AccountStatus, Locale, MessageDomain, PlanTier, Service, Upstream } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import {
-  InstantOut,
-  uuidOut,
-  VOCABULARY_SOURCE_LOCAL,
-  vocabularyIn,
-  dateTimeIn,
-} from '@arthome/core/schema';
+import { VOCABULARY_SOURCE_LOCAL, vocabularyIn, dateTimeIn } from '@arthome/core/schema';
 
 import {
   BadRequestResponse,
-  IdempotencyKeyParameter,
   ServedAtHeader,
   StorefrontTag,
   SurfaceParameter,
@@ -33,7 +17,7 @@ import {
 } from './components.js';
 import { ChangeFeedSchema } from '../engagement/index.js';
 import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, QueryParameter, Route } from '../http/index.js';
+import type { JsonResponse, QueryParameter, Route } from '../http/index.js';
 import { ViewerContextSchema } from '../identity/index.js';
 
 const bootstrapRoutes = storefrontV1
@@ -42,110 +26,6 @@ const bootstrapRoutes = storefrontV1
 const bootstrapReads = bootstrapRoutes.errors({ 401: UnauthorizedResponse });
 
 const LIST_CHANGES_SCOPE = ['profile', 'device'] as const;
-
-export const registerDevice: Route<{
-  method: 'post';
-  version: 1;
-  path: '/devices';
-  parameters: readonly [
-    typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  requestBody: JsonRequestBody<
-    z.ZodObject<
-      {
-        kind: VocabularyIn<typeof DEVICE_KINDS>;
-        label: z.ZodString;
-        osVersion: z.ZodOptional<z.ZodString>;
-        appVersion: z.ZodOptional<z.ZodString>;
-      },
-      z.core.$strip
-    >
-  >;
-  responses: {
-    201: JsonResponse<
-      z.ZodIntersection<
-        typeof StorefrontEnvelopeMetaSchema,
-        z.ZodObject<
-          {
-            data: z.ZodObject<
-              { deviceId: z.ZodString; deviceToken: z.ZodString; expiresAt: z.ZodString },
-              z.core.$loose
-            >;
-          },
-          z.core.$loose
-        >
-      >
-    >;
-    400: typeof BadRequestResponse;
-    503: typeof UnavailableResponse;
-  };
-}> = bootstrapRoutes.defineRoute({
-  method: 'post',
-  path: '/devices',
-  operationId: 'registerDevice',
-  summary: 'Registers the device and returns its device token.',
-  description:
-    '**Called on first launch, before any session.** Device identity is a contract notion, and\nit is required for four things the surfaces ask for: opening and polling a pairing, naming\nitself under "connected devices", being revoked, and carrying a rate limit somewhere other\nthan the IP address — which a household behind a NAT shares.\n\nIt **is not a session** and opens no personal data; in particular it does not open the\nreal-time channel.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.IDENTITY],
-  security: [],
-  parameters: [IdempotencyKeyParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          kind: vocabularyIn(DEVICE_KINDS).meta({
-            'x-arthome-vocabulary-source': 'DEVICE_KINDS',
-          }),
-          label: z.string().max(80),
-          osVersion: z.string().optional(),
-          appVersion: z.string().optional(),
-        }),
-        example: {
-          kind: DeviceKind.TV,
-          label: 'Téléviseur du salon',
-          osVersion: 'tvOS 19.2',
-          appVersion: '1.4.0',
-        },
-      },
-    },
-  },
-  responses: {
-    201: {
-      description: 'Device registered. The token is to be kept in the native store.',
-      headers: {
-        'X-Arthome-Served-At': ServedAtHeader,
-      },
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              data: z.looseObject({
-                deviceId: uuidOut(),
-                deviceToken: z.string(),
-                expiresAt: InstantOut,
-              }),
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:02:11.004Z',
-            data: {
-              deviceId: '019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77',
-              deviceToken: 'eyJhbGciOiJFUzI1NiIsImtpZCI6ImRldi0yMDI2LTA5In0',
-              expiresAt: '2027-03-20T18:02:11.004Z',
-            },
-          },
-        },
-      },
-    },
-    400: BadRequestResponse,
-    503: UnavailableResponse,
-  },
-});
 
 export const getViewerContext: Route<{
   method: 'get';

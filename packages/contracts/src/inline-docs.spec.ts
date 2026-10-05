@@ -51,7 +51,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
   'quoteCart',
   'quoteSeat',
   'refreshDateAvailability',
-  'registerDevice',
   'releasePlayback',
   'removeCartLine',
   'renewPlaybackTicket',

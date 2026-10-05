@@ -7,6 +7,7 @@ import * as storefrontBootstrap from './storefront-api/bootstrap.js';
 import * as storefrontChat from './storefront-api/chat.js';
 import * as storefrontCommerce from './storefront-api/commerce.js';
 import * as storefrontDate from './storefront-api/date.js';
+import * as storefrontDevices from './storefront-api/devices/routes.js';
 import * as storefrontDiscovery from './storefront-api/discovery.js';
 import { storefrontApi } from './storefront-api/index.js';
 import * as storefrontMe from './storefront-api/me/routes.js';
@@ -52,6 +53,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
     storefrontApi,
     [
       storefrontAccount,
+      storefrontDevices,
       storefrontAccountDeepLink,
       storefrontBootstrap,
       storefrontChat,

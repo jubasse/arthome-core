@@ -207,9 +207,6 @@ paths:
       responses:
         '201':
           description: Device registered. The token is to be kept in the native store.
-          headers:
-            X-Arthome-Served-At:
-              $ref: '#/components/headers/ServedAt'
           content:
             application/json:
               schema:
@@ -237,15 +234,28 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:11.004Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
                   deviceToken: eyJhbGciOiJFUzI1NiIsImtpZCI6ImRldi0yMDI2LTA5In0
                   expiresAt: '2027-03-20T18:02:11.004Z'
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '503':
-          $ref: '#/components/responses/Unavailable'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/viewer-context:
     get:
       operationId: getViewerContext
