@@ -1,4 +1,9 @@
-import { ApiErrorCode, IdentityErrorCode } from '@arthome/core';
+import {
+  ApiErrorCode,
+  IdentityErrorCode,
+  WATCH_DENIAL_REASONS,
+  WatchDenialReason,
+} from '@arthome/core';
 
 import { OpenPlaybackBodySchema, PlaybackSessionIdParameter } from './schemas.js';
 import type { OpenPlaybackRoute, ReleasePlaybackRoute, RenewPlaybackTicketRoute } from './types.js';
@@ -27,7 +32,7 @@ export const openPlayback: OpenPlaybackRoute = playback
     response: PlaybackTicketSchema,
     idempotent: false,
     answer: 'Right granted. The token, the lease and the complete screen.',
-    errors: [ApiErrorCode.NOT_FOUND],
+    errors: [ApiErrorCode.NOT_FOUND, ...WATCH_DENIAL_REASONS],
   });
 
 export const renewPlaybackTicket: RenewPlaybackTicketRoute = sessions.action('renew', {
@@ -36,7 +41,12 @@ export const renewPlaybackTicket: RenewPlaybackTicketRoute = sessions.action('re
   response: PlaybackRenewalSchema,
   idempotent: false,
   answer: 'Token renewed.',
-  errors: [ApiErrorCode.NOT_FOUND, IdentityErrorCode.SIGNED_OUT_ELSEWHERE],
+  errors: [
+    ApiErrorCode.NOT_FOUND,
+    IdentityErrorCode.SIGNED_OUT_ELSEWHERE,
+    WatchDenialReason.CONCURRENT_LIMIT_REACHED,
+    WatchDenialReason.PREVIEW_EXHAUSTED,
+  ],
 });
 
 export const releasePlayback: ReleasePlaybackRoute = sessions.action('release', {

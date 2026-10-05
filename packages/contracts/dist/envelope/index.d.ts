@@ -46,7 +46,7 @@
  *   week on.
  */
 import { z } from 'zod';
-import { ApiErrorCode, ChatErrorCode, DomainErrorCode, IdentityErrorCode, OrderErrorCode, PairingErrorCode } from '@arthome/core';
+import { ApiErrorCode, ChatErrorCode, DomainErrorCode, IdentityErrorCode, OrderErrorCode, PairingErrorCode, WATCH_DENIAL_REASONS } from '@arthome/core';
 import { ErrorSchema } from '@arthome/core/schema';
 /** The meta every STOREFRONT response composes. */
 export declare const StorefrontEnvelopeMetaSchema: z.ZodObject<{
@@ -126,7 +126,8 @@ export declare const STOREFRONT_RELAYED_CODES: readonly [
     typeof PairingErrorCode.SLOW_DOWN,
     typeof PairingErrorCode.IDENTITY_MISMATCH,
     typeof PairingErrorCode.INTENT_NOT_ENGAGEABLE,
-    typeof PairingErrorCode.EXECUTION_ENGAGED
+    typeof PairingErrorCode.EXECUTION_ENGAGED,
+    ...typeof WATCH_DENIAL_REASONS
 ];
 /** The codes a storefront operation may declare: only what a surface can be handed. */
 export type StorefrontRelayedCode = (typeof STOREFRONT_RELAYED_CODES)[number];

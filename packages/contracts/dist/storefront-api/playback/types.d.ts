@@ -1,5 +1,5 @@
 /** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
-import type { ApiErrorCode, IdentityErrorCode } from '@arthome/core';
+import type { ApiErrorCode, IdentityErrorCode, WatchDenialReason } from '@arthome/core';
 import type { IdentifiedAccess, ItemResponse, JsonRequestBody, Response, Route } from '../../http/index.js';
 import type { PlaybackRenewalSchema, PlaybackTicketSchema } from '../../streaming/index.js';
 import type { DateIdParameter, IdempotencyKeyParameter, SurfaceParameter, TraceparentParameter, storefrontConventions, viewer } from '../components.js';
@@ -20,8 +20,10 @@ export type OpenPlaybackRoute = Route<{
         200: ItemResponse<typeof storefrontConventions, typeof PlaybackTicketSchema, unknown>;
     };
     errorCodes: {
+        403: readonly (typeof WatchDenialReason.CONCURRENT_LIMIT_REACHED | typeof WatchDenialReason.DATE_CANCELLED | typeof WatchDenialReason.NO_REPLAY | typeof WatchDenialReason.NO_SEAT | typeof WatchDenialReason.NOT_PUBLISHED | typeof WatchDenialReason.OUT_OF_TERRITORY | typeof WatchDenialReason.PREVIEW_EXHAUSTED | typeof WatchDenialReason.REPLAY_NOT_ON_SALE | typeof WatchDenialReason.ROOM_NOT_OPEN | typeof WatchDenialReason.SUBSCRIPTION_REQUIRED)[];
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
         409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+        410: readonly (typeof WatchDenialReason.REPLAY_EXPIRED)[];
     };
 }>;
 export type RenewPlaybackTicketRoute = Route<{
@@ -39,7 +41,7 @@ export type RenewPlaybackTicketRoute = Route<{
         200: ItemResponse<typeof storefrontConventions, typeof PlaybackRenewalSchema, unknown>;
     };
     errorCodes: {
-        403: readonly (typeof IdentityErrorCode.SIGNED_OUT_ELSEWHERE)[];
+        403: readonly (typeof IdentityErrorCode.SIGNED_OUT_ELSEWHERE | typeof WatchDenialReason.CONCURRENT_LIMIT_REACHED | typeof WatchDenialReason.PREVIEW_EXHAUSTED)[];
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
         409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
     };

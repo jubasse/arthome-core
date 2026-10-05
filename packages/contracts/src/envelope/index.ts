@@ -59,6 +59,7 @@ import {
   PublicationChecklistItem,
   PublicationPromise,
   PublicationState,
+  WATCH_DENIAL_REASONS,
 } from '@arthome/core';
 import { ErrorSchema, InstantOut, int64 } from '@arthome/core/schema';
 
@@ -255,6 +256,7 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   typeof PairingErrorCode.IDENTITY_MISMATCH,
   typeof PairingErrorCode.INTENT_NOT_ENGAGEABLE,
   typeof PairingErrorCode.EXECUTION_ENGAGED,
+  ...typeof WATCH_DENIAL_REASONS,
 ] = [
   ApiErrorCode.SCHEMA_INVALID,
   ApiErrorCode.CURSOR_TOO_OLD,
@@ -292,6 +294,8 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   PairingErrorCode.IDENTITY_MISMATCH,
   PairingErrorCode.INTENT_NOT_ENGAGEABLE,
   PairingErrorCode.EXECUTION_ENGAGED,
+  // Each denial of the right to watch is a screen of its own, with its way out (WatchFallbackAction).
+  ...WATCH_DENIAL_REASONS,
 ];
 
 /** The codes a storefront operation may declare: only what a surface can be handed. */
