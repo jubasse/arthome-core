@@ -238,6 +238,7 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   typeof IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED,
   typeof IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED,
   typeof OrderErrorCode.QUOTE_ADDRESS_MISMATCH,
+  typeof OrderErrorCode.QUOTE_EXPIRED,
   typeof OrderErrorCode.SOLD_OUT,
   typeof OrderErrorCode.TIER_UNAVAILABLE,
   typeof OrderErrorCode.PAYMENT_DECLINED,
@@ -276,6 +277,7 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   // The refusals of a purchase, a cart checkout, a plan change and a seat cancellation: the viewer
   // acts on each (pick another tier, accept the new price, join the waiting list, change the card).
   OrderErrorCode.QUOTE_ADDRESS_MISMATCH,
+  OrderErrorCode.QUOTE_EXPIRED,
   OrderErrorCode.SOLD_OUT,
   OrderErrorCode.TIER_UNAVAILABLE,
   OrderErrorCode.PAYMENT_DECLINED,

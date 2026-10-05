@@ -285,12 +285,19 @@ export const ChannelErrorCode = {
   SAME_ACTOR_FORBIDDEN: 'channel.same_actor_forbidden',
 } as const;
 
-/** Payout refusals: a period does not close over an unexplained discrepancy. */
-export const PAYOUT_ERROR_CODES = ['payout.reconciliation_discrepancy_unexplained'] as const;
+/**
+ * Payout refusals: a period does not close over an unexplained discrepancy, and a bank change
+ * request past its deadline can no longer be countersigned.
+ */
+export const PAYOUT_ERROR_CODES = [
+  'payout.reconciliation_discrepancy_unexplained',
+  'payout.bank_change_request_expired',
+] as const;
 export type PayoutErrorCode = (typeof PAYOUT_ERROR_CODES)[number];
 
 export const PayoutErrorCode = {
   RECONCILIATION_DISCREPANCY_UNEXPLAINED: 'payout.reconciliation_discrepancy_unexplained',
+  BANK_CHANGE_REQUEST_EXPIRED: 'payout.bank_change_request_expired',
 } as const;
 
 /**
@@ -299,6 +306,8 @@ export const PayoutErrorCode = {
  */
 export const ORDER_ERROR_CODES = [
   'order.quote_address_mismatch',
+  // The binding quote is past its fifteen minutes (data-model 3.5): a new quote, then checkout again.
+  'order.quote_expired',
   'order.sold_out',
   // A price tier the date no longer sells.
   'order.tier_unavailable',
@@ -324,6 +333,7 @@ export type OrderErrorCode = (typeof ORDER_ERROR_CODES)[number];
 
 export const OrderErrorCode = {
   QUOTE_ADDRESS_MISMATCH: 'order.quote_address_mismatch',
+  QUOTE_EXPIRED: 'order.quote_expired',
   SOLD_OUT: 'order.sold_out',
   TIER_UNAVAILABLE: 'order.tier_unavailable',
   PAYMENT_DECLINED: 'order.payment_declined',

@@ -397,6 +397,19 @@ paths:
                   $ref: '#/components/examples/IdentityInvalidCredentialsError'
         '409':
           $ref: '#/components/responses/Conflict'
+        '410':
+          description: Resume cursor too old — a full reload is required, and the surface **knows** it.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiCursorTooOldError'
+                - $ref: '#/components/schemas/IdentityTwoFactorChallengeExpiredError'
+              examples:
+                api.cursor_too_old:
+                  $ref: '#/components/examples/ApiCursorTooOldError'
+                identity.two_factor_challenge_expired:
+                  $ref: '#/components/examples/IdentityTwoFactorChallengeExpiredError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -10951,6 +10964,19 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '410':
+          description: Resume cursor too old — a full reload is required, and the surface **knows** it.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiCursorTooOldError'
+                - $ref: '#/components/schemas/PayoutBankChangeRequestExpiredError'
+              examples:
+                api.cursor_too_old:
+                  $ref: '#/components/examples/ApiCursorTooOldError'
+                payout.bank_change_request_expired:
+                  $ref: '#/components/examples/PayoutBankChangeRequestExpiredError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -11838,7 +11864,9 @@ components:
           - channel.transfer_target_ineligible
           - channel.same_actor_forbidden
           - payout.reconciliation_discrepancy_unexplained
+          - payout.bank_change_request_expired
           - order.quote_address_mismatch
+          - order.quote_expired
           - order.sold_out
           - order.tier_unavailable
           - order.payment_declined
@@ -14954,6 +14982,105 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    ApiCursorTooOldError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.cursor_too_old
+            params:
+              type: object
+              properties:
+                maxAgeHours:
+                  type: integer
+                  format: int64
+              required:
+              - maxAgeHours
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    IdentityTwoFactorChallengeExpiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.two_factor_challenge_expired
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     ApiForbiddenError:
       type: object
       properties:
@@ -16890,6 +17017,53 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    PayoutBankChangeRequestExpiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: payout.bank_change_request_expired
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     PayoutReconciliationDiscrepancyUnexplainedError:
       type: object
       properties:
@@ -16951,6 +17125,15 @@ components:
       - servedAt
       additionalProperties: {}
   examples:
+    ApiCursorTooOldError:
+      value:
+        error:
+          code: api.cursor_too_old
+          nature: refused
+          params:
+            maxAgeHours: 24
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     ApiForbiddenError:
       value:
         error:
@@ -17255,6 +17438,14 @@ components:
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
+    IdentityTwoFactorChallengeExpiredError:
+      value:
+        error:
+          code: identity.two_factor_challenge_expired
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     IdentityTwoFactorRequiredError:
       value:
         error:
@@ -17283,6 +17474,14 @@ components:
             verdict: remove
             settledBy: Yann P.
             settledAt: '2026-09-21T19:31:18Z'
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    PayoutBankChangeRequestExpiredError:
+      value:
+        error:
+          code: payout.bank_change_request_expired
+          nature: refused
+          params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     PayoutReconciliationDiscrepancyUnexplainedError:

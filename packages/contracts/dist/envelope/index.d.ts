@@ -109,6 +109,7 @@ export declare const STOREFRONT_RELAYED_CODES: readonly [
     typeof IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED,
     typeof IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED,
     typeof OrderErrorCode.QUOTE_ADDRESS_MISMATCH,
+    typeof OrderErrorCode.QUOTE_EXPIRED,
     typeof OrderErrorCode.SOLD_OUT,
     typeof OrderErrorCode.TIER_UNAVAILABLE,
     typeof OrderErrorCode.PAYMENT_DECLINED,

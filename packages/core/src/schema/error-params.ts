@@ -158,11 +158,13 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
     currencyCode: text(),
     payoutIds: list(),
   }),
+  [PayoutErrorCode.BANK_CHANGE_REQUEST_EXPIRED]: none(),
 
   [OrderErrorCode.QUOTE_ADDRESS_MISMATCH]: z.looseObject({
     quotedCountryCode: text(),
     quotedPostalCode: text(),
   }),
+  [OrderErrorCode.QUOTE_EXPIRED]: none(),
   [OrderErrorCode.SOLD_OUT]: none(),
   [OrderErrorCode.TIER_UNAVAILABLE]: none(),
   [OrderErrorCode.PAYMENT_DECLINED]: z.looseObject({

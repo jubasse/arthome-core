@@ -76,6 +76,7 @@ export type CheckoutCartRoute = Route<{
     errorCodes: {
         402: readonly (typeof OrderErrorCode.PAYMENT_DECLINED)[];
         409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof OrderErrorCode.CHECKOUT_LINE_UNAVAILABLE | typeof OrderErrorCode.PRICE_STALE | typeof OrderErrorCode.QUOTE_ADDRESS_MISMATCH)[];
+        410: readonly (typeof OrderErrorCode.QUOTE_EXPIRED)[];
     };
 }>;
 export type GetOrderRoute = Route<{

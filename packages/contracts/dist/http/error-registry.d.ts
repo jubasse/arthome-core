@@ -75,7 +75,9 @@ export interface ErrorStatusMap {
     readonly [ChannelErrorCode.TRANSFER_TARGET_INELIGIBLE]: 409;
     readonly [ChannelErrorCode.SAME_ACTOR_FORBIDDEN]: 403;
     readonly [PayoutErrorCode.RECONCILIATION_DISCREPANCY_UNEXPLAINED]: 409;
+    readonly [PayoutErrorCode.BANK_CHANGE_REQUEST_EXPIRED]: 410;
     readonly [OrderErrorCode.QUOTE_ADDRESS_MISMATCH]: 409;
+    readonly [OrderErrorCode.QUOTE_EXPIRED]: 410;
     readonly [OrderErrorCode.SOLD_OUT]: 409;
     readonly [OrderErrorCode.TIER_UNAVAILABLE]: 409;
     readonly [OrderErrorCode.PAYMENT_DECLINED]: 402;

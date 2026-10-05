@@ -133,8 +133,10 @@ export interface ErrorParamsMap {
     currencyCode: string;
     payoutIds: string[];
   };
+  [PayoutErrorCode.BANK_CHANGE_REQUEST_EXPIRED]: NoErrorParams;
 
   [OrderErrorCode.QUOTE_ADDRESS_MISMATCH]: { quotedCountryCode: string; quotedPostalCode: string };
+  [OrderErrorCode.QUOTE_EXPIRED]: NoErrorParams;
   [OrderErrorCode.SOLD_OUT]: NoErrorParams;
   [OrderErrorCode.TIER_UNAVAILABLE]: NoErrorParams;
   [OrderErrorCode.PAYMENT_DECLINED]: { declineCode?: string };

@@ -115,8 +115,10 @@ export interface ErrorStatusMap {
   readonly [ChannelErrorCode.SAME_ACTOR_FORBIDDEN]: 403;
 
   readonly [PayoutErrorCode.RECONCILIATION_DISCREPANCY_UNEXPLAINED]: 409;
+  readonly [PayoutErrorCode.BANK_CHANGE_REQUEST_EXPIRED]: 410;
 
   readonly [OrderErrorCode.QUOTE_ADDRESS_MISMATCH]: 409;
+  readonly [OrderErrorCode.QUOTE_EXPIRED]: 410;
   readonly [OrderErrorCode.SOLD_OUT]: 409;
   readonly [OrderErrorCode.TIER_UNAVAILABLE]: 409;
   readonly [OrderErrorCode.PAYMENT_DECLINED]: 402;
@@ -363,11 +365,13 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
       payoutIds: ['019928e5-0000-7000-8000-000000000001'],
     },
   },
+  [PayoutErrorCode.BANK_CHANGE_REQUEST_EXPIRED]: { status: 410, example: {} },
 
   [OrderErrorCode.QUOTE_ADDRESS_MISMATCH]: {
     status: 409,
     example: { quotedCountryCode: 'FR', quotedPostalCode: '75011' },
   },
+  [OrderErrorCode.QUOTE_EXPIRED]: { status: 410, example: {} },
   [OrderErrorCode.SOLD_OUT]: { status: 409, example: {} },
   [OrderErrorCode.TIER_UNAVAILABLE]: { status: 409, example: {} },
   // Declined by the payment provider, which is not a rule of ours refusing (commerce.ts).

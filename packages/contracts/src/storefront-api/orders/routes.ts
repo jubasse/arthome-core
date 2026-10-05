@@ -77,6 +77,7 @@ export const checkoutCart: CheckoutCartRoute = orders.collectionAction('merch', 
   errors: [
     OrderErrorCode.CHECKOUT_LINE_UNAVAILABLE,
     OrderErrorCode.QUOTE_ADDRESS_MISMATCH,
+    OrderErrorCode.QUOTE_EXPIRED,
     OrderErrorCode.PRICE_STALE,
     OrderErrorCode.PAYMENT_DECLINED,
   ],

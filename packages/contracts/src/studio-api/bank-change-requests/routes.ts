@@ -1,4 +1,4 @@
-import { ApiErrorCode, ChannelErrorCode } from '@arthome/core';
+import { ApiErrorCode, ChannelErrorCode, PayoutErrorCode } from '@arthome/core';
 
 import { BankChangeRequestIdParameter, CountersignBankChangeBodySchema } from './schemas.js';
 import type { CountersignBankChangeRoute } from './types.js';
@@ -28,6 +28,6 @@ export const countersignBankChange: CountersignBankChangeRoute = bankChangeReque
     body: CountersignBankChangeBodySchema,
     response: BankChangeRequestSchema,
     answer: 'Counter-signed, transfers resumed.',
-    errors: [ChannelErrorCode.SAME_ACTOR_FORBIDDEN],
+    errors: [ChannelErrorCode.SAME_ACTOR_FORBIDDEN, PayoutErrorCode.BANK_CHANGE_REQUEST_EXPIRED],
   },
 );

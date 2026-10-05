@@ -1,5 +1,5 @@
 /** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
-import type { ApiErrorCode, ChannelErrorCode } from '@arthome/core';
+import type { ApiErrorCode, ChannelErrorCode, PayoutErrorCode } from '@arthome/core';
 import type { IdentifiedAccess, ItemResponse, JsonRequestBody, Route } from '../../http/index.js';
 import type { BankChangeRequestSchema } from '../../studio-money/index.js';
 import type { IdempotencyKeyParameter, IfRightsVersionParameter, SurfaceParameter, TraceparentParameter, operator, studioConventions } from '../components.js';
@@ -24,6 +24,7 @@ export type CountersignBankChangeRoute = Route<{
         403: readonly (typeof ApiErrorCode.FORBIDDEN | typeof ChannelErrorCode.SAME_ACTOR_FORBIDDEN)[];
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
         409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+        410: readonly (typeof PayoutErrorCode.BANK_CHANGE_REQUEST_EXPIRED)[];
     };
 }>;
 //# sourceMappingURL=types.d.ts.map

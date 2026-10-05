@@ -152,20 +152,25 @@ export declare const ChannelErrorCode: {
     readonly TRANSFER_TARGET_INELIGIBLE: "channel.transfer_target_ineligible";
     readonly SAME_ACTOR_FORBIDDEN: "channel.same_actor_forbidden";
 };
-/** Payout refusals: a period does not close over an unexplained discrepancy. */
-export declare const PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained"];
+/**
+ * Payout refusals: a period does not close over an unexplained discrepancy, and a bank change
+ * request past its deadline can no longer be countersigned.
+ */
+export declare const PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained", "payout.bank_change_request_expired"];
 export type PayoutErrorCode = (typeof PAYOUT_ERROR_CODES)[number];
 export declare const PayoutErrorCode: {
     readonly RECONCILIATION_DISCREPANCY_UNEXPLAINED: "payout.reconciliation_discrepancy_unexplained";
+    readonly BANK_CHANGE_REQUEST_EXPIRED: "payout.bank_change_request_expired";
 };
 /**
  * The viewer's commerce refusals: a purchase, a seat, a means of payment. `failureCode` narrows
  * it to the four a purchase command can refuse with.
  */
-export declare const ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.sold_out", "order.tier_unavailable", "order.payment_declined", "order.price_stale", "order.plan_unavailable", "order.contribution_out_of_range", "order.checkout_line_unavailable", "order.sales_queue_admission_required", "order.late_entry_unacknowledged", "order.sales_closed", "seat.cancel_deadline_passed", "payment_method.in_use"];
+export declare const ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.quote_expired", "order.sold_out", "order.tier_unavailable", "order.payment_declined", "order.price_stale", "order.plan_unavailable", "order.contribution_out_of_range", "order.checkout_line_unavailable", "order.sales_queue_admission_required", "order.late_entry_unacknowledged", "order.sales_closed", "seat.cancel_deadline_passed", "payment_method.in_use"];
 export type OrderErrorCode = (typeof ORDER_ERROR_CODES)[number];
 export declare const OrderErrorCode: {
     readonly QUOTE_ADDRESS_MISMATCH: "order.quote_address_mismatch";
+    readonly QUOTE_EXPIRED: "order.quote_expired";
     readonly SOLD_OUT: "order.sold_out";
     readonly TIER_UNAVAILABLE: "order.tier_unavailable";
     readonly PAYMENT_DECLINED: "order.payment_declined";

@@ -106,6 +106,7 @@ export type CheckoutCartRoute = Route<{
       | typeof OrderErrorCode.PRICE_STALE
       | typeof OrderErrorCode.QUOTE_ADDRESS_MISMATCH
     )[];
+    410: readonly (typeof OrderErrorCode.QUOTE_EXPIRED)[];
   };
 }>;
 

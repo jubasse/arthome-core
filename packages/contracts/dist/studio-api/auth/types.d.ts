@@ -40,6 +40,7 @@ export type VerifyTwoFactorStudioRoute = Route<{
     errorCodes: {
         401: readonly (typeof IdentityErrorCode.INVALID_CREDENTIALS)[];
         409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
+        410: readonly (typeof IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED)[];
     };
 }>;
 export type RequestPasswordResetStudioRoute = Route<{

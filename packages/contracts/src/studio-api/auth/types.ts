@@ -65,6 +65,7 @@ export type VerifyTwoFactorStudioRoute = Route<{
     409: readonly (
       typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
     )[];
+    410: readonly (typeof IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED)[];
   };
 }>;
 

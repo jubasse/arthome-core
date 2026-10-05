@@ -629,7 +629,7 @@ Declarations: `dist/index.d.ts` — 465 exported names.
 - `PAYMENT_EVENT_KINDS` (const) — `PAYMENT_EVENT_KINDS: readonly ["intent_succeeded", "intent_requires_action", "intent_processing", "intent_failed", "intent_cancelled", "unhandled"]` — What a provider's webhook says happened to an intent, recorded before anything reads it.
 - `PAYMENT_WEBHOOK_TOLERANCE_SECONDS` (const) — `PAYMENT_WEBHOOK_TOLERANCE_SECONDS = 300` — adr-payments.md §7.1: a webhook signed further in the past than this is rejected.
 - `PAYOUT_DELAY_DAYS` (const) — `PAYOUT_DELAY_DAYS = 14` — 'payoutDelayDays: 14'.
-- `PAYOUT_ERROR_CODES` (const) — `PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained"]` — Payout refusals: a period does not close over an unexplained discrepancy.
+- `PAYOUT_ERROR_CODES` (const) — `PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained", "payout.bank_change_request_expired"]` — Payout refusals: a period does not close over an unexplained discrepancy, and a bank change request past its deadline can no longer be coun…
 - `PAYOUT_STATES` (const) — `PAYOUT_STATES: readonly ["scheduled", "held", "paid", "refunded", "suspended"]` — Where a payout stands: 'held' while an outcome is open, 'refunded' if the date is cancelled, 'suspended' while a bank-details change waits …
 - `PLAN_OPENINGS` (const) — `PLAN_OPENINGS: readonly ["browse", "trailers", "free_dates", "replays", "no_ads", "one_live_month", "all_lives", "multi_screen", "archive"]` — The nine openings 'catalogue.json' carries.
 - `PLAN_TIERS` (const) — `PLAN_TIERS: readonly ["free", "pass", "premium"]` — The plan a viewer holds; 'catalogue.json' has authority.

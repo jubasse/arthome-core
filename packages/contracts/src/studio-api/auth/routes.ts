@@ -39,7 +39,7 @@ export const verifyTwoFactorStudio: VerifyTwoFactorStudioRoute = auth.collection
     body: VerifyTwoFactorStudioBodySchema,
     response: StudioSessionEstablishedSchema,
     answer: 'Session opened.',
-    errors: [IdentityErrorCode.INVALID_CREDENTIALS],
+    errors: [IdentityErrorCode.INVALID_CREDENTIALS, IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED],
   },
 );
 

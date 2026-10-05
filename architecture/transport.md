@@ -418,7 +418,7 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 | `403` | `refused` | `api.forbidden`, `api.sort_key_forbidden`, `api.rights_version_stale`, `pairing.identity_mismatch`, `order.sales_queue_admission_required` |
 | `404` | `refused` | `api.not_found` |
 | `409` | `refused` | `state.conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `capacity.tier_must_widen`; two are `unavailable`, since retrying succeeds: `api.idempotency_in_flight` (param `retryAfterMs`) and `show.slug_taken` (publishing again takes the next free slug) |
-| `410` | `refused` | `api.cursor_too_old`, `pairing.expired`, `watch.replay_expired` |
+| `410` | `refused` | `api.cursor_too_old`, `pairing.expired`, `watch.replay_expired`, `order.quote_expired`, `payout.bank_change_request_expired`, `identity.reset_token_expired`, `identity.one_time_token_expired`, `identity.two_factor_challenge_expired` |
 | `429` | `unavailable` | `api.rate_limited`, `chat.rate_limited` (param `retryAfterMs`) |
 | `500` | `unavailable` | `api.internal` — **never** the original error's message |
 | `502` | `unavailable` | `api.upstream_unavailable` (the BFF, for a service that failed) |
