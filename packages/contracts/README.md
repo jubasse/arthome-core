@@ -210,7 +210,7 @@ still on a bare builder is unchanged. Nothing the server can answer is undocumen
 | an `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` header on its successes |
 | an identity | `401`, the identity's codes, and on a write its write codes (the CSRF `403`, a stale rights version) |
 | a rule | the rule's codes (`403 api.reauthentication_required`, `429 api.rate_limited`) |
-| the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `504 api.upstream_timeout` and `api.deadline_exceeded` |
+| the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `503 api.service_unavailable` (its own, never relayed), `504 api.upstream_timeout` and `api.deadline_exceeded` |
 | a `cache` with an `etag` | `If-None-Match`, `ETag` and the `304` |
 | a response that carries a `sensitive` field | `Cache-Control: no-store` on it |
 
@@ -348,7 +348,7 @@ compile errors that name the operation. Measured on the 32 routes under a date, 
   the list also holds the derived codes of that status. `DERIVED_ERROR_CODES` lists the derived
   statuses and their codes.
 - **The typed client types the errors**: `ClientResponse<R>` is the route's declared statuses, the
-  statuses of its `errorCodes`, plus 400, 401, 403, 413, 415, 429, 500, 502 and 504 (those not
+  statuses of its `errorCodes`, plus 400, 401, 403, 413, 415, 429, 500, 502, 503 and 504 (those not
   declared by the route), each an `ErrorBody` of its codes: a union discriminated on `error.code`, so
   a surface narrows on a code and reads its params typed. The full derived set is added rather than the subset a route
   implies, so a surface switches on a `401` or a `429` with types on any route, and the cost is one

@@ -76,7 +76,7 @@ type ErrorAnswer<R extends RouteShape> = {
 
 /**
  * What a call answers: the statuses the route declares, typed by the route; the codes it declares,
- * by status (`errorCodes`); and the derived errors (400, 401, 403, 413, 415, 429, 500, 502, 504).
+ * by status (`errorCodes`); and the derived errors (400, 401, 403, 413, 415, 429, 500, 502, 503, 504).
  * An error body is a union discriminated on `error.code`, so a surface switches on a code with its
  * params typed, and a status that is none of these throws `UndeclaredStatusError`.
  */

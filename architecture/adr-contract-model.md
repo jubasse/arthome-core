@@ -517,7 +517,7 @@ viewer: restricted(ViewerOverlaySchema, 'signedIn'),
 | a write by cookie | the CSRF `403` the BFF already answers |
 | a rate limit | `429 api.rate_limited` |
 | a rule | its own codes |
-| the surface | `500 api.internal`; on a BFF, `502 api.upstream_unavailable`, `504 api.upstream_timeout`, `504 api.deadline_exceeded` |
+| the surface | `500 api.internal`; on a BFF, `502 api.upstream_unavailable`, `503 api.service_unavailable` (its own, never relayed), `504 api.upstream_timeout`, `504 api.deadline_exceeded` |
 
 ### 7.2 Errors produced before the handler
 

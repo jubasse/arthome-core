@@ -668,7 +668,7 @@ by the declaration, because nothing the server can answer is undocumented:
 | a write carrying `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` header |
 | an identity | `401`; a write by cookie, the CSRF `403`; the studio's `If-Rights-Version` and its `403 api.rights_version_stale`, and `X-Arthome-Rights-Version` on every success |
 | a rule | its codes (`api.reauthentication_required`, `api.rate_limited`) |
-| the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `504 api.upstream_timeout`, `504 api.deadline_exceeded` |
+| the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `503 api.service_unavailable` (its own, never relayed), `504 api.upstream_timeout`, `504 api.deadline_exceeded` |
 
 The framework's own refusals (a malformed JSON body, a wrong content type, a body over the ceiling,
 an unknown route) answer the envelope with these codes too, and an end-to-end test fails on a status

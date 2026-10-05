@@ -124,7 +124,7 @@ export interface ErrorModel<Allowed extends string> {
     Partial<Record<ErrorStatus, { readonly response: Response; readonly codes: readonly string[] }>>
   >;
   readonly envelopeOf: (code: string) => z.ZodType;
-  /** A BFF: its calls go through a service, so a route can answer `502` and `504`. */
+  /** A BFF: its calls go through a service, so a route can answer `502` and `504`, and `503` of its own. */
   readonly upstreams?: boolean;
   /** Never read at runtime: it carries `Allowed` to the compiler. */
   readonly allowed?: readonly Allowed[];
@@ -224,6 +224,7 @@ export const DERIVED_ERROR_CODES: {
   readonly 429: readonly [typeof ApiErrorCode.RATE_LIMITED];
   readonly 500: readonly [typeof ApiErrorCode.INTERNAL];
   readonly 502: readonly [typeof ApiErrorCode.UPSTREAM_UNAVAILABLE];
+  readonly 503: readonly [typeof ApiErrorCode.SERVICE_UNAVAILABLE];
   readonly 504: readonly [
     typeof ApiErrorCode.UPSTREAM_TIMEOUT,
     typeof ApiErrorCode.DEADLINE_EXCEEDED,
@@ -241,6 +242,7 @@ export const DERIVED_ERROR_CODES: {
   429: [ApiErrorCode.RATE_LIMITED],
   500: [ApiErrorCode.INTERNAL],
   502: [ApiErrorCode.UPSTREAM_UNAVAILABLE],
+  503: [ApiErrorCode.SERVICE_UNAVAILABLE],
   504: [ApiErrorCode.UPSTREAM_TIMEOUT, ApiErrorCode.DEADLINE_EXCEEDED],
 };
 

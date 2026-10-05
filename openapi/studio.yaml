@@ -281,6 +281,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/two-factor/verify:
@@ -403,6 +405,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/forget-password:
@@ -493,6 +497,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/bootstrap:
@@ -695,6 +701,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
     post:
@@ -788,6 +796,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/me/reauth:
@@ -948,6 +958,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
     get:
@@ -1016,6 +1028,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/me/devices:
@@ -1108,6 +1122,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/me/devices/{deviceId}:
@@ -1200,6 +1216,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/me/session:
@@ -1274,6 +1292,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/me/push-registrations:
@@ -1403,6 +1423,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/changes:
@@ -1498,6 +1520,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/me/preferences:
@@ -1609,6 +1633,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/me/duties:
@@ -1696,6 +1722,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/events:
@@ -1828,6 +1856,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/dashboard:
@@ -1981,6 +2011,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/stats:
@@ -2121,6 +2153,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/agenda:
@@ -2216,6 +2250,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/dates:
@@ -2366,6 +2402,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/sheet:
@@ -2444,6 +2482,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/panes/public:
@@ -2560,6 +2600,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/panes/replay:
@@ -2672,6 +2714,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/publication/transitions:
@@ -2858,6 +2902,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/replay-policy:
@@ -3002,6 +3048,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}:
@@ -3108,6 +3156,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/duplicate:
@@ -3231,6 +3281,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/outcome:
@@ -3431,6 +3483,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/panes/tickets:
@@ -3508,6 +3562,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/prices:
@@ -3690,6 +3746,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/capacity-tiers:
@@ -3850,6 +3908,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/technical-provision:
@@ -4002,6 +4062,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/seats/{seatId}/refund:
@@ -4132,6 +4194,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/complimentaries:
@@ -4251,6 +4315,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/ticketing:
@@ -4443,6 +4509,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/panes/chat:
@@ -4533,6 +4601,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/chat-policy:
@@ -4659,6 +4729,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/moderation/queue:
@@ -4782,6 +4854,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/moderation/items/{itemId}/claim:
@@ -4903,6 +4977,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
     delete:
@@ -5002,6 +5078,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/moderation/items/{itemId}/verdict:
@@ -5183,6 +5261,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/audience:
@@ -5280,6 +5360,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/audience/{memberId}/sanction:
@@ -5414,6 +5496,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/moderation/banned-words:
@@ -5526,6 +5610,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/moderation/banned-words/{word}:
@@ -5613,6 +5699,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/chat/messages:
@@ -5750,6 +5838,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/panes/tech:
@@ -5886,6 +5976,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/run:
@@ -5977,6 +6069,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/run/technical-check:
@@ -6075,6 +6169,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/run/rehearse:
@@ -6194,6 +6290,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/run/go-on-air:
@@ -6340,6 +6438,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/run/end:
@@ -6459,6 +6559,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/run/reset:
@@ -6578,6 +6680,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/run/quality-profile:
@@ -6716,6 +6820,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/run/health-samples:
@@ -6807,6 +6913,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
     post:
@@ -6921,6 +7029,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/run/chapters:
@@ -7036,6 +7146,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/run/chapters/{chapterId}:
@@ -7124,6 +7236,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/incidents:
@@ -7276,6 +7390,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/incidents/{incidentId}/resolve:
@@ -7360,6 +7476,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/incidents/{incidentId}/escalate:
@@ -7466,6 +7584,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/stream-key/reveal:
@@ -7587,6 +7707,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/stream-key/rotate:
@@ -7725,6 +7847,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/stream:
@@ -7855,6 +7979,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/panes/crew:
@@ -7992,6 +8118,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/members:
@@ -8100,6 +8228,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/invitations:
@@ -8237,6 +8367,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/invitations/{invitationId}/response:
@@ -8357,6 +8489,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/members/{personId}/change-roles:
@@ -8484,6 +8618,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/members/{personId}:
@@ -8572,6 +8708,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/crew:
@@ -8702,6 +8840,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/date-access-grants/{grantId}:
@@ -8792,6 +8932,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/ownership-transfer:
@@ -8929,6 +9071,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}:
@@ -9062,6 +9206,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/replays:
@@ -9190,6 +9336,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/settings:
@@ -9345,6 +9493,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
     patch:
@@ -9550,6 +9700,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/journal:
@@ -9679,6 +9831,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/uploads:
@@ -9800,6 +9954,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/merch-items:
@@ -9869,6 +10025,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/merch-items/{itemId}:
@@ -10039,6 +10197,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/merch-pin:
@@ -10137,6 +10297,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/replay-window:
@@ -10261,6 +10423,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/identity:
@@ -10404,6 +10568,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/payouts:
@@ -10530,6 +10696,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/bank-change-requests:
@@ -10657,6 +10825,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/bank-change-requests/{requestId}/countersign:
@@ -10789,6 +10959,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/reconciliation-periods/{periodId}/close:
@@ -10921,6 +11093,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/exports:
@@ -11053,6 +11227,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/exports/{exportId}:
@@ -11115,6 +11291,8 @@ paths:
           $ref: '#/components/responses/InternalError'
         '502':
           $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
         '504':
           $ref: '#/components/responses/GatewayTimeout'
 components:

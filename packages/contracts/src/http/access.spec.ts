@@ -168,7 +168,7 @@ describe('derived errors', () => {
     });
 
     expect(Object.keys(route.responses).sort()).toEqual(
-      ['200', '400', '401', '403', '409', '413', '415', '500', '502', '504'].sort(),
+      ['200', '400', '401', '403', '409', '413', '415', '500', '502', '503', '504'].sort(),
     );
     expect(route.bodyLimit).toBe(DEFAULT_BODY_LIMIT);
     expect(Object.keys(headersOf(route.responses[200]))).toContain('Idempotency-Replayed');
@@ -179,7 +179,7 @@ describe('derived errors', () => {
       .public()
       .defineRoute({ method: 'get', path: '/a', operationId: 'a', responses: ok });
 
-    expect(Object.keys(route.responses).sort()).toEqual(['200', '500', '502', '504']);
+    expect(Object.keys(route.responses).sort()).toEqual(['200', '500', '502', '503', '504']);
   });
 
   it('keeps a response the route writes whole over the derived one', () => {

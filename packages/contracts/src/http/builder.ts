@@ -418,6 +418,7 @@ function derivedCodes(
     if (settings.model?.upstreams === true) {
       add({
         502: [ApiErrorCode.UPSTREAM_UNAVAILABLE],
+        503: [ApiErrorCode.SERVICE_UNAVAILABLE],
         504: [ApiErrorCode.UPSTREAM_TIMEOUT, ApiErrorCode.DEADLINE_EXCEEDED],
       });
     } else if (access.kind === 'identified' && access.identity.internal) {
