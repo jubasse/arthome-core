@@ -14,7 +14,6 @@ import { studioApi } from './studio-api/index.js';
 const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
   'addCartLine',
   'cancelPairing',
-  'cancelSeat',
   'cancelSubscription',
   'changePassword',
   'checkoutCart',

@@ -11,19 +11,12 @@ import {
   PlanTier,
   PRICE_TIERS,
   PriceTier,
-  RefundReason,
   ReplayPolicy,
   RightsScope,
   Service,
 } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import {
-  MoneyOut,
-  uuidOut,
-  VOCABULARY_SOURCE_LOCAL,
-  vocabularyIn,
-  uuidIn,
-} from '@arthome/core/schema';
+import { MoneyOut, uuidOut, vocabularyIn, uuidIn } from '@arthome/core/schema';
 
 import {
   AdmissionTokenParameter,
@@ -74,15 +67,6 @@ const commerceWrites = commerceRoutes.security(
     bearerToken: [],
   },
 );
-const SeatIdParameter: PathParameter<'seatId', z.ZodString> = {
-  name: 'seatId',
-  in: 'path',
-  required: true,
-  schema: uuidIn(),
-};
-const seats = commerceWrites.resource('seats', { id: SeatIdParameter });
-
-const CANCEL_SEAT_CANCEL_REASON_CODE = ['viewer_request'] as const;
 
 export const refreshDateAvailability: Route<{
   method: 'get';
@@ -819,170 +803,6 @@ export const getOrder: Route<{
       },
     },
     404: NotFoundResponse,
-  },
-});
-
-export const cancelSeat: Route<{
-  method: 'post';
-  version: 1;
-  path: '/seats/{seatId}/cancel';
-  parameters: readonly [
-    PathParameter<'seatId', z.ZodString>,
-    typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  requestBody: JsonRequestBody<
-    z.ZodObject<
-      { cancelReasonCode: z.ZodOptional<VocabularyIn<typeof CANCEL_SEAT_CANCEL_REASON_CODE>> },
-      z.core.$strip
-    >,
-    false
-  >;
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StorefrontEnvelopeMetaSchema,
-        z.ZodObject<
-          {
-            data: z.ZodObject<
-              {
-                ticket: z.ZodOptional<typeof TicketCardSchema>;
-                date: z.ZodOptional<typeof DateCardSchema>;
-              },
-              z.core.$loose
-            >;
-          },
-          z.core.$loose
-        >
-      >
-    >;
-    404: typeof NotFoundResponse;
-    409: typeof ConflictResponse;
-    403: typeof CsrfRefusedResponse;
-  };
-}> = seats.action('cancel', {
-  operationId: 'cancelSeat',
-  summary: 'Cancels a seat before its deadline.',
-  description:
-    'The deadline is **served as an instant** on the seat (`cancelDeadline`), never as the\nsentence "up to 1 h before". The refusal after the deadline carries\n`seat.cancel_deadline_passed`, with the instant as a parameter.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.TICKETING],
-  'x-arthome-invalidates': ['account:tickets', 'date:{dateId}:availability'],
-  body: z.object({
-    cancelReasonCode: vocabularyIn(CANCEL_SEAT_CANCEL_REASON_CODE)
-      .meta({
-        'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
-        'x-arthome-vocabulary-reason':
-          'A single-member enum: it records the actor on an audit line, and this path has exactly one actor. Flagged in the description as a question, not settled as a vocabulary.',
-        description:
-          '**One member, and that is a question rather than a vocabulary.** A field whose\nenum has a single value carries no information: every request that reaches this\npath says the same thing. It is here because the audit line must record *who*\nasked — and a viewer cancelling their own seat is the only actor this path has.\n\n**What would make it a vocabulary is a second actor**, and there is one in the\ndomain already: the studio cancels seats too, through `refundSeat`, with its own\nfour-member `refundReasonCode`. If those two paths ever merge, this field becomes\nthe merged reason and the single member becomes the first of several. Until then\nit is a placeholder that is honest about being one.\n',
-      })
-      .optional(),
-  }),
-  example: {
-    cancelReasonCode: RefundReason.VIEWER_REQUEST,
-  },
-  optionalBody: true,
-  responses: {
-    200: {
-      description: 'Seat cancelled, with the refund and its delay code.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              data: z.looseObject({
-                ticket: TicketCardSchema.optional(),
-                date: DateCardSchema.optional(),
-              }),
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T17:10:00.000Z',
-            data: {
-              ticket: {
-                seatId: '019928f5-0000-7000-8000-000000000001',
-                dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
-                seatCode: 'ATH-7QK2-4M',
-                tier: PriceTier.FULL,
-                state: OrderState.REFUNDED,
-                date: {
-                  id: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
-                  showId: '019928a0-7d31-7a10-b8c4-2f9e11a4c111',
-                  channelId: '019928a0-7d31-7a10-b8c4-2f9e11a4c222',
-                  slug: '2026-09-21',
-                  canonicalUrl: 'https://arthome.fr/show/nuit-blanche/date/2026-09-21',
-                  title: 'Nuit blanche',
-                  startsAt: '2026-09-21T19:00:00Z',
-                  venueClock: {
-                    venueTimezone: 'Europe/Paris',
-                    venueUtcOffsetMin: 120,
-                  },
-                  runtimeMin: 95,
-                  roomOpensAt: '2026-09-21T18:30:00Z',
-                  displayState: DisplayState.SCHEDULED,
-                  displayStateValidUntil: '2026-09-21T18:30:00Z',
-                  replay: {
-                    policy: ReplayPolicy.INCLUDED,
-                    windowHours: 72,
-                  },
-                  rights: {
-                    scope: RightsScope.WORLDWIDE,
-                    blackoutCountries: [],
-                  },
-                  media: {
-                    wide: [],
-                    poster: [],
-                  },
-                },
-                refund: {
-                  amount: {
-                    amountMinor: 2400,
-                    currencyCode: 'EUR',
-                  },
-                  delayCode: 'refund_delay_business_days_3_5',
-                  method: 'original_payment_method',
-                  refundReasonCode: RefundReason.VIEWER_REQUEST,
-                },
-              },
-              date: {
-                id: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
-                showId: '019928a0-7d31-7a10-b8c4-2f9e11a4c111',
-                channelId: '019928a0-7d31-7a10-b8c4-2f9e11a4c222',
-                slug: '2026-09-21',
-                canonicalUrl: 'https://arthome.fr/show/nuit-blanche/date/2026-09-21',
-                title: 'Nuit blanche',
-                startsAt: '2026-09-21T19:00:00Z',
-                venueClock: {
-                  venueTimezone: 'Europe/Paris',
-                  venueUtcOffsetMin: 120,
-                },
-                runtimeMin: 95,
-                roomOpensAt: '2026-09-21T18:30:00Z',
-                displayState: DisplayState.SCHEDULED,
-                displayStateValidUntil: '2026-09-21T18:30:00Z',
-                replay: {
-                  policy: ReplayPolicy.INCLUDED,
-                  windowHours: 72,
-                },
-                rights: {
-                  scope: RightsScope.WORLDWIDE,
-                  blackoutCountries: [],
-                },
-                media: {
-                  wide: [],
-                  poster: [],
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    404: NotFoundResponse,
-    409: ConflictResponse,
-    403: CsrfRefusedResponse,
   },
 });
 

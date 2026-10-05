@@ -14,7 +14,6 @@ import { studioApi } from './studio-api/index.js';
 const STOREFRONT_STILL_INLINE: readonly string[] = [
   'addCartLine',
   'cancelPairing',
-  'cancelSeat',
   'cancelSubscription',
   'changePassword',
   'checkoutCart',

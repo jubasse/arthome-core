@@ -25,7 +25,6 @@ import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
 import {
   addCartLine,
-  cancelSeat,
   cancelSubscription,
   checkoutCart,
   enterSalesQueue,
@@ -133,6 +132,7 @@ import {
 } from './pairing.js';
 import { listPlans } from './plans/routes.js';
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
+import { cancelSeat } from './seats/routes.js';
 import {
   ArtistDetailSchema,
   ArtistSummarySchema,

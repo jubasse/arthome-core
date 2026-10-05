@@ -7,7 +7,6 @@ import { DateCardSchema, PriceTierSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
 import { CartQuoteSchema, CartSchema, OrderSchema, PaymentHandoffSchema, SalesQueuePositionSchema, SeatQuoteSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
-declare const CANCEL_SEAT_CANCEL_REASON_CODE: readonly ["viewer_request"];
 export declare const refreshDateAvailability: Route<{
     method: 'get';
     version: 1;
@@ -152,31 +151,6 @@ export declare const getOrder: Route<{
             }, z.core.$loose>;
         }, z.core.$loose>>>;
         404: typeof NotFoundResponse;
-    };
-}>;
-export declare const cancelSeat: Route<{
-    method: 'post';
-    version: 1;
-    path: '/seats/{seatId}/cancel';
-    parameters: readonly [
-        PathParameter<'seatId', z.ZodString>,
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        cancelReasonCode: z.ZodOptional<VocabularyIn<typeof CANCEL_SEAT_CANCEL_REASON_CODE>>;
-    }, z.core.$strip>, false>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodObject<{
-                ticket: z.ZodOptional<typeof TicketCardSchema>;
-                date: z.ZodOptional<typeof DateCardSchema>;
-            }, z.core.$loose>;
-        }, z.core.$loose>>>;
-        404: typeof NotFoundResponse;
-        409: typeof ConflictResponse;
-        403: typeof CsrfRefusedResponse;
     };
 }>;
 export declare const joinWaitlist: Route<{
@@ -392,5 +366,4 @@ export declare const cancelSubscription: Route<{
         403: typeof CsrfRefusedResponse;
     };
 }>;
-export {};
 //# sourceMappingURL=commerce.d.ts.map
