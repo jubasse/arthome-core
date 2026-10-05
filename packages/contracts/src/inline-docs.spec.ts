@@ -13,34 +13,7 @@ import { studioApi } from './studio-api/index.js';
  */
 const STOREFRONT_STILL_INLINE: readonly string[] = [];
 
-const STUDIO_STILL_INLINE: readonly string[] = [
-  'claimModerationItem',
-  'countersignBankChange',
-  'createReauthToken',
-  'createUploadTicket',
-  'escalateIncidentToProduction',
-  'getChannelExport',
-  'getStudioBootstrap',
-  'listDuties',
-  'listInbox',
-  'listReauthFactors',
-  'listStudioChanges',
-  'listStudioDevices',
-  'markInboxRead',
-  'refundSeat',
-  'registerStudioPushToken',
-  'releaseModerationItem',
-  'requestPasswordResetStudio',
-  'resolveIncident',
-  'respondToInvitation',
-  'revokeDateAccess',
-  'revokeStudioDevice',
-  'settleModerationItem',
-  'signInStudio',
-  'signOutStudio',
-  'updateStudioPreferences',
-  'verifyTwoFactorStudio',
-];
+const STUDIO_STILL_INLINE: readonly string[] = [];
 
 const DOC_ONLY_KEYS = [
   'x-arthome-maturity',

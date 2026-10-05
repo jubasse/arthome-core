@@ -13,34 +13,7 @@ import { studioApi } from './studio-api/index.js';
  */
 const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [];
 
-const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
-  'claimModerationItem',
-  'countersignBankChange',
-  'createReauthToken',
-  'createUploadTicket',
-  'escalateIncidentToProduction',
-  'getChannelExport',
-  'getStudioBootstrap',
-  'listDuties',
-  'listInbox',
-  'listReauthFactors',
-  'listStudioChanges',
-  'listStudioDevices',
-  'markInboxRead',
-  'refundSeat',
-  'registerStudioPushToken',
-  'releaseModerationItem',
-  'requestPasswordResetStudio',
-  'resolveIncident',
-  'respondToInvitation',
-  'revokeDateAccess',
-  'revokeStudioDevice',
-  'settleModerationItem',
-  'signInStudio',
-  'signOutStudio',
-  'updateStudioPreferences',
-  'verifyTwoFactorStudio',
-];
+const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [];
 
 describe.each([
   ['storefront', storefrontApi, STOREFRONT_NOT_YET_OPTED_IN],

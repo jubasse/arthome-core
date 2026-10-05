@@ -1,23 +1,9 @@
 import { MoneyOut } from '@arthome/core/schema';
 
-import { listDuties } from './agenda.js';
-import {
-  createReauthToken,
-  getStudioBootstrap,
-  listInbox,
-  listReauthFactors,
-  listStudioChanges,
-  listStudioDevices,
-  markInboxRead,
-  registerStudioPushToken,
-  requestPasswordResetStudio,
-  revokeStudioDevice,
-  signInStudio,
-  signOutStudio,
-  updateStudioPreferences,
-  verifyTwoFactorStudio,
-} from './bootstrap.js';
-import { createUploadTicket } from './channel.js';
+import { signInStudio, verifyTwoFactorStudio, requestPasswordResetStudio } from './auth/routes.js';
+import { countersignBankChange } from './bank-change-requests/routes.js';
+import { getStudioBootstrap } from './bootstrap/routes.js';
+import { listStudioChanges } from './changes/routes.js';
 import {
   addBannedWord,
   changeMemberRoles,
@@ -79,7 +65,7 @@ import {
   BadGatewayResponse,
   GatewayTimeoutResponse,
 } from './components.js';
-import { respondToInvitation, revokeDateAccess } from './crew.js';
+import { revokeDateAccess } from './date-access-grants/routes.js';
 import {
   decideDateOutcome,
   deleteDate,
@@ -117,10 +103,27 @@ import {
   setTechnicalProvision,
   submitHealthSample,
 } from './dates/routes.js';
-import { claimModerationItem, releaseModerationItem, settleModerationItem } from './moderation.js';
-import { countersignBankChange, getChannelExport } from './payouts.js';
-import { escalateIncidentToProduction, resolveIncident } from './run.js';
-import { refundSeat } from './ticketing.js';
+import { getChannelExport } from './exports/routes.js';
+import { listInbox, markInboxRead } from './inbox/routes.js';
+import { resolveIncident, escalateIncidentToProduction } from './incidents/routes.js';
+import { respondToInvitation } from './invitations/routes.js';
+import {
+  createReauthToken,
+  listReauthFactors,
+  listStudioDevices,
+  revokeStudioDevice,
+  signOutStudio,
+  registerStudioPushToken,
+  updateStudioPreferences,
+  listDuties,
+} from './me/routes.js';
+import {
+  claimModerationItem,
+  releaseModerationItem,
+  settleModerationItem,
+} from './moderation/routes.js';
+import { refundSeat } from './seats/routes.js';
+import { createUploadTicket } from './uploads/routes.js';
 import {
   StudioEnvelopeMetaSchema,
   StudioErrorEnvelopeSchema,

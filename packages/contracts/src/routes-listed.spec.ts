@@ -26,17 +26,22 @@ import * as storefrontSeats from './storefront-api/seats/routes.js';
 import * as storefrontSubscription from './storefront-api/subscription/routes.js';
 import * as storefrontSupport from './storefront-api/support/routes.js';
 import * as storefrontViewerContext from './storefront-api/viewer-context/routes.js';
-import * as studioAgenda from './studio-api/agenda.js';
-import * as studioBootstrap from './studio-api/bootstrap.js';
-import * as studioChannel from './studio-api/channel.js';
+import * as studioAuth from './studio-api/auth/routes.js';
+import * as studioBankChangeRequests from './studio-api/bank-change-requests/routes.js';
+import * as studioBootstrap from './studio-api/bootstrap/routes.js';
+import * as studioChanges from './studio-api/changes/routes.js';
 import * as studioChannels from './studio-api/channels/routes.js';
-import * as studioCrew from './studio-api/crew.js';
+import * as studioDateAccessGrants from './studio-api/date-access-grants/routes.js';
 import * as studioDates from './studio-api/dates/routes.js';
+import * as studioExports from './studio-api/exports/routes.js';
+import * as studioInbox from './studio-api/inbox/routes.js';
+import * as studioIncidents from './studio-api/incidents/routes.js';
 import { studioApi } from './studio-api/index.js';
-import * as studioModeration from './studio-api/moderation.js';
-import * as studioPayouts from './studio-api/payouts.js';
-import * as studioRun from './studio-api/run.js';
-import * as studioTicketing from './studio-api/ticketing.js';
+import * as studioInvitations from './studio-api/invitations/routes.js';
+import * as studioMe from './studio-api/me/routes.js';
+import * as studioModerationItems from './studio-api/moderation/routes.js';
+import * as studioSeats from './studio-api/seats/routes.js';
+import * as studioUploads from './studio-api/uploads/routes.js';
 
 type Module = Readonly<Record<string, unknown>>;
 
@@ -95,16 +100,21 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
     'studio-api',
     studioApi,
     [
-      studioAgenda,
+      studioAuth,
+      studioBankChangeRequests,
       studioBootstrap,
-      studioChannel,
+      studioChanges,
       studioChannels,
-      studioCrew,
+      studioDateAccessGrants,
       studioDates,
-      studioModeration,
-      studioPayouts,
-      studioRun,
-      studioTicketing,
+      studioExports,
+      studioInbox,
+      studioIncidents,
+      studioInvitations,
+      studioMe,
+      studioModerationItems,
+      studioSeats,
+      studioUploads,
     ],
   ],
 ];

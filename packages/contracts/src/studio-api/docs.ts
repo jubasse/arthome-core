@@ -2,44 +2,38 @@ import { MemberRole } from '@arthome/core';
 
 import { StudioTag } from './components.js';
 import type { RouteDefinition } from '../http/index.js';
-import type { ApiDocs, ModuleDocs, OperationDocumentation } from '../openapi/docs.js';
+import type { ApiDocs, OperationDocumentation } from '../openapi/docs.js';
 import { apiDocs, documentationLookup } from '../openapi/docs.js';
+import { authDocs } from './auth/docs.js';
+import { authExamples } from './auth/examples.js';
+import { bankChangeRequestsDocs } from './bank-change-requests/docs.js';
+import { bankChangeRequestsExamples } from './bank-change-requests/examples.js';
+import { bootstrapDocs } from './bootstrap/docs.js';
+import { bootstrapExamples } from './bootstrap/examples.js';
+import { changesDocs } from './changes/docs.js';
+import { changesExamples } from './changes/examples.js';
 import { channelsDocs } from './channels/docs.js';
 import { channelsExamples } from './channels/examples.js';
+import { dateAccessGrantsDocs } from './date-access-grants/docs.js';
+import { dateAccessGrantsExamples } from './date-access-grants/examples.js';
 import { datesDocs } from './dates/docs.js';
 import { datesExamples } from './dates/examples.js';
 import { sharedExamples } from './examples.js';
-
-/**
- * The operations whose maturity is not their owning service's (`transport.md` §5.11). Each entry
- * moves into its module's docs when the module converts.
- */
-const statedMaturities = {
-  listStudioChanges: {
-    maturity: 'stable',
-    maturityReason: 'realtime is not a service, and the change feed is a shape the BFF owns',
-  },
-  createReauthToken: {
-    maturity: 'provisional',
-    maturityReason: 'studio re-authentication is not built',
-  },
-  listReauthFactors: {
-    maturity: 'provisional',
-    maturityReason: 'studio re-authentication is not built',
-  },
-  listStudioDevices: {
-    maturity: 'provisional',
-    maturityReason: 'studio device sessions (D-118) are not built',
-  },
-  revokeStudioDevice: {
-    maturity: 'provisional',
-    maturityReason: 'studio device sessions (D-118) are not built',
-  },
-  signOutStudio: {
-    maturity: 'provisional',
-    maturityReason: 'studio device sessions (D-118) are not built',
-  },
-} satisfies ModuleDocs;
+import { exportsDocs } from './exports/docs.js';
+import { inboxDocs } from './inbox/docs.js';
+import { inboxExamples } from './inbox/examples.js';
+import { incidentsDocs } from './incidents/docs.js';
+import { incidentsExamples } from './incidents/examples.js';
+import { invitationsDocs } from './invitations/docs.js';
+import { invitationsExamples } from './invitations/examples.js';
+import { meDocs } from './me/docs.js';
+import { meExamples } from './me/examples.js';
+import { moderationDocs } from './moderation/docs.js';
+import { moderationExamples } from './moderation/examples.js';
+import { seatsDocs } from './seats/docs.js';
+import { seatsExamples } from './seats/examples.js';
+import { uploadsDocs } from './uploads/docs.js';
+import { uploadsExamples } from './uploads/examples.js';
 
 /** The studio document's introduction, and the docs and examples its modules register. */
 export const studioDocs: ApiDocs = apiDocs({
@@ -128,8 +122,40 @@ export const studioDocs: ApiDocs = apiDocs({
         '**`studio-mobile` cannot hold its session in a cookie**: `capacitor://localhost` is a\nthird-party context on iOS. The studio BFF therefore offers a **bearer-token** session\nalongside the cookie session — a refresh token bound to the device, kept in the native store\n(`@capacitor/preferences`, **never `localStorage`**), a short access token, revocation per\ndevice.\n\nOn returning from the background with an expired token: **silent refresh**. A\nre-authentication while on duty is an operational fault. It is required only for\n**sensitive operations** — revealing or rotating a stream key, transferring ownership of a\nchannel, changing a payout method — and it is then asked for **at the moment of the\noperation**, not on returning to a screen.\n\nAllowed origins on the CORS side, as **literal strings**: `capacitor://localhost` and\n`https://localhost`. A bare `localhost` entry covers neither, `*` is illegal with credentialed\nrequests, and a framework that normalises the origin through a URL parser would reject\n`capacitor://`.\n',
     },
   },
-  modules: [statedMaturities, datesDocs, channelsDocs],
-  examples: [sharedExamples, datesExamples, channelsExamples],
+  modules: [
+    authDocs,
+    bankChangeRequestsDocs,
+    bootstrapDocs,
+    changesDocs,
+    channelsDocs,
+    dateAccessGrantsDocs,
+    datesDocs,
+    exportsDocs,
+    inboxDocs,
+    incidentsDocs,
+    invitationsDocs,
+    meDocs,
+    moderationDocs,
+    seatsDocs,
+    uploadsDocs,
+  ],
+  examples: [
+    sharedExamples,
+    authExamples,
+    bankChangeRequestsExamples,
+    bootstrapExamples,
+    changesExamples,
+    channelsExamples,
+    dateAccessGrantsExamples,
+    datesExamples,
+    inboxExamples,
+    incidentsExamples,
+    invitationsExamples,
+    meExamples,
+    moderationExamples,
+    seatsExamples,
+    uploadsExamples,
+  ],
 });
 
 /** Each studio operation's prose and doc-only metadata, by route: for a server's own docs. Server only. */

@@ -5,6 +5,7 @@ import {
   Locale,
   ModerationItemState,
   ModerationReason,
+  ModerationVerdict,
   StateChangeOrigin,
   Surface,
 } from '@arthome/core';
@@ -59,6 +60,52 @@ const moderationItem: z.output<typeof ModerationItemSchema> = {
   version: 1,
 };
 
+const claimedModerationItem: z.output<typeof ModerationItemSchema> = {
+  id: '019928e0-0000-7000-8000-000000000001',
+  messageId: '019928f8-0000-7000-8000-000000000009',
+  dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+  state: ModerationItemState.CLAIMED,
+  reportsCount: 3,
+  atMediaSec: 1812,
+  claimedBy: {
+    personId: '019928b0-0000-7000-8000-000000000001',
+    displayName: 'Claire D.',
+    surface: Surface.STUDIO_MOBILE,
+  },
+  claimExpiresAt: '2026-09-21T19:32:10Z',
+  version: 2,
+  decisionVersion: 0,
+};
+
+const releasedModerationItem: z.output<typeof ModerationItemSchema> = {
+  id: '019928e0-0000-7000-8000-000000000001',
+  messageId: '019928f8-0000-7000-8000-000000000009',
+  dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+  state: ModerationItemState.REPORTED,
+  reportsCount: 3,
+  atMediaSec: 1812,
+  version: 3,
+};
+
+const settledModerationItem: z.output<typeof ModerationItemSchema> = {
+  id: '019928e0-0000-7000-8000-000000000001',
+  messageId: '019928f8-0000-7000-8000-000000000009',
+  dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+  state: ModerationItemState.SETTLED,
+  verdict: ModerationVerdict.MUTE,
+  reportsCount: 3,
+  atMediaSec: 1812,
+  settledBy: {
+    personId: '019928b0-0000-7000-8000-000000000001',
+    displayName: 'Claire D.',
+    surface: Surface.STUDIO_MOBILE,
+  },
+  settledAt: '2026-09-21T19:31:20Z',
+  origin: StateChangeOrigin.HUMAN_VERDICT,
+  version: 3,
+  decisionVersion: 1,
+};
+
 const exportJobs: readonly z.output<typeof ExportJobSchema>[] = [
   {
     exportId: '019928e8-0000-7000-8000-000000000001',
@@ -86,5 +133,8 @@ export const sharedExamples: ModuleExamples = [
   [ReauthProof, [{ reauthToken: 'ott_9f2ac1' }]],
   [BankChangeRequestSchema, bankChangeRequests],
   [ExportJobSchema, exportJobs],
-  [ModerationItemSchema, [moderationItem]],
+  [
+    ModerationItemSchema,
+    [moderationItem, claimedModerationItem, releasedModerationItem, settledModerationItem],
+  ],
 ];
