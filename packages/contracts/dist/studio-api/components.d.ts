@@ -3,7 +3,7 @@ import { ApiErrorCode, Surface } from '@arthome/core';
 import type { ErrorCode } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { AccessorOf, ErrorModel, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, CodedResponse } from '../http/index.js';
+import type { AccessorOf, ErrorModel, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, RecentAuth, Response, ResourceConventions, RouteBuilder, CodedResponse } from '../http/index.js';
 declare const SURFACE: readonly [typeof Surface.STUDIO_WEB, typeof Surface.STUDIO_MOBILE];
 declare const SORT_DIR: readonly ["asc", "desc"];
 declare const STUDIO_TAGS: readonly ["bootstrap", "agenda", "publication", "ticketing", "run", "moderation", "crew", "payouts", "channel"];
@@ -87,6 +87,11 @@ export declare const OperatorPrincipalSchema: z.ZodObject<{
 }, z.core.$strip>;
 /** A signed-in channel member, by session cookie (a write carries its CSRF token) or bearer token; a write carries the rights version it holds. */
 export declare const operator: Identity<'operator', typeof OperatorPrincipalSchema, typeof ApiErrorCode.RIGHTS_VERSION_STALE | typeof ApiErrorCode.FORBIDDEN, readonly [], readonly [typeof IfRightsVersionParameter]>;
+/** The commands a re-authentication token is minted for, one per token. */
+export declare const REAUTH_INTENTS: readonly ["reveal_stream_key", "rotate_stream_key", "transfer_ownership", "delete_channel", "change_bank_details"];
+export declare const ReauthIntent: AccessorOf<typeof REAUTH_INTENTS>;
+/** `requires: [recentAuth({ intent: ReauthIntent.DELETE_CHANNEL })]`: a token minted for another command is refused. */
+export declare const recentAuth: RecentAuth<typeof REAUTH_INTENTS>;
 export declare const studioV1: RouteBuilder<1, readonly [], Record<never, never>, ErrorCode, typeof studioConventions>;
 export {};
 //# sourceMappingURL=components.d.ts.map

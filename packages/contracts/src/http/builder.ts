@@ -332,7 +332,7 @@ type AnyBuilder = RouteBuilder<
 
 type CodesByStatus = Record<string, readonly string[]>;
 
-/** A rule that reads a body field finds it declared: `recentAuth()` on a body extending `ReauthProof`. */
+/** A rule that reads a body field finds it declared: `recentAuth({ intent })` on a body extending `ReauthProof`. */
 function checkProofs(
   operationId: string,
   requires: readonly Requirement[],

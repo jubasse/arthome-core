@@ -80,7 +80,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 181 exported names.
+Declarations: `dist/http/index.d.ts` — 182 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
@@ -167,7 +167,8 @@ Declarations: `dist/http/index.d.ts` — 181 exported names.
 - `PublicAccess` (interface)
 - `QueryParameter` (type)
 - `RESTRICTED_KEY` (const) — `RESTRICTED_KEY = "x-arthome-restricted"`
-- `ReauthProof` (const) — `ReauthProof: z.ZodObject<{ reauthToken: z.ZodString; }, z.core.$strip>` — The proof 'recentAuth()' reads: the body of a route that requires it extends this.
+- `ReauthProof` (const) — `ReauthProof: z.ZodObject<{ reauthToken: z.ZodString; }, z.core.$strip>` — The proof 'recentAuth({ intent })' reads: the body of a route that requires it extends this.
+- `RecentAuth` (type) — The 'recentAuth' rule of a surface, typed by its re-authentication intents.
 - `ReplaceRoute` (type)
 - `RequestBody` (interface)
 - `Requirement` (interface) — A rule beyond identity: a name the server maps to a guard, its parameters, and the codes it can answer.
@@ -243,7 +244,7 @@ Declarations: `dist/http/index.d.ts` — 181 exported names.
 - `period` (function) — `function period<const Required extends boolean = true>(options: PeriodOptions<Required>): Period<Required>;`
 - `perishable` (function) — `function perishable<S extends z.core.$ZodShape, C extends z.core.$ZodObjectConfig>(schema: z.ZodObject<S, C>): z.ZodObject<S & { validUntil: ValidUntil; }, C>;` — 'schema' with the 'validUntil' the envelope declares, for data that stops being true at an instant.
 - `querySchemaOf` (function) — `function querySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteQuery<R>, unknown>;` — The query a server validates: undeclared parameters refused, defaults not materialised.
-- `recentAuth` (function) — The caller holds a recent re-authentication: the proof is the body field 'proof' names (a token 'createReauthToken' minted), declared by ex…
+- `recentAuthOver` (function) — `function recentAuthOver<const Intents extends readonly string[]>(intents: Intents): RecentAuth<Intents>;` — The caller holds a recent re-authentication for the one command 'intent' names: the proof is the body's 'reauthToken' (the body extends 'Re…
 - `requirement` (function)
 - `restricted` (function) — `function restricted<S extends z.ZodType, const Right extends string>(schema: S, right: Right, meta?: Readonly<Record<string, unknown>>): z.ZodOptional<S>;` — A field present only for a caller who holds 'right': optional in the type and in the document, absent from the answer otherwise, never pres…
 - `restrictedFieldsOf` (function) — `function restrictedFieldsOf(schema: z.ZodType): readonly RestrictedField[];` — Each restricted field with the right that unlocks it.

@@ -89,7 +89,7 @@ import type {
   UpdateChannelSettingsRoute,
   UpsertMerchItemRoute,
 } from './types.js';
-import { Deleted, Freshness, cache, cursor, pages, recentAuth } from '../../http/index.js';
+import { Deleted, Freshness, cache, cursor, pages } from '../../http/index.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
 import {
   AudienceMemberSchema,
@@ -111,10 +111,12 @@ import {
   ChannelIdParameter,
   DateIdParameter,
   IdempotencyKeyParameter,
+  ReauthIntent,
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
   operator,
+  recentAuth,
   studioConventions,
   studioV1,
 } from '../components.js';
@@ -244,7 +246,7 @@ export const transferChannelOwnership: TransferChannelOwnershipRoute = crewChann
   {
     operationId: 'transferChannelOwnership',
     summary: 'Transfers ownership of the channel — two-stage.',
-    requires: [recentAuth()],
+    requires: [recentAuth({ intent: ReauthIntent.TRANSFER_OWNERSHIP })],
     body: TransferChannelOwnershipBodySchema,
     response: OwnershipTransferSchema,
     status: 202,
@@ -330,7 +332,7 @@ export const requestBankChange: RequestBankChangeRoute = payoutsChannel
   .create({
     operationId: 'requestBankChange',
     summary: 'Requests a change of bank details — dual signature.',
-    requires: [recentAuth()],
+    requires: [recentAuth({ intent: ReauthIntent.CHANGE_BANK_DETAILS })],
     body: RequestBankChangeBodySchema,
     item: BankChangeRequestSchema,
     status: 202,
@@ -455,7 +457,7 @@ export const deleteChannel: DeleteChannelRoute = channels.tags(StudioTag.CHANNEL
   path: '/channels/{channelId}',
   operationId: 'deleteChannel',
   summary: 'Deletes a channel.',
-  requires: [recentAuth()],
+  requires: [recentAuth({ intent: ReauthIntent.DELETE_CHANNEL })],
   parameters: [ChannelIdParameter, IdempotencyKeyParameter],
   requestBody: {
     required: true,

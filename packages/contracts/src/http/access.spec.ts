@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { ApiErrorCode } from '@arthome/core';
 
 import type { PrincipalOf } from './access.js';
-import { identity, recentAuth, requirement, roles, throttle } from './access.js';
+import { identity, recentAuthOver, requirement, roles, throttle } from './access.js';
 import { routeBuilder } from './builder.js';
 import { defineErrorModel } from './errors.js';
 import type { Response } from './index.js';
@@ -34,6 +34,7 @@ const rights = {
   required: false,
   schema: z.number(),
 } as const;
+const recentAuth = recentAuthOver(['delete_channel', 'reveal_stream_key'] as const);
 const operator = identity('operator', {
   schemes: { read: [session], write: [session] },
   principal: z.object({ roles: z.array(z.string()) }),
@@ -233,7 +234,11 @@ describe('derived errors', () => {
 
   it('merges the codes of a rule into its status', () => {
     const route = builder
-      .requires(roles('production').on('channelId'), recentAuth(), throttle('auth'))
+      .requires(
+        roles('production').on('channelId'),
+        recentAuth({ intent: 'delete_channel' }),
+        throttle('auth'),
+      )
       .defineRoute({
         method: 'post',
         path: '/a',
@@ -252,7 +257,7 @@ describe('derived errors', () => {
       method: 'post',
       path: '/a',
       operationId: 'a',
-      requires: [recentAuth()],
+      requires: [recentAuth({ intent: 'delete_channel' })],
       requestBody: { content: { 'application/json': { schema: ReauthProof } } },
       responses: ok,
     });
@@ -260,9 +265,20 @@ describe('derived errors', () => {
     expect(errorCodesOf(route, 403)).toContain(ApiErrorCode.REAUTHENTICATION_REQUIRED);
   });
 
+  it('binds a re-authentication to the one intent the route names, and refuses a route that names none', () => {
+    expect(recentAuth({ intent: 'reveal_stream_key' }).params).toEqual({
+      intent: 'reveal_stream_key',
+      proof: { in: 'body', name: 'reauthToken' },
+    });
+    // @ts-expect-error a re-authentication names the command its token was minted for.
+    expect(() => recentAuth()).toThrow();
+    // @ts-expect-error an intent outside the surface's intents does not compile, and throws when it loads.
+    expect(() => recentAuth({ intent: 'rotate_stream_key' })).toThrow('"rotate_stream_key"');
+  });
+
   it('refuses a route whose body lacks the proof a rule reads', () => {
     const define = (): unknown =>
-      builder.requires(recentAuth()).defineRoute({
+      builder.requires(recentAuth({ intent: 'delete_channel' })).defineRoute({
         method: 'post',
         path: '/a',
         operationId: 'a',

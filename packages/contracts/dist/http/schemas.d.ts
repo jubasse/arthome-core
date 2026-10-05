@@ -1,7 +1,7 @@
 /** Schemas that several routes repeat, written once. */
 import { z } from 'zod';
 import type { VocabularyIn } from '@arthome/core/schema';
-/** The proof `recentAuth()` reads: the body of a route that requires it extends this. */
+/** The proof `recentAuth({ intent })` reads: the body of a route that requires it extends this. */
 export declare const ReauthProof: z.ZodObject<{
     reauthToken: z.ZodString;
 }, z.core.$strip>;

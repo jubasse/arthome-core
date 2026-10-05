@@ -880,9 +880,8 @@ paths:
                   - transfer_ownership
                   - delete_channel
                   - change_bank_details
-                  x-arthome-vocabulary-source: none
-                  x-arthome-vocabulary-reason: A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.
-                  description: The command targeted. The token is valid for that one only.
+                  x-arthome-vocabulary-source: REAUTH_INTENTS
+                  description: 'The command targeted. The token is valid for that one only: the route names its intent in `x-arthome-requires`.'
                 factor:
                   type: string
                   enum:
@@ -7599,6 +7598,7 @@ paths:
       - run
       x-arthome-requires:
       - name: recentAuth
+        intent: reveal_stream_key
         proof:
           in: body
           name: reauthToken
@@ -7713,6 +7713,7 @@ paths:
       - run
       x-arthome-requires:
       - name: recentAuth
+        intent: rotate_stream_key
         proof:
           in: body
           name: reauthToken
@@ -8930,6 +8931,7 @@ paths:
       - crew
       x-arthome-requires:
       - name: recentAuth
+        intent: transfer_ownership
         proof:
           in: body
           name: reauthToken
@@ -9069,6 +9071,7 @@ paths:
       - channel
       x-arthome-requires:
       - name: recentAuth
+        intent: delete_channel
         proof:
           in: body
           name: reauthToken
@@ -10693,6 +10696,7 @@ paths:
       - payouts
       x-arthome-requires:
       - name: recentAuth
+        intent: change_bank_details
         proof:
           in: body
           name: reauthToken
@@ -10814,6 +10818,7 @@ paths:
       - payouts
       x-arthome-requires:
       - name: recentAuth
+        intent: change_bank_details
         proof:
           in: body
           name: reauthToken
