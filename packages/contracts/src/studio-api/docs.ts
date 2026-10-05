@@ -14,6 +14,8 @@ import { sharedExamples } from './examples.js';
 import { exportsDocs } from './exports/docs.js';
 import { invitationsDocs } from './invitations/docs.js';
 import { invitationsExamples } from './invitations/examples.js';
+import { seatsDocs } from './seats/docs.js';
+import { seatsExamples } from './seats/examples.js';
 import { uploadsDocs } from './uploads/docs.js';
 import { uploadsExamples } from './uploads/examples.js';
 
@@ -163,6 +165,7 @@ export const studioDocs: ApiDocs = apiDocs({
     uploadsDocs,
     dateAccessGrantsDocs,
     invitationsDocs,
+    seatsDocs,
   ],
   examples: [
     sharedExamples,
@@ -171,6 +174,7 @@ export const studioDocs: ApiDocs = apiDocs({
     uploadsExamples,
     dateAccessGrantsExamples,
     invitationsExamples,
+    seatsExamples,
   ],
 });
 

@@ -25,6 +25,7 @@ import * as studioModeration from './studio-api/moderation.js';
 import * as studioPayouts from './studio-api/payouts.js';
 import * as studioPublication from './studio-api/publication.js';
 import * as studioRun from './studio-api/run.js';
+import * as studioSeats from './studio-api/seats/routes.js';
 import * as studioTicketing from './studio-api/ticketing.js';
 import * as studioUploads from './studio-api/uploads/routes.js';
 
@@ -85,6 +86,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       studioUploads,
       studioDateAccessGrants,
       studioInvitations,
+      studioSeats,
     ],
   ],
 ];

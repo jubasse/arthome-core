@@ -129,7 +129,8 @@ import {
 } from './payouts.js';
 import { createDateDraft } from './publication.js';
 import { escalateIncidentToProduction, getChannelStreamSettings, resolveIncident } from './run.js';
-import { getChannelTicketing, refundSeat } from './ticketing.js';
+import { refundSeat } from './seats/routes.js';
+import { getChannelTicketing } from './ticketing.js';
 import { createUploadTicket } from './uploads/routes.js';
 import {
   StudioEnvelopeMetaSchema,

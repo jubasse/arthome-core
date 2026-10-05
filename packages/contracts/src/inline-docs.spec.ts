@@ -103,7 +103,6 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'listStudioChanges',
   'listStudioDevices',
   'markInboxRead',
-  'refundSeat',
   'registerStudioPushToken',
   'releaseModerationItem',
   'removeBannedWord',

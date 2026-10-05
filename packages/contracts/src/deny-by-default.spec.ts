@@ -102,7 +102,6 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'listStudioChanges',
   'listStudioDevices',
   'markInboxRead',
-  'refundSeat',
   'registerStudioPushToken',
   'releaseModerationItem',
   'removeBannedWord',
