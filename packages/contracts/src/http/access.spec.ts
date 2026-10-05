@@ -70,6 +70,25 @@ describe('identity', () => {
     expect(read.access).toEqual({ kind: 'identified', identity: viewer, optional: false });
   });
 
+  it('lets a write skip the CSRF token with a stated reason, and keeps the reason on the route', () => {
+    const exempt = base.identity(viewer, { csrfExempt: 'a lost CSRF cookie must not block it' });
+    const write = exempt.defineRoute({
+      method: 'post',
+      path: '/b',
+      operationId: 'b',
+      responses: ok,
+    });
+
+    expect(write.security).toEqual([session, bearer]);
+    expect(Object.keys(write.responses)).not.toContain('403');
+    expect(write.access).toEqual({
+      kind: 'identified',
+      identity: viewer,
+      optional: false,
+      csrfExempt: 'a lost CSRF cookie must not block it',
+    });
+  });
+
   it('opens a route with public() and lets an anonymous caller in with optionalAuth()', () => {
     const open = base
       .public()

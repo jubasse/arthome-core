@@ -9041,6 +9041,9 @@ components:
           - identity.two_factor_required
           - identity.signed_out_elsewhere
           - identity.verification_link_invalid
+          - identity.reset_token_expired
+          - identity.one_time_token_expired
+          - identity.two_factor_challenge_expired
           - pairing.slow_down
           - pairing.identity_mismatch
           - pairing.intent_not_engageable

@@ -518,6 +518,27 @@ export const viewer: Identity<
   writeResponses: { 403: CsrfRefusedResponse },
 });
 
+/**
+ * A signed-in viewer, or a device that holds only its device token: the bootstrap is read before
+ * any session. Reads accept either credential, a write takes the viewer's, and the principal says
+ * which one called.
+ */
+export const viewerOrDevice: Identity<
+  'viewer_or_device',
+  z.ZodUnion<readonly [typeof ViewerPrincipalSchema, typeof DevicePrincipalSchema]>,
+  typeof ApiErrorCode.FORBIDDEN,
+  readonly [],
+  readonly []
+> = identity('viewer_or_device', {
+  schemes: {
+    read: [{ sessionCookie: [] }, { bearerToken: [] }, { deviceToken: [] }],
+    write: [{ sessionCookie: [], csrfToken: [] }, { bearerToken: [] }],
+  },
+  principal: z.union([ViewerPrincipalSchema, DevicePrincipalSchema]),
+  writeErrors: [ApiErrorCode.FORBIDDEN],
+  writeResponses: { 403: CsrfRefusedResponse },
+});
+
 /** The television, paired to an account: it holds a device token and no session. */
 export const device: Identity<
   'paired_device',

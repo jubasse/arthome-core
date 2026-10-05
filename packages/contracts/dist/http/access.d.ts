@@ -67,6 +67,7 @@ export type Access = {
     readonly kind: 'identified';
     readonly identity: Identity;
     readonly optional: boolean;
+    readonly csrfExempt?: string;
 };
 export interface PublicAccess {
     readonly kind: 'anyone';
@@ -75,6 +76,8 @@ export interface IdentifiedAccess<I extends Identity, Optional extends boolean =
     readonly kind: 'identified';
     readonly identity: I;
     readonly optional: Optional;
+    /** Why a write by this identity takes no CSRF token: its schemes are those of a read, and it adds none of the identity's write codes. */
+    readonly csrfExempt?: string;
 }
 /**
  * What a handler receives for the caller: the identity's principal, or `null` where the route

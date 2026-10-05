@@ -77,6 +77,9 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
   [IdentityErrorCode.TWO_FACTOR_REQUIRED]: z.looseObject({ challengeId: text() }),
   [IdentityErrorCode.SIGNED_OUT_ELSEWHERE]: none(),
   [IdentityErrorCode.VERIFICATION_LINK_INVALID]: none(),
+  [IdentityErrorCode.RESET_TOKEN_EXPIRED]: none(),
+  [IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED]: none(),
+  [IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED]: none(),
 
   [PairingErrorCode.SLOW_DOWN]: z.looseObject({ retryAfterMs: count() }),
   [PairingErrorCode.IDENTITY_MISMATCH]: none(),

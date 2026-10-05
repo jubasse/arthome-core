@@ -81,7 +81,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 Declarations: `dist/http/index.d.ts` — 180 exported names.
 
 - `AcceptedOptions` (interface)
-- `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
+- `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
 - `AccessorOf` (type) — `type AccessorOf<T extends readonly string[]> = { readonly [Member in T[number] as Uppercase<Member>]: Member; };` — Named members for a list of words, 'CHAT' for ''chat'', so no module spells a member again.
 - `Acknowledged` (const) — `Acknowledged: z.ZodOptional<z.ZodObject<{ accepted: z.ZodOptional<z.ZodBoolean>; }, z.core.$loose>>` — The data of an action that answers only that it was done.
 - `ActionOptions` (type)

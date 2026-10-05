@@ -191,6 +191,7 @@ export interface RouteBuilder<
   /** Every route requires this identity unless it says otherwise; its security is derived from it. */
   identity<const I extends Identity>(
     identity: I,
+    options?: { readonly csrfExempt: string },
   ): RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, false>, Z>;
   /** No identity: sign-in, sign-up, public links. */
   public(): RouteBuilder<V, P, E, A, K, PublicAccess, Z>;
@@ -409,7 +410,7 @@ function derivedCodes(
   if (access?.kind === 'identified') {
     add({ 401: [ApiErrorCode.UNAUTHENTICATED] });
     add(access.identity.errors);
-    if (write) add(access.identity.writeErrors);
+    if (write && access.csrfExempt === undefined) add(access.identity.writeErrors);
   }
   for (const rule of definition.requires) add(rule.errors);
   if (access !== undefined) {
@@ -521,7 +522,10 @@ function withHeaders(
 
 function securityOf(access: Access, method: string): readonly SecurityRequirement[] {
   if (access.kind === 'anyone') return [];
-  const schemes = method === 'get' ? access.identity.schemes.read : access.identity.schemes.write;
+  const schemes =
+    method === 'get' || access.csrfExempt !== undefined
+      ? access.identity.schemes.read
+      : access.identity.schemes.write;
   return access.optional && method === 'get'
     ? [...schemes, ...access.identity.optionalAlso, {}]
     : access.optional
@@ -551,8 +555,15 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
     security: (...requirements: readonly SecurityRequirement[]) =>
       next({ security: Object.freeze([...requirements]) }),
     conventions: (conventions: ResourceConventions) => next({ conventions }),
-    identity: (identity: Identity) =>
-      next({ access: Object.freeze({ kind: 'identified', identity, optional: false }) }),
+    identity: (identity: Identity, options?: { readonly csrfExempt: string }) =>
+      next({
+        access: Object.freeze({
+          kind: 'identified',
+          identity,
+          optional: false,
+          ...(options !== undefined && { csrfExempt: options.csrfExempt }),
+        }),
+      }),
     public: () => next({ access: Object.freeze({ kind: 'anyone' }) }),
     optionalAuth: () => {
       if (settings.access?.kind !== 'identified') {
@@ -594,7 +605,7 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
       }
       const [ownBases, ownCodes] = split(errors ?? {});
       const identityBases =
-        access?.kind === 'identified' && rest.method !== 'get'
+        access?.kind === 'identified' && rest.method !== 'get' && access.csrfExempt === undefined
           ? access.identity.writeResponses
           : {};
       const tags = rest.tags ?? settings.tags;

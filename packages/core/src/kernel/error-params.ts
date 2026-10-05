@@ -71,6 +71,9 @@ export interface ErrorParamsMap {
   [IdentityErrorCode.TWO_FACTOR_REQUIRED]: { challengeId: string };
   [IdentityErrorCode.SIGNED_OUT_ELSEWHERE]: NoErrorParams;
   [IdentityErrorCode.VERIFICATION_LINK_INVALID]: NoErrorParams;
+  [IdentityErrorCode.RESET_TOKEN_EXPIRED]: NoErrorParams;
+  [IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED]: NoErrorParams;
+  [IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED]: NoErrorParams;
 
   [PairingErrorCode.SLOW_DOWN]: { retryAfterMs: number };
   [PairingErrorCode.IDENTITY_MISMATCH]: NoErrorParams;

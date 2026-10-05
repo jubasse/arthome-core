@@ -36,6 +36,9 @@ export interface ErrorStatusMap {
     readonly [IdentityErrorCode.TWO_FACTOR_REQUIRED]: 401;
     readonly [IdentityErrorCode.SIGNED_OUT_ELSEWHERE]: 403;
     readonly [IdentityErrorCode.VERIFICATION_LINK_INVALID]: 410;
+    readonly [IdentityErrorCode.RESET_TOKEN_EXPIRED]: 410;
+    readonly [IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED]: 410;
+    readonly [IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED]: 410;
     readonly [PairingErrorCode.SLOW_DOWN]: 429;
     readonly [PairingErrorCode.IDENTITY_MISMATCH]: 403;
     readonly [PairingErrorCode.INTENT_NOT_ENGAGEABLE]: 403;
