@@ -103,18 +103,19 @@ describe('ADR §9.6: every example parses with its schema', () => {
 
 describe('the docs registry is the one place a converted operation is documented', () => {
   it.each(APIS)(
-    '%s: a documented operation carries no prose, upstream or maturity of its own',
+    '%s: a route carries no prose or upstream its docs state, and no other maturity',
     (_name, api, docs) => {
-      const twice = Object.keys(docs.operations).filter((operationId) => {
+      const twice = Object.entries(docs.operations).filter(([operationId, doc]) => {
         const route = api.routes[operationId];
+        const carried = route?.['x-arthome-maturity'];
         return (
-          route?.description !== undefined ||
-          route?.['x-arthome-upstream'] !== undefined ||
-          route?.['x-arthome-maturity'] !== undefined
+          (doc.description !== undefined && route?.description !== undefined) ||
+          (doc.upstream !== undefined && route?.['x-arthome-upstream'] !== undefined) ||
+          (doc.maturity !== undefined && carried !== undefined && carried !== doc.maturity)
         );
       });
 
-      expect(twice).toEqual([]);
+      expect(twice.map(([operationId]) => operationId)).toEqual([]);
     },
   );
 

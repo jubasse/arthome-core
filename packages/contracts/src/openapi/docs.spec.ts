@@ -12,9 +12,9 @@ import { storefrontV1 } from '../storefront-api/components.js';
 type Operation = Record<string, unknown>;
 
 describe('maturityOf', () => {
-  it('is the least mature regime among the services an operation calls', () => {
-    expect(maturityOf([Upstream.CATALOG, Upstream.TICKETING])).toBe('stable');
-    expect(maturityOf([Upstream.CATALOG, Upstream.STREAMING])).toBe('provisional');
+  it('is the regime of the owning service, the first one the operation calls', () => {
+    expect(maturityOf([Upstream.CATALOG, Upstream.STREAMING])).toBe('stable');
+    expect(maturityOf([Upstream.STREAMING, Upstream.CATALOG])).toBe('provisional');
   });
 
   it('derives nothing from what is not a service', () => {
@@ -28,14 +28,6 @@ describe('apiDocs', () => {
     const one: ModuleDocs = { getDate: { description: 'One.' } };
 
     expect(() => apiDocs({ modules: [one, one] })).toThrow('"getDate" is documented twice');
-  });
-
-  it('refuses a maturity the upstream already gives', () => {
-    const redundant: ModuleDocs = {
-      getDate: { description: 'A date.', upstream: [Upstream.CATALOG], maturity: 'stable' },
-    };
-
-    expect(() => apiDocs({ modules: [redundant] })).toThrow('leave it out');
   });
 
   it('refuses a schema registered twice or with no example', () => {
@@ -101,7 +93,13 @@ const api = defineApi({
 
 const operationDocs = {
   createItem: { description: 'Registered prose.', upstream: [Upstream.CATALOG] },
-  findItem: { description: 'One item.', upstream: [Upstream.CATALOG], maturity: 'provisional' },
+  findItem: {
+    description: 'One item.',
+    upstream: [Upstream.CATALOG],
+    maturity: 'provisional',
+    maturityReason: 'not built',
+  },
+  getLegacy: { maturity: 'stable', maturityReason: 'realtime is not a service' },
 } satisfies ModuleDocs;
 
 const itemExamples = [
@@ -170,16 +168,25 @@ describe('openApiDocumentOf with docs', () => {
     ]);
   });
 
-  it('writes a maturity stated because it differs from the upstream’s', () => {
+  it('writes a maturity stated because it differs from the owning service’s', () => {
     expect(found['x-arthome-maturity']).toBe('provisional');
   });
 
-  it('keeps what an undocumented route carries, unchanged', () => {
+  it('keeps what the route carries where its docs entry says nothing', () => {
     expect(document.paths['/v1/legacy']?.get).toMatchObject({
       description: 'Kept as written.',
       'x-arthome-maturity': 'stable',
       'x-arthome-upstream': [Upstream.REALTIME],
     });
+  });
+
+  it('refuses a stated maturity the owning service already gives', () => {
+    const redundant = apiDocs({
+      info: { title: 'test', version: '1' },
+      modules: [{ createItem: { maturity: 'provisional', maturityReason: 'none needed' } }],
+    });
+
+    expect(() => openApiDocumentOf(api, redundant)).toThrow('leave it out');
   });
 
   it('prefers a registered example over the one a route still writes', () => {

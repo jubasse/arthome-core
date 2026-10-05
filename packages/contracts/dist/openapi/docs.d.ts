@@ -12,16 +12,26 @@ export type Maturity = 'stable' | 'provisional';
 /** The regime of each service's contract: a copy of `transport.md` §5.11, held to it by `check-contract-docs`. */
 export declare const MATURITY_BY_SERVICE: Readonly<Record<Service, Maturity>>;
 /**
- * The least mature regime among the services an operation calls: one provisional service makes it
- * provisional. `undefined` when it calls no service (`realtime` is not one).
+ * The regime of the operation's owning service, the first service in its upstream: a BFF keeps its
+ * own shape stable over a provisional service it translates. `undefined` when it calls no service
+ * (`realtime` is not one).
  */
 export declare function maturityOf(upstream: readonly Upstream[]): Maturity | undefined;
-export interface OperationDoc {
-    readonly description: string;
-    readonly upstream?: readonly Upstream[];
-    /** Only where it differs from `maturityOf(upstream)`. */
-    readonly maturity?: Maturity;
+interface DerivedMaturity {
+    readonly maturity?: undefined;
+    readonly maturityReason?: undefined;
 }
+/** Only where it differs from `maturityOf(upstream)`, and never without its reason. */
+interface StatedMaturity {
+    readonly maturity: Maturity;
+    /** Why, in one phrase. */
+    readonly maturityReason: string;
+}
+export type OperationDoc = {
+    /** Absent while the route still carries its own. */
+    readonly description?: string;
+    readonly upstream?: readonly Upstream[];
+} & (DerivedMaturity | StatedMaturity);
 /** A module's operations, by operation id: `export const datesDocs = { ... } satisfies ModuleDocs`. */
 export type ModuleDocs = Readonly<Record<string, OperationDoc>>;
 export type ExampleEntry = readonly [schema: z.ZodType, examples: readonly unknown[]];
@@ -53,7 +63,7 @@ export interface ApiDocsDefinition extends DocumentDocs {
     readonly modules?: readonly ModuleDocs[];
     readonly examples?: readonly ModuleExamples[];
 }
-/** Gathers an api's modules: refuses an operation documented twice, and a maturity its upstream already gives. */
+/** Gathers an api's modules, and refuses an operation documented twice. */
 export declare function apiDocs(definition: ApiDocsDefinition): ApiDocs;
 export {};
 //# sourceMappingURL=docs.d.ts.map

@@ -1,8 +1,71 @@
 import { MemberRole } from '@arthome/core';
 
 import { StudioTag } from './components.js';
-import type { ApiDocs } from '../openapi/docs.js';
+import type { ApiDocs, ModuleDocs } from '../openapi/docs.js';
 import { apiDocs } from '../openapi/docs.js';
+
+/**
+ * The operations whose maturity is not their owning service's (`transport.md` §5.11). Each entry
+ * moves into its module's docs when the module converts.
+ */
+const statedMaturities = {
+  listStudioChanges: {
+    maturity: 'stable',
+    maturityReason: 'realtime is not a service, and the change feed is a shape the BFF owns',
+  },
+  createReauthToken: {
+    maturity: 'provisional',
+    maturityReason: 'studio re-authentication is not built',
+  },
+  listReauthFactors: {
+    maturity: 'provisional',
+    maturityReason: 'studio re-authentication is not built',
+  },
+  listStudioDevices: {
+    maturity: 'provisional',
+    maturityReason: 'studio device sessions (D-118) are not built',
+  },
+  revokeStudioDevice: {
+    maturity: 'provisional',
+    maturityReason: 'studio device sessions (D-118) are not built',
+  },
+  signOutStudio: {
+    maturity: 'provisional',
+    maturityReason: 'studio device sessions (D-118) are not built',
+  },
+  issueComplimentary: {
+    maturity: 'provisional',
+    maturityReason: 'complimentary tickets entered the ticketing contract marked provisional',
+  },
+  getChannelTicketing: {
+    maturity: 'provisional',
+    maturityReason: 'the channel ticketing read is new and not built',
+  },
+  listChannelMerchItems: {
+    maturity: 'provisional',
+    maturityReason: 'studio merchandise is not built',
+  },
+  upsertMerchItem: {
+    maturity: 'provisional',
+    maturityReason: 'studio merchandise is not built',
+  },
+  pinMerchDuringLive: {
+    maturity: 'provisional',
+    maturityReason: 'studio merchandise is not built',
+  },
+  getDateReplayPane: {
+    maturity: 'provisional',
+    maturityReason: 'the replay slice (adr-replay, D-090 to D-092) is not built',
+  },
+  getChannelDashboard: {
+    maturity: 'provisional',
+    maturityReason: 'the studio statistics (studio-money) are not built',
+  },
+  getChannelStats: {
+    maturity: 'provisional',
+    maturityReason: 'the studio statistics (studio-money) are not built',
+  },
+} satisfies ModuleDocs;
 
 /** The studio document's introduction, and the docs and examples its modules register. */
 export const studioDocs: ApiDocs = apiDocs({
@@ -91,6 +154,6 @@ export const studioDocs: ApiDocs = apiDocs({
         '**`studio-mobile` cannot hold its session in a cookie**: `capacitor://localhost` is a\nthird-party context on iOS. The studio BFF therefore offers a **bearer-token** session\nalongside the cookie session — a refresh token bound to the device, kept in the native store\n(`@capacitor/preferences`, **never `localStorage`**), a short access token, revocation per\ndevice.\n\nOn returning from the background with an expired token: **silent refresh**. A\nre-authentication while on duty is an operational fault. It is required only for\n**sensitive operations** — revealing or rotating a stream key, transferring ownership of a\nchannel, changing a payout method — and it is then asked for **at the moment of the\noperation**, not on returning to a screen.\n\nAllowed origins on the CORS side, as **literal strings**: `capacitor://localhost` and\n`https://localhost`. A bare `localhost` entry covers neither, `*` is illegal with credentialed\nrequests, and a framework that normalises the origin through a URL parser would reject\n`capacitor://`.\n',
     },
   },
-  modules: [],
+  modules: [statedMaturities],
   examples: [],
 });

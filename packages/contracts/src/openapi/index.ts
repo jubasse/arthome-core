@@ -251,14 +251,20 @@ class DocumentBuilder {
 function documented(route: Route, doc: OperationDoc | undefined): Record<string, unknown> {
   if (doc === undefined) return {};
   const upstream = doc.upstream ?? (route['x-arthome-upstream'] as OperationDoc['upstream']);
-  const maturity = doc.maturity ?? maturityOf(upstream ?? []);
+  const derived = maturityOf(upstream ?? []);
+  if (doc.maturity !== undefined && doc.maturity === derived) {
+    throw new Error(
+      `openapi: "${route.operationId}" states the maturity its owning service gives; leave it out.`,
+    );
+  }
+  const maturity = doc.maturity ?? derived;
   if (maturity === undefined) {
     throw new Error(
       `openapi: "${route.operationId}" calls no service a maturity derives from; state its maturity.`,
     );
   }
   return {
-    description: doc.description,
+    ...(doc.description !== undefined && { description: doc.description }),
     'x-arthome-maturity': maturity,
     ...(upstream !== undefined && { 'x-arthome-upstream': upstream }),
   };

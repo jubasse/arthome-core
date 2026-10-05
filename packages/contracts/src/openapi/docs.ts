@@ -30,25 +30,32 @@ function isService(upstream: Upstream): upstream is Service {
 }
 
 /**
- * The least mature regime among the services an operation calls: one provisional service makes it
- * provisional. `undefined` when it calls no service (`realtime` is not one).
+ * The regime of the operation's owning service, the first service in its upstream: a BFF keeps its
+ * own shape stable over a provisional service it translates. `undefined` when it calls no service
+ * (`realtime` is not one).
  */
 export function maturityOf(upstream: readonly Upstream[]): Maturity | undefined {
-  let maturity: Maturity | undefined;
-  for (const name of upstream) {
-    if (!isService(name)) continue;
-    if (MATURITY_BY_SERVICE[name] === 'provisional') return 'provisional';
-    maturity = 'stable';
-  }
-  return maturity;
+  const owner = upstream.find(isService);
+  return owner === undefined ? undefined : MATURITY_BY_SERVICE[owner];
 }
 
-export interface OperationDoc {
-  readonly description: string;
-  readonly upstream?: readonly Upstream[];
-  /** Only where it differs from `maturityOf(upstream)`. */
-  readonly maturity?: Maturity;
+interface DerivedMaturity {
+  readonly maturity?: undefined;
+  readonly maturityReason?: undefined;
 }
+
+/** Only where it differs from `maturityOf(upstream)`, and never without its reason. */
+interface StatedMaturity {
+  readonly maturity: Maturity;
+  /** Why, in one phrase. */
+  readonly maturityReason: string;
+}
+
+export type OperationDoc = {
+  /** Absent while the route still carries its own. */
+  readonly description?: string;
+  readonly upstream?: readonly Upstream[];
+} & (DerivedMaturity | StatedMaturity);
 
 /** A module's operations, by operation id: `export const datesDocs = { ... } satisfies ModuleDocs`. */
 export type ModuleDocs = Readonly<Record<string, OperationDoc>>;
@@ -100,7 +107,7 @@ export interface ApiDocsDefinition extends DocumentDocs {
   readonly examples?: readonly ModuleExamples[];
 }
 
-/** Gathers an api's modules: refuses an operation documented twice, and a maturity its upstream already gives. */
+/** Gathers an api's modules, and refuses an operation documented twice. */
 export function apiDocs(definition: ApiDocsDefinition): ApiDocs {
   const { modules = [], examples = [], ...document } = definition;
   const operations: Record<string, OperationDoc> = {};
@@ -108,11 +115,6 @@ export function apiDocs(definition: ApiDocsDefinition): ApiDocs {
     for (const [operationId, doc] of Object.entries(module)) {
       if (operationId in operations) {
         throw new Error(`apiDocs: "${operationId}" is documented twice.`);
-      }
-      if (doc.maturity !== undefined && doc.maturity === maturityOf(doc.upstream ?? [])) {
-        throw new Error(
-          `apiDocs: "${operationId}" states the maturity its upstream already gives; leave it out.`,
-        );
       }
       operations[operationId] = doc;
     }

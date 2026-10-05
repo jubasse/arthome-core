@@ -97,8 +97,8 @@ A surface imports an api to call it, and the operations' prose and examples are 
 What only the document reads is registered per module, beside the routes:
 
 - `<module>/docs.ts`: `export const datesDocs = { publishDate: { description, upstream } } satisfies
-  ModuleDocs`, the operation's prose and the services it calls (`x-arthome-upstream`). The one-line
-  `summary` stays on the route.
+  ModuleDocs`, the operation's prose and the services it calls (`x-arthome-upstream`), owning service
+  first. The one-line `summary` stays on the route.
 - `<module>/examples.ts`: typed example constants (`export const dateExample: StudioDate = { ... }`)
   and `export const datesExamples = [[DateSchema, [dateExample]]] as const satisfies ModuleExamples`.
 - The api's `docs.ts` gathers them: `apiDocs({ info, servers, tags, securitySchemes, modules,
@@ -109,10 +109,12 @@ What only the document reads is registered per module, beside the routes:
 
 - **What is registered wins** over what a route still carries, so a module converts without its
   operations moving in the document; a test refuses an operation documented in both places.
-- **The maturity is derived** from the upstream: the least mature regime among the services the
+- **The maturity is derived** from the upstream: the regime of the owning service, the first one the
   operation calls (`maturityOf`, `MATURITY_BY_SERVICE`, `transport.md` §5.11). A module states
-  `maturity` only where an operation differs, and `apiDocs` refuses one that repeats the derived
-  value; an operation that calls no service (`realtime`) states it.
+  `maturity` only where an operation differs, always with its `maturityReason` in one phrase, and the
+  emitter refuses one that repeats the derived value; an operation that calls no service
+  (`realtime`) states it. Until a module converts, its stated maturities sit in the api's
+  `docs.ts`; `maturity.spec.ts` holds every operation to the rule.
 - **A media type's example** is its schema's registered example, or else the one derived from the
   record it wraps: a resource member's answer shows its item's registered example in the api's
   envelope (`itemExample`, `pageExample`). An example a route still writes is kept when nothing is

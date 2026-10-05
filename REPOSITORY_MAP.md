@@ -302,9 +302,9 @@ Declarations: `dist/openapi/index.d.ts` — 14 exported names.
 - `ModuleDocs` (type) — `type ModuleDocs = Readonly<Record<string, OperationDoc>>;` — A module's operations, by operation id: 'export const datesDocs = { ...
 - `ModuleExamples` (type) — `type ModuleExamples = readonly ExampleEntry[];` — A module's examples, by schema: '[[DateSchema, [dateExample]]] as const satisfies ModuleExamples'.
 - `OpenApiDocument` (type) — `type OpenApiDocument = Readonly<Record<string, unknown>>;`
-- `OperationDoc` (interface)
-- `apiDocs` (function) — `function apiDocs(definition: ApiDocsDefinition): ApiDocs;` — Gathers an api's modules: refuses an operation documented twice, and a maturity its upstream already gives.
-- `maturityOf` (function) — `function maturityOf(upstream: readonly Upstream[]): Maturity | undefined;` — The least mature regime among the services an operation calls: one provisional service makes it provisional.
+- `OperationDoc` (type)
+- `apiDocs` (function) — `function apiDocs(definition: ApiDocsDefinition): ApiDocs;` — Gathers an api's modules, and refuses an operation documented twice.
+- `maturityOf` (function) — `function maturityOf(upstream: readonly Upstream[]): Maturity | undefined;` — The regime of the operation's owning service, the first service in its upstream: a BFF keeps its own shape stable over a provisional servic…
 - `openApiDocumentOf` (function) — `function openApiDocumentOf(api: Api, docs?: ApiDocs): OpenApiDocument;`
 
 #### @arthome/contracts/pagination

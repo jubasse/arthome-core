@@ -2466,8 +2466,8 @@ holds the model, and these are the rules a reviewer holds it to:
 - **No `security` beside an identity**, and no hand-written `403` for a CSRF refusal: the identity
   writes both.
 - **What only the document reads is registered beside the routes**: an operation's description and
-  upstream in its module's `docs.ts`, a maturity only where it differs from the one its upstream
-  gives (`transport.md` §5.11), its schemas' examples in `examples.ts`. Only the api's docs module
+  upstream in its module's `docs.ts`, a maturity only where it differs from its owning service's
+  (`transport.md` §5.11) and with its reason, its schemas' examples in `examples.ts`. Only the api's docs module
   and the emitter import them (gate 21), and every registered example parses with its schema.
 - **A path segment that shares its spelling with an enumeration** (`'chat'`, `'crew'`, `'duplicate'`)
   is an `enum-literals.allow.json` entry with its reason, never an import of the vocabulary.
