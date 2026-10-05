@@ -7,11 +7,11 @@
 
 import { z } from 'zod';
 
-import { ApiErrorCode, type ErrorCode } from '@arthome/core';
+import { ApiErrorCode, natureOf, type ErrorCode } from '@arthome/core';
 import type { ErrorParamsRead } from '@arthome/core/schema';
 
 import type { ErrorStatusMap } from './error-registry.js';
-import { exampleOf, natureOf, statusOf } from './error-registry.js';
+import { exampleOf, statusOf } from './error-registry.js';
 import type { JsonResponse, Response } from './index.js';
 
 export type ErrorStatus =

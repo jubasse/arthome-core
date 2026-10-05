@@ -15,6 +15,8 @@ export declare const FailureNature: {
     readonly UNAVAILABLE: "unavailable";
     readonly OFFLINE_FORBIDDEN: "offline_forbidden";
 };
+/** A code's nature, for the error a domain raises and for the error a route documents. */
+export declare function natureOf(code: RaisableErrorCode): FailureNature;
 /** `params` may be left out only where the code's params accept none. */
 type ParamsField<P> = NoErrorParams extends P ? {
     readonly params?: P;
@@ -23,7 +25,6 @@ type ParamsField<P> = NoErrorParams extends P ? {
 };
 export type DomainErrorInit<C extends RaisableErrorCode> = {
     readonly code: C;
-    readonly nature?: FailureNature;
 } & ParamsField<ErrorParamsOf<C>>;
 /** An invariant violation. It carries no text: it carries a code, and the params that code takes. */
 export declare class DomainError<C extends RaisableErrorCode = RaisableErrorCode> extends Error {

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { DomainError } from './errors.js';
-import { ApiErrorCode, DomainErrorCode, OrderErrorCode } from '../vocabulary/error-codes.js';
+import { DomainError, FailureNature } from './errors.js';
+import {
+  ApiErrorCode,
+  CatalogErrorCode,
+  DomainErrorCode,
+  OrderErrorCode,
+} from '../vocabulary/error-codes.js';
 
 describe('a domain error is typed by its code', () => {
   it('takes the params its code declares, and carries them', () => {
@@ -29,5 +34,24 @@ describe('a domain error is typed by its code', () => {
       // @ts-expect-error `api.not_found` carries no params.
       new DomainError({ code: ApiErrorCode.NOT_FOUND, params: { dateId: 'x' } }).code,
     ).toBe(ApiErrorCode.NOT_FOUND);
+  });
+
+  it("carries its code's nature, which no raiser chooses", () => {
+    const natures = [
+      new DomainError({ code: CatalogErrorCode.SHOW_SLUG_TAKEN }),
+      new DomainError({ code: ApiErrorCode.IDEMPOTENCY_IN_FLIGHT, params: { retryAfterMs: 1000 } }),
+      new DomainError({ code: DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES }),
+      new DomainError({ code: OrderErrorCode.SOLD_OUT }),
+    ].map((error) => error.nature);
+    expect(natures).toEqual([
+      FailureNature.UNAVAILABLE,
+      FailureNature.UNAVAILABLE,
+      FailureNature.UNAVAILABLE,
+      FailureNature.REFUSED,
+    ]);
+    expect(
+      // @ts-expect-error the nature is the code's, never the raiser's.
+      new DomainError({ code: OrderErrorCode.SOLD_OUT, nature: FailureNature.UNAVAILABLE }).nature,
+    ).toBe(FailureNature.REFUSED);
   });
 });

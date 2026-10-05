@@ -2,14 +2,19 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ApiErrorCode,
+  CatalogErrorCode,
+  DomainError,
+  DomainErrorCode,
   ERROR_CODES,
   FailureNature,
   OrderErrorCode,
+  natureOf,
   type ErrorCode,
 } from '@arthome/core';
 import { ERROR_PARAMS } from '@arthome/core/schema';
 
-import { ERRORS, NATURE_BY_STATUS, exampleOf, natureOf, statusOf } from './error-registry.js';
+import { ERRORS, NATURE_BY_STATUS, exampleOf, statusOf } from './error-registry.js';
+import { errorExampleOf } from './errors.js';
 import { openApiDocumentOf } from '../openapi/index.js';
 import { storefrontDocs } from '../storefront-api/docs.js';
 import { storefrontApi } from '../storefront-api/index.js';
@@ -82,14 +87,23 @@ describe('the registry of error codes', () => {
     expect(unreadable).toEqual([]);
   });
 
-  it("gives each code its status's nature unless the entry says otherwise, and only where it differs", () => {
-    expect(natureOf(ApiErrorCode.NOT_FOUND)).toBe(FailureNature.REFUSED);
-    expect(natureOf(ApiErrorCode.RATE_LIMITED)).toBe(FailureNature.UNAVAILABLE);
-    expect(natureOf(ApiErrorCode.IDEMPOTENCY_IN_FLIGHT)).toBe(FailureNature.UNAVAILABLE);
-    const redundant = ERROR_CODES.filter((code) => {
-      const { status, nature } = ERRORS[code];
-      return nature === NATURE_BY_STATUS[status];
-    });
-    expect(redundant).toEqual([]);
+  it("gives each code its status's nature, except the conflicts a caller waits out", () => {
+    const apart = ERROR_CODES.filter((code) => natureOf(code) !== NATURE_BY_STATUS[statusOf(code)]);
+    expect(apart).toEqual([ApiErrorCode.IDEMPOTENCY_IN_FLIGHT, CatalogErrorCode.SHOW_SLUG_TAKEN]);
+  });
+
+  it('documents, code for code, the nature a DomainError carries', () => {
+    const raised = (code: ErrorCode): string =>
+      new DomainError({ code, params: exampleOf(code) }).nature;
+    const documented = (code: ErrorCode): string =>
+      (errorExampleOf(code) as { readonly error: { readonly nature: string } }).error.nature;
+    expect(ERROR_CODES.filter((code) => raised(code) !== documented(code))).toEqual([]);
+    expect(
+      [
+        CatalogErrorCode.SHOW_SLUG_TAKEN,
+        ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
+        DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES,
+      ].map(documented),
+    ).toEqual([FailureNature.UNAVAILABLE, FailureNature.UNAVAILABLE, FailureNature.UNAVAILABLE]);
   });
 });

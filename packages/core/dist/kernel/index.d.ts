@@ -3,7 +3,7 @@ export type { AccountId, ArtistId, Brand, ChannelId, DateId, DeviceId, MessageId
 export { brandId } from './brand.js';
 export type { DomainErrorInit, MessageParams } from './errors.js';
 export type { ErrorParamsMap, ErrorParamsOf, NoErrorParams, RaisableErrorCode, SchemaIssue, } from './error-params.js';
-export { DomainError, FAILURE_NATURES, FailureNature, isDomainError } from './errors.js';
+export { DomainError, FAILURE_NATURES, FailureNature, isDomainError, natureOf } from './errors.js';
 export type { Err, Ok, Result } from './result.js';
 export { err, isOk, ok } from './result.js';
 export type { Clock, Instant } from './clock.js';
