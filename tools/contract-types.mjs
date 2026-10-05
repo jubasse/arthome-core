@@ -154,7 +154,8 @@ function shortened(text, dictionary, used) {
     }
   }
   return out
-    .replace(/(?<![\w.])Zod([A-Z]\w*)/g, 'z.Zod$1')
+    .replace(/(?<![\w.$])Zod([A-Z]\w*)/g, 'z.Zod$1')
+    .replace(/(?<![\w.])\$Zod(\w+)/g, 'z.core.$$Zod$1')
     .replace(/(?<!core\.)\$(strip|loose|strict|catchall)\b/g, 'z.core.$$$1')
     .replace(/\bz\.core\.z\.core\./g, 'z.core.')
     .replace(/\bz\.z\./g, 'z.')
@@ -223,11 +224,12 @@ function importsFor(text, { from, contextFiles, dictionary, extra }) {
   );
   const specs = new Map();
   const want = (spec, name) => specs.set(spec, [...(specs.get(spec) ?? []), name]);
-  const names = new Set([...text.matchAll(IDENT)].map((match) => match[1]));
+  const code = text.replace(/'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"/g, "''");
+  const names = new Set([...code.matchAll(IDENT)].map((match) => match[1]));
   for (const name of names) {
     if (extra.has(name)) continue;
     else if (name === 'z') want('zod', 'z');
-    else if (byOrigin.has(name) && new RegExp(`typeof ${name}\\b`).test(text)) {
+    else if (byOrigin.has(name) && new RegExp(`typeof ${name}\\b`).test(code)) {
       want(relativeSpec(from, byOrigin.get(name)), name);
     } else if (imported.has(name)) want(imported.get(name), name);
     else if (httpExports.has(name)) want(relativeSpec(from, httpIndex.fileName), name);
