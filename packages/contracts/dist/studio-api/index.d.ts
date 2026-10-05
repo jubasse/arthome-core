@@ -1,11 +1,12 @@
 import { getChannelAgenda, getChannelDashboard, getChannelStats, listChannelEvents, listDuties } from './agenda.js';
+import { countersignBankChange } from './bank-change-requests/routes.js';
 import { createReauthToken, getStudioBootstrap, listInbox, listReauthFactors, listStudioChanges, listStudioDevices, markInboxRead, registerStudioPushToken, requestPasswordResetStudio, revokeStudioDevice, signInStudio, signOutStudio, updateStudioPreferences, verifyTwoFactorStudio } from './bootstrap.js';
 import { createUploadTicket, deleteChannel, getChannelSettings, listChannelJournal, listChannelMerchItems, listChannelReplays, updateChannelIdentity, updateChannelSettings, upsertMerchItem } from './channel.js';
 import { changeMemberRoles, inviteMember, listChannelMembers, removeMember, respondToInvitation, revokeDateAccess, transferChannelOwnership } from './crew.js';
 import { decideDateOutcome, deleteDate, duplicateDate, endRun, getDateChatPane, getDateCrewPane, getDatePublicPane, getDateReplayPane, getDateSheet, getDateTechPane, getDateTicketsPane, getHealthSeries, getRunConsole, goOnAir, grantDateAccess, issueComplimentary, listStudioChatMessages, moveDatePublicationState, openCapacityTier, pinMerchDuringLive, postChapter, raiseIncident, rehearseRun, removeChapter, reopenReplayWindow, resetRun, revealStreamKey, rotateStreamKey, runTechnicalCheck, setDateChatPolicy, setDatePrices, setDateReplayPolicy, setQualityProfile, setTechnicalProvision, submitHealthSample } from './dates/routes.js';
 import { getChannelExport } from './exports/routes.js';
 import { addBannedWord, claimModerationItem, listModerationQueue, releaseModerationItem, removeBannedWord, sanctionAudienceMember, searchAudience, settleModerationItem } from './moderation.js';
-import { closeReconciliationPeriod, countersignBankChange, listPayouts, requestBankChange, requestChannelExport } from './payouts.js';
+import { closeReconciliationPeriod, listPayouts, requestBankChange, requestChannelExport } from './payouts.js';
 import { createDateDraft } from './publication.js';
 import { escalateIncidentToProduction, getChannelStreamSettings, resolveIncident } from './run.js';
 import { getChannelTicketing, refundSeat } from './ticketing.js';

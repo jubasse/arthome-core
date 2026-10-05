@@ -7,6 +7,7 @@ import {
   listChannelEvents,
   listDuties,
 } from './agenda.js';
+import { countersignBankChange } from './bank-change-requests/routes.js';
 import {
   createReauthToken,
   getStudioBootstrap,
@@ -123,7 +124,6 @@ import {
 } from './moderation.js';
 import {
   closeReconciliationPeriod,
-  countersignBankChange,
   listPayouts,
   requestBankChange,
   requestChannelExport,

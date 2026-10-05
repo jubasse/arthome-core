@@ -78,7 +78,6 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'changeMemberRoles',
   'claimModerationItem',
   'closeReconciliationPeriod',
-  'countersignBankChange',
   'createDateDraft',
   'createReauthToken',
   'createUploadTicket',

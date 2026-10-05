@@ -2,12 +2,11 @@ import { z } from 'zod';
 import { PAYOUT_STATES } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
-import { ChannelIdParameter, ConflictResponse, ForbiddenResponse, GoneResponse, IdempotencyKeyParameter, IfRightsVersionParameter, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter } from './components.js';
+import { ChannelIdParameter, ConflictResponse, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import { BankChangeRequestSchema, ExportJobSchema, PayoutLineSchema } from '../studio-money/index.js';
-declare const COUNTERSIGN_BANK_CHANGE_DECISION: readonly ["countersign", "reject"];
 declare const REQUEST_CHANNEL_EXPORT_KIND: readonly ["sales_csv", "fec", "sage", "cegid", "grouped_invoices", "journal", "schedule_ics", "stats_csv"];
 export declare const listPayouts: Route<{
     method: 'get';
@@ -55,29 +54,6 @@ export declare const requestBankChange: Route<{
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
         409: typeof ConflictResponse;
-    };
-}>;
-export declare const countersignBankChange: Route<{
-    method: 'post';
-    version: 1;
-    path: '/bank-change-requests/{requestId}/countersign';
-    parameters: readonly [
-        PathParameter<'requestId', z.ZodString>,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        decision: VocabularyIn<typeof COUNTERSIGN_BANK_CHANGE_DECISION>;
-        reauthToken: z.ZodString;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof BankChangeRequestSchema;
-        }, z.core.$loose>>>;
-        403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        410: typeof GoneResponse;
     };
 }>;
 export declare const closeReconciliationPeriod: Route<{

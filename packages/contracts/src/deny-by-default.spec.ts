@@ -78,7 +78,6 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'changeMemberRoles',
   'claimModerationItem',
   'closeReconciliationPeriod',
-  'countersignBankChange',
   'createReauthToken',
   'createUploadTicket',
   'deleteChannel',

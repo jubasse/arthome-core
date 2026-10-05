@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 import {
-  ChannelErrorCode,
   DatePane,
   DisplayState,
   FailureNature,
@@ -20,14 +19,12 @@ import {
   uuidOut,
   VOCABULARY_SOURCE_LOCAL,
   vocabularyIn,
-  uuidIn,
 } from '@arthome/core/schema';
 
 import {
   ChannelIdParameter,
   ConflictResponse,
   ForbiddenResponse,
-  GoneResponse,
   IdempotencyKeyParameter,
   IfRightsVersionParameter,
   PageParameter,
@@ -59,7 +56,6 @@ const payoutsRoutes = studioV1
   .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 const payoutsWrites = payoutsRoutes.headers(IdempotencyKeyParameter);
 
-const COUNTERSIGN_BANK_CHANGE_DECISION = ['countersign', 'reject'] as const;
 const REQUEST_CHANNEL_EXPORT_KIND = [
   'sales_csv',
   'fec',
@@ -298,120 +294,6 @@ export const requestBankChange: Route<{
     },
     403: ForbiddenResponse,
     409: ConflictResponse,
-  },
-});
-
-export const countersignBankChange: Route<{
-  method: 'post';
-  version: 1;
-  path: '/bank-change-requests/{requestId}/countersign';
-  parameters: readonly [
-    PathParameter<'requestId', z.ZodString>,
-    typeof SurfaceParameter,
-    typeof IfRightsVersionParameter,
-    typeof TraceparentParameter,
-    typeof IdempotencyKeyParameter,
-  ];
-  requestBody: JsonRequestBody<
-    z.ZodObject<
-      { decision: VocabularyIn<typeof COUNTERSIGN_BANK_CHANGE_DECISION>; reauthToken: z.ZodString },
-      z.core.$strip
-    >
-  >;
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<{ data: typeof BankChangeRequestSchema }, z.core.$loose>
-      >
-    >;
-    403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    410: typeof GoneResponse;
-  };
-}> = payoutsWrites.defineRoute({
-  method: 'post',
-  path: '/bank-change-requests/{requestId}/countersign',
-  operationId: 'countersignBankChange',
-  summary: 'Counter-signs a change of bank details.',
-  description:
-    '**Two distinct roles**: the owner **and** the treasury. One and the same person cannot sign\nboth times, even holding both roles — `channel.same_actor_forbidden`. That is the entire point of a\ndual signature.\n',
-  'x-arthome-maturity': 'provisional',
-  'x-arthome-upstream': [NavigationEntry.PAYOUTS],
-  parameters: [
-    {
-      name: 'requestId',
-      in: 'path',
-      required: true,
-      schema: uuidIn(),
-    },
-  ],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          decision: vocabularyIn(COUNTERSIGN_BANK_CHANGE_DECISION).meta({
-            'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
-            'x-arthome-vocabulary-reason':
-              "The two answers this one command accepts. It is the command's shape, not a vocabulary: a third answer would be a third command.",
-          }),
-          reauthToken: z.string(),
-        }),
-        example: {
-          decision: 'countersign',
-          reauthToken: 'ott_4d77e2',
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Counter-signed, transfers resumed.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              data: BankChangeRequestSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:30:00.000Z',
-            rightsVersion: 412,
-            data: {
-              requestId: '019928e6-0000-7000-8000-000000000001',
-              state: 'countersigned',
-              maskedAccountTail: '4417',
-              requestedAt: '2026-09-21T18:26:00Z',
-              expiresAt: '2026-09-28T18:26:00Z',
-              countersignedBy: {
-                personId: '019928b4-0000-7000-8000-000000000001',
-                displayName: 'Léa M.',
-                surface: Surface.STUDIO_WEB,
-              },
-            },
-          },
-        },
-      },
-    },
-    403: {
-      description: '`channel.same_actor_forbidden` — a dual signature requires two people.',
-      content: {
-        'application/json': {
-          schema: StudioErrorEnvelopeSchema,
-          example: {
-            error: {
-              code: ChannelErrorCode.SAME_ACTOR_FORBIDDEN,
-              nature: FailureNature.REFUSED,
-              params: {},
-              traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-            },
-            servedAt: '2026-09-21T18:30:00.000Z',
-          },
-        },
-      },
-    },
-    410: GoneResponse,
   },
 });
 
