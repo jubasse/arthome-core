@@ -455,6 +455,10 @@ books.find({ item: BookSchema, expand: { author: AuthorSchema, publisher: Publis
 It is optional per read: `getDateDetail` keeps it, and another read adds it when a surface needs it.
 Freshness stays §5.9's.
 
+The scope is an anonymous caller's. An identified caller always gets `private`, so a body that varies
+per viewer is never shareable: `cacheControlOf(policy, caller)` takes the caller, and the document
+declares on each `200` the value every kind of caller the route lets in gets.
+
 ## 6. Responses
 
 ### 6.1 Four ways a response varies, each with its tool

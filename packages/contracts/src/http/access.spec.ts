@@ -307,6 +307,27 @@ describe('policies', () => {
     expect(Object.keys(headersOf(route.responses[200]))).toEqual(['Cache-Control', 'Vary']);
   });
 
+  it('declares the Cache-Control of every caller the access lets in, private once identified', () => {
+    const shared = cache(Freshness.MINUTE, { scope: 'public' });
+    const read = { method: 'get', path: '/a', operationId: 'a', responses: ok } as const;
+    const sentBy = (route: { readonly responses: Readonly<Record<string, Response>> }): unknown => {
+      const header = route.responses[200]?.headers?.['Cache-Control'];
+      return header === undefined ? undefined : z.toJSONSchema(header.schema, { io: 'output' });
+    };
+
+    expect(sentBy(base.public().cache(shared).defineRoute(read))).toMatchObject({
+      const: 'public, max-age=60',
+    });
+    expect(sentBy(base.identity(viewer).cache(shared).defineRoute(read))).toMatchObject({
+      const: 'private, max-age=60',
+    });
+    expect(
+      sentBy(base.identity(viewer).optionalAuth().cache(shared).defineRoute(read)),
+    ).toMatchObject({
+      anyOf: [{ const: 'public, max-age=60' }, { const: 'private, max-age=60' }],
+    });
+  });
+
   it('declares a rule through requirement()', () => {
     const rule = requirement('custom', {
       params: { level: 2 },

@@ -232,7 +232,7 @@ const PUBLIC_READ_VARY: readonly string[] = [
   'X-Arthome-Surface',
 ];
 
-/** The freshness of a public read: `public` for an anonymous caller, varying on every credential and the surface. */
+/** The freshness of a public read: `public` for an anonymous caller, `private` for an identified one, varying on every credential and the surface. */
 export function publicRead(
   freshness: Freshness,
   options: { readonly etag?: boolean } = {},

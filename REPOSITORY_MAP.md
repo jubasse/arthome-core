@@ -80,7 +80,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 181 exported names.
+Declarations: `dist/http/index.d.ts` — 182 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
@@ -95,9 +95,9 @@ Declarations: `dist/http/index.d.ts` — 181 exported names.
 - `BatchRoute` (type)
 - `BuiltRoute` (type) — The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors.
 - `BuiltRouteDefinition` (type) — What a builder's 'defineRoute' takes: a route without its version and its security, which the builder holds and derives.
-- `CACHE_CONTROL_HEADER` (const) — `CACHE_CONTROL_HEADER: Header`
 - `CacheOptions` (interface)
 - `CachePolicy` (interface)
+- `CallerKind` (type+const) — `CallerKind: { readonly ANONYMOUS: "anonymous"; readonly IDENTIFIED: "identified"; } type CallerKind = (typeof CallerKind)[keyof typeof CallerKind];` — Who an answer goes to, as a cache sees it: nobody in particular, or a principal.
 - `ChildContext` (type) — The context of what is nested under one record of 'C', or under 'C' itself when it has no id.
 - `ClientView` (type) — What a client may receive: each tagged union of a body gains the unknown variant, so an exhaustive 'switch' on the tag must handle it.
 - `CodedResponse` (interface) — Type-only: the code a shared error response stands for, so two responses never share a type.
@@ -217,7 +217,8 @@ Declarations: `dist/http/index.d.ts` — 181 exported names.
 - `accessorOf` (function) — `function accessorOf<const T extends readonly string[]>(members: T): AccessorOf<T>;` — The accessor built from the list rather than written beside it: the list stays the one declaration, which is what 'check-enums' reads.
 - `bodySchemaOf` (function) — `function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;` — The JSON body's schema, or 'undefined' for a route that takes none.
 - `cache` (function) — `function cache(freshness: Freshness, options?: CacheOptions): CachePolicy;` — 'cache(Freshness.FIVE_MINUTES)': the family of 'transport.md' §5.9, with its directive.
-- `cacheControlOf` (function) — `function cacheControlOf(policy: CachePolicy): string;` — The 'Cache-Control' value of a policy, as the BFF writes it.
+- `cacheControlHeaderOf` (function) — `function cacheControlHeaderOf(policy: CachePolicy, callers: readonly [CallerKind, ...CallerKind[]]): Header;` — The 'Cache-Control' a 200 declares: the one value of 'cacheControlOf', or one per kind of caller where they differ.
+- `cacheControlOf` (function) — `function cacheControlOf(policy: CachePolicy, caller: CallerKind): string;` — The 'Cache-Control' value of a policy for one caller, as the BFF writes it.
 - `changesSince` (function) — `function changesSince(): { readonly kind: 'changesSince'; };` — The token a change feed takes: '410' when it is too old.
 - `codedEnvelopesIn` (function) — `function codedEnvelopesIn(schema: z.ZodType): readonly (readonly [string, z.ZodType])[];` — The coded envelopes 'schema' is, itself or as the members of a union, each with its code.
 - `collect` (function) — `function collect<const Trees extends readonly RouteTree[]>(...trees: Trees): Collected<Trees>;`
