@@ -80,7 +80,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 181 exported names.
+Declarations: `dist/http/index.d.ts` — 182 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
@@ -262,6 +262,7 @@ Declarations: `dist/http/index.d.ts` — 181 exported names.
 - `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
 - `tagged` (function) — `function tagged<const Tag extends string, const V extends Variants>(tag: Tag, variants: V): TaggedSchema<Tag, V>;` — 'tagged('outcome', { succeeded: Succeeded, declined: Declined })': each variant is an object schema without the tag, and the helper adds it.
 - `throttle` (function) — `function throttle<const Bucket extends string>(bucket: Bucket): Requirement<'throttle', { readonly bucket: Bucket; }, typeof ApiErrorCode.RATE_LIMITED>;` — A rate-limit bucket by name: the server binds the cap, and the '429' is derived.
+- `variantOf` (function) — `function variantOf(union: z.ZodType, key: string): z.ZodObject;` — The variant a tag value selects, as the union holds it: the schema to register as that variant's component.
 - `versionedPath` (function) — `function versionedPath(route: Pick<RouteShape, 'version' | 'path'>): string;` — The only versioning strategy: the version is a path prefix, '/v1/dates/{dateId}'.
 
 #### @arthome/contracts/http-client
@@ -296,7 +297,7 @@ Declarations: `dist/identity/index.d.ts` — 15 exported names.
 - `SessionEstablishedBearerSchema` (const)
 - `SessionEstablishedCookieSchema` (const) — `SessionEstablishedCookieSchema: z.ZodObject<{ mode: z.ZodLiteral<'cookie'>; viewerContext: typeof ViewerContextSchema; }, z.core.$loose>`
 - `SessionMode` (const) — `SessionMode: { readonly COOKIE: "cookie"; readonly BEARER: "bearer"; readonly DEVICE: "device"; }` — The NAMED members, so nothing writes one of these as a string — and so nothing reaches for 'SESSION_MODES[0]' either.
-- `StorefrontSessionEstablishedSchema` (const) — `StorefrontSessionEstablishedSchema: z.ZodXor<readonly [typeof SessionEstablishedCookieSchema, typeof SessionEstablishedBearerSchema]>`
+- `StorefrontSessionEstablishedSchema` (const)
 - `StorefrontSessionModeSchema` (const) — `StorefrontSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bearer'; device: 'device'; }>`
 - `ViewerContextSchema` (const)
 - `ViewerPreferencesSchema` (const)
@@ -377,7 +378,7 @@ Declarations: `dist/studio-access/index.d.ts` — 11 exported names.
 - `StudioCountersSchema` (const) — The badges, served at bootstrap and kept up to date by the real-time channel.
 - `StudioSessionEstablishedBearerSchema` (const) — A bearer session: an opaque token in the body, no cookie.
 - `StudioSessionEstablishedCookieSchema` (const) — `StudioSessionEstablishedCookieSchema: z.ZodObject<{ mode: z.ZodLiteral<typeof SessionMode.COOKIE>; bootstrap: typeof StudioBootstrapSchema; }, z.core.$loose>` — A cookie session: nothing in the body but the bootstrap.
-- `StudioSessionEstablishedSchema` (const) — `StudioSessionEstablishedSchema: z.ZodDiscriminatedUnion<[ typeof StudioSessionEstablishedCookieSchema, typeof StudioSessionEstablishedBearerSchema ]>` — Exactly one of a cookie or a bearer session, discriminated by the mode.
+- `StudioSessionEstablishedSchema` (const) — Exactly one of a cookie or a bearer session, discriminated by the mode.
 - `StudioSessionModeSchema` (const) — `StudioSessionModeSchema: z.ZodEnum<{ cookie: 'cookie'; bearer: 'bearer'; }>` — The session mode, chosen by the caller and never inferred.
 
 #### @arthome/contracts/studio-api

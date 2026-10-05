@@ -367,6 +367,22 @@ describe('tagged', () => {
     expect(shared.safeParse({ mode: 'device', receipt: 'r' }).success).toBe(true);
     expect(shared.safeParse({ mode: 'cookie', declineCode: 'd' }).success).toBe(true);
   });
+
+  it('writes a shared tag as a plain string, and lends the metadata of a declared tag field', () => {
+    const Documented = z.object({
+      mode: z.string().describe('Narrowed to the token modes.'),
+      token: z.string(),
+    });
+    const own = tagged('mode', { bearer: Documented, device: Documented, cookie: Declined });
+    const json = z.toJSONSchema(own) as { oneOf: { properties: Record<string, unknown> }[] };
+
+    expect(own.safeParse({ mode: 'device', token: 't' }).success).toBe(true);
+    expect(own.safeParse({ mode: 'later', token: 't' }).success).toBe(false);
+    expect(json.oneOf[0]?.properties.mode).toEqual({
+      type: 'string',
+      description: 'Narrowed to the token modes.',
+    });
+  });
 });
 
 describe('accepted', () => {

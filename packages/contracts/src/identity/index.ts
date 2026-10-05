@@ -51,6 +51,8 @@ import {
   LabelArtifactRefSchema,
 } from '../catalog/index.js';
 import { NotificationPreferencesSchema } from '../engagement/index.js';
+import type { TaggedSchema } from '../http/tagged.js';
+import { tagged } from '../http/tagged.js';
 import { OrderSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
 
 // The document's name for a vocabulary local to the contract. The preferred
@@ -479,23 +481,20 @@ export const StorefrontSessionModeSchema: z.ZodEnum<{
     '**An explicit, validated parameter, never inferred from the `User-Agent`** — that is\nforgeable, and a bypassable heuristic does not count as an answer.\n\n`cookie` for the web surfaces; `bearer` for the native shells, where\n`capacitor://localhost` is a third-party context on iOS and no cookie would survive;\n`device` for the television, which has **neither cookie nor token** at the moment it opens a\nsign-in pairing — which is what device identity solves.\n',
   );
 
-export const StorefrontSessionEstablishedSchema: z.ZodXor<
-  readonly [typeof SessionEstablishedCookieSchema, typeof SessionEstablishedBearerSchema]
-> = z
-  .xor([SessionEstablishedCookieSchema, SessionEstablishedBearerSchema])
-  .meta({
-    discriminator: {
-      propertyName: 'mode',
-      mapping: {
-        cookie: '#/components/schemas/SessionEstablishedCookie',
-        bearer: '#/components/schemas/SessionEstablishedBearer',
-        device: '#/components/schemas/SessionEstablishedBearer',
-      },
-    },
-  })
-  .describe(
-    '**Invariant: a response never carries both a cookie and a token.** Two bearers for one\nsession means **two revocations to maintain and one that will be forgotten** — that is what\nstops a session surviving its own sign-out. So this is not a schema with an optional field:\nit is **two schemas**, discriminated by mode.\n',
-  );
+export const StorefrontSessionEstablishedSchema: TaggedSchema<
+  'mode',
+  {
+    cookie: typeof SessionEstablishedCookieSchema;
+    bearer: typeof SessionEstablishedBearerSchema;
+    device: typeof SessionEstablishedBearerSchema;
+  }
+> = tagged('mode', {
+  cookie: SessionEstablishedCookieSchema,
+  bearer: SessionEstablishedBearerSchema,
+  device: SessionEstablishedBearerSchema,
+}).describe(
+  '**Invariant: a response never carries both a cookie and a token.** Two bearers for one\nsession means **two revocations to maintain and one that will be forgotten** — that is what\nstops a session surviving its own sign-out. So this is not a schema with an optional field:\nit is **two schemas**, discriminated by mode.\n',
+);
 
 export const AccountDeepLinkSchema: z.ZodObject<{ url: z.ZodString }, z.core.$loose> = z
   .looseObject({

@@ -165,7 +165,7 @@ import {
   StorefrontErrorSchema,
 } from '../envelope/index.js';
 import type { Api } from '../http/index.js';
-import { defineApi } from '../http/index.js';
+import { defineApi, variantOf } from '../http/index.js';
 import {
   AccountDeepLinkSchema,
   AccountScreenSchema,
@@ -174,8 +174,7 @@ import {
   DeviceSchema,
   PairingOutcomeSchema,
   ProfileSummarySchema,
-  SessionEstablishedBearerSchema,
-  SessionEstablishedCookieSchema,
+  SessionMode,
   StorefrontSessionEstablishedSchema,
   StorefrontSessionModeSchema,
   ViewerContextSchema,
@@ -454,8 +453,8 @@ export const storefrontApi: Api<{
       // authentication
       SessionMode: StorefrontSessionModeSchema,
       SessionEstablished: StorefrontSessionEstablishedSchema,
-      SessionEstablishedCookie: SessionEstablishedCookieSchema,
-      SessionEstablishedBearer: SessionEstablishedBearerSchema,
+      SessionEstablishedCookie: variantOf(StorefrontSessionEstablishedSchema, SessionMode.COOKIE),
+      SessionEstablishedBearer: variantOf(StorefrontSessionEstablishedSchema, SessionMode.BEARER),
       // viewer bootstrap
       DomainConstants: DomainConstantsSchema,
       LabelArtifactRef: LabelArtifactRefSchema,

@@ -29,9 +29,12 @@ export type ClientView<T> = T extends readonly (infer Item)[] ? ClientView<Item>
 /**
  * `tagged('outcome', { succeeded: Succeeded, declined: Declined })`: each variant is an object
  * schema without the tag, and the helper adds it. Two keys may name one schema (a variant that
- * serves two tag values), and its tag then takes both.
+ * serves two tag values), and its tag then takes both. A variant that declares the tag field itself
+ * lends the metadata of that field (its description and vocabulary) to the tag the helper writes.
  */
 export declare function tagged<const Tag extends string, const V extends Variants>(tag: Tag, variants: V): TaggedSchema<Tag, V>;
+/** The variant a tag value selects, as the union holds it: the schema to register as that variant's component. */
+export declare function variantOf(union: z.ZodType, key: string): z.ZodObject;
 export type TolerantParse = {
     readonly ok: true;
     readonly value: unknown;
