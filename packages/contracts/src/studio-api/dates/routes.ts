@@ -275,7 +275,7 @@ export const listStudioChatMessages: ListStudioChatMessagesRoute = moderationDat
     summary:
       'The live chat as the studio sees it — **by cursor**, the second exception to page + total.',
     item: StudioChatMessageSchema,
-    paging: cursor({ maxLimit: 50 }),
+    paging: cursor({ maxLimit: 200 }),
     parameters: [SinceSeqParameter],
     answer: 'A page of messages, with their state and their badge.',
   });
