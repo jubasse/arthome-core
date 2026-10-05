@@ -12,11 +12,9 @@ import { countersignBankChange } from './bank-change-requests/routes.js';
 import {
   createReauthToken,
   getStudioBootstrap,
-  listInbox,
   listReauthFactors,
   listStudioChanges,
   listStudioDevices,
-  markInboxRead,
   registerStudioPushToken,
   revokeStudioDevice,
   signOutStudio,
@@ -108,6 +106,7 @@ import {
   submitHealthSample,
 } from './dates/routes.js';
 import { getChannelExport } from './exports/routes.js';
+import { listInbox, markInboxRead } from './inbox/routes.js';
 import { resolveIncident, escalateIncidentToProduction } from './incidents/routes.js';
 import { respondToInvitation } from './invitations/routes.js';
 import {

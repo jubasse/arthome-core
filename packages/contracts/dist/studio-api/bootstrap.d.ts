@@ -1,12 +1,10 @@
 import { z } from 'zod';
 import { LOCALES } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
-import { BadRequestResponse, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, PageParameter, PageSizeParameter, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter, UnauthorizedResponse, UnavailableResponse } from './components.js';
+import { BadRequestResponse, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter, UnauthorizedResponse, UnavailableResponse } from './components.js';
 import { StudioEnvelopeMetaSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
-import { OffsetPageInfoSchema } from '../pagination/index.js';
-import { StudioBootstrapSchema, StudioCountersSchema } from '../studio-access/index.js';
-import { InboxEntrySchema } from '../studio-desk/index.js';
+import { StudioBootstrapSchema } from '../studio-access/index.js';
 declare const CREATE_REAUTH_TOKEN_INTENT: readonly ["reveal_stream_key", "rotate_stream_key", "transfer_ownership", "delete_channel", "change_bank_details"];
 declare const CREATE_REAUTH_TOKEN_FACTOR: readonly ["platform_biometric", "password", "totp", "backup_code"];
 declare const REGISTER_STUDIO_PUSH_TOKEN_PLATFORM: readonly ["fcm", "apns"];
@@ -25,46 +23,6 @@ export declare const getStudioBootstrap: Route<{
         }, z.core.$loose>>>;
         401: typeof UnauthorizedResponse;
         503: typeof UnavailableResponse;
-    };
-}>;
-export declare const listInbox: Route<{
-    method: 'get';
-    version: 1;
-    path: '/inbox';
-    parameters: readonly [
-        typeof PageParameter,
-        typeof PageSizeParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof IfRightsVersionParameter
-    ];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            items: z.ZodArray<typeof InboxEntrySchema>;
-            page: typeof OffsetPageInfoSchema;
-        }, z.core.$loose>>>;
-        401: typeof UnauthorizedResponse;
-    };
-}>;
-export declare const markInboxRead: Route<{
-    method: 'post';
-    version: 1;
-    path: '/inbox';
-    parameters: readonly [
-        typeof IdempotencyKeyParameter,
-        typeof IfRightsVersionParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        entryIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
-        all: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof StudioCountersSchema;
-        }, z.core.$loose>>>;
-        401: typeof UnauthorizedResponse;
     };
 }>;
 export declare const createReauthToken: Route<{

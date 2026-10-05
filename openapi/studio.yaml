@@ -632,18 +632,17 @@ paths:
       - notifications
       tags:
       - bootstrap
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/Page'
       - $ref: '#/components/parameters/PageSize'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IfRightsVersion'
       responses:
         '200':
           description: A page of inbox entries.
-          headers:
-            X-Arthome-Rights-Version:
-              $ref: '#/components/headers/RightsVersion'
           content:
             application/json:
               schema:
@@ -662,7 +661,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:00:10.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 items:
                 - id: 019928b1-0000-7000-8000-000000000001
@@ -677,10 +676,21 @@ paths:
                 page:
                   page: 1
                   pageSize: 20
-                  totalItems: 2
+                  totalItems: 1
                   totalPages: 1
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     post:
       operationId: markInboxRead
       summary: Marks inbox entries as read.
@@ -690,11 +700,14 @@ paths:
       - notifications
       tags:
       - bootstrap
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -734,8 +747,43 @@ paths:
                   moderationPending: 14
                   inboxUnread: 0
                   dutiesTonight: 3
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/me/reauth:
     post:
       operationId: createReauthToken

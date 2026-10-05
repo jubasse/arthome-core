@@ -8,7 +8,6 @@ import { ExampleRegistry, apiDocs, maturityOf } from './docs.js';
 import { openApiDocumentOf } from './index.js';
 import { defineApi, defineRoute } from '../http/index.js';
 import { storefrontV1 } from '../storefront-api/components.js';
-import { listInbox } from '../studio-api/bootstrap.js';
 import { datesDocs } from '../studio-api/dates/docs.js';
 import { getDateSheet } from '../studio-api/dates/routes.js';
 import { studioDocsOf } from '../studio-api/docs.js';
@@ -231,6 +230,6 @@ describe('studioDocsOf', () => {
       'x-arthome-maturity': 'stable',
       'x-arthome-upstream': datesDocs.getDateSheet?.upstream,
     });
-    expect(studioDocsOf(listInbox).description).toBe(listInbox.description);
+    expect(studioDocsOf(legacy).description).toBe('Inline prose.');
   });
 });

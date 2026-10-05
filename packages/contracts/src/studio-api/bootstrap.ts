@@ -27,8 +27,6 @@ import {
   IdempotencyKeyParameter,
   IfRightsVersionParameter,
   NotFoundResponse,
-  PageParameter,
-  PageSizeParameter,
   RightsVersionHeader,
   ServedAtHeader,
   StudioTag,
@@ -47,9 +45,7 @@ import type {
   QueryParameter,
   Route,
 } from '../http/index.js';
-import { OffsetPageInfoSchema } from '../pagination/index.js';
-import { StudioBootstrapSchema, StudioCountersSchema } from '../studio-access/index.js';
-import { InboxEntrySchema } from '../studio-desk/index.js';
+import { StudioBootstrapSchema } from '../studio-access/index.js';
 
 const bootstrapRoutes = studioV1
   .tags(StudioTag.BOOTSTRAP)
@@ -223,162 +219,6 @@ export const getStudioBootstrap: Route<{
       },
     },
     503: UnavailableResponse,
-  },
-});
-
-export const listInbox: Route<{
-  method: 'get';
-  version: 1;
-  path: '/inbox';
-  parameters: readonly [
-    typeof PageParameter,
-    typeof PageSizeParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-    typeof IfRightsVersionParameter,
-  ];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<
-          { items: z.ZodArray<typeof InboxEntrySchema>; page: typeof OffsetPageInfoSchema },
-          z.core.$loose
-        >
-      >
-    >;
-    401: typeof UnauthorizedResponse;
-  };
-}> = bootstrapReads.defineRoute({
-  method: 'get',
-  path: '/inbox',
-  operationId: 'listInbox',
-  summary: 'The inbox — invitations and alerts routed by role and by channel.',
-  description:
-    '**Open to everyone**, whatever the role. The routing is decided **server-side**: the\napplication does not filter a common queue, otherwise it would receive alerts it has no right\nto read and would merely refrain from displaying them — which is a leak, not a rule.\n',
-  'x-arthome-maturity': 'provisional',
-  'x-arthome-upstream': [Service.NOTIFICATIONS],
-  parameters: [PageParameter, PageSizeParameter],
-  responses: {
-    200: {
-      description: 'A page of inbox entries.',
-      headers: {
-        'X-Arthome-Rights-Version': RightsVersionHeader,
-      },
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              items: z.array(InboxEntrySchema),
-              page: OffsetPageInfoSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:00:10.000Z',
-            rightsVersion: 412,
-            items: [
-              {
-                id: '019928b1-0000-7000-8000-000000000001',
-                kind: 'invitation',
-                channelId: '019928a0-7d31-7a10-b8c4-2f9e11a4c222',
-                body: {
-                  contentLanguage: Locale.FR,
-                  text: 'Compagnie Verticale vous invite comme coordination.',
-                },
-                deepLinkCode: 'crew_invitation',
-                createdAt: '2026-09-20T14:02:00Z',
-                read: false,
-              },
-            ],
-            page: {
-              page: 1,
-              pageSize: 20,
-              totalItems: 2,
-              totalPages: 1,
-            },
-          },
-        },
-      },
-    },
-  },
-});
-
-export const markInboxRead: Route<{
-  method: 'post';
-  version: 1;
-  path: '/inbox';
-  parameters: readonly [
-    typeof IdempotencyKeyParameter,
-    typeof IfRightsVersionParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  requestBody: JsonRequestBody<
-    z.ZodObject<
-      {
-        entryIds: z.ZodOptional<z.ZodArray<z.ZodString>>;
-        all: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
-      },
-      z.core.$strip
-    >
-  >;
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<{ data: typeof StudioCountersSchema }, z.core.$loose>
-      >
-    >;
-    401: typeof UnauthorizedResponse;
-  };
-}> = bootstrapRoutes.defineRoute({
-  method: 'post',
-  path: '/inbox',
-  operationId: 'markInboxRead',
-  summary: 'Marks inbox entries as read.',
-  description: '**Monotonic: nothing gets un-read.** Replayed, it changes nothing.',
-  'x-arthome-maturity': 'provisional',
-  'x-arthome-upstream': [Service.NOTIFICATIONS],
-  parameters: [IdempotencyKeyParameter, IfRightsVersionParameter],
-  requestBody: {
-    required: true,
-    content: {
-      'application/json': {
-        schema: z.object({
-          entryIds: z.array(uuidOut()).optional(),
-          all: z.boolean().default(false).optional(),
-        }),
-        example: {
-          all: true,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Up-to-date counters.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              data: StudioCountersSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:00:20.000Z',
-            rightsVersion: 412,
-            data: {
-              moderationPending: 14,
-              inboxUnread: 0,
-              dutiesTonight: 3,
-            },
-          },
-        },
-      },
-    },
-    401: UnauthorizedResponse,
   },
 });
 
