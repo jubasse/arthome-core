@@ -16,6 +16,8 @@ import { incidentsDocs } from './incidents/docs.js';
 import { incidentsExamples } from './incidents/examples.js';
 import { invitationsDocs } from './invitations/docs.js';
 import { invitationsExamples } from './invitations/examples.js';
+import { moderationDocs } from './moderation/docs.js';
+import { moderationExamples } from './moderation/examples.js';
 import { seatsDocs } from './seats/docs.js';
 import { seatsExamples } from './seats/examples.js';
 import { uploadsDocs } from './uploads/docs.js';
@@ -169,6 +171,7 @@ export const studioDocs: ApiDocs = apiDocs({
     invitationsDocs,
     seatsDocs,
     incidentsDocs,
+    moderationDocs,
   ],
   examples: [
     sharedExamples,
@@ -179,6 +182,7 @@ export const studioDocs: ApiDocs = apiDocs({
     invitationsExamples,
     seatsExamples,
     incidentsExamples,
+    moderationExamples,
   ],
 });
 

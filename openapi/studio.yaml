@@ -4280,6 +4280,9 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - name: itemId
         in: path
@@ -4287,10 +4290,10 @@ paths:
         schema:
           type: string
           format: uuid
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       responses:
         '200':
           description: Lease taken, with the instant it expires.
@@ -4307,7 +4310,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:30:10.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   id: 019928e0-0000-7000-8000-000000000001
@@ -4319,25 +4322,66 @@ paths:
                   claimedBy:
                     personId: 019928b0-0000-7000-8000-000000000001
                     displayName: Claire D.
-                    surface: studio-mobile
+                    surface: studio_mobile
                   claimExpiresAt: '2026-09-21T19:32:10Z'
                   version: 2
                   decisionVersion: 0
-        '409':
-          description: '`moderation.already_claimed`, with the name of whoever holds the lease.'
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: moderation.already_claimed
-                  nature: refused
-                  params:
-                    claimedBy: Yann P.
-                    claimExpiresAt: '2026-09-21T19:32:00Z'
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T19:30:10.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/ModerationAlreadyClaimedError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                moderation.already_claimed:
+                  $ref: '#/components/examples/ModerationAlreadyClaimedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     delete:
       operationId: releaseModerationItem
       summary: Releases the claim.
@@ -4347,6 +4391,9 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - name: itemId
         in: path
@@ -4354,10 +4401,16 @@ paths:
         schema:
           type: string
           format: uuid
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - name: expectedVersion
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       responses:
         '200':
           description: Row released.
@@ -4374,18 +4427,57 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:31:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   id: 019928e0-0000-7000-8000-000000000001
                   messageId: 019928f8-0000-7000-8000-000000000009
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
-                  state: reported
+                  state: claimed
                   reportsCount: 3
                   atMediaSec: 1812
-                  version: 3
+                  claimedBy:
+                    personId: 019928b0-0000-7000-8000-000000000001
+                    displayName: Claire D.
+                    surface: studio_mobile
+                  claimExpiresAt: '2026-09-21T19:32:10Z'
+                  version: 2
+                  decisionVersion: 0
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/moderation/items/{itemId}/verdict:
     post:
       operationId: settleModerationItem
@@ -4410,6 +4502,9 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - name: itemId
         in: path
@@ -4417,10 +4512,10 @@ paths:
         schema:
           type: string
           format: uuid
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -4471,7 +4566,7 @@ paths:
               expectedDecisionVersion: 0
       responses:
         '200':
-          description: Verdict rendu.
+          description: Verdict rendered.
           content:
             application/json:
               schema:
@@ -4485,40 +4580,82 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:31:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   id: 019928e0-0000-7000-8000-000000000001
                   messageId: 019928f8-0000-7000-8000-000000000009
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
-                  state: settled
-                  verdict: mute
+                  state: claimed
                   reportsCount: 3
                   atMediaSec: 1812
-                  settledBy:
+                  claimedBy:
                     personId: 019928b0-0000-7000-8000-000000000001
                     displayName: Claire D.
-                    surface: studio-mobile
-                  settledAt: '2026-09-21T19:31:20Z'
-                  origin: human_verdict
-                  version: 3
-                  decisionVersion: 1
-        '409':
-          description: '`moderation.already_settled`, **with the winning verdict and its author**.'
+                    surface: studio_mobile
+                  claimExpiresAt: '2026-09-21T19:32:10Z'
+                  version: 2
+                  decisionVersion: 0
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: moderation.already_settled
-                  nature: refused
-                  params:
-                    verdict: remove
-                    settledBy: Yann P.
-                    settledAt: '2026-09-21T19:31:18Z'
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T19:31:20.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/ModerationAlreadySettledError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                moderation.already_settled:
+                  $ref: '#/components/examples/ModerationAlreadySettledError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/audience:
     get:
       operationId: searchAudience
@@ -14509,6 +14646,117 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    ModerationAlreadyClaimedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: moderation.already_claimed
+            params:
+              type: object
+              properties:
+                claimedBy:
+                  type: string
+                claimExpiresAt:
+                  type: string
+              required:
+              - claimedBy
+              - claimExpiresAt
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ModerationAlreadySettledError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: moderation.already_settled
+            params:
+              type: object
+              properties:
+                verdict:
+                  type: string
+                settledBy:
+                  type: string
+                settledAt:
+                  type: string
+              required:
+              - verdict
+              - settledBy
+              - settledAt
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     DateTechnicalCheckRequiredError:
       type: object
       properties:
@@ -14996,6 +15244,27 @@ components:
             threshold: 10000
             capacityTotal: 10050
             revisableUntil: '2026-09-18T19:00:00Z'
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ModerationAlreadyClaimedError:
+      value:
+        error:
+          code: moderation.already_claimed
+          nature: refused
+          params:
+            claimedBy: Yann P.
+            claimExpiresAt: '2026-09-21T19:32:00Z'
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ModerationAlreadySettledError:
+      value:
+        error:
+          code: moderation.already_settled
+          nature: refused
+          params:
+            verdict: remove
+            settledBy: Yann P.
+            settledAt: '2026-09-21T19:31:18Z'
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     PublicationChecklistIncompleteError:

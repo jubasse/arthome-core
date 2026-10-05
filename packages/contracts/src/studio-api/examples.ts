@@ -1,9 +1,10 @@
 import type { z } from 'zod';
 
-import { Surface } from '@arthome/core';
+import { ModerationItemState, ModerationVerdict, StateChangeOrigin, Surface } from '@arthome/core';
 
 import { Acknowledged, Deleted, ReauthProof } from '../http/index.js';
 import type { ModuleExamples } from '../openapi/docs.js';
+import { ModerationItemSchema } from '../studio-desk/index.js';
 import { BankChangeRequestSchema, ExportJobSchema } from '../studio-money/index.js';
 
 const bankChangeRequest: z.output<typeof BankChangeRequestSchema> = {
@@ -17,6 +18,52 @@ const bankChangeRequest: z.output<typeof BankChangeRequestSchema> = {
     displayName: 'Léa M.',
     surface: Surface.STUDIO_WEB,
   },
+};
+
+const claimedModerationItem: z.output<typeof ModerationItemSchema> = {
+  id: '019928e0-0000-7000-8000-000000000001',
+  messageId: '019928f8-0000-7000-8000-000000000009',
+  dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+  state: ModerationItemState.CLAIMED,
+  reportsCount: 3,
+  atMediaSec: 1812,
+  claimedBy: {
+    personId: '019928b0-0000-7000-8000-000000000001',
+    displayName: 'Claire D.',
+    surface: Surface.STUDIO_MOBILE,
+  },
+  claimExpiresAt: '2026-09-21T19:32:10Z',
+  version: 2,
+  decisionVersion: 0,
+};
+
+const releasedModerationItem: z.output<typeof ModerationItemSchema> = {
+  id: '019928e0-0000-7000-8000-000000000001',
+  messageId: '019928f8-0000-7000-8000-000000000009',
+  dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+  state: ModerationItemState.REPORTED,
+  reportsCount: 3,
+  atMediaSec: 1812,
+  version: 3,
+};
+
+const settledModerationItem: z.output<typeof ModerationItemSchema> = {
+  id: '019928e0-0000-7000-8000-000000000001',
+  messageId: '019928f8-0000-7000-8000-000000000009',
+  dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+  state: ModerationItemState.SETTLED,
+  verdict: ModerationVerdict.MUTE,
+  reportsCount: 3,
+  atMediaSec: 1812,
+  settledBy: {
+    personId: '019928b0-0000-7000-8000-000000000001',
+    displayName: 'Claire D.',
+    surface: Surface.STUDIO_MOBILE,
+  },
+  settledAt: '2026-09-21T19:31:20Z',
+  origin: StateChangeOrigin.HUMAN_VERDICT,
+  version: 3,
+  decisionVersion: 1,
 };
 
 const exportJob: z.output<typeof ExportJobSchema> = {
@@ -38,4 +85,5 @@ export const sharedExamples: ModuleExamples = [
   [ReauthProof, [{ reauthToken: 'ott_9f2ac1' }]],
   [ExportJobSchema, [exportJob]],
   [BankChangeRequestSchema, [bankChangeRequest]],
+  [ModerationItemSchema, [claimedModerationItem, releasedModerationItem, settledModerationItem]],
 ];

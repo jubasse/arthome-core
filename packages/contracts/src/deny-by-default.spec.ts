@@ -76,7 +76,6 @@ const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
 const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'addBannedWord',
   'changeMemberRoles',
-  'claimModerationItem',
   'closeReconciliationPeriod',
   'createReauthToken',
   'deleteChannel',
@@ -102,7 +101,6 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'listStudioDevices',
   'markInboxRead',
   'registerStudioPushToken',
-  'releaseModerationItem',
   'removeBannedWord',
   'removeMember',
   'requestBankChange',
@@ -111,7 +109,6 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'revokeStudioDevice',
   'sanctionAudienceMember',
   'searchAudience',
-  'settleModerationItem',
   'signInStudio',
   'signOutStudio',
   'transferChannelOwnership',

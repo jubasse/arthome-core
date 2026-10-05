@@ -113,14 +113,16 @@ import { getChannelExport } from './exports/routes.js';
 import { resolveIncident, escalateIncidentToProduction } from './incidents/routes.js';
 import { respondToInvitation } from './invitations/routes.js';
 import {
-  addBannedWord,
   claimModerationItem,
-  listModerationQueue,
   releaseModerationItem,
+  settleModerationItem,
+} from './moderation/routes.js';
+import {
+  addBannedWord,
+  listModerationQueue,
   removeBannedWord,
   sanctionAudienceMember,
   searchAudience,
-  settleModerationItem,
 } from './moderation.js';
 import {
   closeReconciliationPeriod,
