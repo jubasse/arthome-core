@@ -8005,16 +8005,19 @@ paths:
       - ticketing
       tags:
       - pairing
+      x-arthome-requires:
+      - name: throttle
+        bucket: pairing_create
       security:
       - deviceToken: []
       - bearerToken: []
       - sessionCookie: []
         csrfToken: []
       parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/AdmissionToken'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -8069,7 +8072,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:50:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   pairingId: 019928f9-0000-7000-8000-000000000001
                   intent: seat
@@ -8079,31 +8082,42 @@ paths:
                   expiresAt: '2026-09-21T18:55:00.000Z'
                   pollIntervalSec: 2
                   state: pending
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            `order.sales_queue_admission_required`: a `seat` pairing on a date whose sales queue is armed,
-            without a valid admission (D-086). The television enters the queue and opens the pairing once
-            admitted.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
+            A write with the session cookie came without its `X-Arthome-Csrf` token, or with another
+            session's (`api.forbidden`). A write with a bearer token never meets it.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: order.sales_queue_admission_required
-                  nature: refused
-                  params:
-                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:50:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/OrderSalesQueueAdmissionRequiredError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                order.sales_queue_admission_required:
+                  $ref: '#/components/examples/OrderSalesQueueAdmissionRequiredError'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/pairings/{pairingId}:
     get:
       operationId: pollPairing
@@ -8122,6 +8136,8 @@ paths:
         after the television restarts.
 
         The response is **complete**: the confirmation screen costs **zero further calls**.
+
+        **Slow down (`429`).** RFC 8628 `slow_down` (`pairing.slow_down`, with `Retry-After-Ms`): the surface **slows down**, it does not retry faster.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
@@ -8158,7 +8174,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:52:10.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   pairingId: 019928f9-0000-7000-8000-000000000001
                   intent: seat
@@ -8194,31 +8210,45 @@ paths:
                       media:
                         wide: []
                         poster: []
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
         '410':
           $ref: '#/components/responses/Gone'
         '429':
-          description: RFC 8628 `slow_down`. The surface **slows down**, it does not retry faster.
-          headers:
-            Retry-After-Ms:
-              $ref: '#/components/headers/RetryAfterMs'
+          description: Rate limit reached. `params.retryAfterMs` allows the control to be disabled instead of stacking up refusals.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: pairing.slow_down
-                  nature: unavailable
-                  params:
-                    retryAfterMs: 5000
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:52:10.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiRateLimitedError'
+                - $ref: '#/components/schemas/PairingSlowDownError'
+              examples:
+                api.rate_limited:
+                  $ref: '#/components/examples/ApiRateLimitedError'
+                pairing.slow_down:
+                  $ref: '#/components/examples/PairingSlowDownError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     delete:
       operationId: cancelPairing
       summary: Closes a pending pairing.
-      description: Triggered by the Back button. The television often leaves without waiting for the response.
+      description: |
+        Triggered by the Back button. The television often leaves without waiting for the response.
+        **`pairing.execution_engaged` (`409`) — the pairing can no longer be cancelled.** The phone has
+        entered the payment journey; cancelling here would orphan a purchase in flight.
+
+        **What the surface does with this refusal**: it **stays on the waiting screen** and keeps
+        polling. It does not go back. This is the only case in the contract where pressing Back does
+        not go up one level, and the reason is written down: we do not let a remote control cancel a
+        payment it triggered itself.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
@@ -8236,9 +8266,9 @@ paths:
         schema:
           type: string
           format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: Cancelled, or already settled — **a second call returns the original outcome, never an error**.
@@ -8255,38 +8285,77 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:53:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   pairingId: 019928f9-0000-7000-8000-000000000001
                   intent: seat
-                  state: cancelled
+                  state: approved
                   pollIntervalSec: 5
+                  ticket:
+                    seatId: 019928f5-0000-7000-8000-000000000001
+                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                    seatCode: ATH-7QK2-4M
+                    tier: full
+                    state: active
+                    date:
+                      id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                      showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
+                      channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                      slug: '2026-09-21'
+                      canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+                      title: Nuit blanche
+                      startsAt: '2026-09-21T19:00:00Z'
+                      venueClock:
+                        venueTimezone: Europe/Paris
+                        venueUtcOffsetMin: 120
+                      runtimeMin: 95
+                      roomOpensAt: '2026-09-21T18:30:00Z'
+                      displayState: room_open
+                      displayStateValidUntil: '2026-09-21T19:00:00Z'
+                      replay:
+                        policy: included
+                        windowHours: 72
+                      rights:
+                        scope: worldwide
+                        blackoutCountries: []
+                      media:
+                        wide: []
+                        poster: []
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
           description: |
-            **`pairing.execution_engaged` — the pairing can no longer be cancelled.** The phone has
-            entered the payment journey; cancelling here would orphan a purchase in flight.
-
-            **What the surface does with this refusal**: it **stays on the waiting screen** and keeps
-            polling. It does not go back. This is the only case in the contract where pressing Back does
-            not go up one level, and the reason is written down: we do not let a remote control cancel a
-            payment it triggered itself.
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: pairing.execution_engaged
-                  nature: refused
-                  params:
-                    state: engaged
-                    engagedAt: '2026-09-21T18:52:04Z'
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:52:06.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/PairingExecutionEngagedError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                pairing.execution_engaged:
+                  $ref: '#/components/examples/PairingExecutionEngagedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/pairings/{pairingId}/engagement:
     post:
       operationId: engagePairing
@@ -8310,6 +8379,8 @@ paths:
 
         **Idempotent**: a second call on an already `engaged` pairing returns the same state, not an
         error — the phone may replay its entry into the journey on a network that switches over.
+
+        Refused with `pairing.identity_mismatch`, or `pairing.intent_not_engageable` on `signin`.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
@@ -8326,9 +8397,9 @@ paths:
         schema:
           type: string
           format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -8358,31 +8429,81 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:52:04.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   pairingId: 019928f9-0000-7000-8000-000000000001
                   intent: seat
-                  state: engaged
-                  pollIntervalSec: 2
+                  state: approved
+                  pollIntervalSec: 5
+                  ticket:
+                    seatId: 019928f5-0000-7000-8000-000000000001
+                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                    seatCode: ATH-7QK2-4M
+                    tier: full
+                    state: active
+                    date:
+                      id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                      showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
+                      channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                      slug: '2026-09-21'
+                      canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+                      title: Nuit blanche
+                      startsAt: '2026-09-21T19:00:00Z'
+                      venueClock:
+                        venueTimezone: Europe/Paris
+                        venueUtcOffsetMin: 120
+                      runtimeMin: 95
+                      roomOpensAt: '2026-09-21T18:30:00Z'
+                      displayState: room_open
+                      displayStateValidUntil: '2026-09-21T19:00:00Z'
+                      replay:
+                        policy: included
+                        windowHours: 72
+                      rights:
+                        scope: worldwide
+                        blackoutCountries: []
+                      media:
+                        wide: []
+                        poster: []
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            `pairing.identity_mismatch`, or `pairing.intent_not_engageable` on `signin`.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
+            A write with the session cookie came without its `X-Arthome-Csrf` token, or with another
+            session's (`api.forbidden`). A write with a bearer token never meets it.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: pairing.intent_not_engageable
-                  nature: refused
-                  params:
-                    intent: signin
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:52:04.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/PairingIdentityMismatchError'
+                - $ref: '#/components/schemas/PairingIntentNotEngageableError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                pairing.identity_mismatch:
+                  $ref: '#/components/examples/PairingIdentityMismatchError'
+                pairing.intent_not_engageable:
+                  $ref: '#/components/examples/PairingIntentNotEngageableError'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '410':
           $ref: '#/components/responses/Gone'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/pairings/{pairingId}/decision:
     post:
       operationId: decidePairing
@@ -8401,6 +8522,8 @@ paths:
         rights and deliver the seat to the wrong account — in a living room, at the precise moment
         two people are watching the same screen. The phone offers "switch account": a gesture by the
         person, never by the system.
+
+        Refused with `pairing.identity_mismatch` — the bearer is not the profile that opened the pairing. Impossible on `signin`.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
@@ -8417,9 +8540,9 @@ paths:
         schema:
           type: string
           format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -8463,30 +8586,78 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:52:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   pairingId: 019928f9-0000-7000-8000-000000000001
                   intent: seat
                   state: approved
                   pollIntervalSec: 5
+                  ticket:
+                    seatId: 019928f5-0000-7000-8000-000000000001
+                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                    seatCode: ATH-7QK2-4M
+                    tier: full
+                    state: active
+                    date:
+                      id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                      showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
+                      channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                      slug: '2026-09-21'
+                      canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+                      title: Nuit blanche
+                      startsAt: '2026-09-21T19:00:00Z'
+                      venueClock:
+                        venueTimezone: Europe/Paris
+                        venueUtcOffsetMin: 120
+                      runtimeMin: 95
+                      roomOpensAt: '2026-09-21T18:30:00Z'
+                      displayState: room_open
+                      displayStateValidUntil: '2026-09-21T19:00:00Z'
+                      replay:
+                        policy: included
+                        windowHours: 72
+                      rights:
+                        scope: worldwide
+                        blackoutCountries: []
+                      media:
+                        wide: []
+                        poster: []
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            `pairing.identity_mismatch` — the bearer is not the profile that opened the pairing. Impossible on `signin`.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
+            A write with the session cookie came without its `X-Arthome-Csrf` token, or with another
+            session's (`api.forbidden`). A write with a bearer token never meets it.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: pairing.identity_mismatch
-                  nature: refused
-                  params: {}
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:52:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/PairingIdentityMismatchError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                pairing.identity_mismatch:
+                  $ref: '#/components/examples/PairingIdentityMismatchError'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '410':
           $ref: '#/components/responses/Gone'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/account-deep-link:
     get:
       operationId: getAccountDeepLink
@@ -13302,6 +13473,355 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    OrderSalesQueueAdmissionRequiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: order.sales_queue_admission_required
+            params:
+              type: object
+              properties:
+                dateId:
+                  type: string
+              required:
+              - dateId
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ApiRateLimitedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.rate_limited
+            params:
+              type: object
+              properties:
+                retryAfterMs:
+                  type: integer
+                  format: int64
+              required:
+              - retryAfterMs
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    PairingSlowDownError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: pairing.slow_down
+            params:
+              type: object
+              properties:
+                retryAfterMs:
+                  type: integer
+                  format: int64
+              required:
+              - retryAfterMs
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    PairingExecutionEngagedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: pairing.execution_engaged
+            params:
+              type: object
+              properties:
+                state:
+                  type: string
+                engagedAt:
+                  type: string
+              required:
+              - state
+              - engagedAt
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    PairingIdentityMismatchError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: pairing.identity_mismatch
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    PairingIntentNotEngageableError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: pairing.intent_not_engageable
+            params:
+              type: object
+              properties:
+                intent:
+                  type: string
+              required:
+              - intent
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
   examples:
     ApiForbiddenError:
       value:
@@ -13328,6 +13848,15 @@ components:
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
+    ApiRateLimitedError:
+      value:
+        error:
+          code: api.rate_limited
+          nature: unavailable
+          params:
+            retryAfterMs: 2000
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     ChatHoldersOnlyError:
       value:
         error:
@@ -13342,6 +13871,51 @@ components:
           code: identity.signed_out_elsewhere
           nature: refused
           params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    OrderSalesQueueAdmissionRequiredError:
+      value:
+        error:
+          code: order.sales_queue_admission_required
+          nature: refused
+          params:
+            dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    PairingExecutionEngagedError:
+      value:
+        error:
+          code: pairing.execution_engaged
+          nature: refused
+          params:
+            state: engaged
+            engagedAt: '2026-09-21T18:52:04Z'
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    PairingIdentityMismatchError:
+      value:
+        error:
+          code: pairing.identity_mismatch
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    PairingIntentNotEngageableError:
+      value:
+        error:
+          code: pairing.intent_not_engageable
+          nature: refused
+          params:
+            intent: signin
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    PairingSlowDownError:
+      value:
+        error:
+          code: pairing.slow_down
+          nature: unavailable
+          params:
+            retryAfterMs: 5000
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     StateConflictError:

@@ -121,14 +121,14 @@ import {
   updateProfile,
   updateSavedSearch,
 } from './me/routes.js';
+import { getAccountDeepLink } from './pairing.js';
 import {
   cancelPairing,
   createPairing,
   decidePairing,
   engagePairing,
-  getAccountDeepLink,
   pollPairing,
-} from './pairing.js';
+} from './pairings/routes.js';
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback/routes.js';
 import { extendRail } from './rails/routes.js';
 import { listReplays } from './replays/routes.js';

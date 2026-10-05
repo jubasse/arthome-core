@@ -533,6 +533,28 @@ export const viewer: Identity<
   writeResponses: { 403: CsrfRefusedResponse },
 });
 
+export const ViewerOrDevicePrincipalSchema: z.ZodObject<
+  { accountId: z.ZodOptional<z.ZodString>; deviceId: z.ZodString },
+  z.core.$strip
+> = z.object({ accountId: z.string().optional(), deviceId: z.string() });
+
+/** A signed-in viewer or a device alone: the credentials a pairing accepts, a device token needing no session. */
+export const viewerOrDevice: Identity<
+  'viewer_or_device',
+  typeof ViewerOrDevicePrincipalSchema,
+  typeof ApiErrorCode.FORBIDDEN,
+  readonly [],
+  readonly []
+> = identity('viewer_or_device', {
+  schemes: {
+    read: [{ deviceToken: [] }, { bearerToken: [] }, { sessionCookie: [] }],
+    write: [{ deviceToken: [] }, { bearerToken: [] }, { sessionCookie: [], csrfToken: [] }],
+  },
+  principal: ViewerOrDevicePrincipalSchema,
+  writeErrors: [ApiErrorCode.FORBIDDEN],
+  writeResponses: { 403: CsrfRefusedResponse },
+});
+
 /** The television, paired to an account: it holds a device token and no session. */
 export const device: Identity<
   'paired_device',
