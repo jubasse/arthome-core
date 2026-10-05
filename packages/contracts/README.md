@@ -192,6 +192,11 @@ studioV1.identity(operator).requires(roles(MemberRole.PRODUCTION).on('channelId'
   the write the schemes of a read and none of the identity's write codes, and the reason is
   documented as `x-arthome-csrf-exempt`. The server's guard for the identity must honour it. Only
   `signOut` uses it.
+- **An optional route may count a refused credential as none**:
+  `.optionalAuth({ refusedCredentialIsAnonymous: 'reason' })` derives no `401`, and the reason is
+  documented as `x-arthome-refused-credential-is-anonymous`. The server's guard for the identity must
+  honour it. Only `signOut` uses it (signing out is idempotent), and `access-exceptions.spec.ts`
+  holds both exceptions to `signOut`.
 - **The identity may add parameters and headers** to every route or to a write only (the studio's
   `If-Rights-Version`, its `X-Arthome-Rights-Version` on every success), and an `internal` identity
   (a service's) marks its routes internal: `defineApi` keeps them out of a surface document.
@@ -208,7 +213,7 @@ still on a bare builder is unchanged. Nothing the server can answer is undocumen
 | a path or query parameter, or a body | `400 api.schema_invalid` |
 | a body | `413 api.payload_too_large`, `415 api.unsupported_media_type`, and a `bodyLimit` (1 MiB; 2 MiB on a batch) |
 | an `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` header on its successes |
-| an identity | `401`, the identity's codes, and on a write its write codes (the CSRF `403`, a stale rights version) |
+| an identity | `401` (unless a refused credential counts as none), the identity's codes, and on a write its write codes (the CSRF `403`, a stale rights version) |
 | a rule | the rule's codes (`403 api.reauthentication_required`, `429 api.rate_limited`) |
 | the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `503 api.service_unavailable` (its own, never relayed), `504 api.upstream_timeout` and `api.deadline_exceeded` |
 | a `cache` with an `etag` | `If-None-Match`, `ETag` and the `304` |

@@ -56,6 +56,10 @@ const signOutOnly = account
     csrfExempt:
       'A forged sign-out ends a session and grants nothing, and a browser that lost its CSRF cookie must still be able to sign out.',
   })
+  .optionalAuth({
+    refusedCredentialIsAnonymous:
+      'Signing out is idempotent: a revoked, expired or absent session signs out as a no-op.',
+  })
   .single('auth');
 
 export const signUp: SignUpRoute = signedOut.action('sign-up', {

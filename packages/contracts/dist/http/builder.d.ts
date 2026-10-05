@@ -110,8 +110,13 @@ export interface RouteBuilder<V extends number | undefined, P extends readonly P
     }): RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, false>, Z>;
     /** No identity: sign-in, sign-up, public links. */
     public(): RouteBuilder<V, P, E, A, K, PublicAccess, Z>;
-    /** An anonymous caller is let in and the principal may be null; a credential presented and refused is still a `401`. */
-    optionalAuth(): X extends IdentifiedAccess<infer I, boolean> ? RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, true>, Z> : never;
+    /**
+     * An anonymous caller is let in and the principal may be null; a credential presented and refused
+     * is still a `401`, unless `refusedCredentialIsAnonymous` gives the reason it counts as none.
+     */
+    optionalAuth(options?: {
+        readonly refusedCredentialIsAnonymous: string;
+    }): X extends IdentifiedAccess<infer I, boolean> ? RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, true>, Z> : never;
     /** Rules beyond identity, applied in the order given, after those already set. */
     requires(...rules: readonly Requirement[]): RouteBuilder<V, P, E, A, K, X, Z>;
     /** The latency budget in milliseconds. */

@@ -89,6 +89,23 @@ describe('identity', () => {
     });
   });
 
+  it('lets an optional route treat a refused credential as none with a stated reason, and derives no 401', () => {
+    const write = base
+      .identity(viewer, { csrfExempt: 'a lost CSRF cookie must not block it' })
+      .optionalAuth({ refusedCredentialIsAnonymous: 'signing out is idempotent' })
+      .defineRoute({ method: 'post', path: '/b', operationId: 'b', responses: ok });
+
+    expect(write.security).toEqual([session, bearer, {}]);
+    expect(Object.keys(write.responses)).not.toContain('401');
+    expect(write.access).toEqual({
+      kind: 'identified',
+      identity: viewer,
+      optional: true,
+      csrfExempt: 'a lost CSRF cookie must not block it',
+      refusedCredentialIsAnonymous: 'signing out is idempotent',
+    });
+  });
+
   it('opens a route with public() and lets an anonymous caller in with optionalAuth()', () => {
     const open = base
       .public()

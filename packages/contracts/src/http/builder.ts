@@ -195,8 +195,13 @@ export interface RouteBuilder<
   ): RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, false>, Z>;
   /** No identity: sign-in, sign-up, public links. */
   public(): RouteBuilder<V, P, E, A, K, PublicAccess, Z>;
-  /** An anonymous caller is let in and the principal may be null; a credential presented and refused is still a `401`. */
-  optionalAuth(): X extends IdentifiedAccess<infer I, boolean>
+  /**
+   * An anonymous caller is let in and the principal may be null; a credential presented and refused
+   * is still a `401`, unless `refusedCredentialIsAnonymous` gives the reason it counts as none.
+   */
+  optionalAuth(options?: {
+    readonly refusedCredentialIsAnonymous: string;
+  }): X extends IdentifiedAccess<infer I, boolean>
     ? RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, true>, Z>
     : never;
   /** Rules beyond identity, applied in the order given, after those already set. */
@@ -408,7 +413,9 @@ function derivedCodes(
   }
   const { access } = settings;
   if (access?.kind === 'identified') {
-    add({ 401: [ApiErrorCode.UNAUTHENTICATED] });
+    if (access.refusedCredentialIsAnonymous === undefined) {
+      add({ 401: [ApiErrorCode.UNAUTHENTICATED] });
+    }
     add(access.identity.errors);
     if (write && access.csrfExempt === undefined) add(access.identity.writeErrors);
   }
@@ -566,11 +573,19 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
         }),
       }),
     public: () => next({ access: Object.freeze({ kind: 'anyone' }) }),
-    optionalAuth: () => {
+    optionalAuth: (options?: { readonly refusedCredentialIsAnonymous: string }) => {
       if (settings.access?.kind !== 'identified') {
         throw new Error('optionalAuth: set an identity first.');
       }
-      return next({ access: Object.freeze({ ...settings.access, optional: true }) });
+      return next({
+        access: Object.freeze({
+          ...settings.access,
+          optional: true,
+          ...(options !== undefined && {
+            refusedCredentialIsAnonymous: options.refusedCredentialIsAnonymous,
+          }),
+        }),
+      });
     },
     requires: (...rules: readonly Requirement[]) =>
       next({ requires: Object.freeze([...settings.requires, ...rules]) }),

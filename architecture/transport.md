@@ -647,7 +647,8 @@ that the record exists. Data a team shares keeps its version, and its item must 
 
 **Who may call is declared, and denied by default.** A route requires its surface's identity unless it
 says `.public()`; `.optionalAuth()` lets an anonymous caller in with a principal that may be null (a
-credential presented and refused is still a `401`). A rule beyond identity is a name with parameters
+credential presented and refused is still a `401`, except on `signOut`: signing out is idempotent, so
+its `refusedCredentialIsAnonymous` counts a revoked or expired session as none and answers `200`). A rule beyond identity is a name with parameters
 and errors (`roles(...).on('channelId')`, `recentAuth()`, `throttle('auth')`) that the server maps to a
 guard; the identity writes the document's `security`, including the CSRF token of a cookie write.
 

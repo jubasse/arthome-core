@@ -103,7 +103,7 @@ export type SignOutRoute = Route<{
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
-  access: IdentifiedAccess<typeof viewer, false>;
+  access: IdentifiedAccess<typeof viewer, true>;
   responses: {
     200: ItemResponse<typeof storefrontConventions, typeof SignOutAnswerSchema, unknown>;
   };
