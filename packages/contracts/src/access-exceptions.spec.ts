@@ -37,8 +37,8 @@ const publicWrites = (): string[] =>
   );
 
 describe('the exceptions to an identity, named where the documentation names them', () => {
-  it('exempts only signOut from the CSRF token', () => {
-    expect(routesDeclaring('csrfExempt')).toEqual(['signOut']);
+  it('exempts only signOut and signOutStudio from the CSRF token', () => {
+    expect(routesDeclaring('csrfExempt')).toEqual(['signOut', 'signOutStudio']);
   });
 
   it('treats a refused credential as none only on signOut', () => {

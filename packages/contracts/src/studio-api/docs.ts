@@ -112,7 +112,14 @@ export const studioDocs: ApiDocs = apiDocs({
       in: 'cookie',
       name: 'arthome_studio_session',
       description:
-        "Opaque session, `HttpOnly`/`Secure`/`SameSite=Lax` cookie. This is `studio-web`'s form.\n",
+        "Opaque session, `HttpOnly`/`Secure`/`SameSite=Lax` cookie. This is `studio-web`'s form.\n\n**In this mode, a request that writes carries `X-Arthome-Csrf`**: the value of the\n`__Host-arthome_studio_csrf` cookie the BFF sets beside the session cookie, readable by the page and\nbound to that session. Without it, or with another session's, the BFF answers `403`\n`api.forbidden`. Each such write declares it: the `csrfToken` scheme beside this one, and the\n`CsrfRefused` response. `If-Rights-Version` is optional and is no defence against it.\n",
+    },
+    csrfToken: {
+      type: 'apiKey',
+      in: 'header',
+      name: 'X-Arthome-Csrf',
+      description:
+        "The `__Host-arthome_studio_csrf` cookie's value, echoed by a write made with the session\ncookie (see `sessionCookie`). Required together with it, never with a bearer token.\n",
     },
     bearerToken: {
       type: 'http',

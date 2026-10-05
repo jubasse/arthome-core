@@ -24,6 +24,7 @@ export declare const RightsVersionHeader: Header;
 export declare const IdempotencyReplayedHeader: Header;
 export declare const BadRequestResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.PERIOD_FILTER_REQUIRED>;
 export declare const UnauthorizedResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UNAUTHENTICATED>;
+export declare const CsrfRefusedResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.FORBIDDEN>;
 export declare const ForbiddenResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.RIGHTS_VERSION_STALE>;
 export declare const NotFoundResponse: JsonResponse<typeof StudioErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.NOT_FOUND>;
 export declare const ConflictResponse: JsonResponse<typeof StudioErrorEnvelopeSchema>;
@@ -84,8 +85,8 @@ export declare const OperatorPrincipalSchema: z.ZodObject<{
     rightsVersion: z.ZodNumber;
     rights: z.ZodArray<z.ZodString>;
 }, z.core.$strip>;
-/** A signed-in channel member, by session cookie or bearer token; a write carries the rights version it holds. */
-export declare const operator: Identity<'operator', typeof OperatorPrincipalSchema, typeof ApiErrorCode.RIGHTS_VERSION_STALE, readonly [], readonly [typeof IfRightsVersionParameter]>;
+/** A signed-in channel member, by session cookie (a write carries its CSRF token) or bearer token; a write carries the rights version it holds. */
+export declare const operator: Identity<'operator', typeof OperatorPrincipalSchema, typeof ApiErrorCode.RIGHTS_VERSION_STALE | typeof ApiErrorCode.FORBIDDEN, readonly [], readonly [typeof IfRightsVersionParameter]>;
 export declare const studioV1: RouteBuilder<1, readonly [], Record<never, never>, ErrorCode, typeof studioConventions>;
 export {};
 //# sourceMappingURL=components.d.ts.map
