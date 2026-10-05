@@ -188,6 +188,10 @@ studioV1.identity(operator).requires(roles(MemberRole.PRODUCTION).on('channelId'
   `throttle('auth')`, or `requirement(name, { params, errors })`. The contract holds no server code:
   the server maps each name to a guard, and a name with no guard fails at boot. The rules are
   documented as `x-arthome-requires`.
+- **A write may be exempt from the CSRF token**: `identity(viewer, { csrfExempt: 'reason' })` gives
+  the write the schemes of a read and none of the identity's write codes, and the reason is
+  documented as `x-arthome-csrf-exempt`. The server's guard for the identity must honour it. Only
+  `signOut` uses it.
 - **The identity may add parameters and headers** to every route or to a write only (the studio's
   `If-Rights-Version`, its `X-Arthome-Rights-Version` on every success), and an `internal` identity
   (a service's) marks its routes internal: `defineApi` keeps them out of a surface document.

@@ -103,7 +103,11 @@ export declare const STOREFRONT_RELAYED_CODES: readonly [
     typeof DomainErrorCode.STATE_CONFLICT,
     typeof IdentityErrorCode.EMAIL_TAKEN,
     typeof IdentityErrorCode.INVALID_CREDENTIALS,
-    typeof IdentityErrorCode.VERIFICATION_LINK_INVALID
+    typeof IdentityErrorCode.TWO_FACTOR_REQUIRED,
+    typeof IdentityErrorCode.VERIFICATION_LINK_INVALID,
+    typeof IdentityErrorCode.RESET_TOKEN_EXPIRED,
+    typeof IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED,
+    typeof IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED
 ];
 /** The codes a storefront operation may declare: only what a surface can be handed. */
 export type StorefrontRelayedCode = (typeof STOREFRONT_RELAYED_CODES)[number];

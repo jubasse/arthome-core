@@ -5,18 +5,25 @@ import { sharedExamples } from './examples.js';
 import type { RouteDefinition } from '../http/index.js';
 import type { ApiDocs, ModuleDocs, OperationDocumentation } from '../openapi/docs.js';
 import { apiDocs, documentationLookup } from '../openapi/docs.js';
+import { accountDeepLinkDocs } from './account-deep-link/docs.js';
+import { accountDeepLinkExamples } from './account-deep-link/examples.js';
+import { authDocs } from './auth/docs.js';
+import { authExamples } from './auth/examples.js';
+import { changesDocs } from './changes/docs.js';
+import { changesExamples } from './changes/examples.js';
+import { devicesDocs } from './devices/docs.js';
+import { devicesExamples } from './devices/examples.js';
 import { meDocs } from './me/docs.js';
 import { meExamples } from './me/examples.js';
+import { supportDocs } from './support/docs.js';
+import { supportExamples } from './support/examples.js';
+import { viewerContextDocs } from './viewer-context/docs.js';
 
 /**
  * The operations whose maturity is not their owning service's (`transport.md` §5.11). Each entry
  * moves into its module's docs when the module converts.
  */
 const statedMaturities = {
-  listChanges: {
-    maturity: 'stable',
-    maturityReason: 'realtime is not a service, and the change feed is a shape the BFF owns',
-  },
   enterSalesQueue: {
     maturity: 'provisional',
     maturityReason:
@@ -125,8 +132,25 @@ export const storefrontDocs: ApiDocs = apiDocs({
         'ES256 JWT, `aud: "arthome.device"`, 180 days, **rotated on every use**, carrying `device_id`\nand nothing else. Obtained on first launch through `registerDevice`, **before any session**.\nIt is not a session: it opens only pairing, pairing polling and the public bootstrap, and\n**opens no personal data** — in particular not the real-time channel (`adr-auth.md` §4/Q3,\n§5.3).\n',
     },
   },
-  modules: [statedMaturities, meDocs],
-  examples: [sharedExamples, meExamples],
+  modules: [
+    statedMaturities,
+    meDocs,
+    accountDeepLinkDocs,
+    devicesDocs,
+    changesDocs,
+    supportDocs,
+    viewerContextDocs,
+    authDocs,
+  ],
+  examples: [
+    sharedExamples,
+    meExamples,
+    accountDeepLinkExamples,
+    devicesExamples,
+    changesExamples,
+    supportExamples,
+    authExamples,
+  ],
 });
 
 /** Each storefront operation's prose and doc-only metadata, by route: for a server's own docs. Server only. */

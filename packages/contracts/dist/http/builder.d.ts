@@ -105,7 +105,9 @@ export interface RouteBuilder<V extends number | undefined, P extends readonly P
     security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E, A, K, X, Z>;
     conventions<const C extends ResourceConventions>(conventions: C): RouteBuilder<V, P, E, A, C, X, Z>;
     /** Every route requires this identity unless it says otherwise; its security is derived from it. */
-    identity<const I extends Identity>(identity: I): RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, false>, Z>;
+    identity<const I extends Identity>(identity: I, options?: {
+        readonly csrfExempt: string;
+    }): RouteBuilder<V, P, E, A, K, IdentifiedAccess<I, false>, Z>;
     /** No identity: sign-in, sign-up, public links. */
     public(): RouteBuilder<V, P, E, A, K, PublicAccess, Z>;
     /** An anonymous caller is let in and the principal may be null; a credential presented and refused is still a `401`. */

@@ -95,6 +95,12 @@ export declare const DevicePrincipalSchema: z.ZodObject<{
 }, z.core.$strip>;
 /** A signed-in viewer, by session cookie (a write carries its CSRF token) or bearer token. */
 export declare const viewer: Identity<'viewer', typeof ViewerPrincipalSchema, typeof ApiErrorCode.FORBIDDEN, readonly [], readonly []>;
+/**
+ * A signed-in viewer, or a device that holds only its device token: the bootstrap is read before
+ * any session. Reads accept either credential, a write takes the viewer's, and the principal says
+ * which one called.
+ */
+export declare const viewerOrDevice: Identity<'viewer_or_device', z.ZodUnion<readonly [typeof ViewerPrincipalSchema, typeof DevicePrincipalSchema]>, typeof ApiErrorCode.FORBIDDEN, readonly [], readonly []>;
 /** The television, paired to an account: it holds a device token and no session. */
 export declare const device: Identity<'paired_device', typeof DevicePrincipalSchema, never, readonly [], readonly []>;
 export declare const storefrontV1: RouteBuilder<1, readonly [], Record<never, never>, StorefrontRelayedCode, typeof storefrontConventions>;

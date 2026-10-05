@@ -228,7 +228,11 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   typeof DomainErrorCode.STATE_CONFLICT,
   typeof IdentityErrorCode.EMAIL_TAKEN,
   typeof IdentityErrorCode.INVALID_CREDENTIALS,
+  typeof IdentityErrorCode.TWO_FACTOR_REQUIRED,
   typeof IdentityErrorCode.VERIFICATION_LINK_INVALID,
+  typeof IdentityErrorCode.RESET_TOKEN_EXPIRED,
+  typeof IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED,
+  typeof IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED,
 ] = [
   ApiErrorCode.SCHEMA_INVALID,
   ApiErrorCode.CURSOR_TOO_OLD,
@@ -240,7 +244,11 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   DomainErrorCode.STATE_CONFLICT,
   IdentityErrorCode.EMAIL_TAKEN,
   IdentityErrorCode.INVALID_CREDENTIALS,
+  IdentityErrorCode.TWO_FACTOR_REQUIRED,
   IdentityErrorCode.VERIFICATION_LINK_INVALID,
+  IdentityErrorCode.RESET_TOKEN_EXPIRED,
+  IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED,
+  IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED,
 ];
 
 /** The codes a storefront operation may declare: only what a surface can be handed. */

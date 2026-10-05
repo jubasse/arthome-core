@@ -135,6 +135,10 @@ export const IDENTITY_ERROR_CODES = [
   // An email verification link that is unknown, expired or already used: one answer for the
   //   three, since telling them apart says which tokens were ever issued.
   'identity.verification_link_invalid',
+  // A single-use token that has run out, one code per journey so a surface restarts the right one.
+  'identity.reset_token_expired',
+  'identity.one_time_token_expired',
+  'identity.two_factor_challenge_expired',
 ] as const;
 export type IdentityErrorCode = (typeof IDENTITY_ERROR_CODES)[number];
 
@@ -145,6 +149,9 @@ export const IdentityErrorCode = {
   TWO_FACTOR_REQUIRED: 'identity.two_factor_required',
   SIGNED_OUT_ELSEWHERE: 'identity.signed_out_elsewhere',
   VERIFICATION_LINK_INVALID: 'identity.verification_link_invalid',
+  RESET_TOKEN_EXPIRED: 'identity.reset_token_expired',
+  ONE_TIME_TOKEN_EXPIRED: 'identity.one_time_token_expired',
+  TWO_FACTOR_CHALLENGE_EXPIRED: 'identity.two_factor_challenge_expired',
 } as const;
 
 /**

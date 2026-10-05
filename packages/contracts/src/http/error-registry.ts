@@ -70,6 +70,9 @@ export interface ErrorStatusMap {
   readonly [IdentityErrorCode.TWO_FACTOR_REQUIRED]: 401;
   readonly [IdentityErrorCode.SIGNED_OUT_ELSEWHERE]: 403;
   readonly [IdentityErrorCode.VERIFICATION_LINK_INVALID]: 410;
+  readonly [IdentityErrorCode.RESET_TOKEN_EXPIRED]: 410;
+  readonly [IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED]: 410;
+  readonly [IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED]: 410;
 
   readonly [PairingErrorCode.SLOW_DOWN]: 429;
   readonly [PairingErrorCode.IDENTITY_MISMATCH]: 403;
@@ -225,6 +228,9 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
   [IdentityErrorCode.TWO_FACTOR_REQUIRED]: { status: 401, example: { challengeId: 'chl_7ab2' } },
   [IdentityErrorCode.SIGNED_OUT_ELSEWHERE]: { status: 403, example: {} },
   [IdentityErrorCode.VERIFICATION_LINK_INVALID]: { status: 410, example: {} },
+  [IdentityErrorCode.RESET_TOKEN_EXPIRED]: { status: 410, example: {} },
+  [IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED]: { status: 410, example: {} },
+  [IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED]: { status: 410, example: {} },
 
   [PairingErrorCode.SLOW_DOWN]: { status: 429, example: { retryAfterMs: 5000 } },
   [PairingErrorCode.IDENTITY_MISMATCH]: { status: 403, example: {} },

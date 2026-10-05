@@ -201,6 +201,9 @@ class DocumentBuilder {
         ...rule.params,
       }));
     }
+    if (route.access?.kind === 'identified' && route.access.csrfExempt !== undefined) {
+      out['x-arthome-csrf-exempt'] = route.access.csrfExempt;
+    }
     if (route.budgetMs !== undefined) out['x-arthome-budget-ms'] = route.budgetMs;
     if (route.internal === true) out['x-arthome-internal'] = true;
     if (route.degradable !== undefined) out['x-arthome-degradable'] = route.degradable;

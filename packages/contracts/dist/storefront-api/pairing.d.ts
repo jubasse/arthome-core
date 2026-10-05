@@ -3,7 +3,7 @@ import type { VocabularyIn } from '@arthome/core/schema';
 import { AdmissionTokenParameter, BadRequestResponse, CsrfRefusedResponse, GoneResponse, IdempotencyKeyParameter, NotFoundResponse, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter, UnauthorizedResponse } from './components.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
-import { AccountDeepLinkSchema, DevicePairingSchema, PairingOutcomeSchema } from '../identity/index.js';
+import { DevicePairingSchema, PairingOutcomeSchema } from '../identity/index.js';
 declare const CREATE_PAIRING_INTENT: readonly ["signin", "seat", "plan", "payment_method", "merch"];
 declare const DECIDE_PAIRING_DECISION: readonly ["approve", "deny"];
 export declare const createPairing: Route<{
@@ -109,18 +109,6 @@ export declare const decidePairing: Route<{
         }, z.core.$loose>>>;
         403: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
         410: typeof GoneResponse;
-    };
-}>;
-export declare const getAccountDeepLink: Route<{
-    method: 'get';
-    version: 1;
-    path: '/account-deep-link';
-    parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof AccountDeepLinkSchema;
-        }, z.core.$loose>>>;
-        401: typeof UnauthorizedResponse;
     };
 }>;
 export {};

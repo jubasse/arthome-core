@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Api, Route } from './http/index.js';
-import * as storefrontAccount from './storefront-api/account.js';
-import * as storefrontBootstrap from './storefront-api/bootstrap.js';
+import * as storefrontAccountDeepLink from './storefront-api/account-deep-link/routes.js';
+import * as storefrontAuth from './storefront-api/auth/routes.js';
+import * as storefrontChanges from './storefront-api/changes/routes.js';
 import * as storefrontChat from './storefront-api/chat.js';
 import * as storefrontCommerce from './storefront-api/commerce.js';
 import * as storefrontDate from './storefront-api/date.js';
+import * as storefrontDevices from './storefront-api/devices/routes.js';
 import * as storefrontDiscovery from './storefront-api/discovery.js';
 import { storefrontApi } from './storefront-api/index.js';
 import * as storefrontMe from './storefront-api/me/routes.js';
 import * as storefrontPairing from './storefront-api/pairing.js';
 import * as storefrontPlayback from './storefront-api/playback.js';
+import * as storefrontSupport from './storefront-api/support/routes.js';
+import * as storefrontViewerContext from './storefront-api/viewer-context/routes.js';
 import * as studioAgenda from './studio-api/agenda.js';
 import * as studioBootstrap from './studio-api/bootstrap.js';
 import * as studioChannel from './studio-api/channel.js';
@@ -50,8 +54,12 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
     'storefront-api',
     storefrontApi,
     [
-      storefrontAccount,
-      storefrontBootstrap,
+      storefrontAuth,
+      storefrontViewerContext,
+      storefrontSupport,
+      storefrontChanges,
+      storefrontDevices,
+      storefrontAccountDeepLink,
       storefrontChat,
       storefrontCommerce,
       storefrontDate,

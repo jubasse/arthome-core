@@ -5,10 +5,10 @@ import {
   VenueClockSchema,
 } from '@arthome/core/schema';
 
+import { getAccountDeepLink } from './account-deep-link/routes.js';
 import {
   changePassword,
   confirmEmailVerification,
-  contactSupport,
   disableTwoFactor,
   enableTwoFactor,
   exchangeOneTimeToken,
@@ -20,8 +20,8 @@ import {
   signUp,
   startSocialSignIn,
   verifyTwoFactor,
-} from './account.js';
-import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
+} from './auth/routes.js';
+import { listChanges } from './changes/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
 import {
   addCartLine,
@@ -77,6 +77,7 @@ import {
   ViewerTimezoneParameter,
 } from './components.js';
 import { getDateDetail } from './date.js';
+import { registerDevice } from './devices/routes.js';
 import {
   extendRail,
   getArtistDetail,
@@ -129,10 +130,11 @@ import {
   createPairing,
   decidePairing,
   engagePairing,
-  getAccountDeepLink,
   pollPairing,
 } from './pairing.js';
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
+import { contactSupport } from './support/routes.js';
+import { getViewerContext } from './viewer-context/routes.js';
 import {
   ArtistDetailSchema,
   ArtistSummarySchema,

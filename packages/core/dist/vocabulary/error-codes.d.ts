@@ -67,7 +67,7 @@ export declare const SchemaIssueRule: {
  * still open on this device and revoked from another: not an authentication failure, and not to
  * be retried as one.
  */
-export declare const IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.handle_taken", "identity.invalid_credentials", "identity.two_factor_required", "identity.signed_out_elsewhere", "identity.verification_link_invalid"];
+export declare const IDENTITY_ERROR_CODES: readonly ["identity.email_taken", "identity.handle_taken", "identity.invalid_credentials", "identity.two_factor_required", "identity.signed_out_elsewhere", "identity.verification_link_invalid", "identity.reset_token_expired", "identity.one_time_token_expired", "identity.two_factor_challenge_expired"];
 export type IdentityErrorCode = (typeof IDENTITY_ERROR_CODES)[number];
 export declare const IdentityErrorCode: {
     readonly EMAIL_TAKEN: "identity.email_taken";
@@ -76,6 +76,9 @@ export declare const IdentityErrorCode: {
     readonly TWO_FACTOR_REQUIRED: "identity.two_factor_required";
     readonly SIGNED_OUT_ELSEWHERE: "identity.signed_out_elsewhere";
     readonly VERIFICATION_LINK_INVALID: "identity.verification_link_invalid";
+    readonly RESET_TOKEN_EXPIRED: "identity.reset_token_expired";
+    readonly ONE_TIME_TOKEN_EXPIRED: "identity.one_time_token_expired";
+    readonly TWO_FACTOR_CHALLENGE_EXPIRED: "identity.two_factor_challenge_expired";
 };
 /**
  * Device pairing, where the same code is polled repeatedly. `pairing.slow_down` is a rate signal

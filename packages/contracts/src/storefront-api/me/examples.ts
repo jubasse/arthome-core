@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 
-import { AccountStatus, Locale, MessageDomain, NotificationChannel, PlanTier } from '@arthome/core';
+import { AccountStatus, Locale, NotificationChannel, PlanTier } from '@arthome/core';
 
 import type {
   AccountDeletion,
@@ -61,7 +61,6 @@ import { NotificationPreferencesSchema } from '../../engagement/index.js';
 import {
   AccountScreenSchema,
   ConsentsSchema,
-  ViewerContextSchema,
   ViewerPreferencesSchema,
 } from '../../identity/index.js';
 import type { ModuleExamples } from '../../openapi/docs.js';
@@ -210,34 +209,6 @@ const updateConsentsBody: UpdateConsentsBody = {
 
 const deviceRevocation: DeviceRevocation = { devices: [], playbackCutWithinSec: 120 };
 
-const viewerContext: z.output<typeof ViewerContextSchema> = {
-  deviceId: DEVICE_ID,
-  signedIn: true,
-  profiles: [],
-  constants: {
-    roomOpensMinutesBefore: 30,
-    cancelDeadlineMinutesBefore: 60,
-    scarcityThresholdBps: 8500,
-    billboardPreviewDelaySec: 4,
-    waitlistPriorityWindowHours: 2,
-    chatRateLimitPerSecond: 2,
-    reminderLeadMinutes: 30,
-    replayExpiryWarningHours: 6,
-  },
-  labelCatalog: {
-    domain: MessageDomain.STOREFRONT,
-    locale: Locale.FR,
-    version: 41,
-    url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json',
-  },
-  taxonomyArtifact: {
-    domain: MessageDomain.TAXONOMY,
-    locale: Locale.FR,
-    version: 12,
-    url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json',
-  },
-};
-
 const requestExportBody: RequestExportBody = {
   kind: 'invoices',
   fromDate: '2026-01-01',
@@ -296,7 +267,6 @@ export const meExamples: ModuleExamples = [
   [UpdateConsentsBodySchema, [updateConsentsBody]],
   [ConsentsSchema, [consents]],
   [DeviceRevocationSchema, [deviceRevocation]],
-  [ViewerContextSchema, [viewerContext]],
   [RequestExportBodySchema, [requestExportBody]],
   [ExportRequestSchema, [exportRequest]],
   [RequestAccountDeletionBodySchema, [requestAccountDeletionBody]],
