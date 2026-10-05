@@ -32,7 +32,6 @@ const quote = defineRoute({
       content: {
         'application/json': {
           schema: z.looseObject({ total: Money, lines: z.array(Money) }),
-          example: { total: { amountMinor: 2400, currencyCode: 'EUR' } },
         },
       },
     },
@@ -106,7 +105,7 @@ describe('openApiDocumentOf', () => {
     });
   });
 
-  it('keeps the operation’s extensions and its example, and groups two methods under one path', () => {
+  it('keeps the operation’s extensions, and groups two methods under one path', () => {
     expect(operation['x-arthome-invalidates']).toEqual(['quotes']);
     expect(Object.keys(document.paths['/v1/quotes'] ?? {})).toEqual(['post', 'get']);
   });

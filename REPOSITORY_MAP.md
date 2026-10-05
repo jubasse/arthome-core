@@ -147,7 +147,7 @@ Declarations: `dist/http/index.d.ts` — 181 exported names.
 - `ItemResponse` (type) — `type ItemResponse<K, S extends z.ZodType, Relations = unknown> = JsonResponse<z.ZodType<EnvelopeOf<K> & { readonly data: z.output<S> & Relations; }>>;` — The answer of one record: the api's envelope and the record under 'data'.
 - `JsonRequestBody` (interface) — The annotation of a request carrying a JSON body.
 - `JsonResponse` (interface) — The annotation of a response with a JSON body.
-- `MediaType` (interface)
+- `MediaType` (interface) — Its example is never written here: the emitter takes it from a registry (a module's or 'ERRORS').
 - `MemberDocs` (type) — What a member says beyond the convention: prose, metadata, extra parameters, responses and codes.
 - `MergedErrors` (type) — The error responses a list of codes, or the same codes grouped by status, makes over those already held.
 - `NATURE_BY_STATUS` (const) — `NATURE_BY_STATUS: Readonly<Record<ErrorStatus, FailureNature>>` — transport.md §5.5: a 4xx is refused, except 429; a 5xx is unavailable.
@@ -228,7 +228,7 @@ Declarations: `dist/http/index.d.ts` — 181 exported names.
 - `errorCodesOf` (function) — The codes a route's error response stands for, or 'undefined' when the route wrote it whole.
 - `errorComponentNameOf` (function) — `function errorComponentNameOf(code: string): string;` — A code's envelope and example as the document names them: 'state.conflict' is 'StateConflictError'.
 - `errorExampleOf` (function) — `function errorExampleOf(code: ErrorCode): unknown;` — The envelope an example of 'code' shows: its params and its nature from the registry.
-- `errorResponse` (function) — A shared error response: its description, the api's envelope, and an example written once per code from the registry.
+- `errorResponse` (function) — A shared error response: its description, the api's envelope, and the code its example shows.
 - `errorResponseFor` (function) — `function errorResponseFor(model: ErrorModel<string>, status: number, codes: readonly string[], base: Response | undefined): Response;` — The response for a status.
 - `exampleOf` (function) — `function exampleOf<C extends ErrorCode>(code: C): ErrorParamsOf<C>;`
 - `groupByStatus` (function) — `function groupByStatus(codes: readonly string[]): Record<string, readonly string[]>;` — A list of codes grouped by the status each is answered with.
@@ -312,11 +312,10 @@ Declarations: `dist/money/index.d.ts` — 4 exported names.
 
 #### @arthome/contracts/openapi
 
-Declarations: `dist/openapi/index.d.ts` — 18 exported names.
+Declarations: `dist/openapi/index.d.ts` — 17 exported names.
 
 - `ApiDocs` (interface)
 - `ApiDocsDefinition` (interface)
-- `DOC_ONLY_EXTENSIONS` (const) — `DOC_ONLY_EXTENSIONS: readonly 'x-${string}'[]` — The extensions only a module's 'docs.ts' writes of an operation, never its route; so is its prose.
 - `DocumentDocs` (interface) — The parts of an api's document no consumer reads: its introduction and the names it documents.
 - `ExampleEntry` (type) — `type ExampleEntry = readonly [schema: z.ZodType, examples: readonly unknown[]];`
 - `ExampleRegistry` (class) — The examples of each schema, registered once.

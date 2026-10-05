@@ -63,7 +63,7 @@ const createItem = defineRoute({
   'x-arthome-invalidates': ['items'],
   requestBody: {
     required: true,
-    content: { 'application/json': { schema: Body, example: { name: 'inline' } } },
+    content: { 'application/json': { schema: Body } },
   },
   responses: { 204: { description: 'Done.' } },
 });
@@ -222,8 +222,30 @@ describe('openApiDocumentOf with docs', () => {
     expect(() => openApiDocumentOf(api, redundant)).toThrow('leave it out');
   });
 
-  it('prefers a registered example over the one a route still writes', () => {
+  it('takes a request’s example from the registry', () => {
     expect(exampleOf(created, 'requestBody')).toEqual({ name: 'registered' });
+  });
+
+  it('refuses an example a route writes itself', () => {
+    const written = { schema: Body, example: { name: 'inline' } };
+    const writing = defineRoute({
+      method: 'post',
+      version: 1,
+      path: '/written',
+      operationId: 'writeExample',
+      requestBody: { required: true, content: { 'application/json': written } },
+      responses: { 204: { description: 'Done.' } },
+    });
+    const carrying = defineApi({
+      openapi: '3.1.1',
+      security: [],
+      routes: { writeExample: writing },
+      components: {},
+    });
+
+    expect(() =>
+      openApiDocumentOf(carrying, apiDocs({ info: { title: 'test', version: '1' } })),
+    ).toThrow('"writeExample" writes its own example');
   });
 
   it('derives an answer’s example from its record’s, wrapped in the api’s envelope', () => {

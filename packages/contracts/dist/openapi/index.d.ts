@@ -1,7 +1,7 @@
 /**
  * An api's OpenAPI document, emitted from its routes and components, and from its docs: the prose,
- * upstream, maturity and examples its modules register (`./docs.ts`). What the docs say wins over
- * what a route still carries itself.
+ * upstream, maturity and examples its modules register (`./docs.ts`), the only source of them: a
+ * route or a media type that writes its own is refused.
  *
  * Schemas go through ONE zod registry per direction: every component under its document name,
  * and every schema a route holds under a synthetic id. Without a registry `z.toJSONSchema`

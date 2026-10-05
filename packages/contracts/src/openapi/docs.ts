@@ -124,7 +124,7 @@ export function apiDocs(definition: ApiDocsDefinition): ApiDocs {
 }
 
 /** The extensions only a module's `docs.ts` writes of an operation, never its route; so is its prose. */
-export const DOC_ONLY_EXTENSIONS: readonly `x-${string}`[] = [
+const DOC_ONLY_EXTENSIONS: readonly `x-${string}`[] = [
   'x-arthome-maturity',
   'x-arthome-upstream',
   'x-arthome-freshness',

@@ -33,12 +33,15 @@ export interface Parameter extends Extensions {
   readonly schema: z.ZodType;
 }
 
+/** Its example is never written here: the emitter takes it from a registry (a module's or `ERRORS`). */
 export interface MediaType extends Extensions {
   readonly schema: z.ZodType;
-  readonly example?: unknown;
-  readonly examples?: Readonly<Record<string, unknown>>;
+  /** References to `components/examples`, one per code of a coded error response. */
+  readonly examples?: Readonly<Record<string, { readonly $ref: string }>>;
   /** The example the emitter derives from a registered one, when the schema has none of its own. */
   readonly exampleFrom?: DerivedExample;
+  /** The error code a shared error response shows, its example taken from `ERRORS`. */
+  readonly errorExample?: string;
 }
 
 /** A record's registered example, shown as this answer: wrapped in the api's envelope. */

@@ -22,14 +22,11 @@ function failureOf(schema: z.ZodType, example: unknown): string | undefined {
     .join('; ');
 }
 
-function mediaOf(route: Route): readonly (readonly [string, MediaType])[] {
-  const found: (readonly [string, MediaType])[] = [];
-  for (const media of Object.values(route.requestBody?.content ?? {}))
-    found.push(['request', media]);
-  for (const [status, response] of Object.entries(route.responses)) {
-    for (const media of Object.values(response.content ?? {})) found.push([status, media]);
-  }
-  return found;
+function mediaOf(route: Route): readonly MediaType[] {
+  return [
+    ...Object.values(route.requestBody?.content ?? {}),
+    ...Object.values(route.responses).flatMap((response) => Object.values(response.content ?? {})),
+  ];
 }
 
 function isSchema(value: unknown): value is z.ZodType {
@@ -58,7 +55,7 @@ function* schemasUnder(root: z.ZodType, seen: Set<z.ZodType>): Generator<z.ZodTy
 function rootsOf(route: Route): readonly z.ZodType[] {
   return [
     ...(route.parameters ?? []).map((parameter) => parameter.schema),
-    ...mediaOf(route).map(([, media]) => media.schema),
+    ...mediaOf(route).map((media) => media.schema),
   ];
 }
 
@@ -76,15 +73,10 @@ describe('ADR §9.6: every example parses with its schema', () => {
     expect(failures).toEqual([]);
   });
 
-  it.each(APIS)('%s: every example a route or a schema still writes itself', (_name, api) => {
+  it.each(APIS)('%s: every example a schema writes in its `.meta`', (_name, api) => {
     const failures: string[] = [];
     const seen = new Set<z.ZodType>();
     for (const route of Object.values(api.routes)) {
-      for (const [where, media] of mediaOf(route)) {
-        if (media.example === undefined) continue;
-        const failure = failureOf(media.schema, media.example);
-        if (failure !== undefined) failures.push(`${route.operationId} ${where}: ${failure}`);
-      }
       for (const root of rootsOf(route)) {
         for (const schema of schemasUnder(root, seen)) {
           const meta = z.globalRegistry.get(schema) as { examples?: unknown } | undefined;

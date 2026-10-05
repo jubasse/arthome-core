@@ -46,8 +46,8 @@ export interface ResourceConventions {
   readonly readHeaders: Readonly<Record<string, Header>>;
   readonly notModified?: Response;
   /**
-   * The envelope of an example: given the example of an item (`.meta({ examples })` on its schema),
-   * the example of the whole answer, so a route does not restate it.
+   * The envelope of an example: given the registered example of an item, the example of the whole
+   * answer, so a route does not restate it.
    */
   readonly itemExample?: (data: unknown) => unknown;
   /** The same for a page of items. */
@@ -128,8 +128,6 @@ export type MemberDocs<Allowed extends string = string> = Omit<
   readonly operationId?: string;
   readonly parameters?: readonly Parameter[];
   readonly responses?: Responses;
-  /** The example of the request body. */
-  readonly example?: unknown;
   /** What a success is called, when the convention's words do not fit: `Date deleted.` */
   readonly answer?: string;
   /** The body is not required: the request may carry none. */
@@ -894,43 +892,25 @@ const OPTION_KEYS = [
   'status',
   'follow',
   'idempotent',
-  'example',
   'optionalBody',
   'answer',
   'filters',
   'max',
 ] as const;
 
-/** An answer's example: written now from the schema's `.meta`, or derived later from a registered one. */
-interface Shown {
-  readonly example?: unknown;
-  readonly exampleFrom: DerivedExample;
-}
-
 function jsonResponse(
   description: string,
   schema: z.ZodType,
   headers?: Readonly<Record<string, Header>>,
-  shown?: Shown,
+  exampleFrom?: DerivedExample,
 ): Response {
   return {
     description,
     ...(headers !== undefined && Object.keys(headers).length > 0 && { headers }),
     content: {
-      'application/json': {
-        schema,
-        ...(shown?.example !== undefined && { example: shown.example }),
-        ...(shown !== undefined && { exampleFrom: shown.exampleFrom }),
-      },
+      'application/json': { schema, ...(exampleFrom !== undefined && { exampleFrom }) },
     },
   };
-}
-
-/** The first example the schema carries, if any: `schema.meta({ examples: [...] })`. */
-function firstExample(schema: z.ZodType | undefined): unknown {
-  if (schema === undefined) return undefined;
-  const meta = z.globalRegistry.get(schema) as { examples?: readonly unknown[] } | undefined;
-  return meta?.examples?.[0];
 }
 
 function sentBody(
@@ -942,7 +922,6 @@ function sentBody(
   readonly content: {
     readonly 'application/json': {
       readonly schema: z.ZodType;
-      readonly example?: unknown;
       readonly exampleFrom?: DerivedExample;
     };
   };
@@ -950,11 +929,7 @@ function sentBody(
   return {
     required: docs?.optionalBody !== true,
     content: {
-      'application/json': {
-        schema,
-        ...(docs?.example !== undefined && { example: docs.example }),
-        ...(exampleFrom !== undefined && { exampleFrom }),
-      },
+      'application/json': { schema, ...(exampleFrom !== undefined && { exampleFrom }) },
     },
   };
 }
@@ -1068,15 +1043,10 @@ export function makeResource(
     return conventions.item(z.intersection(item, relations));
   };
 
-  /** The example of an answer, derived from the item's own example by the api's envelope. */
-  const shown = (item: z.ZodType | undefined): Shown | undefined => {
+  /** The example of an answer, derived from the item's registered example by the api's envelope. */
+  const shown = (item: z.ZodType | undefined): DerivedExample | undefined => {
     const envelope = conventions.itemExample;
-    if (item === undefined || envelope === undefined) return undefined;
-    const example = firstExample(item);
-    return {
-      ...(example !== undefined && { example: envelope(example) }),
-      exampleFrom: { of: item, as: envelope },
-    };
+    return item === undefined || envelope === undefined ? undefined : { of: item, as: envelope };
   };
   const said = (docs: AnyDocs | undefined, fallback: string): string => docs?.answer ?? fallback;
 
@@ -1160,14 +1130,11 @@ export function makeResource(
         errors.push(ApiErrorCode.SORT_KEY_FORBIDDEN);
       }
     }
-    const pageShown = (data: z.ZodType): Shown | undefined => {
+    const pageShown = (data: z.ZodType): DerivedExample | undefined => {
       const envelope = conventions.pageExample;
-      if (envelope === undefined) return undefined;
-      const example = firstExample(data);
-      return {
-        ...(example !== undefined && { example: envelope([example]) }),
-        exampleFrom: { of: data, as: (registered) => envelope([registered]) },
-      };
+      return envelope === undefined
+        ? undefined
+        : { of: data, as: (registered) => envelope([registered]) };
     };
     return {
       parameters: [

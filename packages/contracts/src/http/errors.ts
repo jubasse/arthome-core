@@ -259,10 +259,7 @@ export interface CodedResponse<C extends string> {
   readonly '~code'?: C;
 }
 
-/**
- * A shared error response: its description, the api's envelope, and an example written once per
- * code from the registry.
- */
+/** A shared error response: its description, the api's envelope, and the code its example shows. */
 export function errorResponse<S extends z.ZodType, const C extends ErrorCode>(
   schema: S,
   options: {
@@ -274,6 +271,6 @@ export function errorResponse<S extends z.ZodType, const C extends ErrorCode>(
   return {
     description: options.description,
     ...(options.headers !== undefined && { headers: options.headers }),
-    content: { 'application/json': { schema, example: errorExampleOf(options.code) } },
+    content: { 'application/json': { schema, errorExample: options.code } },
   };
 }

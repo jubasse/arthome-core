@@ -157,16 +157,14 @@ describe('resource members', () => {
     expect(searches.upsert({}).path).toBe('/saved-searches/{savedSearchId}');
   });
 
-  it('carries the request example and an optional body, and drops its own success for a stated one', () => {
+  it('carries an optional body, and drops its own success for a stated one', () => {
     const route = searches.action('archive', {
       body: Writable,
       optionalBody: true,
-      example: { name: 'x' },
       responses: { 202: { description: 'Accepted.' } },
     });
 
     expect(route.requestBody.required).toBe(false);
-    expect(route.requestBody.content['application/json'].example).toEqual({ name: 'x' });
     expect(Object.keys(route.responses)).toContain('202');
     expect(Object.keys(route.responses)).not.toContain('204');
   });

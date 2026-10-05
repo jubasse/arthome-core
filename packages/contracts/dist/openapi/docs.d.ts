@@ -66,8 +66,6 @@ export interface ApiDocsDefinition extends DocumentDocs {
 }
 /** Gathers an api's modules, and refuses an operation documented twice. */
 export declare function apiDocs(definition: ApiDocsDefinition): ApiDocs;
-/** The extensions only a module's `docs.ts` writes of an operation, never its route; so is its prose. */
-export declare const DOC_ONLY_EXTENSIONS: readonly `x-${string}`[];
 /** What a document says of one operation beyond its route's runtime fields. */
 export interface OperationDocumentation {
     readonly description?: string;

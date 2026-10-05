@@ -6,8 +6,6 @@ export interface AcceptedOptions<S extends z.ZodType | undefined = undefined> {
     readonly operation?: string;
     /** What the 202 itself carries, when it is more than an acknowledgement. */
     readonly body?: S;
-    /** An example of the body. */
-    readonly example?: unknown;
     readonly description?: string;
 }
 /**

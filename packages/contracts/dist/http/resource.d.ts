@@ -25,8 +25,8 @@ export interface ResourceConventions {
     readonly readHeaders: Readonly<Record<string, Header>>;
     readonly notModified?: Response;
     /**
-     * The envelope of an example: given the example of an item (`.meta({ examples })` on its schema),
-     * the example of the whole answer, so a route does not restate it.
+     * The envelope of an example: given the registered example of an item, the example of the whole
+     * answer, so a route does not restate it.
      */
     readonly itemExample?: (data: unknown) => unknown;
     /** The same for a page of items. */
@@ -79,8 +79,6 @@ export type MemberDocs<Allowed extends string = string> = Omit<BuiltRouteDefinit
     readonly operationId?: string;
     readonly parameters?: readonly Parameter[];
     readonly responses?: Responses;
-    /** The example of the request body. */
-    readonly example?: unknown;
     /** What a success is called, when the convention's words do not fit: `Date deleted.` */
     readonly answer?: string;
     /** The body is not required: the request may carry none. */

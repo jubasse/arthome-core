@@ -1,7 +1,7 @@
 /**
  * An api's OpenAPI document, emitted from its routes and components, and from its docs: the prose,
- * upstream, maturity and examples its modules register (`./docs.ts`). What the docs say wins over
- * what a route still carries itself.
+ * upstream, maturity and examples its modules register (`./docs.ts`), the only source of them: a
+ * route or a media type that writes its own is refused.
  *
  * Schemas go through ONE zod registry per direction: every component under its document name,
  * and every schema a route holds under a synthetic id. Without a registry `z.toJSONSchema`
@@ -126,38 +126,52 @@ class DocumentBuilder {
     return this.withSchema(header, header.schema, 'output');
   }
 
-  private media(media: MediaType, io: Io): Record<string, unknown> {
+  private media(media: MediaType, io: Io, where: string): Record<string, unknown> {
+    const written = media as MediaType & { readonly example?: unknown };
+    const referencesOnly = Object.values(written.examples ?? {}).every(
+      (entry: unknown) => typeof entry === 'object' && entry !== null && '$ref' in entry,
+    );
+    if (written.example !== undefined || !referencesOnly) {
+      throw new Error(
+        `openapi: ${where} writes its own example; register it in its module's examples.ts.`,
+      );
+    }
     for (const [code, envelope] of codedEnvelopesIn(media.schema)) {
       if (!this.schemaNames.has(envelope))
         this.schemaNames.set(envelope, errorComponentNameOf(code));
       this.errorCodes.add(code);
     }
-    const { exampleFrom: _derivation, ...declared } = media;
+    const { exampleFrom: _derivation, errorExample: _code, ...declared } = media;
     const out = this.withSchema(declared, media.schema, io);
-    const registered = this.registeredExampleOf(media);
-    if (registered !== undefined) out.example = registered;
+    const example = this.exampleOf(media);
+    if (example !== undefined) out.example = example;
     return out;
   }
 
-  /** The schema's own registered example, else the one derived from the record it wraps. */
-  private registeredExampleOf(media: MediaType): unknown {
+  /** The schema's registered example, else the one derived from the record it wraps, else its error code's. */
+  private exampleOf(media: MediaType): unknown {
     const own = this.examples?.firstOf(media.schema);
-    if (own !== undefined || media.exampleFrom === undefined) return own;
-    const source = this.examples?.firstOf(media.exampleFrom.of);
-    return source === undefined ? undefined : media.exampleFrom.as(source);
+    if (own !== undefined) return own;
+    const source =
+      media.exampleFrom === undefined ? undefined : this.examples?.firstOf(media.exampleFrom.of);
+    if (source !== undefined) return media.exampleFrom?.as(source);
+    return media.errorExample === undefined
+      ? undefined
+      : errorExampleOf(media.errorExample as ErrorCode);
   }
 
   private content(
     content: Readonly<Record<string, MediaType>>,
     io: Io,
+    where: string,
   ): Record<string, Record<string, unknown>> {
     const out: Record<string, Record<string, unknown>> = {};
     for (const [mediaType, media] of Object.entries(content))
-      out[mediaType] = this.media(media, io);
+      out[mediaType] = this.media(media, io, where);
     return out;
   }
 
-  public response(response: Response): Record<string, unknown> {
+  public response(response: Response, where: string): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(response)) {
       if (key === 'headers' && response.headers !== undefined) {
@@ -167,7 +181,7 @@ class DocumentBuilder {
         }
         out[key] = headers;
       } else if (key === 'content' && response.content !== undefined) {
-        out[key] = this.content(response.content, 'output');
+        out[key] = this.content(response.content, 'output', where);
       } else {
         out[key] = value;
       }
@@ -175,10 +189,10 @@ class DocumentBuilder {
     return out;
   }
 
-  private requestBody(body: RequestBody): Record<string, unknown> {
+  private requestBody(body: RequestBody, where: string): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(body)) {
-      out[key] = key === 'content' ? this.content(body.content, 'input') : value;
+      out[key] = key === 'content' ? this.content(body.content, 'input', where) : value;
     }
     return out;
   }
@@ -216,10 +230,14 @@ class DocumentBuilder {
         this.refOr(parameter, () => this.parameter(parameter)),
       );
     }
-    if (route.requestBody !== undefined) out.requestBody = this.requestBody(route.requestBody);
+    if (route.requestBody !== undefined) {
+      out.requestBody = this.requestBody(route.requestBody, `"${route.operationId}"`);
+    }
     const responses: Record<string, unknown> = {};
     for (const [status, response] of Object.entries(route.responses)) {
-      responses[status] = this.refOr(response, () => this.response(response));
+      responses[status] = this.refOr(response, () =>
+        this.response(response, `"${route.operationId}" ${status}`),
+      );
     }
     out.responses = responses;
     return out;
@@ -319,7 +337,9 @@ function componentsOf(
     for (const [name, value] of Object.entries(values as Record<string, unknown>)) {
       if (kind === 'parameters') entries[name] = builder.parameter(value as Parameter);
       else if (kind === 'headers') entries[name] = builder.header(value as Header);
-      else if (kind === 'responses') entries[name] = builder.response(value as Response);
+      else if (kind === 'responses') {
+        entries[name] = builder.response(value as Response, `components/responses/${name}`);
+      }
       else entries[name] = value;
     }
     out[kind] = entries;

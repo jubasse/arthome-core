@@ -9,8 +9,6 @@ export interface AcceptedOptions<S extends z.ZodType | undefined = undefined> {
   readonly operation?: string;
   /** What the 202 itself carries, when it is more than an acknowledgement. */
   readonly body?: S;
-  /** An example of the body. */
-  readonly example?: unknown;
   readonly description?: string;
 }
 
@@ -39,12 +37,7 @@ export function accepted(options: AcceptedOptions<z.ZodType | undefined> = {}): 
     },
     ...(options.operation !== undefined && { 'x-arthome-operation': options.operation }),
     ...(options.body !== undefined && {
-      content: {
-        'application/json': {
-          schema: options.body,
-          ...(options.example !== undefined && { example: options.example }),
-        },
-      },
+      content: { 'application/json': { schema: options.body } },
     }),
   };
 }

@@ -1,43 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Api, Route } from './http/index.js';
-import { DOC_ONLY_EXTENSIONS } from './openapi/index.js';
+import type { Api } from './http/index.js';
+import type { ApiDocs } from './openapi/index.js';
+import { openApiDocumentOf } from './openapi/index.js';
+import { storefrontDocs } from './storefront-api/docs.js';
 import { storefrontApi } from './storefront-api/index.js';
+import { studioDocs } from './studio-api/docs.js';
 import { studioApi } from './studio-api/index.js';
 
-/** An example written in place: an example by reference, or derived from a registered one, is not. */
-function writesAnExample(route: Route, shared: ReadonlySet<unknown>): boolean {
-  const media = [
-    ...Object.values(route.requestBody?.content ?? {}),
-    ...Object.values(route.responses)
-      .filter((response) => !shared.has(response))
-      .flatMap((response) => Object.values(response.content ?? {})),
-  ];
-  return media.some(
-    (entry) =>
-      entry.example !== undefined ||
-      Object.values(entry.examples ?? {}).some(
-        (example) => typeof example !== 'object' || example === null || !('$ref' in example),
-      ),
-  );
-}
-
-/** What only the document reads is registered in a module's `docs.ts` and `examples.ts`, never in a route. */
+/** What only the document reads is registered in a module's `docs.ts` and `examples.ts`, and the emitter refuses a route that writes its own. */
 describe.each([
-  ['storefront', storefrontApi],
-  ['studio', studioApi],
-] as const)('docs and examples out of the routes, %s', (_name, api: Api) => {
+  ['storefront', storefrontApi, storefrontDocs],
+  ['studio', studioApi, studioDocs],
+] as const)('docs and examples out of the routes, %s', (_name, api: Api, docs: ApiDocs) => {
   it('has no route carry a description, a doc-only x-arthome-* or an example itself', () => {
-    const shared = new Set<unknown>(Object.values(api.components.responses ?? {}));
-    const carrying = Object.values(api.routes)
-      .filter(
-        (route) =>
-          route.description !== undefined ||
-          DOC_ONLY_EXTENSIONS.some((key) => route[key] !== undefined) ||
-          writesAnExample(route, shared),
-      )
-      .map((route) => route.operationId);
-
-    expect(carrying).toEqual([]);
+    expect(() => openApiDocumentOf(api, docs)).not.toThrow();
   });
 });

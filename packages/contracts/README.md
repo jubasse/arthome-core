@@ -109,8 +109,8 @@ What only the document reads is registered per module, beside the routes:
 `openApiDocumentOf(api, docs)` reads both:
 
 - **The registry is the only source** of an operation's prose and doc-only `x-arthome-*`
-  (`DOC_ONLY_EXTENSIONS`): the emitter, `storefrontDocsOf` and `studioDocsOf` refuse a route that carries
-  its own.
+  (`x-arthome-maturity`, `-upstream`, `-freshness`, `-idempotency-exemption`): the emitter,
+  `storefrontDocsOf` and `studioDocsOf` refuse a route that carries its own.
 - **The maturity is derived** from the upstream: the regime of the owning service, the first one the
   operation calls (`maturityOf`, `MATURITY_BY_SERVICE`, `transport.md` §5.11). A module states
   `maturity` only where an operation differs, always with its `maturityReason` in one phrase, and the
@@ -118,10 +118,10 @@ What only the document reads is registered per module, beside the routes:
   (`realtime`) states it; `maturity.spec.ts` holds every operation to the rule.
 - **A media type's example** is its schema's registered example, or else the one derived from the
   record it wraps: a resource member's answer shows its item's registered example in the api's
-  envelope (`itemExample`, `pageExample`). An example a route writes itself is kept when nothing
-  is registered.
+  envelope (`itemExample`, `pageExample`); a shared error response shows its code's example from
+  `ERRORS`. The emitter refuses an example a route or a media type writes itself.
 - **Every registered example parses with its schema** (ADR §9.6, `examples-parse.spec.ts`), and so
-  does every example a route or a schema writes itself.
+  does every example a schema writes in its `.meta`.
 
 `pnpm run measure:surface-bundle` prints what a surface ships for `createClient(api)`, minified and
 gzipped, part by part. Measured on 2026-10-05, before any module moved its docs: storefront 126.9 KB
@@ -263,9 +263,9 @@ for what exists once in its context (`/me/preferences`, a date's `run`), with no
   `omit` or `pick` narrows it, never both. `collect(...blocks)` flattens such records into the
   `routes` record `defineApi` takes, and a test checks that every route a module exports is listed.
 - **A fixed `operationId` always wins** over the derived one: say it in the member's options, which
-  also carry what the document says beyond the convention: prose, `x-arthome-*`, `parameters`,
-  `responses` (a stated 2xx replaces the generated one), `example` and `optionalBody`, `errors`,
-  `cache`, `requires`.
+  also carry what the route says beyond the convention: the `x-arthome-*` a surface reads
+  (`x-arthome-invalidates`), `parameters`, `responses` (a stated 2xx replaces the generated one),
+  `optionalBody`, `errors`, `cache`, `requires`.
 
 Which verb a change takes is `transport.md` §5.12: a full replacement is `PUT`, a partial change
 without a business rule is `PATCH`, every business state change is an action, and a record that

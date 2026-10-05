@@ -107,10 +107,7 @@ export declare function errorExampleOf(code: ErrorCode): unknown;
 export interface CodedResponse<C extends string> {
     readonly '~code'?: C;
 }
-/**
- * A shared error response: its description, the api's envelope, and an example written once per
- * code from the registry.
- */
+/** A shared error response: its description, the api's envelope, and the code its example shows. */
 export declare function errorResponse<S extends z.ZodType, const C extends ErrorCode>(schema: S, options: {
     readonly description: string;
     readonly code: C;
