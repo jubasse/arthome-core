@@ -5,8 +5,8 @@
 //   1. No subpath a surface imports from @arthome/contracts reaches, at any depth, a docs or
 //      examples module (`docs.ts`, `examples.ts`, `<module>.docs.ts`, `<module>.examples.ts`) or the
 //      emitter (`src/openapi/`). A surface calling `createClient(storefrontApi)` therefore bundles
-//      no operation prose, no registered example and no introduction. `./openapi` is the emitter's
-//      subpath and is not walked.
+//      no operation prose, no registered example and no introduction. `./openapi` (the emitter) and
+//      `./<api>/docs` (an api's docs, for a server's own docs) are server only and are not walked.
 //   2. `MATURITY_BY_SERVICE` says what `transport.md` §5.11, which owns the regimes, says.
 //
 // HOW
@@ -73,7 +73,8 @@ function surfaceEntries() {
   const manifest = JSON.parse(fs.readFileSync(path.join(CONTRACTS, 'package.json'), 'utf8'));
   return Object.entries(manifest.exports)
     .filter(([subpath, target]) => subpath !== EMITTER_SUBPATH && typeof target === 'object')
-    .map(([subpath, target]) => [subpath, path.join(CONTRACTS, target['@arthome/source'])]);
+    .map(([subpath, target]) => [subpath, path.join(CONTRACTS, target['@arthome/source'])])
+    .filter(([, entry]) => !DOCUMENTATION_MODULE.test(entry));
 }
 
 function checkSurfaces() {

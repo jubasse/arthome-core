@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { SERVICES, Service } from '@arthome/core';
 import type { Upstream } from '@arthome/core';
 
-import type { Extensions } from '../http/index.js';
+import type { Extensions, RouteDefinition } from '../http/index.js';
 
 export type Maturity = 'stable' | 'provisional';
 
@@ -122,4 +122,56 @@ export function apiDocs(definition: ApiDocsDefinition): ApiDocs {
     }
   }
   return { ...document, operations, examples: new ExampleRegistry(examples) };
+}
+
+/** What a document says of one operation beyond its route's runtime fields. */
+export interface OperationDocumentation {
+  readonly description?: string;
+  readonly 'x-arthome-maturity'?: Maturity;
+  readonly 'x-arthome-upstream'?: readonly Upstream[];
+  readonly 'x-arthome-idempotency-exemption'?: string;
+}
+
+/**
+ * The prose and doc-only `x-arthome-*` of `route`: what its module registered, over what the route
+ * still carries itself. A registered operation's maturity is the stated one, else its owning
+ * service's; a route not yet registered keeps its own.
+ */
+export function documentationOf(
+  route: RouteDefinition,
+  doc: OperationDoc | undefined,
+): OperationDocumentation {
+  const upstream =
+    doc?.upstream ?? (route['x-arthome-upstream'] as readonly Upstream[] | undefined);
+  const derived = maturityOf(upstream ?? []);
+  if (doc?.maturity !== undefined && doc.maturity === derived) {
+    throw new Error(
+      `openapi: "${route.operationId}" states the maturity its owning service gives; leave it out.`,
+    );
+  }
+  const maturity =
+    doc === undefined
+      ? ((route['x-arthome-maturity'] as Maturity | undefined) ?? derived)
+      : (doc.maturity ?? derived);
+  if (doc !== undefined && maturity === undefined) {
+    throw new Error(
+      `openapi: "${route.operationId}" calls no service a maturity derives from; state its maturity.`,
+    );
+  }
+  const description = doc?.description ?? route.description;
+  const exemption =
+    doc?.idempotencyExemption ?? (route['x-arthome-idempotency-exemption'] as string | undefined);
+  return {
+    ...(description !== undefined && { description }),
+    ...(maturity !== undefined && { 'x-arthome-maturity': maturity }),
+    ...(upstream !== undefined && { 'x-arthome-upstream': upstream }),
+    ...(exemption !== undefined && { 'x-arthome-idempotency-exemption': exemption }),
+  };
+}
+
+/** The documentation of each route of an api, looked up by route: what a server's own docs show. */
+export function documentationLookup(
+  docs: ApiDocs,
+): (route: RouteDefinition) => OperationDocumentation {
+  return (route) => documentationOf(route, docs.operations[route.operationId]);
 }

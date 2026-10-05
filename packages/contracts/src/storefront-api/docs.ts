@@ -1,9 +1,15 @@
 import { MemberRole } from '@arthome/core';
 
 import { StorefrontTag } from './components.js';
+import type { RouteDefinition } from '../http/index.js';
 import { Acknowledged, Deleted, ReauthProof } from '../http/index.js';
-import type { ApiDocs, ModuleDocs, ModuleExamples } from '../openapi/docs.js';
-import { apiDocs } from '../openapi/docs.js';
+import type {
+  ApiDocs,
+  ModuleDocs,
+  ModuleExamples,
+  OperationDocumentation,
+} from '../openapi/docs.js';
+import { apiDocs, documentationLookup } from '../openapi/docs.js';
 import { meDocs } from './me/docs.js';
 import { meExamples } from './me/examples.js';
 
@@ -134,3 +140,7 @@ export const storefrontDocs: ApiDocs = apiDocs({
   modules: [statedMaturities, meDocs],
   examples: [sharedExamples, meExamples],
 });
+
+/** Each storefront operation's prose and doc-only metadata, by route: for a server's own docs. Server only. */
+export const storefrontDocsOf: (route: RouteDefinition) => OperationDocumentation =
+  documentationLookup(storefrontDocs);

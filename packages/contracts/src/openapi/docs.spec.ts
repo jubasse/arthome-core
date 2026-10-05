@@ -8,6 +8,10 @@ import { ExampleRegistry, apiDocs, maturityOf } from './docs.js';
 import { openApiDocumentOf } from './index.js';
 import { defineApi, defineRoute } from '../http/index.js';
 import { storefrontV1 } from '../storefront-api/components.js';
+import { listInbox } from '../studio-api/bootstrap.js';
+import { datesDocs } from '../studio-api/dates/docs.js';
+import { getDateSheet } from '../studio-api/dates/routes.js';
+import { studioDocsOf } from '../studio-api/docs.js';
 
 type Operation = Record<string, unknown>;
 
@@ -217,5 +221,16 @@ describe('openApiDocumentOf with docs', () => {
 
   it('needs an introduction from the api or its docs', () => {
     expect(() => openApiDocumentOf(api)).toThrow('no `info`');
+  });
+});
+
+describe('studioDocsOf', () => {
+  it('gives a converted route the docs its module registered, and another its own prose', () => {
+    expect(studioDocsOf(getDateSheet)).toEqual({
+      description: datesDocs.getDateSheet?.description,
+      'x-arthome-maturity': 'stable',
+      'x-arthome-upstream': datesDocs.getDateSheet?.upstream,
+    });
+    expect(studioDocsOf(listInbox).description).toBe(listInbox.description);
   });
 });

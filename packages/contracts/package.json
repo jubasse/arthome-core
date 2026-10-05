@@ -115,10 +115,20 @@
       "types": "./dist/storefront-api/index.d.ts",
       "import": "./dist/storefront-api/index.js"
     },
+    "./storefront-api/docs": {
+      "@arthome/source": "./src/storefront-api/docs.ts",
+      "types": "./dist/storefront-api/docs.d.ts",
+      "import": "./dist/storefront-api/docs.js"
+    },
     "./studio-api": {
       "@arthome/source": "./src/studio-api/index.ts",
       "types": "./dist/studio-api/index.d.ts",
       "import": "./dist/studio-api/index.js"
+    },
+    "./studio-api/docs": {
+      "@arthome/source": "./src/studio-api/docs.ts",
+      "types": "./dist/studio-api/docs.d.ts",
+      "import": "./dist/studio-api/docs.js"
     },
     "./streaming": {
       "@arthome/source": "./src/streaming/index.ts",

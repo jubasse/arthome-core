@@ -64,6 +64,7 @@ So: **one subpath per bounded context**, added as each lands and never before.
 | `./openapi` | the OpenAPI document an api emits, `components/schemas` included, and the registries of its docs and examples — no schema |
 | `./storefront-api` | `storefrontApi`: every operation of the storefront contract, declared once, and the source of `openapi/storefront.yaml` |
 | `./studio-api` | `studioApi`: the same for the studio, and the source of `openapi/studio.yaml` |
+| `./storefront-api/docs`, `./studio-api/docs` | **server only, never imported by a surface**: each api's introduction (`info`, `servers`, security schemes), its modules' docs and examples, and `storefrontDocsOf(route)` / `studioDocsOf(route)`, an operation's prose and doc-only `x-arthome-*`, for a server's own docs (Swagger). `check:contract-docs` proves no surface subpath reaches them |
 
 **Fourteen subpaths of schemas, 106 schemas, and together with `@arthome/core` they are all 111 schemas of both
 contracts.** The documents are generated from them (next section), and `pnpm run check:openapi-generated`

@@ -307,7 +307,7 @@ Declarations: `dist/money/index.d.ts` — 4 exported names.
 
 #### @arthome/contracts/openapi
 
-Declarations: `dist/openapi/index.d.ts` — 14 exported names.
+Declarations: `dist/openapi/index.d.ts` — 17 exported names.
 
 - `ApiDocs` (interface)
 - `ApiDocsDefinition` (interface)
@@ -320,7 +320,10 @@ Declarations: `dist/openapi/index.d.ts` — 14 exported names.
 - `ModuleExamples` (type) — `type ModuleExamples = readonly ExampleEntry[];` — A module's examples, by schema: '[[DateSchema, [dateExample]]] as const satisfies ModuleExamples'.
 - `OpenApiDocument` (type) — `type OpenApiDocument = Readonly<Record<string, unknown>>;`
 - `OperationDoc` (type)
+- `OperationDocumentation` (interface) — What a document says of one operation beyond its route's runtime fields.
 - `apiDocs` (function) — `function apiDocs(definition: ApiDocsDefinition): ApiDocs;` — Gathers an api's modules, and refuses an operation documented twice.
+- `documentationLookup` (function) — `function documentationLookup(docs: ApiDocs): (route: RouteDefinition) => OperationDocumentation;` — The documentation of each route of an api, looked up by route: what a server's own docs show.
+- `documentationOf` (function) — `function documentationOf(route: RouteDefinition, doc: OperationDoc | undefined): OperationDocumentation;` — The prose and doc-only 'x-arthome-*' of 'route': what its module registered, over what the route still carries itself.
 - `maturityOf` (function) — `function maturityOf(upstream: readonly Upstream[]): Maturity | undefined;` — The regime of the operation's owning service, the first service in its upstream: a BFF keeps its own shape stable over a provisional servic…
 - `openApiDocumentOf` (function) — `function openApiDocumentOf(api: Api, docs?: ApiDocs): OpenApiDocument;`
 
@@ -339,6 +342,13 @@ Declarations: `dist/pagination/index.d.ts` — 5 exported names.
 Declarations: `dist/storefront-api/index.d.ts` — 1 exported names.
 
 - `storefrontApi` (const)
+
+#### @arthome/contracts/storefront-api/docs
+
+Declarations: `dist/storefront-api/docs.d.ts` — 2 exported names.
+
+- `storefrontDocs` (const) — `storefrontDocs: ApiDocs` — The storefront document's introduction, and the docs and examples its modules register.
+- `storefrontDocsOf` (const) — `storefrontDocsOf: (route: RouteDefinition) => OperationDocumentation` — Each storefront operation's prose and doc-only metadata, by route: for a server's own docs.
 
 #### @arthome/contracts/streaming
 
@@ -370,6 +380,13 @@ Declarations: `dist/studio-access/index.d.ts` — 11 exported names.
 Declarations: `dist/studio-api/index.d.ts` — 1 exported names.
 
 - `studioApi` (const)
+
+#### @arthome/contracts/studio-api/docs
+
+Declarations: `dist/studio-api/docs.d.ts` — 2 exported names.
+
+- `studioDocs` (const) — `studioDocs: ApiDocs` — The studio document's introduction, and the docs and examples its modules register.
+- `studioDocsOf` (const) — `studioDocsOf: (route: RouteDefinition) => OperationDocumentation` — Each studio operation's prose and doc-only metadata, by route: for a server's own docs.
 
 #### @arthome/contracts/studio-desk
 

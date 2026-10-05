@@ -1,9 +1,15 @@
 import { MemberRole } from '@arthome/core';
 
 import { StudioTag } from './components.js';
+import type { RouteDefinition } from '../http/index.js';
 import { Acknowledged, Deleted, ReauthProof } from '../http/index.js';
-import type { ApiDocs, ModuleDocs, ModuleExamples } from '../openapi/docs.js';
-import { apiDocs } from '../openapi/docs.js';
+import type {
+  ApiDocs,
+  ModuleDocs,
+  ModuleExamples,
+  OperationDocumentation,
+} from '../openapi/docs.js';
+import { apiDocs, documentationLookup } from '../openapi/docs.js';
 import { datesDocs } from './dates/docs.js';
 import { datesExamples } from './dates/examples.js';
 
@@ -155,3 +161,7 @@ export const studioDocs: ApiDocs = apiDocs({
   modules: [statedMaturities, datesDocs],
   examples: [sharedExamples, datesExamples],
 });
+
+/** Each studio operation's prose and doc-only metadata, by route: for a server's own docs. Server only. */
+export const studioDocsOf: (route: RouteDefinition) => OperationDocumentation =
+  documentationLookup(studioDocs);

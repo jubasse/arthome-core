@@ -13,7 +13,7 @@
 import { z } from 'zod';
 
 import type { ApiDocs, ExampleRegistry, OperationDoc } from './docs.js';
-import { maturityOf } from './docs.js';
+import { documentationOf } from './docs.js';
 import type {
   Api,
   ApiComponents,
@@ -171,7 +171,10 @@ class DocumentBuilder {
   }
 
   public operation(route: Route, doc: OperationDoc | undefined): Record<string, unknown> {
-    const declared: Readonly<Record<string, unknown>> = { ...route, ...documented(route, doc) };
+    const declared: Readonly<Record<string, unknown>> = {
+      ...route,
+      ...(doc === undefined ? {} : documentationOf(route, doc)),
+    };
     const out: Record<string, unknown> = {};
     for (const key of FIRST) if (declared[key] !== undefined) out[key] = declared[key];
     for (const [key, value] of Object.entries(declared)) {
@@ -245,32 +248,6 @@ class DocumentBuilder {
     }
     return inlined(components, slotJson) as Record<string, unknown>;
   }
-}
-
-/** What the docs registry says of an operation, as the keys a route would carry. */
-function documented(route: Route, doc: OperationDoc | undefined): Record<string, unknown> {
-  if (doc === undefined) return {};
-  const upstream = doc.upstream ?? (route['x-arthome-upstream'] as OperationDoc['upstream']);
-  const derived = maturityOf(upstream ?? []);
-  if (doc.maturity !== undefined && doc.maturity === derived) {
-    throw new Error(
-      `openapi: "${route.operationId}" states the maturity its owning service gives; leave it out.`,
-    );
-  }
-  const maturity = doc.maturity ?? derived;
-  if (maturity === undefined) {
-    throw new Error(
-      `openapi: "${route.operationId}" calls no service a maturity derives from; state its maturity.`,
-    );
-  }
-  return {
-    ...(doc.description !== undefined && { description: doc.description }),
-    'x-arthome-maturity': maturity,
-    ...(upstream !== undefined && { 'x-arthome-upstream': upstream }),
-    ...(doc.idempotencyExemption !== undefined && {
-      'x-arthome-idempotency-exemption': doc.idempotencyExemption,
-    }),
-  };
 }
 
 function stripped(json: unknown): unknown {

@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { Service } from '@arthome/core';
 import type { Upstream } from '@arthome/core';
-import type { Extensions } from '../http/index.js';
+import type { Extensions, RouteDefinition } from '../http/index.js';
 export type Maturity = 'stable' | 'provisional';
 /** The regime of each service's contract: a copy of `transport.md` §5.11, held to it by `check-contract-docs`. */
 export declare const MATURITY_BY_SERVICE: Readonly<Record<Service, Maturity>>;
@@ -67,5 +67,20 @@ export interface ApiDocsDefinition extends DocumentDocs {
 }
 /** Gathers an api's modules, and refuses an operation documented twice. */
 export declare function apiDocs(definition: ApiDocsDefinition): ApiDocs;
+/** What a document says of one operation beyond its route's runtime fields. */
+export interface OperationDocumentation {
+    readonly description?: string;
+    readonly 'x-arthome-maturity'?: Maturity;
+    readonly 'x-arthome-upstream'?: readonly Upstream[];
+    readonly 'x-arthome-idempotency-exemption'?: string;
+}
+/**
+ * The prose and doc-only `x-arthome-*` of `route`: what its module registered, over what the route
+ * still carries itself. A registered operation's maturity is the stated one, else its owning
+ * service's; a route not yet registered keeps its own.
+ */
+export declare function documentationOf(route: RouteDefinition, doc: OperationDoc | undefined): OperationDocumentation;
+/** The documentation of each route of an api, looked up by route: what a server's own docs show. */
+export declare function documentationLookup(docs: ApiDocs): (route: RouteDefinition) => OperationDocumentation;
 export {};
 //# sourceMappingURL=docs.d.ts.map
