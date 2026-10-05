@@ -80,7 +80,6 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'closeReconciliationPeriod',
   'createDateDraft',
   'createReauthToken',
-  'createUploadTicket',
   'deleteChannel',
   'escalateIncidentToProduction',
   'getChannelAgenda',

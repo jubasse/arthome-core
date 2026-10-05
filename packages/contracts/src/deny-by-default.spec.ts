@@ -79,7 +79,6 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'claimModerationItem',
   'closeReconciliationPeriod',
   'createReauthToken',
-  'createUploadTicket',
   'deleteChannel',
   'escalateIncidentToProduction',
   'getChannelAgenda',

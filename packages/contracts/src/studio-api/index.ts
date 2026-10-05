@@ -25,7 +25,6 @@ import {
   verifyTwoFactorStudio,
 } from './bootstrap.js';
 import {
-  createUploadTicket,
   deleteChannel,
   getChannelSettings,
   listChannelJournal,
@@ -131,6 +130,7 @@ import {
 import { createDateDraft } from './publication.js';
 import { escalateIncidentToProduction, getChannelStreamSettings, resolveIncident } from './run.js';
 import { getChannelTicketing, refundSeat } from './ticketing.js';
+import { createUploadTicket } from './uploads/routes.js';
 import {
   StudioEnvelopeMetaSchema,
   StudioErrorEnvelopeSchema,

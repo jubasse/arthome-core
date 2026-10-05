@@ -7,12 +7,10 @@ import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope
 import type { JsonRequestBody, PathParameter, JsonResponse, QueryParameter, Route } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import { JournalEntrySchema } from '../studio-desk/index.js';
-import { MerchItemAdminSchema, UploadTicketSchema } from '../studio-stage/index.js';
+import { MerchItemAdminSchema } from '../studio-stage/index.js';
 declare const LIST_CHANNEL_REPLAYS_STATE: readonly ["online", "expired", "archived"];
 declare const UPDATE_CHANNEL_SETTINGS_INGEST_PROTOCOL: readonly ["rtmps", "srt", "whip"];
 declare const LIST_CHANNEL_JOURNAL_NATURE: readonly ["air", "mod", "event", "access", "money"];
-declare const CREATE_UPLOAD_TICKET_PURPOSE: readonly ["poster", "wide", "avatar", "merch_image"];
-declare const CREATE_UPLOAD_TICKET_CONTENT_TYPE: readonly ["image/jpeg", "image/png", "image/webp"];
 export declare const deleteChannel: Route<{
     method: 'delete';
     version: 1;
@@ -163,28 +161,6 @@ export declare const listChannelJournal: Route<{
         }, z.core.$loose>>>;
         400: typeof BadRequestResponse;
         403: typeof ForbiddenResponse;
-    };
-}>;
-export declare const createUploadTicket: Route<{
-    method: 'post';
-    version: 1;
-    path: '/uploads';
-    parameters: readonly [
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter,
-        typeof IdempotencyKeyParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        purpose: VocabularyIn<typeof CREATE_UPLOAD_TICKET_PURPOSE>;
-        contentType: VocabularyIn<typeof CREATE_UPLOAD_TICKET_CONTENT_TYPE>;
-        sizeBytes: z.ZodInt;
-    }, z.core.$strip>>;
-    responses: {
-        201: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof UploadTicketSchema;
-        }, z.core.$loose>>>;
-        400: typeof BadRequestResponse;
     };
 }>;
 export declare const listChannelMerchItems: Route<{

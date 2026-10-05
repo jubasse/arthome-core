@@ -24,6 +24,7 @@ import * as studioPayouts from './studio-api/payouts.js';
 import * as studioPublication from './studio-api/publication.js';
 import * as studioRun from './studio-api/run.js';
 import * as studioTicketing from './studio-api/ticketing.js';
+import * as studioUploads from './studio-api/uploads/routes.js';
 
 type Module = Readonly<Record<string, unknown>>;
 
@@ -79,6 +80,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       studioTicketing,
       studioExports,
       studioBankChangeRequests,
+      studioUploads,
     ],
   ],
 ];
