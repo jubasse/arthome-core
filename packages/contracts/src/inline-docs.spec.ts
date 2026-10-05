@@ -19,7 +19,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
   'changePassword',
   'checkoutCart',
   'confirmEmailVerification',
-  'contactSupport',
   'createPairing',
   'decidePairing',
   'disableTwoFactor',

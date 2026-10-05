@@ -19,7 +19,6 @@ const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
   'changePassword',
   'checkoutCart',
   'confirmEmailVerification',
-  'contactSupport',
   'createPairing',
   'decidePairing',
   'disableTwoFactor',

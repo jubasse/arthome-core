@@ -13,6 +13,8 @@ import { devicesDocs } from './devices/docs.js';
 import { devicesExamples } from './devices/examples.js';
 import { meDocs } from './me/docs.js';
 import { meExamples } from './me/examples.js';
+import { supportDocs } from './support/docs.js';
+import { supportExamples } from './support/examples.js';
 
 /**
  * The operations whose maturity is not their owning service's (`transport.md` §5.11). Each entry
@@ -127,8 +129,15 @@ export const storefrontDocs: ApiDocs = apiDocs({
         'ES256 JWT, `aud: "arthome.device"`, 180 days, **rotated on every use**, carrying `device_id`\nand nothing else. Obtained on first launch through `registerDevice`, **before any session**.\nIt is not a session: it opens only pairing, pairing polling and the public bootstrap, and\n**opens no personal data** — in particular not the real-time channel (`adr-auth.md` §4/Q3,\n§5.3).\n',
     },
   },
-  modules: [statedMaturities, meDocs, accountDeepLinkDocs, devicesDocs, changesDocs],
-  examples: [sharedExamples, meExamples, accountDeepLinkExamples, devicesExamples, changesExamples],
+  modules: [statedMaturities, meDocs, accountDeepLinkDocs, devicesDocs, changesDocs, supportDocs],
+  examples: [
+    sharedExamples,
+    meExamples,
+    accountDeepLinkExamples,
+    devicesExamples,
+    changesExamples,
+    supportExamples,
+  ],
 });
 
 /** Each storefront operation's prose and doc-only metadata, by route: for a server's own docs. Server only. */

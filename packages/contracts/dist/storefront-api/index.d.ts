@@ -1,5 +1,5 @@
 import { getAccountDeepLink } from './account-deep-link/routes.js';
-import { changePassword, confirmEmailVerification, contactSupport, disableTwoFactor, enableTwoFactor, exchangeOneTimeToken, requestPasswordReset, resendEmailVerification, resetPassword, signIn, signOut, signUp, startSocialSignIn, verifyTwoFactor } from './account.js';
+import { changePassword, confirmEmailVerification, disableTwoFactor, enableTwoFactor, exchangeOneTimeToken, requestPasswordReset, resendEmailVerification, resetPassword, signIn, signOut, signUp, startSocialSignIn, verifyTwoFactor } from './account.js';
 import { getViewerContext } from './bootstrap.js';
 import { listChanges } from './changes/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
@@ -10,6 +10,7 @@ import { extendRail, getArtistDetail, getCategoryScreen, getHomeScreen, getLiveS
 import { addPasskey, addPaymentMethod, addToWatchlist, cancelAccountDeletion, clearReminder, createSavedSearch, deleteSavedSearch, followArtist, getAccountScreen, getExport, listFollowedArtists, listMyOrders, listMyReplays, listMyTickets, listNotifications, listSavedSearches, listWatchlist, markNotificationsRead, recordPlaybackPosition, removeFromWatchlist, removePasskey, removePaymentMethod, requestAccountDeletion, requestExport, revokeDevice, setReminder, signOutProfile, unfollowArtist, updateConsents, updateNotificationPreferences, updatePreferences, updateProfile, updateSavedSearch } from './me/routes.js';
 import { cancelPairing, createPairing, decidePairing, engagePairing, pollPairing } from './pairing.js';
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
+import { contactSupport } from './support/routes.js';
 import type { Api } from '../http/index.js';
 export declare const storefrontApi: Api<{
     registerDevice: typeof registerDevice;

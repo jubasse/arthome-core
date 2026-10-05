@@ -4304,6 +4304,9 @@ paths:
       - notifications
       tags:
       - account
+      x-arthome-requires:
+      - name: throttle
+        bucket: contact
       security:
       - sessionCookie: []
         csrfToken: []
@@ -4388,15 +4391,34 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:14:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   requestId: 019928fd-0000-7000-8000-000000000001
                   reference: SUP-2026-0912
                   priorityCode: live_in_progress
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/home:
     get:
       operationId: getHomeScreen

@@ -9,7 +9,6 @@ import { getAccountDeepLink } from './account-deep-link/routes.js';
 import {
   changePassword,
   confirmEmailVerification,
-  contactSupport,
   disableTwoFactor,
   enableTwoFactor,
   exchangeOneTimeToken,
@@ -135,6 +134,7 @@ import {
   pollPairing,
 } from './pairing.js';
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
+import { contactSupport } from './support/routes.js';
 import {
   ArtistDetailSchema,
   ArtistSummarySchema,

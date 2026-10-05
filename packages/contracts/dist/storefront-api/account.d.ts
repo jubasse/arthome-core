@@ -6,7 +6,6 @@ import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../
 import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
 import { StorefrontSessionEstablishedSchema, StorefrontSessionModeSchema } from '../identity/index.js';
 declare const START_SOCIAL_SIGN_IN_PROVIDER: readonly ["google", "facebook"];
-declare const CONTACT_SUPPORT_TOPIC: readonly ["ticketing_refund", "playback_quality", "replay", "store_shipping", "account_signin", "personal_data"];
 export declare const signUp: Route<{
     method: 'post';
     version: 1;
@@ -299,37 +298,6 @@ export declare const verifyTwoFactor: Route<{
         }, z.core.$loose>>>;
         401: typeof UnauthorizedResponse;
         410: typeof GoneResponse;
-    };
-}>;
-export declare const contactSupport: Route<{
-    method: 'post';
-    version: 1;
-    path: '/support/requests';
-    parameters: readonly [
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        topic: VocabularyIn<typeof CONTACT_SUPPORT_TOPIC>;
-        message: z.ZodString;
-        context: z.ZodOptional<z.ZodObject<{
-            dateId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-            seatId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-            orderId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-            traceId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-        }, z.core.$strip>>;
-    }, z.core.$strip>>;
-    responses: {
-        202: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodOptional<z.ZodObject<{
-                requestId: z.ZodOptional<z.ZodString>;
-                reference: z.ZodOptional<z.ZodString>;
-                priorityCode: z.ZodOptional<z.ZodString>;
-            }, z.core.$loose>>;
-        }, z.core.$loose>>>;
-        429: typeof TooManyRequestsResponse;
-        403: typeof CsrfRefusedResponse;
     };
 }>;
 export {};
