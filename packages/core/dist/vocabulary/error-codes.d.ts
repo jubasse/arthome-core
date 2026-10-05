@@ -112,10 +112,12 @@ export declare const ModerationErrorCode: {
  * Refusals about a date and what may still be changed on it — the wire's half of
  * `publication.ts`'s irreversible transitions.
  */
-export declare const CATALOG_ERROR_CODES: readonly ["artist.slug_taken", "date.has_sold_seats", "date.outcome_decision_forbidden", "date.prices_locked", "date.prices_currency_mismatch", "date.replay_policy_final", "date.technical_check_required", "date.technical_provision_required", "date.provision_deadline_passed", "date.provision_below_capacity", "date.stream_key_rotation_during_run", "date.postponement_limit_reached", "date.outcome_final", "date.not_public", "date.already_started", "date.not_started", "date.already_ended", "date.reschedule_in_past"];
+export declare const CATALOG_ERROR_CODES: readonly ["artist.slug_taken", "artist.already_exists", "show.slug_taken", "date.has_sold_seats", "date.outcome_decision_forbidden", "date.prices_locked", "date.prices_currency_mismatch", "date.replay_policy_final", "date.technical_check_required", "date.technical_provision_required", "date.provision_deadline_passed", "date.provision_below_capacity", "date.stream_key_rotation_during_run", "date.postponement_limit_reached", "date.outcome_final", "date.not_public", "date.already_started", "date.not_started", "date.already_ended", "date.reschedule_in_past"];
 export type CatalogErrorCode = (typeof CATALOG_ERROR_CODES)[number];
 export declare const CatalogErrorCode: {
     readonly ARTIST_SLUG_TAKEN: "artist.slug_taken";
+    readonly ARTIST_ALREADY_EXISTS: "artist.already_exists";
+    readonly SHOW_SLUG_TAKEN: "show.slug_taken";
     readonly DATE_HAS_SOLD_SEATS: "date.has_sold_seats";
     readonly OUTCOME_DECISION_FORBIDDEN: "date.outcome_decision_forbidden";
     readonly PRICES_LOCKED: "date.prices_locked";
@@ -157,11 +159,12 @@ export declare const PayoutErrorCode: {
  * The viewer's commerce refusals: a purchase, a seat, a means of payment. `failureCode` narrows
  * it to the four a purchase command can refuse with.
  */
-export declare const ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.sold_out", "order.payment_declined", "order.price_stale", "order.plan_unavailable", "order.contribution_out_of_range", "order.checkout_line_unavailable", "order.sales_queue_admission_required", "order.late_entry_unacknowledged", "order.sales_closed", "seat.cancel_deadline_passed", "payment_method.in_use"];
+export declare const ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.sold_out", "order.tier_unavailable", "order.payment_declined", "order.price_stale", "order.plan_unavailable", "order.contribution_out_of_range", "order.checkout_line_unavailable", "order.sales_queue_admission_required", "order.late_entry_unacknowledged", "order.sales_closed", "seat.cancel_deadline_passed", "payment_method.in_use"];
 export type OrderErrorCode = (typeof ORDER_ERROR_CODES)[number];
 export declare const OrderErrorCode: {
     readonly QUOTE_ADDRESS_MISMATCH: "order.quote_address_mismatch";
     readonly SOLD_OUT: "order.sold_out";
+    readonly TIER_UNAVAILABLE: "order.tier_unavailable";
     readonly PAYMENT_DECLINED: "order.payment_declined";
     readonly PRICE_STALE: "order.price_stale";
     readonly PLAN_UNAVAILABLE: "order.plan_unavailable";

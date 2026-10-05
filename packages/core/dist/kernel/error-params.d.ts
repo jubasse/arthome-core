@@ -101,6 +101,8 @@ export interface ErrorParamsMap {
     };
     [ModerationErrorCode.DECISION_VERSION_STALE]: NoErrorParams;
     [CatalogErrorCode.ARTIST_SLUG_TAKEN]: NoErrorParams;
+    [CatalogErrorCode.ARTIST_ALREADY_EXISTS]: NoErrorParams;
+    [CatalogErrorCode.SHOW_SLUG_TAKEN]: NoErrorParams;
     [CatalogErrorCode.DATE_HAS_SOLD_SEATS]: {
         seatsSold: number;
     };
@@ -183,8 +185,9 @@ export interface ErrorParamsMap {
         quotedPostalCode: string;
     };
     [OrderErrorCode.SOLD_OUT]: NoErrorParams;
+    [OrderErrorCode.TIER_UNAVAILABLE]: NoErrorParams;
     [OrderErrorCode.PAYMENT_DECLINED]: {
-        declineCode: string;
+        declineCode?: string;
     };
     [OrderErrorCode.PRICE_STALE]: {
         expectedAmountMinor: number;

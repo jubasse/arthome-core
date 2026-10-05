@@ -202,6 +202,11 @@ export const CATALOG_ERROR_CODES = [
   // The public face's slug, unique across artists: `updateChannelIdentity` names it, and a 409
   //   without the code would say "conflict" about a URL someone else already owns.
   'artist.slug_taken',
+  // A channel has one public face: two first edits racing, the second finds it created.
+  'artist.already_exists',
+  // Two shows of one title published at once: the second's slug is taken, and publishing again
+  //   takes the next free one.
+  'show.slug_taken',
   'date.has_sold_seats',
   'date.outcome_decision_forbidden',
   'date.prices_locked',
@@ -231,6 +236,8 @@ export type CatalogErrorCode = (typeof CATALOG_ERROR_CODES)[number];
 
 export const CatalogErrorCode = {
   ARTIST_SLUG_TAKEN: 'artist.slug_taken',
+  ARTIST_ALREADY_EXISTS: 'artist.already_exists',
+  SHOW_SLUG_TAKEN: 'show.slug_taken',
   DATE_HAS_SOLD_SEATS: 'date.has_sold_seats',
   OUTCOME_DECISION_FORBIDDEN: 'date.outcome_decision_forbidden',
   PRICES_LOCKED: 'date.prices_locked',
@@ -286,6 +293,8 @@ export const PayoutErrorCode = {
 export const ORDER_ERROR_CODES = [
   'order.quote_address_mismatch',
   'order.sold_out',
+  // A price tier the date no longer sells.
+  'order.tier_unavailable',
   'order.payment_declined',
   'order.price_stale',
   'order.plan_unavailable',
@@ -309,6 +318,7 @@ export type OrderErrorCode = (typeof ORDER_ERROR_CODES)[number];
 export const OrderErrorCode = {
   QUOTE_ADDRESS_MISMATCH: 'order.quote_address_mismatch',
   SOLD_OUT: 'order.sold_out',
+  TIER_UNAVAILABLE: 'order.tier_unavailable',
   PAYMENT_DECLINED: 'order.payment_declined',
   PRICE_STALE: 'order.price_stale',
   PLAN_UNAVAILABLE: 'order.plan_unavailable',

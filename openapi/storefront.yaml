@@ -8485,7 +8485,7 @@ components:
           example:
             error:
               code: chat.rate_limited
-              nature: refused
+              nature: unavailable
               params:
                 retryAfterMs: 3000
               traceId: 4bf92f3577b34da6a3ce929d0e0e4736
@@ -8730,6 +8730,8 @@ components:
           - moderation.automatic_cannot_override_human
           - moderation.decision_version_stale
           - artist.slug_taken
+          - artist.already_exists
+          - show.slug_taken
           - date.has_sold_seats
           - date.outcome_decision_forbidden
           - date.prices_locked
@@ -8755,6 +8757,7 @@ components:
           - payout.reconciliation_discrepancy_unexplained
           - order.quote_address_mismatch
           - order.sold_out
+          - order.tier_unavailable
           - order.payment_declined
           - order.price_stale
           - order.plan_unavailable

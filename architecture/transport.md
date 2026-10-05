@@ -413,7 +413,7 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 | `402` | `refused` | `order.payment_declined` (the payment provider declined; not a rule of ours) |
 | `403` | `refused` | `api.forbidden`, `api.sort_key_forbidden`, `api.rights_version_stale`, `pairing.identity_mismatch`, `order.sales_queue_admission_required` |
 | `404` | `refused` | `api.not_found` |
-| `409` | `refused` | `state.conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `api.idempotency_in_flight`, `capacity.tier_must_widen` |
+| `409` | `refused` | `state.conflict`, `publication.transition_irreversible`, `moderation.already_settled`, `order.price_stale`, `order.sold_out`, `api.idempotency_key_reused`, `capacity.tier_must_widen`; two are `unavailable`, since retrying succeeds: `api.idempotency_in_flight` (param `retryAfterMs`) and `show.slug_taken` (publishing again takes the next free slug) |
 | `410` | `refused` | `api.cursor_too_old`, `pairing.expired`, `watch.replay_expired` |
 | `429` | `unavailable` | `api.rate_limited`, `chat.rate_limited` (param `retryAfterMs`) |
 | `500` | `unavailable` | `api.internal` — **never** the original error's message |
@@ -425,8 +425,9 @@ This table said the accessor for every row until `check-vocabulary` was taught t
 every member of `ERROR_CODES`. A code absent from it is not a defect — a code *in* it that the vocabulary
 does not carry is, which is what the gate checks.
 
-**Every code has one entry in `ERRORS`, in `@arthome/contracts/http`**: its status and an example of
-its params, and a code without one does not compile. Tests fail when a generated document shows a
+**Every code has one entry in `ERRORS`, in `@arthome/contracts/http`**: its status, an example of its
+params, and its nature where it is not its status's (`natureOf(code)`), and a code without one does
+not compile. Tests fail when a generated document shows a
 code under another status, or when an example does not parse with the code's `ERROR_PARAMS`.
 
 **The BFF never relays a service error as-is** (`nestjs-bff-gateway` skill, rule 6). It maps an

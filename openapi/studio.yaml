@@ -2227,7 +2227,7 @@ paths:
            on the state.**
         2. **It is conditional and versioned.** Two people can be on the record: a command sent from
            `technical` while the current state is `live` is refused with `state.conflict`,
-           **with the current state and version**. The studio is multi-operator without a lock; the arbitration
+           **with the current version, and the current state when the record has one**. The studio is multi-operator without a lock; the arbitration
            is on the server.
         3. **`Idempotency-Key` is mandatory, not recommended**: the transition commits a public price
            or a sale.
@@ -2348,7 +2348,7 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           description: |
-            `state.conflict` (with the current state and version),
+            `state.conflict` (with the current version, and the current state when the record has one),
             `publication.transition_irreversible` (with the promise committed),
             `publication.promise_unacknowledged` (a one-way transition sent without its promise), or
             `publication.checklist_incomplete` (with the list of what is missing).
@@ -10969,7 +10969,7 @@ components:
     Conflict:
       description: |
         A final business refusal, and the `code` says which. `state.conflict` carries **the current
-        version, and the state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+        version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
         promise committed**; `moderation.already_settled` carries **the winning verdict and its
         author**.
       content:
@@ -11009,7 +11009,7 @@ components:
           example:
             error:
               code: api.rate_limited
-              nature: refused
+              nature: unavailable
               params:
                 retryAfterMs: 2000
               traceId: 4bf92f3577b34da6a3ce929d0e0e4736
@@ -11228,6 +11228,8 @@ components:
           - moderation.automatic_cannot_override_human
           - moderation.decision_version_stale
           - artist.slug_taken
+          - artist.already_exists
+          - show.slug_taken
           - date.has_sold_seats
           - date.outcome_decision_forbidden
           - date.prices_locked
@@ -11253,6 +11255,7 @@ components:
           - payout.reconciliation_discrepancy_unexplained
           - order.quote_address_mismatch
           - order.sold_out
+          - order.tier_unavailable
           - order.payment_declined
           - order.price_stale
           - order.plan_unavailable
@@ -12574,7 +12577,7 @@ components:
           description: |
             The studio is **multi-operator without a lock**: the arbitration is on the server. Every
             transition carries `expectedVersion`, and a command sent from `technical` while the current
-            state is `live` is refused with `state.conflict` **with the current state and version**.
+            state is `live` is refused with `state.conflict` **with the current version, and the current state when the record has one**.
         publishedAt:
           format: date-time
           type:

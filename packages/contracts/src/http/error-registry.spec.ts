@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { ApiErrorCode, ERROR_CODES, OrderErrorCode, type ErrorCode } from '@arthome/core';
+import {
+  ApiErrorCode,
+  ERROR_CODES,
+  FailureNature,
+  OrderErrorCode,
+  type ErrorCode,
+} from '@arthome/core';
 import { ERROR_PARAMS } from '@arthome/core/schema';
 
-import { ERRORS, exampleOf, statusOf } from './error-registry.js';
+import { ERRORS, NATURE_BY_STATUS, exampleOf, natureOf, statusOf } from './error-registry.js';
 import { openApiDocumentOf } from '../openapi/index.js';
 import { storefrontApi } from '../storefront-api/index.js';
 import { studioApi } from '../studio-api/index.js';
@@ -72,5 +78,16 @@ describe('the registry of error codes', () => {
       (code) => !ERROR_PARAMS[code].safeParse(exampleOf(code)).success,
     );
     expect(unreadable).toEqual([]);
+  });
+
+  it("gives each code its status's nature unless the entry says otherwise, and only where it differs", () => {
+    expect(natureOf(ApiErrorCode.NOT_FOUND)).toBe(FailureNature.REFUSED);
+    expect(natureOf(ApiErrorCode.RATE_LIMITED)).toBe(FailureNature.UNAVAILABLE);
+    expect(natureOf(ApiErrorCode.IDEMPOTENCY_IN_FLIGHT)).toBe(FailureNature.UNAVAILABLE);
+    const redundant = ERROR_CODES.filter((code) => {
+      const { status, nature } = ERRORS[code];
+      return nature === NATURE_BY_STATUS[status];
+    });
+    expect(redundant).toEqual([]);
   });
 });

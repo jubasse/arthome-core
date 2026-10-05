@@ -86,6 +86,8 @@ export interface ErrorParamsMap {
   [ModerationErrorCode.DECISION_VERSION_STALE]: NoErrorParams;
 
   [CatalogErrorCode.ARTIST_SLUG_TAKEN]: NoErrorParams;
+  [CatalogErrorCode.ARTIST_ALREADY_EXISTS]: NoErrorParams;
+  [CatalogErrorCode.SHOW_SLUG_TAKEN]: NoErrorParams;
   [CatalogErrorCode.DATE_HAS_SOLD_SEATS]: { seatsSold: number };
   [CatalogErrorCode.OUTCOME_DECISION_FORBIDDEN]: { canEscalateTo: string[] };
   [CatalogErrorCode.PRICES_LOCKED]: { lockedAt: string };
@@ -131,7 +133,8 @@ export interface ErrorParamsMap {
 
   [OrderErrorCode.QUOTE_ADDRESS_MISMATCH]: { quotedCountryCode: string; quotedPostalCode: string };
   [OrderErrorCode.SOLD_OUT]: NoErrorParams;
-  [OrderErrorCode.PAYMENT_DECLINED]: { declineCode: string };
+  [OrderErrorCode.TIER_UNAVAILABLE]: NoErrorParams;
+  [OrderErrorCode.PAYMENT_DECLINED]: { declineCode?: string };
   [OrderErrorCode.PRICE_STALE]: {
     expectedAmountMinor: number;
     currentAmountMinor: number;
