@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ApiErrorCode, DomainErrorCode } from '@arthome/core';
-import type { Access } from './access.js';
+import type { Access, PublicAccess } from './access.js';
 import type { BuiltRoute, BuiltRouteDefinition, RouteBuilder, Scope } from './builder.js';
 import type { GroupedByStatus } from './errors.js';
 import type { Header, JsonRequestBody, JsonResponse, Parameter, QueryParameter, Response } from './index.js';
@@ -523,7 +523,8 @@ export type ActionOptions<C extends ResourceContext> = Docs<C, {
     /** `false` leaves the idempotency key off a non-GET action. */
     readonly idempotent?: boolean;
 }>;
-type AnyBuilder = RouteBuilder<number, readonly Parameter[], Responses, string, ResourceConventions>;
+/** Any builder with an access, typed public: the `Access` union cost 33K type instantiations (1.2%). */
+type AnyBuilder = RouteBuilder<number, readonly Parameter[], Responses, string, ResourceConventions, PublicAccess>;
 export declare function makeResource(builder: AnyBuilder, given: ResourceConventions, name: string, options: Omit<ResourceOptions<PathParameterOf, readonly PathParameterOf[]>, 'id'> & {
     readonly id?: PathParameterOf | undefined;
 }, headers: readonly Parameter[]): never;

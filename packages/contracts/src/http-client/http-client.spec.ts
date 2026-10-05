@@ -7,7 +7,7 @@ import type { ErrorParamsRead } from '@arthome/core/schema';
 
 import { createClient, UndeclaredStatusError, type FetchInit } from './index.js';
 import { defineApi, defineRoute } from '../http/index.js';
-import { studioV1 } from '../studio-api/components.js';
+import { operator, studioV1 } from '../studio-api/components.js';
 
 const Dates = z.looseObject({ items: z.array(z.string()) });
 
@@ -157,6 +157,7 @@ describe('createClient', () => {
   it('narrows a refusal on error.code, its params typed, from the codes the route lists', async () => {
     const quoteId = { name: 'quoteId', in: 'path', required: true, schema: z.string() } as const;
     const confirmQuote = studioV1
+      .identity(operator)
       .errors([OrderErrorCode.SOLD_OUT])
       .resource('quotes', { id: quoteId })
       .action('confirm', { errors: [OrderErrorCode.PRICE_STALE, DomainErrorCode.STATE_CONFLICT] });

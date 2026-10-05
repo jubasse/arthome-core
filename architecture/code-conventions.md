@@ -2467,8 +2467,8 @@ holds the model, and these are the rules a reviewer holds it to:
   ones.
 - **A convention is declared through a resource, not copied.** A route spells its own parameters,
   body and responses only where it differs from the convention, and says so in the member's options.
-- **No `security` beside an identity**, and no hand-written `403` for a CSRF refusal: the identity
-  writes both.
+- **No hand-written `security`**, and no hand-written `403` for a CSRF refusal: every route has an
+  identity or `.public()`, and it writes both.
 - **What only the document reads is registered beside the routes**: an operation's description and
   upstream in its module's `docs.ts`, a maturity only where it differs from its owning service's
   (`transport.md` §5.11) and with its reason, its schemas' examples in `examples.ts`. Only the api's docs module

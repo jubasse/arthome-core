@@ -2,10 +2,9 @@ import { z } from 'zod';
 
 import { ApiErrorCode, DomainErrorCode } from '@arthome/core';
 
-import type { Access } from './access.js';
+import type { Access, PublicAccess } from './access.js';
 import type { BuiltRoute, BuiltRouteDefinition, RouteBuilder, Scope } from './builder.js';
-import type { ErrorList, ErrorsInput, GroupedByStatus } from './errors.js';
-import { groupByStatus } from './errors.js';
+import type { ErrorList, GroupedByStatus } from './errors.js';
 import type {
   DerivedExample,
   Header,
@@ -855,7 +854,7 @@ function filterParameter(schema: z.ZodObject): Parameter {
 
 const SORT_PARAMETERS: readonly string[] = ['sortBy', 'sortDir'];
 
-const NOT_FOUND: ErrorsInput<string> = { 404: [ApiErrorCode.NOT_FOUND] };
+const NOT_FOUND: ErrorList<string> = [ApiErrorCode.NOT_FOUND];
 /** What a `202` that names its follow-up adds to its answer: `Location` and `Retry-After`. */
 function acceptedParts(follow: string): Omit<Response, 'description'> {
   const { description: _accepted, ...parts } = accepted({ operation: follow });
@@ -865,17 +864,19 @@ function acceptedParts(follow: string): Omit<Response, 'description'> {
 /** The version a write's example expects the record to be at. */
 const EXAMPLE_VERSION = 7;
 
-const IDEMPOTENCY: readonly string[] = [
+const IDEMPOTENCY: ErrorList<string> = [
   ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
   ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
 ];
 
+/** Any builder with an access, typed public: the `Access` union cost 33K type instantiations (1.2%). */
 type AnyBuilder = RouteBuilder<
   number,
   readonly Parameter[],
   Responses,
   string,
-  ResourceConventions
+  ResourceConventions,
+  PublicAccess
 >;
 
 type AnyDocs = MemberDocs & Readonly<Record<string, unknown>>;
@@ -899,24 +900,6 @@ const OPTION_KEYS = [
   'filters',
   'max',
 ] as const;
-
-function mergeErrors(
-  convention: ErrorsInput<string>,
-  given: ErrorsInput<string> | ErrorList<string> | undefined,
-): ErrorsInput<string> {
-  const docs: ErrorsInput<string> = Array.isArray(given)
-    ? groupByStatus(given as readonly string[])
-    : ((given as ErrorsInput<string> | undefined) ?? {});
-  const out: Record<string, Response | readonly string[]> = { ...convention };
-  for (const [status, value] of Object.entries(docs)) {
-    const held = out[status];
-    out[status] =
-      Array.isArray(value) && Array.isArray(held)
-        ? [...(held as readonly string[]), ...(value as readonly string[])]
-        : (value as Response | readonly string[]);
-  }
-  return out;
-}
 
 /** An answer's example: written now from the schema's `.meta`, or derived later from a registered one. */
 interface Shown {
@@ -983,7 +966,7 @@ interface Spec {
   readonly docs: AnyDocs | undefined;
   readonly parameters: readonly Parameter[];
   readonly responses: Responses;
-  readonly errors: ErrorsInput<string>;
+  readonly errors: ErrorList<string>;
   readonly body?: z.ZodType;
   /** The schema the body was made from, when it is not the body itself: its example is the body's. */
   readonly bodyFrom?: z.ZodType;
@@ -1020,10 +1003,10 @@ export function makeResource(
   const collectionPath = `/${name}`;
   const itemPath = id === undefined ? collectionPath : `/${name}/{${id.name}}`;
   const itemParameters: readonly Parameter[] = id === undefined ? parents : [...parents, id];
-  const itemNotFound = id === undefined ? {} : NOT_FOUND;
-  const conflicts: ErrorsInput<string> = owned
-    ? { ...itemNotFound, 409: IDEMPOTENCY }
-    : { ...itemNotFound, 409: [DomainErrorCode.STATE_CONFLICT, ...IDEMPOTENCY] };
+  const itemNotFound = id === undefined ? [] : NOT_FOUND;
+  const conflicts: ErrorList<string> = owned
+    ? [...itemNotFound, ...IDEMPOTENCY]
+    : [...itemNotFound, DomainErrorCode.STATE_CONFLICT, ...IDEMPOTENCY];
   const expectedVersionQuery: Parameter = {
     name: 'expectedVersion',
     in: 'query',
@@ -1058,7 +1041,7 @@ export function makeResource(
       ...rest,
       parameters: [...spec.parameters, ...(spec.docs?.parameters ?? [])],
       responses: { ...generated, ...spec.docs?.responses },
-      errors: mergeErrors(spec.errors, spec.docs?.errors),
+      errors: [...spec.errors, ...(spec.docs?.errors ?? [])],
     };
     return builder.defineRoute(definition as never);
   };
@@ -1138,11 +1121,11 @@ export function makeResource(
     const item = (docs.item as z.ZodType | undefined) ?? z.unknown();
     let listParameters: readonly Parameter[] = conventions.listParameters;
     let page: z.ZodType = conventions.page(item);
-    const errors: Record<string, readonly string[]> = { 400: [ApiErrorCode.SCHEMA_INVALID] };
+    const errors: string[] = [ApiErrorCode.SCHEMA_INVALID];
     if (paging?.kind === 'changesSince') {
       listParameters = [SINCE_PARAMETER];
       page = conventions.item(item);
-      errors[410] = [ApiErrorCode.CURSOR_TOO_OLD];
+      errors.push(ApiErrorCode.CURSOR_TOO_OLD);
     } else if (paging !== undefined) {
       const convention = conventions.paginations?.[paging.kind] as
         PagingConvention<Paging> | undefined;
@@ -1153,7 +1136,7 @@ export function makeResource(
       page = convention.page(item);
     }
     if ((paging ?? conventions.paging)?.kind === 'cursor') {
-      errors[410] = [ApiErrorCode.CURSOR_TOO_OLD];
+      errors.push(ApiErrorCode.CURSOR_TOO_OLD);
     }
     if (sortable !== undefined) {
       const keys = sortable.map(sortKeyName) as [string, ...string[]];
@@ -1174,7 +1157,7 @@ export function makeResource(
         },
       ];
       if (sortable.some((key) => typeof key !== 'string')) {
-        errors[403] = [ApiErrorCode.SORT_KEY_FORBIDDEN];
+        errors.push(ApiErrorCode.SORT_KEY_FORBIDDEN);
       }
     }
     const pageShown = (data: z.ZodType): Shown | undefined => {
@@ -1195,7 +1178,7 @@ export function makeResource(
       responses: {
         200: jsonResponse(said(docs, 'The page.'), page, undefined, pageShown(item)),
       },
-      errors: errors as ErrorsInput<string>,
+      errors,
     };
   };
 
@@ -1233,7 +1216,7 @@ export function makeResource(
           ...(docs.follow !== undefined && acceptedParts(docs.follow as string)),
         },
       },
-      errors: docs.idempotent === false ? {} : { 409: IDEMPOTENCY },
+      errors: docs.idempotent === false ? [] : IDEMPOTENCY,
       body: docs.body as z.ZodType,
     });
 
@@ -1301,7 +1284,7 @@ export function makeResource(
               ),
             }
           : { 204: { description: 'Done.' } },
-      errors: docs.idempotent === false ? {} : { 409: IDEMPOTENCY },
+      errors: docs.idempotent === false ? [] : IDEMPOTENCY,
       ...(docs.body !== undefined && { body: docs.body as z.ZodType }),
     });
 
@@ -1345,7 +1328,7 @@ export function makeResource(
           conventions.item(z.record(z.string(), docs.item as z.ZodType)),
         ),
       },
-      errors: {},
+      errors: [],
       body: z.object({ ids: z.array(key).max(max) }),
     });
   };
@@ -1377,7 +1360,7 @@ export function makeResource(
                 shown(response),
               ),
       },
-      errors: keyed ? { 409: IDEMPOTENCY } : {},
+      errors: keyed ? IDEMPOTENCY : [],
       ...(docs.body !== undefined && { body: docs.body as z.ZodType }),
     });
   };

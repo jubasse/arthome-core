@@ -10,7 +10,6 @@ import type {
   ErrorList,
   ErrorModel,
   ErrorResponse,
-  ErrorsInput,
 } from './errors.js';
 import { groupByStatus, errorResponseFor } from './errors.js';
 import type {
@@ -39,11 +38,11 @@ type HeaderParameters = readonly (Parameter & { readonly in: 'header' })[];
 
 type Responses = Readonly<Record<string, Response>>;
 
-/** What a builder's `defineRoute` takes: a route without its version, which the builder holds. */
+/** What a builder's `defineRoute` takes: a route without its version and its security, which the builder holds and derives. */
 export type BuiltRouteDefinition<Allowed extends string = string> = Omit<
   RouteDefinition,
-  'version'
-> & { readonly errors?: ErrorsInput<Allowed> | ErrorList<Allowed> };
+  'version' | 'security'
+> & { readonly errors?: ErrorList<Allowed>; readonly security?: never };
 
 type PathParam = Parameter & { readonly in: 'path' };
 
@@ -84,13 +83,13 @@ type OwnBody<D> = D extends { readonly requestBody: infer B extends RequestBody 
   ? { readonly requestBody: B }
   : unknown;
 
-/** The error responses a set of `errors` declarations makes, over those already held. */
+/** The error responses a list of codes, or the same codes grouped by status, makes over those already held. */
 export type MergedErrors<E extends Responses, R> = R extends readonly (infer C extends string)[]
   ? MergedErrors<E, GroupedByStatus<C>>
   : Omit<E, keyof R> & {
       readonly [S in keyof R]: R[S] extends readonly (infer C extends string)[]
         ? ErrorResponse<C | (S extends keyof E ? CodesOf<E[S]> : never)>
-        : R[S];
+        : never;
     };
 
 type OwnErrors<D> = D extends { readonly errors: infer R }
@@ -161,11 +160,12 @@ type AccessOf<X> = X extends Access ? { readonly access: X } : unknown;
  * Settings shared by the routes of a group, accumulated one call at a time. Every call returns a
  * NEW builder and the types carry what was set, so `defineRoute` is inferred in full: the
  * builder's headers follow a route's own parameters and its errors sit under the route's
- * responses, and the route's own `tags` and `security` replace the builder's.
+ * responses, and the route's own `tags` replace the builder's. A route is defined only once the
+ * builder has its access, `.identity(...)` or `.public()`, from which its security is derived.
  *
- * Errors cumulate in three levels, merged per status: a response the api documents once
- * (`.errors({ 400: BadRequestResponse })`), the convention errors a resource adds, and the codes a
- * route declares (`errors: { 409: ['date.prices_locked'] }`), typed from the code registry.
+ * Errors cumulate in three levels, merged per status: the codes the group answers
+ * (`.errors([ApiErrorCode.FORBIDDEN])`), the convention errors a resource adds, and the codes a
+ * route declares (`errors: [CatalogErrorCode.PRICES_LOCKED]`), typed from the code registry.
  */
 export interface RouteBuilder<
   V extends number | undefined,
@@ -181,10 +181,9 @@ export interface RouteBuilder<
   headers<const H extends HeaderParameters>(
     ...headers: H
   ): RouteBuilder<V, readonly [...P, ...H], E, A, K, X, Z>;
-  errors<const R extends ErrorsInput<A> | ErrorList<A>>(
+  errors<const R extends ErrorList<A>>(
     errors: R,
   ): RouteBuilder<V, P, MergedErrors<E, R> & Responses, A, K, X, Z>;
-  security(...requirements: readonly SecurityRequirement[]): RouteBuilder<V, P, E, A, K, X, Z>;
   conventions<const C extends ResourceConventions>(
     conventions: C,
   ): RouteBuilder<V, P, E, A, C, X, Z>;
@@ -208,7 +207,7 @@ export interface RouteBuilder<
   /** The ceiling of a request body, in bytes. */
   bodyLimit(bytes: number): RouteBuilder<V, P, E, A, K, X, Z>;
   defineRoute<const D extends BuiltRouteDefinition<A>>(
-    this: RouteBuilder<number, P, E, A, K, X, Z>,
+    this: RouteBuilder<number, P, E, A, K, NonNullable<X>, Z>,
     definition: D,
   ): BuiltRoute<NonNullable<V>, P, E, D, X, Z>;
   /**
@@ -228,7 +227,7 @@ export interface RouteBuilder<
     const Parents extends readonly PathParam[] = readonly [],
     const Owner extends 'caller' | undefined = undefined,
   >(
-    this: RouteBuilder<number, P, E, A, K, X, Z>,
+    this: RouteBuilder<number, P, E, A, K, NonNullable<X>, Z>,
     name: Name,
     options: ResourceOptions<Id, Parents, Owner>,
   ): Resource<ContextOf<V, P, E, A, K, X, Z, Name, Id, Parents, Owner>>;
@@ -239,7 +238,7 @@ export interface RouteBuilder<
     const Owner extends 'caller' | undefined,
     R,
   >(
-    this: RouteBuilder<number, P, E, A, K, X, Z>,
+    this: RouteBuilder<number, P, E, A, K, NonNullable<X>, Z>,
     name: Name,
     options: ResourceOptions<Id, Parents, Owner>,
     closure: (resource: Resource<ContextOf<V, P, E, A, K, X, Z, Name, Id, Parents, Owner>>) => R,
@@ -250,7 +249,7 @@ export interface RouteBuilder<
     const Parents extends readonly PathParam[] = readonly [],
     const Owner extends 'caller' | undefined = undefined,
   >(
-    this: RouteBuilder<number, P, E, A, K, X, Z>,
+    this: RouteBuilder<number, P, E, A, K, NonNullable<X>, Z>,
     name: Name,
     options?: SingleOptions<Parents, Owner>,
   ): Resource<ContextOf<V, P, E, A, K, X, Z, Name, undefined, Parents, Owner>>;
@@ -260,7 +259,7 @@ export interface RouteBuilder<
     const Owner extends 'caller' | undefined,
     R,
   >(
-    this: RouteBuilder<number, P, E, A, K, X, Z>,
+    this: RouteBuilder<number, P, E, A, K, NonNullable<X>, Z>,
     name: Name,
     options: SingleOptions<Parents, Owner> | undefined,
     closure: (
@@ -300,16 +299,12 @@ interface ContextOf<
   readonly owner: Owner;
 }
 
-type Structured = Readonly<Record<string, Response>>;
-
 interface BuilderSettings {
   readonly version: number | undefined;
   readonly tags: readonly string[] | undefined;
   readonly headers: readonly Parameter[];
-  readonly bases: Structured;
   readonly codes: Readonly<Record<string, readonly string[]>>;
-  readonly security: readonly SecurityRequirement[] | undefined;
-  readonly model: ErrorModel<string> | undefined;
+  readonly model: ErrorModel<string>;
   readonly conventions: ResourceConventions | undefined;
   readonly access: Access | undefined;
   readonly requires: readonly Requirement[];
@@ -328,19 +323,6 @@ type AnyBuilder = RouteBuilder<
   ResourceConventions,
   Access | undefined
 >;
-
-function split(
-  input: ErrorsInput<string> | ErrorList<string>,
-): [Record<string, Response>, Record<string, readonly string[]>] {
-  const bases: Record<string, Response> = {};
-  if (Array.isArray(input)) return [bases, groupByStatus(input as readonly string[])];
-  const codes: Record<string, readonly string[]> = {};
-  for (const [status, value] of Object.entries(input as ErrorsInput<string>)) {
-    if (Array.isArray(value)) codes[status] = value as readonly string[];
-    else if (value !== undefined) bases[status] = value as Response;
-  }
-  return [bases, codes];
-}
 
 type CodesByStatus = Record<string, readonly string[]>;
 
@@ -371,10 +353,11 @@ const IDEMPOTENCY_KEY = 'Idempotency-Key';
 /**
  * The errors a route can answer because of what it declares (`transport.md` §5.12, ADR §7.1): its
  * input, its body, its idempotency key, its identity and rules, its rate limit, and the surface.
- * A response the group or the route writes whole is kept over the derived one.
+ * A response the route or its identity writes whole is kept over the derived one.
  */
 function derivedCodes(
-  settings: BuilderSettings,
+  access: Access,
+  model: ErrorModel<string>,
   definition: {
     readonly method: string;
     readonly parameters: readonly Parameter[];
@@ -389,7 +372,6 @@ function derivedCodes(
       out[status] = [...held, ...codes.filter((code) => !held.includes(code))];
     }
   };
-  if (settings.access === undefined) return out;
   const write = definition.method !== 'get';
   const hasInput =
     definition.requestBody !== undefined ||
@@ -406,24 +388,21 @@ function derivedCodes(
       409: [ApiErrorCode.IDEMPOTENCY_KEY_REUSED, ApiErrorCode.IDEMPOTENCY_IN_FLIGHT],
     });
   }
-  const { access } = settings;
-  if (access?.kind === 'identified') {
+  if (access.kind === 'identified') {
     add({ 401: [ApiErrorCode.UNAUTHENTICATED] });
     add(access.identity.errors);
     if (write && access.csrfExempt === undefined) add(access.identity.writeErrors);
   }
   for (const rule of definition.requires) add(rule.errors);
-  if (access !== undefined) {
-    add({ 500: [ApiErrorCode.INTERNAL] });
-    if (settings.model?.upstreams === true) {
-      add({
-        502: [ApiErrorCode.UPSTREAM_UNAVAILABLE],
-        503: [ApiErrorCode.SERVICE_UNAVAILABLE],
-        504: [ApiErrorCode.UPSTREAM_TIMEOUT, ApiErrorCode.DEADLINE_EXCEEDED],
-      });
-    } else if (access.kind === 'identified' && access.identity.internal) {
-      add({ 504: [ApiErrorCode.DEADLINE_EXCEEDED] });
-    }
+  add({ 500: [ApiErrorCode.INTERNAL] });
+  if (model.upstreams === true) {
+    add({
+      502: [ApiErrorCode.UPSTREAM_UNAVAILABLE],
+      503: [ApiErrorCode.SERVICE_UNAVAILABLE],
+      504: [ApiErrorCode.UPSTREAM_TIMEOUT, ApiErrorCode.DEADLINE_EXCEEDED],
+    });
+  } else if (access.kind === 'identified' && access.identity.internal) {
+    add({ 504: [ApiErrorCode.DEADLINE_EXCEEDED] });
   }
   return out;
 }
@@ -431,14 +410,12 @@ function derivedCodes(
 function responsesOf(
   settings: BuilderSettings,
   own: Readonly<Record<string, readonly string[]>>,
-  ownBases: Readonly<Record<string, Response>>,
   derived: Readonly<Record<string, readonly string[]>>,
-  identityBases: Readonly<Partial<Record<string, Response>>> = {},
+  bases: Readonly<Partial<Record<string, Response>>>,
 ): {
   readonly responses: Record<string, Response>;
   readonly codes: Record<string, readonly string[]>;
 } {
-  const bases = { ...identityBases, ...settings.bases, ...ownBases };
   const statuses = new Set([
     ...Object.keys(bases),
     ...Object.keys(settings.codes),
@@ -461,13 +438,13 @@ function responsesOf(
 
 /** The codes a built error response stands for: the standard response's own, plus those a route added. */
 function codesOfResponse(
-  model: ErrorModel<string> | undefined,
+  model: ErrorModel<string>,
   status: string,
   codes: readonly string[],
   base: Response | undefined,
   built: Response,
 ): readonly string[] {
-  const standard = model?.standard[Number(status) as keyof ErrorModel<string>['standard']];
+  const standard = model.standard[Number(status) as keyof ErrorModel<string>['standard']];
   const known = standard?.codes ?? [];
   if (built === standard?.response) return known;
   if (built === base) return codes;
@@ -542,19 +519,13 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
     tags: (...tags: readonly string[]) => next({ tags: Object.freeze([...tags]) }),
     headers: (...headers: readonly Parameter[]) =>
       next({ headers: Object.freeze([...settings.headers, ...headers]) }),
-    errors: (errors: ErrorsInput<string> | ErrorList<string>) => {
-      const [bases, codes] = split(errors);
+    errors: (errors: ErrorList<string>) => {
       const merged: Record<string, readonly string[]> = { ...settings.codes };
-      for (const [status, added] of Object.entries(codes)) {
+      for (const [status, added] of Object.entries(groupByStatus(errors))) {
         merged[status] = Object.freeze([...(merged[status] ?? []), ...added]);
       }
-      return next({
-        bases: Object.freeze({ ...settings.bases, ...bases }),
-        codes: Object.freeze(merged),
-      });
+      return next({ codes: Object.freeze(merged) });
     },
-    security: (...requirements: readonly SecurityRequirement[]) =>
-      next({ security: Object.freeze([...requirements]) }),
     conventions: (conventions: ResourceConventions) => next({ conventions }),
     identity: (identity: Identity, options?: { readonly csrfExempt: string }) =>
       next({
@@ -599,19 +570,24 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
       }
       const { errors, ...rest } = definition;
       const { access } = settings;
-      if (access !== undefined && rest.security !== undefined) {
+      if (access === undefined) {
         throw new Error(
-          `defineRoute: "${definition.operationId}" declares its security by hand and has an identity: the identity writes it.`,
+          `defineRoute: "${definition.operationId}" has no access; call .identity(...) or .public().`,
         );
       }
-      const [ownBases, ownCodes] = split(errors ?? {});
+      if (rest.security !== undefined) {
+        throw new Error(
+          `defineRoute: "${definition.operationId}" declares its security by hand: its access writes it.`,
+        );
+      }
+      const ownCodes = groupByStatus(errors ?? []);
       const identityBases =
-        access?.kind === 'identified' && rest.method !== 'get' && access.csrfExempt === undefined
+        access.kind === 'identified' && rest.method !== 'get' && access.csrfExempt === undefined
           ? access.identity.writeResponses
           : {};
       const tags = rest.tags ?? settings.tags;
       const identityParameters =
-        access?.kind === 'identified'
+        access.kind === 'identified'
           ? [
               ...access.identity.parameters,
               ...(rest.method === 'get' ? [] : access.identity.writeParameters),
@@ -632,23 +608,20 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
         ...settings.headers,
         ...identityParameters,
       ];
-      const security =
-        access !== undefined
-          ? securityOf(access, rest.method)
-          : (rest.security ?? settings.security);
+      const security = securityOf(access, rest.method);
       const requires = [...settings.requires, ...(rest.requires ?? [])];
       checkProofs(rest.operationId, requires, rest.requestBody);
-      const internal = access?.kind === 'identified' && access.identity.internal;
+      const internal = access.kind === 'identified' && access.identity.internal;
       const hasBody = rest.requestBody !== undefined;
       const budgetMs = rest.budgetMs ?? settings.budgetMs;
       const cache = rest.cache ?? (rest.method === 'get' ? settings.cache : undefined);
-      const derived = derivedCodes(settings, {
+      const derived = derivedCodes(access, settings.model, {
         method: rest.method,
         parameters,
         requestBody: rest.requestBody,
         requires,
       });
-      const built = responsesOf(settings, ownCodes, ownBases, derived, identityBases);
+      const built = responsesOf(settings, ownCodes, derived, identityBases);
       const errorCodes = Object.fromEntries(
         Object.entries(built.codes).filter(
           ([status]) => rest.responses === undefined || !(status in rest.responses),
@@ -661,10 +634,8 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
           ...rest.responses,
         },
         {
-          every: access?.kind === 'identified' ? access.identity.responseHeaders : {},
-          replayed:
-            access !== undefined &&
-            parameters.some((parameter) => parameter.name === IDEMPOTENCY_KEY),
+          every: access.kind === 'identified' ? access.identity.responseHeaders : {},
+          replayed: parameters.some((parameter) => parameter.name === IDEMPOTENCY_KEY),
           cache,
           etag: conditional?.readHeaders ?? {},
           replayedHeader: settings.conventions?.replayedHeader,
@@ -675,8 +646,8 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
         path: `${settings.prefix}${rest.path}`,
         version: settings.version,
         ...(tags !== undefined && { tags }),
-        ...(security !== undefined && { security }),
-        ...(access !== undefined && { access }),
+        security,
+        access,
         ...(requires.length > 0 && { requires }),
         ...(internal && { internal }),
         ...(budgetMs !== undefined && { budgetMs }),
@@ -717,20 +688,15 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
   return Object.freeze(builder) as unknown as AnyBuilder;
 }
 
-/**
- * The empty builder: `routeBuilder(model).version(1).tags(...).headers(...).errors(...)`. The model
- * is the api's error vocabulary; without one, only responses written whole can be declared.
- */
+/** The empty builder of an api, given its error vocabulary: `routeBuilder(model).version(1).identity(...)`. */
 export function routeBuilder<A extends string = string>(
-  model?: ErrorModel<A>,
+  model: ErrorModel<A>,
 ): RouteBuilder<undefined, readonly [], Record<never, never>, A> {
   return builderOf({
     version: undefined,
     tags: undefined,
     headers: [],
-    bases: {},
     codes: {},
-    security: undefined,
     model,
     conventions: undefined,
     access: undefined,

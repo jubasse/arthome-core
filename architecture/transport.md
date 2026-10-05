@@ -654,12 +654,12 @@ guard; the identity writes the document's `security`, including the CSRF token o
 **Errors are declared by code, in three levels merged per status**, and the derivable ones are added
 by the declaration, because nothing the server can answer is undocumented:
 
-1. the errors common to a group (`.errors({ 403: ForbiddenResponse })`), written as responses;
+1. the errors common to a group (`.errors([ApiErrorCode.FORBIDDEN, ApiErrorCode.NOT_FOUND])`);
 2. the conventions: `404 api.not_found` on `find`, `update`, `replace` and `delete` of one record;
    `409 state.conflict`, carrying the current version, on `update`, `replace` and `delete` of a shared
    record; the idempotency codes on every write; `400` on an invalid cursor and `410` on an old one;
 3. the domain codes of the operation, taken from the core vocabularies
-   (`errors: { 409: [CatalogErrorCode.PRICES_LOCKED] }`).
+   (`errors: [CatalogErrorCode.PRICES_LOCKED]`), each answered with the status `ERRORS` gives it.
 
 | What the route declares | Added |
 |---|---|

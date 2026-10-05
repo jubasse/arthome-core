@@ -120,16 +120,24 @@ describe('identity', () => {
     expectTypeOf<PrincipalOf<typeof open.access>>().toEqualTypeOf<undefined>();
   });
 
-  it('refuses a security written by hand beside an identity', () => {
+  it('refuses a security written by hand, at compile time and at run time', () => {
     expect(() =>
       base.identity(viewer).defineRoute({
         method: 'get',
         path: '/a',
         operationId: 'a',
+        // @ts-expect-error the access writes the security
         security: [],
         responses: ok,
       }),
-    ).toThrow(/identity writes it/);
+    ).toThrow(/its access writes it/);
+  });
+
+  it('refuses a route whose builder has no access, at compile time and at run time', () => {
+    expect(() =>
+      // @ts-expect-error a route needs .identity(...) or .public()
+      base.defineRoute({ method: 'get', path: '/a', operationId: 'a', responses: ok }),
+    ).toThrow(/has no access/);
   });
 
   it('adds what an identity carries: write parameters, response headers, its codes', () => {

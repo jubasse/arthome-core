@@ -82,7 +82,7 @@ const untouched = defineRoute({
   responses: { 204: { description: 'Done.' } },
 });
 
-const items = storefrontV1.resource('items', {
+const items = storefrontV1.public().resource('items', {
   id: { name: 'itemId', in: 'path', required: true, schema: z.string() },
 });
 const { findItem } = items.crud({ item: Item, pick: ['find'] });

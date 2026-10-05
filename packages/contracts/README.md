@@ -136,9 +136,10 @@ without touching the others, and the generic types accumulate what was set, so a
 query, headers, body and responses stay fully inferred for the server binding and the typed client.
 
 ```ts
-export const storefrontV1 = routeBuilder().version(1);
+export const storefrontV1 = routeBuilder(storefrontErrors).version(1);
 
 const pairingRoutes = storefrontV1
+  .identity(viewerOrDevice)
   .tags(StorefrontTag.PAIRING)
   .headers(SurfaceParameter, TraceparentParameter);
 const pairingWrites = pairingRoutes.headers(IdempotencyKeyParameter);
@@ -150,10 +151,10 @@ export const createPairing: Route<{ method: 'post'; version: 1; path: '/pairings
 | Call | Sets | A route can override it |
 |---|---|---|
 | `.version(n)` | the API version, required before `defineRoute` | no |
+| `.identity(...)`, `.public()` | who may call, required before `defineRoute`, `resource` and `single`; the security is derived from it | no |
 | `.tags(...)` | the operation's tags | yes, with its own `tags` |
 | `.headers(...)` | header parameters, appended **after** the route's own `parameters` | no |
-| `.errors({ 400: ... })` | responses every route of the group answers | yes, a status the route writes wins |
-| `.security(...)` | the security requirements | yes, with its own `security` |
+| `.errors([...])` | the codes every route of the group answers, each with its status | it adds its own; a status it writes whole in `responses` wins |
 
 The explicit annotation on each exported route (`isolatedDeclarations` demands one) spells the
 merged type in full: the route's own parameters, then the builder's headers. A builder that
@@ -181,7 +182,8 @@ studioV1.identity(operator).requires(roles(MemberRole.PRODUCTION).on('channelId'
 ```
 
 - **The route's `security` is derived** from its identity and its method (a write by cookie adds
-  the CSRF token), so a route that also writes `security` by hand is refused when the module loads.
+  the CSRF token): a route that writes `security` by hand is a compile error, and refused when the
+  module loads.
 - **`requires(rule)`** takes rules in the order the server applies them after the identity. A rule is
   a declaration, a name with its parameters and its errors: `roles(...)` (with `.on('channelId')` for
   the path parameter it reads), `recentAuth()` (the proof is the body field `reauthToken`),
@@ -200,8 +202,9 @@ studioV1.identity(operator).requires(roles(MemberRole.PRODUCTION).on('channelId'
   `owner`, `internal`. `sensitive(schema)` and `restricted(schema, right)` mark fields, and
   `sensitivePathsOf` and `restrictedFieldsOf` say where.
 
-**What is derived.** Only a builder that declares an identity (or `.public()`) derives, so a route
-still on a bare builder is unchanged. Nothing the server can answer is undocumented:
+**What is derived.** A builder defines a route only once it has an identity or `.public()`:
+`defineRoute`, `resource` and `single` on a bare builder are compile errors, and throw when the module
+loads. So every route derives, and nothing the server can answer is undocumented:
 
 | The route declares | Added |
 |---|---|
@@ -214,7 +217,8 @@ still on a bare builder is unchanged. Nothing the server can answer is undocumen
 | a `cache` with an `etag` | `If-None-Match`, `ETag` and the `304` |
 | a response that carries a `sensitive` field | `Cache-Control: no-store` on it |
 
-A response the group or the route writes whole is kept over the derived one. The derived errors are
+A response the route writes whole in `responses`, or the identity's own (the CSRF refusal), is kept
+over the derived one. The derived errors are
 **not** in the route's annotation: the annotation lists the route's own statuses, and the server and
 the typed client read `route.responses` at run time. The codes the route declares are: its type
 carries them in `errorCodes`, grouped by status.
