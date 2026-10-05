@@ -564,6 +564,12 @@ sets it as `cache-control` and the surface that maps it onto its client cache:
 | `live`, capacity, counters | 15 s | `private, max-age=15` |
 | `PlaybackTicket`, `WatchVerdict`, stream key | **never** | **`no-store`** |
 
+**`public` is only ever an anonymous caller's.** A caller a credential identifies gets `private`
+whatever the family, because its body may carry what is theirs, and a shared cache that ignores
+`Vary` would hand it to the next caller. A read served to both (`publicRead`) answers the anonymous
+one `public` with the same `max-age`. The contracts derive the value per caller
+(`cacheControlOf(policy, caller)`), and the document declares both on that read's `200`.
+
 `no-store` on the stream key and the playback token is not an optimisation: it is what keeps them
 out of the phone's HTTP cache and out of the application snapshot the OS takes when it goes to the
 background (`data-model.md` §5.2).
