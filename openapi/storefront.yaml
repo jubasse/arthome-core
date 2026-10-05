@@ -5223,14 +5223,13 @@ paths:
       - ticketing
       - identity
       - streaming
-      x-arthome-freshness: 60
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - name: railId
         in: path
@@ -5245,11 +5244,6 @@ paths:
       responses:
         '200':
           description: The rest of the rail.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5263,7 +5257,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:45.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   id: cat-dance-contemporary
                   titleCode: home.rail.category
@@ -5274,10 +5268,29 @@ paths:
                   total: 84
                   totalIsLowerBound: false
                   nextCursor: null
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
         '410':
           $ref: '#/components/responses/Gone'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/resolve:
     get:
       operationId: resolvePublicLink

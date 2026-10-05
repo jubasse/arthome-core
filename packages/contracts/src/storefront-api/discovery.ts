@@ -12,9 +12,6 @@ import {
 import {
   BadRequestResponse,
   CacheControlPublicHeader,
-  CursorParameter,
-  GoneResponse,
-  LimitParameter,
   NotFoundResponse,
   StorefrontTag,
   SurfaceParameter,
@@ -23,9 +20,9 @@ import {
   PublicReadSecurity,
   storefrontV1,
 } from './components.js';
-import { ArtistSummarySchema, DateCardSchema, RailSchema } from '../catalog/index.js';
+import { ArtistSummarySchema, DateCardSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
-import type { JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
+import type { JsonResponse, QueryParameter, Route } from '../http/index.js';
 
 const discoveryRoutes = storefrontV1
   .tags(StorefrontTag.DISCOVERY)
@@ -33,85 +30,6 @@ const discoveryRoutes = storefrontV1
   .security(...PublicReadSecurity);
 
 const RESOLVE_PUBLIC_LINK_KIND = ['date', 'show', 'artist', 'category'] as const;
-
-export const extendRail: Route<{
-  method: 'get';
-  version: 1;
-  path: '/rails/{railId}';
-  parameters: readonly [
-    PathParameter<'railId', z.ZodString>,
-    typeof CursorParameter,
-    typeof LimitParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StorefrontEnvelopeMetaSchema,
-        z.ZodObject<{ data: typeof RailSchema }, z.core.$loose>
-      >
-    >;
-    404: typeof NotFoundResponse;
-    410: typeof GoneResponse;
-  };
-}> = discoveryRoutes.defineRoute({
-  method: 'get',
-  path: '/rails/{railId}',
-  operationId: 'extendRail',
-  summary: 'Extends a home rail — the consumer of `Rail.nextCursor`.',
-  description:
-    '`Rail.nextCursor` was served and **no operation consumed it**. A rail extends, it does not\npaginate on screen: the cursor serves to append items on the right when the focus reaches\nthe edge, not to change page.\n\nComposition and order stay **server-side** — the surface never filters the catalogue.\n\n**Public read**, like the rail whose content it continues.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.CATALOG, Service.TICKETING, Service.IDENTITY, Service.STREAMING],
-  'x-arthome-freshness': 60,
-  parameters: [
-    {
-      name: 'railId',
-      in: 'path',
-      required: true,
-      description: 'The `id` carried by the rail, never a string built by the surface.',
-      schema: z.string(),
-    },
-    CursorParameter,
-    LimitParameter,
-  ],
-  responses: {
-    200: {
-      description: 'The rest of the rail.',
-      headers: {
-        'Cache-Control': CacheControlPublicHeader,
-        Vary: VaryAuthHeader,
-      },
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              data: RailSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:02:45.000Z',
-            data: {
-              id: 'cat-dance-contemporary',
-              titleCode: 'home.rail.category',
-              kind: 'category',
-              itemKind: 'date',
-              cardForm: 'wide',
-              items: [],
-              total: 84,
-              totalIsLowerBound: false,
-              nextCursor: null,
-            },
-          },
-        },
-      },
-    },
-    404: NotFoundResponse,
-    410: GoneResponse,
-  },
-});
 
 export const resolvePublicLink: Route<{
   method: 'get';

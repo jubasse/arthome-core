@@ -27,7 +27,6 @@ const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
   'engagePairing',
   'enterSalesQueue',
   'exchangeOneTimeToken',
-  'extendRail',
   'getAccountDeepLink',
   'getCart',
   'getDateDetail',
