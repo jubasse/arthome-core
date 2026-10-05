@@ -107,6 +107,21 @@
       "reason": "A path segment, POST /dates/{dateId}/crew. It shares its spelling with a date pane without being that vocabulary."
     },
     {
+      "file": "packages/contracts/src/storefront-api/me/routes.ts",
+      "value": "tickets",
+      "reason": "A path segment, GET /me/tickets. It shares its spelling with a navigation entry and a date pane without being either vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/storefront-api/me/routes.ts",
+      "value": "replays",
+      "reason": "A path segment, GET /me/replays. It shares its spelling with a plan opening and a navigation entry without being either vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/storefront-api/me/routes.ts",
+      "value": "notifications",
+      "reason": "A path segment, /me/notifications. It shares its spelling with a service without being that vocabulary: importing SERVICES here would say the viewer's notification centre is the notifications service."
+    },
+    {
       "file": "packages/contracts/src/studio-money/index.ts",
       "value": "custom",
       "reason": "A period preset of the revenue screen, a period the person chose by hand, not a vocabulary of the domain."

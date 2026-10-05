@@ -55,7 +55,7 @@ const CACHE_TAGS = [
 export const NotificationPreferencesSchema: z.ZodObject<
   {
     triggers: z.ZodOptional<
-      z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodArray<VocabularyOut>>>
+      z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodArray<VocabularyOut>>>
     >;
     quietHours: z.ZodOptional<
       z.ZodObject<
@@ -175,7 +175,7 @@ export const NotificationEntrySchema: z.ZodObject<
   {
     id: z.ZodString;
     triggerCode: z.ZodString;
-    params: z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodUnknown>>;
+    params: z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodUnknown>>;
     deepLink: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     createdAt: z.ZodString;
     read: z.ZodBoolean;

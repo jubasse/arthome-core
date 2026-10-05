@@ -155,7 +155,7 @@ function shortened(text, dictionary, used) {
   }
   return out
     .replace(/(?<![\w.])Zod([A-Z]\w*)/g, 'z.Zod$1')
-    .replace(/(?<!core\.)\$(strip|loose|strict)\b/g, 'z.core.$$$1')
+    .replace(/(?<!core\.)\$(strip|loose|strict|catchall)\b/g, 'z.core.$$$1')
     .replace(/\bz\.core\.z\.core\./g, 'z.core.')
     .replace(/\bz\.z\./g, 'z.')
     .replace(/<\{\}(?=[,>])/g, '<Record<never, never>')

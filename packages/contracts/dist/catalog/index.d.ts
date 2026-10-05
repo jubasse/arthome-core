@@ -251,7 +251,7 @@ export declare const SavedSearchSchema: z.ZodObject<{
     categoryId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     name: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     queryText: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    criteria: z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodUnknown>>;
+    criteria: z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodUnknown>>;
     criteriaVersion: z.ZodNumber;
     criteriaSignature: z.ZodString;
     stale: z.ZodOptional<z.ZodBoolean>;

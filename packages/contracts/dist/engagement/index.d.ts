@@ -26,7 +26,7 @@ import { z } from 'zod';
 import { type VocabularyOut } from '@arthome/core/schema';
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
 export declare const NotificationPreferencesSchema: z.ZodObject<{
-    triggers: z.ZodOptional<z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodArray<VocabularyOut>>>>;
+    triggers: z.ZodOptional<z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodArray<VocabularyOut>>>>;
     quietHours: z.ZodOptional<z.ZodObject<{
         enabled: z.ZodOptional<z.ZodBoolean>;
         fromHour: z.ZodOptional<z.ZodNumber>;
@@ -56,7 +56,7 @@ export declare const ReactionQuotaSchema: z.ZodObject<{
 export declare const NotificationEntrySchema: z.ZodObject<{
     id: z.ZodString;
     triggerCode: z.ZodString;
-    params: z.ZodObject<Record<string, never>, z.core.$catchall<z.ZodUnknown>>;
+    params: z.ZodObject<Record<never, never>, z.core.$catchall<z.ZodUnknown>>;
     deepLink: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     createdAt: z.ZodString;
     read: z.ZodBoolean;

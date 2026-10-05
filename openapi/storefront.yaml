@@ -1552,13 +1552,6 @@ paths:
       responses:
         '201':
           description: Enrolment options, single-use.
-          headers:
-            Idempotency-Replayed:
-              $ref: '#/components/headers/IdempotencyReplayed'
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:
@@ -1573,6 +1566,8 @@ paths:
                           type: object
                           properties: {}
                           additionalProperties: {}
+                          format: password
+                          x-arthome-sensitive: true
                         expiresAt:
                           type: string
                           format: date-time
@@ -1581,7 +1576,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:59:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   registrationOptions:
                     challenge: k7M2pQ
@@ -1589,6 +1584,14 @@ paths:
                       id: arthome.fr
                       name: Arthome
                   expiresAt: '2026-09-21T19:04:00Z'
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1643,14 +1646,14 @@ paths:
                     data:
                       type: object
                       properties:
-                        removed:
+                        deleted:
                           type: boolean
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:59:30.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
-                  removed: true
+                  deleted: true
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
@@ -1718,13 +1721,6 @@ paths:
       responses:
         '201':
           description: Setup opened. The surface presents the payment element.
-          headers:
-            Idempotency-Replayed:
-              $ref: '#/components/headers/IdempotencyReplayed'
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:
@@ -1739,6 +1735,8 @@ paths:
                           type: string
                         clientSecret:
                           type: string
+                          format: password
+                          x-arthome-sensitive: true
                         returnUrl:
                           type: string
                           format: uri
@@ -1754,12 +1752,20 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:55:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   setupIntentRef: seti_1Ab2Cd
                   clientSecret: seti_1Ab2Cd_secret_7f3
                   returnUrl: https://arthome.fr/compte/securite?setup=seti_1Ab2Cd
                   expiresAt: '2026-09-21T19:25:20Z'
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1817,14 +1823,14 @@ paths:
                     data:
                       type: object
                       properties:
-                        removed:
+                        deleted:
                           type: boolean
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:56:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
-                  removed: true
+                  deleted: true
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
@@ -1857,7 +1863,6 @@ paths:
       - identity
       - ticketing
       - notifications
-      x-arthome-freshness: 300
       tags:
       - account
       security:
@@ -1882,7 +1887,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:55:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   profile:
                     publicHandle: '@marie.j'
@@ -1932,7 +1937,6 @@ paths:
       - ticketing
       - catalog
       - streaming
-      x-arthome-freshness: 60
       tags:
       - account
       security:
@@ -1940,8 +1944,8 @@ paths:
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/Cursor'
-      - $ref: '#/components/parameters/CursorDirection'
       - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/CursorDirection'
       - name: window
         in: query
         schema:
@@ -2008,7 +2012,6 @@ paths:
       - ticketing
       - catalog
       - streaming
-      x-arthome-freshness: 60
       tags:
       - account
       security:
@@ -2040,12 +2043,37 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:56:30.000Z'
-                items: []
+                servedAt: '2026-09-21T18:57:00.000Z'
+                items:
+                - id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
+                  channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                  slug: '2026-09-21'
+                  canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+                  title: Nuit blanche
+                  startsAt: '2026-09-21T19:00:00Z'
+                  venueClock:
+                    venueTimezone: Europe/Paris
+                    venueUtcOffsetMin: 120
+                  runtimeMin: 95
+                  roomOpensAt: '2026-09-21T18:30:00Z'
+                  displayState: live
+                  displayStateValidUntil: '2026-09-21T20:35:00Z'
+                  replay:
+                    policy: included
+                    windowHours: 72
+                  rights:
+                    scope: worldwide
+                    blackoutCountries: []
+                  media:
+                    wide: []
+                    poster: []
+                  viewerRelations:
+                    inWatchlist: true
+                    reminderSet: false
+                    followsArtist: false
                 page:
                   hasMore: false
-                  emptyReason: no_replay_available
-                  emptyActionCode: browse_catalog
           headers:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
@@ -2055,6 +2083,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '410':
+          $ref: '#/components/responses/Gone'
         '500':
           $ref: '#/components/responses/InternalError'
         '502':
@@ -2072,7 +2102,6 @@ paths:
       x-arthome-upstream:
       - identity
       - catalog
-      x-arthome-freshness: 60
       tags:
       - account
       security:
@@ -2105,13 +2134,47 @@ paths:
                   additionalProperties: {}
               example:
                 servedAt: '2026-09-21T18:57:00.000Z'
-                items: []
+                items:
+                - id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
+                  channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                  slug: '2026-09-21'
+                  canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+                  title: Nuit blanche
+                  startsAt: '2026-09-21T19:00:00Z'
+                  venueClock:
+                    venueTimezone: Europe/Paris
+                    venueUtcOffsetMin: 120
+                  runtimeMin: 95
+                  roomOpensAt: '2026-09-21T18:30:00Z'
+                  displayState: live
+                  displayStateValidUntil: '2026-09-21T20:35:00Z'
+                  replay:
+                    policy: included
+                    windowHours: 72
+                  rights:
+                    scope: worldwide
+                    blackoutCountries: []
+                  media:
+                    wide: []
+                    poster: []
+                  viewerRelations:
+                    inWatchlist: true
+                    reminderSet: false
+                    followsArtist: false
                 page:
                   hasMore: false
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '410':
+          $ref: '#/components/responses/Gone'
         '500':
           $ref: '#/components/responses/InternalError'
         '502':
@@ -2158,7 +2221,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:57:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
@@ -2240,7 +2303,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:57:40.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
@@ -2266,7 +2329,7 @@ paths:
                     wide: []
                     poster: []
                   viewerRelations:
-                    inWatchlist: false
+                    inWatchlist: true
                     reminderSet: false
                     followsArtist: false
           headers:
@@ -2312,7 +2375,6 @@ paths:
       - identity
       - catalog
       - notifications
-      x-arthome-freshness: 60
       tags:
       - account
       security:
@@ -2370,14 +2432,19 @@ paths:
                   channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
                   name: Compagnie Verticale
                   categoryId: dance-contemporary
+                  followedByViewer: true
                   followers: 4120
                   isLiveNow: true
-                  followedByViewer: true
                   alertEnabled: true
                 page:
                   hasMore: false
                   emptyReason: no_followed_artist
                   emptyActionCode: browse_artists
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2444,7 +2511,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:58:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   id: 019928a0-7d31-7a10-b8c4-2f9e11a4c333
                   channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
@@ -2511,13 +2578,13 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:58:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   id: 019928a0-7d31-7a10-b8c4-2f9e11a4c333
                   channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
                   name: Compagnie Verticale
                   categoryId: dance-contemporary
-                  followedByViewer: false
+                  followedByViewer: true
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
@@ -2580,7 +2647,7 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:59:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   reminderSet: true
                   remindAt: '2026-09-21T18:30:00Z'
@@ -2636,14 +2703,14 @@ paths:
                     data:
                       type: object
                       properties:
-                        reminderSet:
+                        deleted:
                           type: boolean
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:59:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
-                  reminderSet: false
+                  deleted: true
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
@@ -2675,7 +2742,6 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - catalog
-      x-arthome-freshness: 300
       tags:
       - account
       security:
@@ -2719,6 +2785,11 @@ paths:
                   - push
                   active: true
                   newMatchesSinceLastVisit: 3
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -2816,18 +2887,23 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:00:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   id: 019928fa-0000-7000-8000-000000000001
                   scope: search
                   name: Danse à Paris
-                  criteria: {}
+                  criteria:
+                    categoryIds:
+                    - dance-contemporary
+                    cityIds:
+                    - paris
                   criteriaVersion: 2
                   criteriaSignature: 7f3a1c
+                  stale: false
                   channels:
                   - push
                   active: true
-                  newMatchesSinceLastVisit: 0
+                  newMatchesSinceLastVisit: 3
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
@@ -2916,17 +2992,23 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:01:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   id: 019928fa-0000-7000-8000-000000000001
                   scope: search
-                  criteria: {}
+                  name: Danse à Paris
+                  criteria:
+                    categoryIds:
+                    - dance-contemporary
+                    cityIds:
+                    - paris
                   criteriaVersion: 2
                   criteriaSignature: 7f3a1c
+                  stale: false
                   channels:
                   - push
-                  active: false
-                  newMatchesSinceLastVisit: 0
+                  active: true
+                  newMatchesSinceLastVisit: 3
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
@@ -2991,7 +3073,7 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:01:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   deleted: true
           headers:
@@ -3024,7 +3106,6 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
-      x-arthome-freshness: 300
       tags:
       - account
       security:
@@ -3074,10 +3155,17 @@ paths:
                   hasMore: false
                   emptyReason: no_order_yet
                   emptyActionCode: browse_shop
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '410':
+          $ref: '#/components/responses/Gone'
         '500':
           $ref: '#/components/responses/InternalError'
         '502':
@@ -3094,7 +3182,6 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - notifications
-      x-arthome-freshness: 60
       tags:
       - account
       security:
@@ -3140,10 +3227,17 @@ paths:
                   read: false
                 page:
                   hasMore: false
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '410':
+          $ref: '#/components/responses/Gone'
         '500':
           $ref: '#/components/responses/InternalError'
         '502':
@@ -3253,9 +3347,6 @@ paths:
             schema:
               type: object
               properties:
-                expectedVersion:
-                  type: integer
-                  format: int64
                 displayName:
                   type: string
                   maxLength: 80
@@ -3266,11 +3357,14 @@ paths:
                   type:
                   - string
                   - 'null'
+                expectedVersion:
+                  type: integer
+                  format: int64
               required:
               - expectedVersion
             example:
-              expectedVersion: 7
               displayName: Marie J.
+              expectedVersion: 7
       responses:
         '200':
           description: Profile updated.
@@ -3304,7 +3398,213 @@ paths:
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.idempotency_key_reused
+                        params:
+                          type: object
+                          properties: {}
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: |
+                            The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                            mobile it is the only link between "my application crashed" and a server log.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          examples:
+                          - refused
+                          description: |
+                            The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                            retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                            the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                            **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                            `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                            `enum` here would make a television on an earlier version reject the whole envelope: it would
+                            not lose a card, it would lose its ability to **read errors**, precisely when something is
+                            already wrong, and on a fleet we cannot update.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: api.idempotency_in_flight
+                        params:
+                          type: object
+                          properties:
+                            retryAfterMs:
+                              type: integer
+                              format: int64
+                          required:
+                          - retryAfterMs
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: |
+                            The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                            mobile it is the only link between "my application crashed" and a server log.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          examples:
+                          - refused
+                          description: |
+                            The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                            retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                            the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                            **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                            `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                            `enum` here would make a television on an earlier version reject the whole envelope: it would
+                            not lose a card, it would lose its ability to **read errors**, precisely when something is
+                            already wrong, and on a fleet we cannot update.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+                - type: object
+                  properties:
+                    error:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                          const: state.conflict
+                        params:
+                          type: object
+                          properties:
+                            currentVersion:
+                              type: integer
+                              format: int64
+                            state:
+                              type: string
+                              description: Present when the record has a lifecycle state.
+                          required:
+                          - currentVersion
+                          additionalProperties: {}
+                        traceId:
+                          type: string
+                          minLength: 1
+                          examples:
+                          - 4bf92f3577b34da6a3ce929d0e0e4736
+                          description: |
+                            The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                            mobile it is the only link between "my application crashed" and a server log.
+                        nature:
+                          type: string
+                          x-arthome-vocabulary:
+                          - refused
+                          - unavailable
+                          - offline_forbidden
+                          x-arthome-vocabulary-source: FAILURE_NATURES
+                          x-arthome-unknown-fallback: unavailable
+                          examples:
+                          - refused
+                          description: |
+                            The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                            retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                            the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                            **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                            `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                            `enum` here would make a television on an earlier version reject the whole envelope: it would
+                            not lose a card, it would lose its ability to **read errors**, precisely when something is
+                            already wrong, and on a fleet we cannot update.
+                      required:
+                      - code
+                      - params
+                      - traceId
+                      - nature
+                      additionalProperties: {}
+                    servedAt:
+                      type: string
+                      format: date-time
+                  required:
+                  - error
+                  - servedAt
+                  additionalProperties: {}
+              examples:
+                api.idempotency_key_reused:
+                  value:
+                    error:
+                      code: api.idempotency_key_reused
+                      nature: refused
+                      params: {}
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                api.idempotency_in_flight:
+                  value:
+                    error:
+                      code: api.idempotency_in_flight
+                      nature: unavailable
+                      params:
+                        retryAfterMs: 1000
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
+                state.conflict:
+                  value:
+                    error:
+                      code: state.conflict
+                      nature: refused
+                      params:
+                        currentVersion: 8
+                        state: live
+                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+                    servedAt: '2026-09-21T20:31:04.118Z'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -3381,7 +3681,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:04:30.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   account:
                     interfaceLocale: fr
@@ -3491,7 +3791,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:05:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   triggers:
                     date_starts_soon:
@@ -3600,7 +3900,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:05:30.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   purposes:
                     audience: true
@@ -3698,7 +3998,7 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:06:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   devices: []
                   playbackCutWithinSec: 120
@@ -3764,7 +4064,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:06:30.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
                   signedIn: true
@@ -3822,6 +4122,9 @@ paths:
       - ticketing
       tags:
       - account
+      x-arthome-requires:
+      - name: throttle
+        bucket: export
       security:
       - sessionCookie: []
         csrfToken: []
@@ -3958,7 +4261,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:12:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   exportId: 019928fc-0000-7000-8000-000000000001
                   kind: invoices
@@ -4041,7 +4344,7 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:13:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   state: requested
                   graceUntil: '2026-10-21T19:13:00Z'
@@ -4106,7 +4409,7 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-25T10:00:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   state: active
           headers:
@@ -7251,13 +7554,13 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
+      tags:
+      - playback
       x-arthome-idempotency-exemption: |
         **The most frequent write in the system.** One key per 30-second slice, per viewer and per
         live show would make the idempotency store the hottest table in `streaming` — to protect a
         write whose loss has no consequence and whose rule is already "last writer wins, server
         ordering". The cost would be per minute of playback and per viewer.
-      tags:
-      - playback
       security:
       - sessionCookie: []
         csrfToken: []
@@ -7309,7 +7612,7 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:35:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   positionSec: 1840
                   version: 212

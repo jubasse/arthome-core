@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { DisplayState } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { CsrfRefusedResponse, DateIdParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter, UnavailableResponse, viewer } from './components.js';
+import { CsrfRefusedResponse, DateIdParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter, UnavailableResponse } from './components.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, PathParameter, Route, IdentifiedAccess } from '../http/index.js';
+import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
 import { PlaybackRenewalSchema, PlaybackTicketSchema } from '../streaming/index.js';
 declare const OPEN_PLAYBACK_KIND: readonly [typeof DisplayState.LIVE, typeof DisplayState.REPLAY];
 declare const OPEN_PLAYBACK_DRM_SYSTEMS: readonly ["fairplay", "widevine", "playready"];
@@ -66,32 +66,6 @@ export declare const releasePlayback: Route<{
         200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
             data: z.ZodOptional<z.ZodObject<{
                 released: z.ZodOptional<z.ZodBoolean>;
-            }, z.core.$loose>>;
-        }, z.core.$loose>>>;
-        404: typeof NotFoundResponse;
-        403: typeof CsrfRefusedResponse;
-    };
-}>;
-export declare const recordPlaybackPosition: Route<{
-    method: 'put';
-    version: 1;
-    path: '/me/progress/{dateId}';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    access: IdentifiedAccess<typeof viewer, false>;
-    requestBody: JsonRequestBody<z.ZodObject<{
-        positionSec: z.ZodInt;
-        deviceId: z.ZodString;
-        completed: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodOptional<z.ZodObject<{
-                positionSec: z.ZodOptional<z.ZodInt>;
-                version: z.ZodOptional<z.ZodInt>;
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         404: typeof NotFoundResponse;
