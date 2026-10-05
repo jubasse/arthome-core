@@ -1,80 +1,15 @@
 import { z } from 'zod';
 import { LOCALES } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
-import { BadRequestResponse, ForbiddenResponse, GoneResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, PageParameter, PageSizeParameter, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter, UnauthorizedResponse, UnavailableResponse } from './components.js';
-import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
+import { BadRequestResponse, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, PageParameter, PageSizeParameter, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter, UnauthorizedResponse, UnavailableResponse } from './components.js';
+import { StudioEnvelopeMetaSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
-import { StudioBootstrapSchema, StudioCountersSchema, StudioSessionEstablishedSchema, StudioSessionModeSchema } from '../studio-access/index.js';
+import { StudioBootstrapSchema, StudioCountersSchema } from '../studio-access/index.js';
 import { InboxEntrySchema } from '../studio-desk/index.js';
 declare const CREATE_REAUTH_TOKEN_INTENT: readonly ["reveal_stream_key", "rotate_stream_key", "transfer_ownership", "delete_channel", "change_bank_details"];
 declare const CREATE_REAUTH_TOKEN_FACTOR: readonly ["platform_biometric", "password", "totp", "backup_code"];
 declare const REGISTER_STUDIO_PUSH_TOKEN_PLATFORM: readonly ["fcm", "apns"];
-export declare const signInStudio: Route<{
-    method: 'post';
-    version: 1;
-    path: '/auth/sign-in';
-    parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        email: z.ZodString;
-        password: z.ZodString;
-        mode: typeof StudioSessionModeSchema;
-        deviceId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-        deviceLabel: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof StudioSessionEstablishedSchema;
-        }, z.core.$loose>>>;
-        401: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-        429: typeof TooManyRequestsResponse;
-    };
-}>;
-export declare const verifyTwoFactorStudio: Route<{
-    method: 'post';
-    version: 1;
-    path: '/auth/two-factor/verify';
-    parameters: readonly [
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        challengeId: z.ZodString;
-        code: z.ZodString;
-        mode: typeof StudioSessionModeSchema;
-        deviceId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof StudioSessionEstablishedSchema;
-        }, z.core.$loose>>>;
-        401: typeof UnauthorizedResponse;
-        410: typeof GoneResponse;
-    };
-}>;
-export declare const requestPasswordResetStudio: Route<{
-    method: 'post';
-    version: 1;
-    path: '/auth/forget-password';
-    parameters: readonly [
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        email: z.ZodString;
-        locale: z.ZodOptional<VocabularyIn<typeof LOCALES>>;
-    }, z.core.$strip>>;
-    responses: {
-        202: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodOptional<z.ZodObject<{
-                accepted: z.ZodOptional<z.ZodBoolean>;
-            }, z.core.$loose>>;
-        }, z.core.$loose>>>;
-        429: typeof TooManyRequestsResponse;
-    };
-}>;
 export declare const getStudioBootstrap: Route<{
     method: 'get';
     version: 1;

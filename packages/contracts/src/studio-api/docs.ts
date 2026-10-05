@@ -4,6 +4,8 @@ import { StudioTag } from './components.js';
 import type { RouteDefinition } from '../http/index.js';
 import type { ApiDocs, ModuleDocs, OperationDocumentation } from '../openapi/docs.js';
 import { apiDocs, documentationLookup } from '../openapi/docs.js';
+import { authDocs } from './auth/docs.js';
+import { authExamples } from './auth/examples.js';
 import { bankChangeRequestsDocs } from './bank-change-requests/docs.js';
 import { bankChangeRequestsExamples } from './bank-change-requests/examples.js';
 import { dateAccessGrantsDocs } from './date-access-grants/docs.js';
@@ -172,6 +174,7 @@ export const studioDocs: ApiDocs = apiDocs({
     seatsDocs,
     incidentsDocs,
     moderationDocs,
+    authDocs,
   ],
   examples: [
     sharedExamples,
@@ -183,6 +186,7 @@ export const studioDocs: ApiDocs = apiDocs({
     seatsExamples,
     incidentsExamples,
     moderationExamples,
+    authExamples,
   ],
 });
 

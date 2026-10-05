@@ -125,6 +125,16 @@
       "file": "packages/contracts/src/studio-money/index.ts",
       "value": "custom",
       "reason": "A period preset of the revenue screen, a period the person chose by hand, not a vocabulary of the domain."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/auth/schemas.ts",
+      "value": "fr",
+      "reason": "The explicit type tools/contract-types.mjs writes for vocabularyIn(LOCALES): its printed type is shorter than the tool's replacement threshold, so it is spelled out as readonly ['fr', 'en'] instead of typeof LOCALES. The schema itself imports LOCALES."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/auth/schemas.ts",
+      "value": "en",
+      "reason": "Same: the other member of the explicit type of vocabularyIn(LOCALES)."
     }
   ]
 }

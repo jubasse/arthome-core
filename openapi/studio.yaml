@@ -157,12 +157,15 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - bootstrap
       x-arthome-idempotency-exemption: |
         A session opening must **always** re-authenticate: returning a memorised response would
         amount to issuing a token without checking the credentials. The protection against a double
         submit is rate limiting, not the idempotency store.
-      tags:
-      - bootstrap
+      x-arthome-requires:
+      - name: throttle
+        bucket: sign-in
       security: []
       parameters:
       - $ref: '#/components/parameters/Surface'
@@ -179,6 +182,8 @@ paths:
                   format: email
                 password:
                   type: string
+                  format: password
+                  x-arthome-sensitive: true
                 mode:
                   $ref: '#/components/schemas/SessionMode'
                 deviceId:
@@ -215,7 +220,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T17:58:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   mode: bearer
@@ -227,10 +232,6 @@ paths:
                       personId: 019928b0-0000-7000-8000-000000000001
                       displayName: Claire D.
                     channels: []
-                    personNavigation:
-                    - agenda
-                    - inbox
-                    - help
                     rightsVersion: 412
                     constants:
                       technicalProvisionThreshold: 10000
@@ -252,22 +253,36 @@ paths:
                       moderationPending: 14
                       inboxUnread: 2
                       dutiesTonight: 3
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
-          description: '`identity.invalid_credentials` — indistinguishable from an unknown email — or `identity.two_factor_required`.'
+          description: Aucune session valide.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: identity.two_factor_required
-                  nature: refused
-                  params:
-                    challengeId: chl_7ab2
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T17:58:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiUnauthenticatedError'
+                - $ref: '#/components/schemas/IdentityInvalidCredentialsError'
+                - $ref: '#/components/schemas/IdentityTwoFactorRequiredError'
+              examples:
+                api.unauthenticated:
+                  $ref: '#/components/examples/ApiUnauthenticatedError'
+                identity.invalid_credentials:
+                  $ref: '#/components/examples/IdentityInvalidCredentialsError'
+                identity.two_factor_required:
+                  $ref: '#/components/examples/IdentityTwoFactorRequiredError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/two-factor/verify:
     post:
       operationId: verifyTwoFactorStudio
@@ -294,6 +309,8 @@ paths:
                   type: string
                 code:
                   type: string
+                  format: password
+                  x-arthome-sensitive: true
                 mode:
                   $ref: '#/components/schemas/SessionMode'
                 deviceId:
@@ -311,7 +328,7 @@ paths:
               mode: bearer
       responses:
         '200':
-          description: Session ouverte.
+          description: Session opened.
           content:
             application/json:
               schema:
@@ -325,10 +342,13 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T17:58:20.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
-                  mode: cookie
+                  mode: bearer
+                  accessToken: sess_7c1de4
+                  refreshToken: refr_2b9f
+                  expiresAt: '2026-09-28T17:58:00Z'
                   bootstrap:
                     person:
                       personId: 019928b0-0000-7000-8000-000000000001
@@ -355,10 +375,36 @@ paths:
                       moderationPending: 14
                       inboxUnread: 2
                       dutiesTonight: 3
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
-          $ref: '#/components/responses/Unauthorized'
-        '410':
-          $ref: '#/components/responses/Gone'
+          description: Aucune session valide.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiUnauthenticatedError'
+                - $ref: '#/components/schemas/IdentityInvalidCredentialsError'
+              examples:
+                api.unauthenticated:
+                  $ref: '#/components/examples/ApiUnauthenticatedError'
+                identity.invalid_credentials:
+                  $ref: '#/components/examples/IdentityInvalidCredentialsError'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/forget-password:
     post:
       operationId: requestPasswordResetStudio
@@ -373,6 +419,9 @@ paths:
       - identity
       tags:
       - bootstrap
+      x-arthome-requires:
+      - name: throttle
+        bucket: password-reset
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -423,12 +472,29 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T17:57:00.000Z'
-                rightsVersion: 0
+                servedAt: '2026-09-21T19:00:00.000Z'
+                rightsVersion: 412
                 data:
                   accepted: true
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/bootstrap:
     get:
       operationId: getStudioBootstrap
@@ -13340,6 +13406,151 @@ components:
       - state
       - source
       additionalProperties: {}
+    ApiUnauthenticatedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.unauthenticated
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    IdentityInvalidCredentialsError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.invalid_credentials
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    IdentityTwoFactorRequiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.two_factor_required
+            params:
+              type: object
+              properties:
+                challengeId:
+                  type: string
+              required:
+              - challengeId
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     ApiForbiddenError:
       type: object
       properties:
@@ -15065,6 +15276,14 @@ components:
               inclusive: true
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
+    ApiUnauthenticatedError:
+      value:
+        error:
+          code: api.unauthenticated
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     CapacityTierMustWidenError:
       value:
         error:
@@ -15244,6 +15463,23 @@ components:
             threshold: 10000
             capacityTotal: 10050
             revisableUntil: '2026-09-18T19:00:00Z'
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    IdentityInvalidCredentialsError:
+      value:
+        error:
+          code: identity.invalid_credentials
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    IdentityTwoFactorRequiredError:
+      value:
+        error:
+          code: identity.two_factor_required
+          nature: refused
+          params:
+            challengeId: chl_7ab2
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     ModerationAlreadyClaimedError:

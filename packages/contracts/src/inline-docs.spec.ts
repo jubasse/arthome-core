@@ -106,18 +106,15 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'removeMember',
   'requestBankChange',
   'requestChannelExport',
-  'requestPasswordResetStudio',
   'revokeStudioDevice',
   'sanctionAudienceMember',
   'searchAudience',
-  'signInStudio',
   'signOutStudio',
   'transferChannelOwnership',
   'updateChannelIdentity',
   'updateChannelSettings',
   'updateStudioPreferences',
   'upsertMerchItem',
-  'verifyTwoFactorStudio',
 ];
 
 const DOC_ONLY_KEYS = [

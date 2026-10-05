@@ -105,18 +105,15 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'removeMember',
   'requestBankChange',
   'requestChannelExport',
-  'requestPasswordResetStudio',
   'revokeStudioDevice',
   'sanctionAudienceMember',
   'searchAudience',
-  'signInStudio',
   'signOutStudio',
   'transferChannelOwnership',
   'updateChannelIdentity',
   'updateChannelSettings',
   'updateStudioPreferences',
   'upsertMerchItem',
-  'verifyTwoFactorStudio',
 ];
 
 describe.each([

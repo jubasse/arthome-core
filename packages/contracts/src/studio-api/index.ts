@@ -7,6 +7,7 @@ import {
   listChannelEvents,
   listDuties,
 } from './agenda.js';
+import { signInStudio, verifyTwoFactorStudio, requestPasswordResetStudio } from './auth/routes.js';
 import { countersignBankChange } from './bank-change-requests/routes.js';
 import {
   createReauthToken,
@@ -17,12 +18,9 @@ import {
   listStudioDevices,
   markInboxRead,
   registerStudioPushToken,
-  requestPasswordResetStudio,
   revokeStudioDevice,
-  signInStudio,
   signOutStudio,
   updateStudioPreferences,
-  verifyTwoFactorStudio,
 } from './bootstrap.js';
 import {
   deleteChannel,
