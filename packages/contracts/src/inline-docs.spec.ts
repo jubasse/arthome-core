@@ -93,7 +93,6 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'listChannelReplays',
   'listModerationQueue',
   'listPayouts',
-  'listStudioChanges',
   'removeBannedWord',
   'removeMember',
   'requestBankChange',

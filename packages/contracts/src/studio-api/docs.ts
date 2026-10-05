@@ -10,6 +10,8 @@ import { bankChangeRequestsDocs } from './bank-change-requests/docs.js';
 import { bankChangeRequestsExamples } from './bank-change-requests/examples.js';
 import { bootstrapDocs } from './bootstrap/docs.js';
 import { bootstrapExamples } from './bootstrap/examples.js';
+import { changesDocs } from './changes/docs.js';
+import { changesExamples } from './changes/examples.js';
 import { dateAccessGrantsDocs } from './date-access-grants/docs.js';
 import { dateAccessGrantsExamples } from './date-access-grants/examples.js';
 import { datesDocs } from './dates/docs.js';
@@ -36,10 +38,6 @@ import { uploadsExamples } from './uploads/examples.js';
  * moves into its module's docs when the module converts.
  */
 const statedMaturities = {
-  listStudioChanges: {
-    maturity: 'stable',
-    maturityReason: 'realtime is not a service, and the change feed is a shape the BFF owns',
-  },
   getChannelTicketing: {
     maturity: 'provisional',
     maturityReason: 'the channel ticketing read is new and not built',
@@ -164,6 +162,7 @@ export const studioDocs: ApiDocs = apiDocs({
     inboxDocs,
     bootstrapDocs,
     meDocs,
+    changesDocs,
   ],
   examples: [
     sharedExamples,
@@ -179,6 +178,7 @@ export const studioDocs: ApiDocs = apiDocs({
     inboxExamples,
     bootstrapExamples,
     meExamples,
+    changesExamples,
   ],
 });
 

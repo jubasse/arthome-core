@@ -9,7 +9,7 @@ import {
 import { signInStudio, verifyTwoFactorStudio, requestPasswordResetStudio } from './auth/routes.js';
 import { countersignBankChange } from './bank-change-requests/routes.js';
 import { getStudioBootstrap } from './bootstrap/routes.js';
-import { listStudioChanges } from './bootstrap.js';
+import { listStudioChanges } from './changes/routes.js';
 import {
   deleteChannel,
   getChannelSettings,

@@ -1425,6 +1425,9 @@ paths:
       - realtime
       tags:
       - bootstrap
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - name: since
         in: query
@@ -1440,7 +1443,6 @@ paths:
           format: uuid
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IfRightsVersion'
       responses:
         '200':
           description: A list of invalidated tags.
@@ -1485,10 +1487,19 @@ paths:
                 - date:019928a0-7d31-7a10-b8c4-2f9e11a4c001:publication
                 - person:inbox
                 complete: true
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/me/preferences:
     patch:
       operationId: updateStudioPreferences
