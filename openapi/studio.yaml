@@ -255,6 +255,12 @@ paths:
                       moderationPending: 14
                       inboxUnread: 2
                       dutiesTonight: 3
+          headers:
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -382,6 +388,11 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -12090,7 +12101,11 @@ components:
           const: bearer
         accessToken:
           type: string
+          format: password
+          x-arthome-sensitive: true
         refreshToken:
+          format: password
+          x-arthome-sensitive: true
           type:
           - string
           - 'null'

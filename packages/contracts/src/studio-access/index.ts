@@ -41,6 +41,7 @@ import {
   vocabularyOutNullable,
 } from '@arthome/core/schema';
 
+import { sensitive } from '../http/marks.js';
 import { SessionMode } from '../identity/index.js';
 
 const LOCAL_REASON =
@@ -440,8 +441,8 @@ export const StudioSessionEstablishedBearerSchema: z.ZodObject<
 > = z
   .looseObject({
     mode: z.literal(SessionMode.BEARER),
-    accessToken: z.string(),
-    refreshToken: z.string().nullable().optional(),
+    accessToken: sensitive(z.string()),
+    refreshToken: sensitive(z.string().nullable().optional()),
     expiresAt: InstantOut,
     bootstrap: StudioBootstrapSchema,
   })
