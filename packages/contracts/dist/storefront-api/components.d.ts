@@ -25,7 +25,6 @@ export declare const LimitParameter: QueryParameter<'limit', z.ZodDefault<z.ZodI
 export declare const DateIdParameter: PathParameter<'dateId', z.ZodString>;
 export declare const ArtistIdParameter: PathParameter<'artistId', z.ZodString>;
 export declare const CategoryIdParameter: PathParameter<'categoryId', z.ZodString>;
-export declare const ServedAtHeader: Header;
 export declare const IdempotencyReplayedHeader: Header;
 export declare const RetryAfterMsHeader: Header;
 /** The freshness of a public read: `public` for an anonymous caller, `private` for an identified one, varying on every credential and the surface. */

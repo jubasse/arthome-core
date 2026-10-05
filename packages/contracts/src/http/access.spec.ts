@@ -212,6 +212,23 @@ describe('derived errors', () => {
     expect(Object.keys(headersOf(route.responses[200]))).toContain('Idempotency-Replayed');
   });
 
+  it('declares the instant of a replay beside its marker, on the writes that can replay only', () => {
+    const write = (parameters: readonly (typeof key)[]): Response =>
+      builder.defineRoute({
+        method: 'post',
+        path: '/a',
+        operationId: 'a',
+        parameters,
+        responses: { 201: { description: 'Created.' } },
+      }).responses[201];
+
+    expect(Object.keys(headersOf(write([key])))).toEqual([
+      'Idempotency-Replayed',
+      'X-Arthome-Served-At',
+    ]);
+    expect(headersOf(write([]))).toEqual({});
+  });
+
   it('adds no 400 to a route with no input, and no 401 to a public one', () => {
     const route = base
       .public()

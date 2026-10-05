@@ -682,7 +682,7 @@ by the declaration, because nothing the server can answer is undocumented:
 |---|---|
 | any input (path, query, body) | `400 api.schema_invalid` |
 | a body | `413 api.payload_too_large` (1 MiB, 2 MiB on a batch), `415 api.unsupported_media_type` |
-| a write carrying `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` header |
+| a write carrying `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` and `X-Arthome-Served-At` headers |
 | an identity | `401`; a write by cookie, the CSRF `403`; the studio's `If-Rights-Version` and its `403 api.rights_version_stale`, and `X-Arthome-Rights-Version` on every success |
 | a rule | its codes (`api.reauthentication_required`, `api.rate_limited`) |
 | the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `503 api.service_unavailable` (its own, never relayed), `504 api.upstream_timeout`, `504 api.deadline_exceeded` |

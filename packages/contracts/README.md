@@ -217,7 +217,7 @@ loads. So every route derives, and nothing the server can answer is undocumented
 |---|---|
 | a path or query parameter, a required header, or a body | `400 api.schema_invalid` |
 | a body | `413 api.payload_too_large`, `415 api.unsupported_media_type`, and a `bodyLimit` (1 MiB; 2 MiB on a batch) |
-| an `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` header on its successes |
+| an `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` and `X-Arthome-Served-At` headers on its successes |
 | an identity | `401` (unless a refused credential counts as none), the identity's codes, and on a write its write codes (the CSRF `403`, a stale rights version) |
 | a rule | the rule's codes (`403 api.reauthentication_required`, `429 api.rate_limited`) |
 | the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `503 api.service_unavailable` (its own, never relayed), `504 api.upstream_timeout` and `api.deadline_exceeded` |

@@ -80,7 +80,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 182 exported names.
+Declarations: `dist/http/index.d.ts` — 183 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
@@ -197,6 +197,7 @@ Declarations: `dist/http/index.d.ts` — 182 exported names.
 - `RouteSuccessStatus` (type) — `type RouteSuccessStatus<R extends RouteShape> = Extract<RouteStatus<R>, 200 | 201 | 202 | 203 | 204 | 206 | '200' | '201' | '202' | '203' | '204' | '206'>;` — The 2xx statuses a route declares.
 - `RouteTree` (interface)
 - `SENSITIVE_KEY` (const) — `SENSITIVE_KEY = "x-arthome-sensitive"`
+- `SERVED_AT_HEADER` (const) — `SERVED_AT_HEADER: Header` — Beside 'Idempotency-Replayed': when the replay was served, the body's 'servedAt' being the first attempt's.
 - `Scope` (interface) — A path prefix and the path parameters it declares: what 'path()' accumulates.
 - `SearchTextOptions` (interface)
 - `SecurityRequirement` (type) — `type SecurityRequirement = Readonly<Record<string, readonly string[]>>;` — The schemes that satisfy a route, by name: '{}' is a call with no credential at all.

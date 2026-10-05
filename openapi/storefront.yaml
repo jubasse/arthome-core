@@ -246,6 +246,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -619,6 +621,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -862,6 +866,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -946,6 +952,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -1032,6 +1040,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1125,6 +1135,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -1211,6 +1223,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -1343,6 +1357,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -1447,6 +1463,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -1560,6 +1578,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1662,6 +1682,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -1743,6 +1765,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1853,6 +1877,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -1971,6 +1997,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -2043,6 +2071,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2149,6 +2179,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -2224,6 +2256,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2691,6 +2725,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2775,6 +2811,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -2967,6 +3005,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3039,6 +3079,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3107,6 +3149,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3169,6 +3213,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3369,6 +3415,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3476,6 +3524,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3545,6 +3595,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3774,6 +3826,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3875,6 +3929,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -3988,6 +4044,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4102,6 +4160,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4212,6 +4272,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4307,6 +4369,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4411,6 +4475,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4512,6 +4578,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Location:
               description: Where to follow the outcome, `getExport`.
               schema:
@@ -4680,6 +4748,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4745,6 +4815,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4869,6 +4941,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6648,11 +6722,6 @@ paths:
       responses:
         '201':
           description: Seats created, and the updated date.
-          headers:
-            Idempotency-Replayed:
-              $ref: '#/components/headers/IdempotencyReplayed'
-            X-Arthome-Served-At:
-              $ref: '#/components/headers/ServedAt'
           content:
             application/json:
               schema:
@@ -6744,6 +6813,11 @@ paths:
                     kind: seat
                     state: paid
                     placedAt: '2026-09-21T18:41:30Z'
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '202':
           description: |
             **Strong authentication required** — the order exists, the payment is not complete. The
@@ -6776,6 +6850,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -7085,6 +7161,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7187,6 +7265,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7249,6 +7329,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7411,6 +7493,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7512,6 +7596,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7610,6 +7696,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -7839,6 +7927,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '202':
           description: '**Strong authentication required.** See `PaymentHandoff` — the return URL concludes nothing, `getOrder` is authoritative.'
           content:
@@ -7868,6 +7958,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -8012,6 +8104,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '202':
           description: '**Strong authentication required.** See `PaymentHandoff` — the return URL concludes nothing, `getOrder` is authoritative.'
           content:
@@ -8041,6 +8135,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
             Cache-Control:
               description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
@@ -8139,6 +8235,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -8928,6 +9026,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -9133,6 +9233,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -9265,6 +9367,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -9508,6 +9612,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -9654,6 +9760,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -9813,6 +9921,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10104,9 +10214,9 @@ components:
   headers:
     ServedAt:
       description: |
-        Server instant **of this response**. On a response replayed by idempotency, it differs from
-        the body's `servedAt`, which is the first attempt's: a replay proves an effect took place, it
-        does not promise fresh data.
+        Server instant **of this response**, sent with `Idempotency-Replayed`. On a replay it differs
+        from the body's `servedAt`, which is the first attempt's: a replay proves an effect took
+        place, it does not promise fresh data.
       schema:
         type: string
         format: date-time

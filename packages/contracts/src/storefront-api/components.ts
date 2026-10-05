@@ -6,7 +6,6 @@ import type { VocabularyIn } from '@arthome/core/schema';
 import {
   ERROR_PARAMS,
   errorParamsSchemaOf,
-  InstantOut,
   int64,
   VOCABULARY_SOURCE_LOCAL,
   vocabularyIn,
@@ -206,12 +205,6 @@ export const CategoryIdParameter: PathParameter<'categoryId', z.ZodString> = {
   schema: z.string().meta({
     examples: ['dance-contemporary'],
   }),
-};
-
-export const ServedAtHeader: Header = {
-  description:
-    "Server instant **of this response**. On a response replayed by idempotency, it differs from\nthe body's `servedAt`, which is the first attempt's: a replay proves an effect took place, it\ndoes not promise fresh data.\n",
-  schema: InstantOut,
 };
 
 export const IdempotencyReplayedHeader: Header = {

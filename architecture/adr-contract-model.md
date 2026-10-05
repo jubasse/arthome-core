@@ -674,7 +674,9 @@ The rule "never one identifier at a time" stays in `definition-of-done.md`.
 
 ### 9.3 Derived on writes
 
-- **Every write carrying `Idempotency-Key`** declares the `Idempotency-Replayed` response header.
+- **Every write carrying `Idempotency-Key`** declares the `Idempotency-Replayed` response header,
+  and beside it `X-Arthome-Served-At`, the instant of a replay, whose body's `servedAt` is the first
+  attempt's.
   Today 2 routes do.
 - **A versioned record's item schema must carry `version`** (§5.5). A resource whose members take
   `expectedVersion` refuses, at compile time, an item without it.

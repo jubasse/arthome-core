@@ -53,4 +53,6 @@ export declare const NO_STORE_HEADER: Header;
 export declare const VARY_HEADER: Header;
 /** On a write carrying `Idempotency-Key`: `true` when the answer is the stored one of an earlier attempt. */
 export declare const IDEMPOTENCY_REPLAYED_HEADER: Header;
+/** Beside `Idempotency-Replayed`: when the replay was served, the body's `servedAt` being the first attempt's. */
+export declare const SERVED_AT_HEADER: Header;
 //# sourceMappingURL=policy.d.ts.map
