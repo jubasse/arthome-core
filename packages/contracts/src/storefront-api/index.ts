@@ -25,7 +25,6 @@ import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
 import { addCartLine, getCart, quoteCart, removeCartLine, updateCartLine } from './cart/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
 import {
-  cancelSubscription,
   checkoutCart,
   enterSalesQueue,
   getOrder,
@@ -35,7 +34,6 @@ import {
   purchaseSeat,
   quoteSeat,
   refreshDateAvailability,
-  setSubscriptionPlan,
 } from './commerce.js';
 import {
   AdmissionTokenParameter,
@@ -129,6 +127,7 @@ import {
 import { listPlans } from './plans/routes.js';
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
 import { cancelSeat } from './seats/routes.js';
+import { cancelSubscription, setSubscriptionPlan } from './subscription/routes.js';
 import {
   ArtistDetailSchema,
   ArtistSummarySchema,

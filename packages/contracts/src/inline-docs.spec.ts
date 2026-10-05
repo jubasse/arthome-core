@@ -13,7 +13,6 @@ import { studioApi } from './studio-api/index.js';
  */
 const STOREFRONT_STILL_INLINE: readonly string[] = [
   'cancelPairing',
-  'cancelSubscription',
   'changePassword',
   'checkoutCart',
   'confirmEmailVerification',
@@ -58,7 +57,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
   'search',
   'sendChatMessage',
   'sendReaction',
-  'setSubscriptionPlan',
   'signIn',
   'signOut',
   'signUp',

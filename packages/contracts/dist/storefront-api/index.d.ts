@@ -2,7 +2,7 @@ import { changePassword, confirmEmailVerification, contactSupport, disableTwoFac
 import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
 import { addCartLine, getCart, quoteCart, removeCartLine, updateCartLine } from './cart/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
-import { cancelSubscription, checkoutCart, enterSalesQueue, getOrder, getSalesQueuePosition, joinWaitlist, leaveWaitlist, purchaseSeat, quoteSeat, refreshDateAvailability, setSubscriptionPlan } from './commerce.js';
+import { checkoutCart, enterSalesQueue, getOrder, getSalesQueuePosition, joinWaitlist, leaveWaitlist, purchaseSeat, quoteSeat, refreshDateAvailability } from './commerce.js';
 import { getDateDetail } from './date.js';
 import { extendRail, getArtistDetail, getCategoryScreen, getHomeScreen, getLiveScreen, listArtists, listCategories, listReplays, resolvePublicLink, search } from './discovery.js';
 import { addPasskey, addPaymentMethod, addToWatchlist, cancelAccountDeletion, clearReminder, createSavedSearch, deleteSavedSearch, followArtist, getAccountScreen, getExport, listFollowedArtists, listMyOrders, listMyReplays, listMyTickets, listNotifications, listSavedSearches, listWatchlist, markNotificationsRead, recordPlaybackPosition, removeFromWatchlist, removePasskey, removePaymentMethod, requestAccountDeletion, requestExport, revokeDevice, setReminder, signOutProfile, unfollowArtist, updateConsents, updateNotificationPreferences, updatePreferences, updateProfile, updateSavedSearch } from './me/routes.js';
@@ -10,6 +10,7 @@ import { cancelPairing, createPairing, decidePairing, engagePairing, getAccountD
 import { listPlans } from './plans/routes.js';
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
 import { cancelSeat } from './seats/routes.js';
+import { cancelSubscription, setSubscriptionPlan } from './subscription/routes.js';
 import type { Api } from '../http/index.js';
 export declare const storefrontApi: Api<{
     registerDevice: typeof registerDevice;

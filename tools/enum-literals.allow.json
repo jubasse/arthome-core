@@ -32,6 +32,11 @@
       "reason": "The Cache-Control scope of an anonymous read, `cache(..., { scope: 'public' })`. It shares its spelling with a date pane without being that vocabulary."
     },
     {
+      "file": "packages/contracts/src/storefront-api/subscription/routes.ts",
+      "value": "subscription",
+      "reason": "A path segment, /subscription/cancel. It shares its spelling with a replay policy, an order kind and a tax supply kind without being any of those vocabularies."
+    },
+    {
       "file": "packages/contracts/src/studio-money/index.ts",
       "value": "expired",
       "reason": "A bank-details change request's own state machine (pending_countersignature, countersigned, rejected, expired) and an export job's (queued, running, ready, failed, expired) — the contract's own, not the domain's (D-060 §B). They share the word with SEAT_HOLD_STATES without being the same vocabulary: a hold's expiry and a signing request's are unrelated facts."

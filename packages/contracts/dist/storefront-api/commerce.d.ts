@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { PLAN_TIERS, PRICE_TIERS } from '@arthome/core';
+import { PRICE_TIERS } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
 import { AdmissionTokenParameter, BadRequestResponse, ConflictResponse, CsrfRefusedResponse, DateIdParameter, GoneResponse, IdempotencyKeyParameter, LateEntryAcknowledgedParameter, NotFoundResponse, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter, UnauthorizedResponse, UnavailableResponse } from './components.js';
 import { DateCardSchema, PriceTierSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
-import { CartSchema, OrderSchema, PaymentHandoffSchema, SalesQueuePositionSchema, SeatQuoteSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
+import { CartSchema, OrderSchema, PaymentHandoffSchema, SalesQueuePositionSchema, SeatQuoteSchema, TicketCardSchema } from '../ticketing/index.js';
 export declare const refreshDateAvailability: Route<{
     method: 'get';
     version: 1;
@@ -229,48 +229,6 @@ export declare const checkoutCart: Route<{
         }, z.core.$loose>>>;
         409: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
         410: typeof GoneResponse;
-        403: typeof CsrfRefusedResponse;
-    };
-}>;
-export declare const setSubscriptionPlan: Route<{
-    method: 'post';
-    version: 1;
-    path: '/subscription/change-plan';
-    parameters: readonly [
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        planTier: VocabularyIn<typeof PLAN_TIERS>;
-        paymentMethodRef: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof SubscriptionSchema;
-        }, z.core.$loose>>>;
-        202: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof PaymentHandoffSchema;
-        }, z.core.$loose>>>;
-        402: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-        409: typeof ConflictResponse;
-        403: typeof CsrfRefusedResponse;
-    };
-}>;
-export declare const cancelSubscription: Route<{
-    method: 'post';
-    version: 1;
-    path: '/subscription/cancel';
-    parameters: readonly [
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof SubscriptionSchema;
-        }, z.core.$loose>>>;
-        409: typeof ConflictResponse;
         403: typeof CsrfRefusedResponse;
     };
 }>;
