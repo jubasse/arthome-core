@@ -20,7 +20,7 @@ import {
   signUp,
   startSocialSignIn,
   verifyTwoFactor,
-} from './account.js';
+} from './auth/routes.js';
 import { listChanges } from './changes/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
 import {

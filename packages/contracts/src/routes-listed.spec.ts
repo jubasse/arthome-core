@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Api, Route } from './http/index.js';
 import * as storefrontAccountDeepLink from './storefront-api/account-deep-link/routes.js';
-import * as storefrontAccount from './storefront-api/account.js';
+import * as storefrontAuth from './storefront-api/auth/routes.js';
 import * as storefrontChanges from './storefront-api/changes/routes.js';
 import * as storefrontChat from './storefront-api/chat.js';
 import * as storefrontCommerce from './storefront-api/commerce.js';
@@ -54,7 +54,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
     'storefront-api',
     storefrontApi,
     [
-      storefrontAccount,
+      storefrontAuth,
       storefrontViewerContext,
       storefrontSupport,
       storefrontChanges,

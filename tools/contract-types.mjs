@@ -85,7 +85,7 @@ function dictionaryOf(sourceFile, contextFiles) {
   const add = (name, symbol, origin) => {
     if (!(symbol.flags & ts.SymbolFlags.Variable)) return;
     const text = printType(checker.getTypeOfSymbolAtLocation(symbol, sourceFile), sourceFile);
-    if (text.length < 24 || entries.has(text)) return;
+    if ((text.length < 24 && !text.startsWith('readonly [')) || entries.has(text)) return;
     entries.set(text, { name, origin });
   };
   for (const file of contextFiles) {

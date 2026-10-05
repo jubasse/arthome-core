@@ -493,6 +493,9 @@ paths:
       - identity
       tags:
       - account
+      x-arthome-requires:
+      - name: throttle
+        bucket: auth
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -567,7 +570,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:00:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   mode: cookie
                   viewerContext:
@@ -580,7 +583,7 @@ paths:
                       scarcityThresholdBps: 8500
                       billboardPreviewDelaySec: 4
                       waitlistPriorityWindowHours: 2
-                      chatRateLimitPerSecond: 10
+                      chatRateLimitPerSecond: 6
                       reminderLeadMinutes: 30
                       replayExpiryWarningHours: 6
                     labelCatalog:
@@ -593,23 +596,41 @@ paths:
                       locale: fr
                       version: 12
                       url: https://cdn.arthome.fr/taxonomy/fr/v12.json
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
-          description: '`identity.email_taken` — a **code**, not the library''s English sentence.'
+          description: |
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: identity.email_taken
-                  nature: refused
-                  params: {}
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:00:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/IdentityEmailTakenError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                identity.email_taken:
+                  $ref: '#/components/examples/IdentityEmailTakenError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/sign-in:
     post:
       operationId: signIn
@@ -624,6 +645,8 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
+      tags:
+      - account
       x-arthome-idempotency-exemption: |
         **The one exemption that is not "nothing to deduplicate": this one is a prohibition.** The
         idempotency regime replays the original response **verbatim**; on a session opening, that
@@ -634,8 +657,9 @@ paths:
         original response rather than a `410` or a second effect: that is safe resumption. A
         sign-in, no — it must **always** re-authenticate. The protection against double submission
         here is rate limiting per `device_id`, not the idempotency store.
-      tags:
-      - account
+      x-arthome-requires:
+      - name: throttle
+        bucket: auth
       security: []
       parameters:
       - $ref: '#/components/parameters/Surface'
@@ -685,12 +709,9 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:00:10.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
-                  mode: bearer
-                  accessToken: sess_9f2ac1b4
-                  refreshToken: refr_4d77e2
-                  expiresAt: '2026-09-28T18:00:10Z'
+                  mode: cookie
                   viewerContext:
                     deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
                     signedIn: true
@@ -714,22 +735,36 @@ paths:
                       locale: fr
                       version: 12
                       url: https://cdn.arthome.fr/taxonomy/fr/v12.json
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
-          description: '`identity.invalid_credentials`, or `identity.two_factor_required` with its `challengeId`.'
+          description: No valid session, or expired token.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: identity.two_factor_required
-                  nature: refused
-                  params:
-                    challengeId: chl_7ab2
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:00:10.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiUnauthenticatedError'
+                - $ref: '#/components/schemas/IdentityInvalidCredentialsError'
+                - $ref: '#/components/schemas/IdentityTwoFactorRequiredError'
+              examples:
+                api.unauthenticated:
+                  $ref: '#/components/examples/ApiUnauthenticatedError'
+                identity.invalid_credentials:
+                  $ref: '#/components/examples/IdentityInvalidCredentialsError'
+                identity.two_factor_required:
+                  $ref: '#/components/examples/IdentityTwoFactorRequiredError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/sign-out:
     post:
       operationId: signOut
@@ -754,6 +789,10 @@ paths:
       - identity
       tags:
       - account
+      x-arthome-csrf-exempt: A forged sign-out ends a session and grants nothing, and a browser that lost its CSRF cookie must still be able to sign out.
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
@@ -776,11 +815,22 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T23:00:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   signedOut: true
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/verify-email:
     post:
       operationId: confirmEmailVerification
@@ -800,6 +850,9 @@ paths:
       - account:profile
       tags:
       - account
+      x-arthome-requires:
+      - name: throttle
+        bucket: auth
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -842,26 +895,41 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:05:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   verified: true
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '410':
-          description: '`identity.verification_link_invalid`: unknown, expired or already used, one answer for the three.'
+          description: The targeted cursor, pairing or replay has expired.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: identity.verification_link_invalid
-                  nature: refused
-                  params: {}
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:05:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiCursorTooOldError'
+                - $ref: '#/components/schemas/IdentityVerificationLinkInvalidError'
+              examples:
+                api.cursor_too_old:
+                  $ref: '#/components/examples/ApiCursorTooOldError'
+                identity.verification_link_invalid:
+                  $ref: '#/components/examples/IdentityVerificationLinkInvalidError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/verify-email/resend:
     post:
       operationId: resendEmailVerification
@@ -876,6 +944,9 @@ paths:
       - identity
       tags:
       - account
+      x-arthome-requires:
+      - name: throttle
+        bucket: auth
       security:
       - sessionCookie: []
         csrfToken: []
@@ -906,15 +977,26 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:06:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   queued: true
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/forget-password:
     post:
       operationId: requestPasswordReset
@@ -931,6 +1013,9 @@ paths:
       - identity
       tags:
       - account
+      x-arthome-requires:
+      - name: throttle
+        bucket: auth
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -981,11 +1066,28 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:01:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   accepted: true
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/reset-password:
     post:
       operationId: resetPassword
@@ -1043,14 +1145,40 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   changed: true
                   otherSessionsRevoked: 3
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '410':
-          $ref: '#/components/responses/Gone'
+          description: The targeted cursor, pairing or replay has expired.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiCursorTooOldError'
+                - $ref: '#/components/schemas/IdentityResetTokenExpiredError'
+              examples:
+                api.cursor_too_old:
+                  $ref: '#/components/examples/ApiCursorTooOldError'
+                identity.reset_token_expired:
+                  $ref: '#/components/examples/IdentityResetTokenExpiredError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/social/{provider}/start:
     post:
       operationId: startSocialSignIn
@@ -1075,7 +1203,6 @@ paths:
       - account
       security: []
       parameters:
-      - $ref: '#/components/parameters/IdempotencyKey'
       - name: provider
         in: path
         required: true
@@ -1086,6 +1213,7 @@ paths:
           - facebook
           x-arthome-vocabulary-source: none
           x-arthome-vocabulary-reason: An external provider or platform identifier. It is their vocabulary, not ours, and it changes when they change.
+      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
       requestBody:
@@ -1146,13 +1274,28 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:03:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   authorizationUrl: https://api.arthome.fr/v1/auth/social/google/redirect?state=ott_9f2ac1
                   state: ott_9f2ac1
                   expiresAt: '2026-09-21T18:13:00Z'
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/exchange:
     post:
       operationId: exchangeOneTimeToken
@@ -1210,11 +1353,9 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:03:40.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
-                  mode: bearer
-                  accessToken: sess_4d77e2
-                  expiresAt: '2026-09-28T18:03:40Z'
+                  mode: cookie
                   viewerContext:
                     deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
                     signedIn: true
@@ -1238,8 +1379,36 @@ paths:
                       locale: fr
                       version: 12
                       url: https://cdn.arthome.fr/taxonomy/fr/v12.json
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '410':
-          $ref: '#/components/responses/Gone'
+          description: The targeted cursor, pairing or replay has expired.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiCursorTooOldError'
+                - $ref: '#/components/schemas/IdentityOneTimeTokenExpiredError'
+              examples:
+                api.cursor_too_old:
+                  $ref: '#/components/examples/ApiCursorTooOldError'
+                identity.one_time_token_expired:
+                  $ref: '#/components/examples/IdentityOneTimeTokenExpiredError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/change-password:
     post:
       operationId: changePassword
@@ -1256,6 +1425,9 @@ paths:
       - identity
       tags:
       - account
+      x-arthome-requires:
+      - name: throttle
+        bucket: auth
       security:
       - sessionCookie: []
         csrfToken: []
@@ -1305,16 +1477,33 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:57:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   changed: true
-                  otherSessionsRevoked: 2
+                  otherSessionsRevoked: 3
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/two-factor:
     post:
       operationId: enableTwoFactor
@@ -1356,11 +1545,6 @@ paths:
       responses:
         '201':
           description: Secret to enrol and backup codes, returned **once only**.
-          headers:
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:
@@ -1373,10 +1557,14 @@ paths:
                       properties:
                         otpauthUri:
                           type: string
+                          format: password
+                          x-arthome-sensitive: true
                         backupCodes:
                           type: array
                           items:
                             type: string
+                          format: password
+                          x-arthome-sensitive: true
                       required:
                       - otpauthUri
                       - backupCodes
@@ -1385,16 +1573,38 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:58:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   otpauthUri: otpauth://totp/Arthome:marie%40example.org?secret=JBSWY3DP&issuer=Arthome
                   backupCodes:
                   - 7K2M-9QP4
                   - X3N8-2VTR
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     delete:
       operationId: disableTwoFactor
       summary: Disables two-factor authentication.
@@ -1443,13 +1653,30 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:58:30.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   twoFactorEnabled: false
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/two-factor/verify:
     post:
       operationId: verifyTwoFactor
@@ -1509,7 +1736,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:00:25.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   mode: cookie
                   viewerContext:
@@ -1522,7 +1749,7 @@ paths:
                       scarcityThresholdBps: 8500
                       billboardPreviewDelaySec: 4
                       waitlistPriorityWindowHours: 2
-                      chatRateLimitPerSecond: 10
+                      chatRateLimitPerSecond: 6
                       reminderLeadMinutes: 30
                       replayExpiryWarningHours: 6
                     labelCatalog:
@@ -1535,10 +1762,49 @@ paths:
                       locale: fr
                       version: 12
                       url: https://cdn.arthome.fr/taxonomy/fr/v12.json
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          description: No valid session, or expired token.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiUnauthenticatedError'
+                - $ref: '#/components/schemas/IdentityInvalidCredentialsError'
+              examples:
+                api.unauthenticated:
+                  $ref: '#/components/examples/ApiUnauthenticatedError'
+                identity.invalid_credentials:
+                  $ref: '#/components/examples/IdentityInvalidCredentialsError'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '410':
-          $ref: '#/components/responses/Gone'
+          description: The targeted cursor, pairing or replay has expired.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiCursorTooOldError'
+                - $ref: '#/components/schemas/IdentityTwoFactorChallengeExpiredError'
+              examples:
+                api.cursor_too_old:
+                  $ref: '#/components/examples/ApiCursorTooOldError'
+                identity.two_factor_challenge_expired:
+                  $ref: '#/components/examples/IdentityTwoFactorChallengeExpiredError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/me/passkeys:
     post:
       operationId: addPasskey
@@ -12899,6 +13165,501 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    IdentityEmailTakenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.email_taken
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ApiUnauthenticatedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.unauthenticated
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    IdentityInvalidCredentialsError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.invalid_credentials
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    IdentityTwoFactorRequiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.two_factor_required
+            params:
+              type: object
+              properties:
+                challengeId:
+                  type: string
+              required:
+              - challengeId
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ApiCursorTooOldError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.cursor_too_old
+            params:
+              type: object
+              properties:
+                maxAgeHours:
+                  type: integer
+                  format: int64
+              required:
+              - maxAgeHours
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    IdentityVerificationLinkInvalidError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.verification_link_invalid
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    IdentityResetTokenExpiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.reset_token_expired
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    IdentityOneTimeTokenExpiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.one_time_token_expired
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    IdentityTwoFactorChallengeExpiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.two_factor_challenge_expired
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     StateConflictError:
       type: object
       properties:
@@ -12962,6 +13723,15 @@ components:
       - servedAt
       additionalProperties: {}
   examples:
+    ApiCursorTooOldError:
+      value:
+        error:
+          code: api.cursor_too_old
+          nature: refused
+          params:
+            maxAgeHours: 24
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     ApiIdempotencyInFlightError:
       value:
         error:
@@ -12975,6 +13745,71 @@ components:
       value:
         error:
           code: api.idempotency_key_reused
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ApiUnauthenticatedError:
+      value:
+        error:
+          code: api.unauthenticated
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    IdentityEmailTakenError:
+      value:
+        error:
+          code: identity.email_taken
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    IdentityInvalidCredentialsError:
+      value:
+        error:
+          code: identity.invalid_credentials
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    IdentityOneTimeTokenExpiredError:
+      value:
+        error:
+          code: identity.one_time_token_expired
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    IdentityResetTokenExpiredError:
+      value:
+        error:
+          code: identity.reset_token_expired
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    IdentityTwoFactorChallengeExpiredError:
+      value:
+        error:
+          code: identity.two_factor_challenge_expired
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    IdentityTwoFactorRequiredError:
+      value:
+        error:
+          code: identity.two_factor_required
+          nature: refused
+          params:
+            challengeId: chl_7ab2
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    IdentityVerificationLinkInvalidError:
+      value:
+        error:
+          code: identity.verification_link_invalid
           nature: refused
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736

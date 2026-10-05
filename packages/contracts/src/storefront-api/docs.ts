@@ -7,6 +7,8 @@ import type { ApiDocs, ModuleDocs, OperationDocumentation } from '../openapi/doc
 import { apiDocs, documentationLookup } from '../openapi/docs.js';
 import { accountDeepLinkDocs } from './account-deep-link/docs.js';
 import { accountDeepLinkExamples } from './account-deep-link/examples.js';
+import { authDocs } from './auth/docs.js';
+import { authExamples } from './auth/examples.js';
 import { changesDocs } from './changes/docs.js';
 import { changesExamples } from './changes/examples.js';
 import { devicesDocs } from './devices/docs.js';
@@ -138,6 +140,7 @@ export const storefrontDocs: ApiDocs = apiDocs({
     changesDocs,
     supportDocs,
     viewerContextDocs,
+    authDocs,
   ],
   examples: [
     sharedExamples,
@@ -146,6 +149,7 @@ export const storefrontDocs: ApiDocs = apiDocs({
     devicesExamples,
     changesExamples,
     supportExamples,
+    authExamples,
   ],
 });
 

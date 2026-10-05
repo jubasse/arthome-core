@@ -1,5 +1,5 @@
 import { getAccountDeepLink } from './account-deep-link/routes.js';
-import { changePassword, confirmEmailVerification, disableTwoFactor, enableTwoFactor, exchangeOneTimeToken, requestPasswordReset, resendEmailVerification, resetPassword, signIn, signOut, signUp, startSocialSignIn, verifyTwoFactor } from './account.js';
+import { changePassword, confirmEmailVerification, disableTwoFactor, enableTwoFactor, exchangeOneTimeToken, requestPasswordReset, resendEmailVerification, resetPassword, signIn, signOut, signUp, startSocialSignIn, verifyTwoFactor } from './auth/routes.js';
 import { listChanges } from './changes/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
 import { addCartLine, cancelSeat, cancelSubscription, checkoutCart, enterSalesQueue, getCart, getOrder, getSalesQueuePosition, joinWaitlist, leaveWaitlist, listPlans, purchaseSeat, quoteCart, quoteSeat, refreshDateAvailability, removeCartLine, setSubscriptionPlan, updateCartLine } from './commerce.js';
