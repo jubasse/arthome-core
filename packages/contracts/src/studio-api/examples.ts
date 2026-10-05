@@ -1,9 +1,17 @@
 import type { z } from 'zod';
 
-import { Surface } from '@arthome/core';
+import {
+  AudienceSanction,
+  Locale,
+  ModerationItemState,
+  ModerationReason,
+  StateChangeOrigin,
+  Surface,
+} from '@arthome/core';
 
 import { Acknowledged, Deleted, ReauthProof } from '../http/index.js';
 import type { ModuleExamples } from '../openapi/docs.js';
+import { ModerationItemSchema } from '../studio-desk/index.js';
 import { BankChangeRequestSchema, ExportJobSchema } from '../studio-money/index.js';
 
 const bankChangeRequests: readonly z.output<typeof BankChangeRequestSchema>[] = [
@@ -34,6 +42,23 @@ const bankChangeRequests: readonly z.output<typeof BankChangeRequestSchema>[] = 
   },
 ];
 
+const moderationItem: z.output<typeof ModerationItemSchema> = {
+  id: '019928e0-0000-7000-8000-000000000001',
+  messageId: '019928f8-0000-7000-8000-000000000009',
+  dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
+  channelId: '019928a0-7d31-7a10-b8c4-2f9e11a4c222',
+  state: ModerationItemState.REPORTED,
+  reason: ModerationReason.HARASSMENT,
+  reportsCount: 3,
+  atMediaSec: 1812,
+  sentAt: '2026-09-21T19:29:42Z',
+  authorHandle: '@anon.7742',
+  authorSanction: AudienceSanction.NONE,
+  body: { contentLanguage: Locale.FR, text: '…' },
+  origin: StateChangeOrigin.HUMAN_VERDICT,
+  version: 1,
+};
+
 const exportJobs: readonly z.output<typeof ExportJobSchema>[] = [
   {
     exportId: '019928e8-0000-7000-8000-000000000001',
@@ -61,4 +86,5 @@ export const sharedExamples: ModuleExamples = [
   [ReauthProof, [{ reauthToken: 'ott_9f2ac1' }]],
   [BankChangeRequestSchema, bankChangeRequests],
   [ExportJobSchema, exportJobs],
+  [ModerationItemSchema, [moderationItem]],
 ];

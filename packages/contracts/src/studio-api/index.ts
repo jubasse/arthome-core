@@ -19,6 +19,7 @@ import {
 } from './bootstrap.js';
 import { createUploadTicket, deleteChannel } from './channel.js';
 import {
+  addBannedWord,
   changeMemberRoles,
   closeReconciliationPeriod,
   getChannelAgenda,
@@ -31,10 +32,14 @@ import {
   listChannelMembers,
   listChannelMerchItems,
   listChannelReplays,
+  listModerationQueue,
   listPayouts,
+  removeBannedWord,
   removeMember,
   requestBankChange,
   requestChannelExport,
+  sanctionAudienceMember,
+  searchAudience,
   transferChannelOwnership,
   updateChannelIdentity,
   updateChannelSettings,
@@ -108,16 +113,7 @@ import {
   setTechnicalProvision,
   submitHealthSample,
 } from './dates/routes.js';
-import {
-  addBannedWord,
-  claimModerationItem,
-  listModerationQueue,
-  releaseModerationItem,
-  removeBannedWord,
-  sanctionAudienceMember,
-  searchAudience,
-  settleModerationItem,
-} from './moderation.js';
+import { claimModerationItem, releaseModerationItem, settleModerationItem } from './moderation.js';
 import { countersignBankChange, getChannelExport } from './payouts.js';
 import { createDateDraft } from './publication.js';
 import { escalateIncidentToProduction, getChannelStreamSettings, resolveIncident } from './run.js';

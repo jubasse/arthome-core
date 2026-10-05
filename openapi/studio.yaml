@@ -4246,17 +4246,29 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Cursor'
-      - $ref: '#/components/parameters/Limit'
+      - name: limit
+        in: query
+        required: false
+        schema:
+          default: 20
+          type: integer
+          minimum: 1
+          maximum: 200
       - name: dateId
         in: query
+        required: false
         schema:
           type: string
           format: uuid
       - name: filter
         in: query
+        required: false
         schema:
           default: pending
           type: string
@@ -4272,7 +4284,6 @@ paths:
         schema:
           type: string
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -4295,9 +4306,8 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:30:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
-                lastEventSeq: 8812
                 items:
                 - id: 019928e0-0000-7000-8000-000000000001
                   messageId: 019928f8-0000-7000-8000-000000000009
@@ -4316,13 +4326,29 @@ paths:
                   origin: human_verdict
                   version: 1
                 page:
-                  hasMore: true
-                  nextCursor: eyJjIjoiMjAyNi0wOS0yMVQxOTozMCJ9
-                  pendingCount: 14
+                  page: 1
+                  pageSize: 20
+                  totalItems: 1
+                  totalPages: 1
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '410':
           $ref: '#/components/responses/Gone'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/moderation/items/{itemId}/claim:
     post:
       operationId: claimModerationItem
@@ -4591,6 +4617,9 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - $ref: '#/components/parameters/Page'
@@ -4601,11 +4630,13 @@ paths:
           type: string
       - name: presentOnDateId
         in: query
+        required: false
         schema:
           type: string
           format: uuid
       - name: sanction
         in: query
+        required: false
         schema:
           type: string
           enum:
@@ -4614,7 +4645,6 @@ paths:
           - banned
           x-arthome-vocabulary-source: AUDIENCE_SANCTIONS
       - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
@@ -4637,7 +4667,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:32:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 items:
                 - id: 019928e1-0000-7000-8000-000000000001
@@ -4652,10 +4682,25 @@ paths:
                 page:
                   page: 1
                   pageSize: 20
-                  totalItems: 934
-                  totalPages: 47
+                  totalItems: 1
+                  totalPages: 1
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/audience/{memberId}/sanction:
     post:
       operationId: sanctionAudienceMember
@@ -4673,6 +4718,9 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: memberId
@@ -4681,10 +4729,10 @@ paths:
         schema:
           type: string
           format: uuid
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -4736,7 +4784,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:33:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   id: 019928e1-0000-7000-8000-000000000001
@@ -4744,11 +4792,49 @@ paths:
                   sanction: muted
                   sanctionExpiresAt: '2026-09-21T20:30:00Z'
                   messagesCount: 0
+                  firstSeenAt: '2026-02-11T20:10:00Z'
+                  subscriberTier: pass
+                  holdsSeat: true
                   present: true
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/moderation/banned-words:
     post:
       operationId: addBannedWord
@@ -4766,12 +4852,15 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       requestBody:
         required: true
         content:
@@ -4813,14 +4902,51 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:34:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   word: exemple
                   reprocessing: true
                   estimatedAffectedMessages: 312
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/channels/{channelId}/moderation/banned-words/{word}:
     delete:
       operationId: removeBannedWord
@@ -4831,6 +4957,9 @@ paths:
       - chat
       tags:
       - moderation
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/ChannelId'
       - name: word
@@ -4838,10 +4967,16 @@ paths:
         required: true
         schema:
           type: string
-      - $ref: '#/components/parameters/Surface'
-      - $ref: '#/components/parameters/IfRightsVersion'
-      - $ref: '#/components/parameters/Traceparent'
       - $ref: '#/components/parameters/IdempotencyKey'
+      - name: expectedVersion
+        in: query
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/IfRightsVersion'
       responses:
         '200':
           description: Word removed.
@@ -4860,12 +4995,45 @@ paths:
                       additionalProperties: {}
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:35:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
                 data:
                   deleted: true
+          headers:
+            X-Arthome-Rights-Version:
+              $ref: '#/components/headers/RightsVersion'
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: |
+            Right absent, rights stale, access revoked, or channel left. Three distinct codes —
+            `api.forbidden`, `api.rights_version_stale`, `CHANNEL_ACCESS_REVOKED` — because the person must know
+            whether to reload, to phone someone, or to give up.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/ApiRightsVersionStaleError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                api.rights_version_stale:
+                  $ref: '#/components/examples/ApiRightsVersionStaleError'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/chat/messages:
     get:
       operationId: listStudioChatMessages

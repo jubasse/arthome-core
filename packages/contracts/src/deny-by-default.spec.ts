@@ -74,7 +74,6 @@ const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
 ];
 
 const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
-  'addBannedWord',
   'claimModerationItem',
   'countersignBankChange',
   'createReauthToken',
@@ -87,7 +86,6 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'getStudioBootstrap',
   'listDuties',
   'listInbox',
-  'listModerationQueue',
   'listReauthFactors',
   'listStudioChanges',
   'listStudioDevices',
@@ -95,14 +93,11 @@ const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'refundSeat',
   'registerStudioPushToken',
   'releaseModerationItem',
-  'removeBannedWord',
   'requestPasswordResetStudio',
   'resolveIncident',
   'respondToInvitation',
   'revokeDateAccess',
   'revokeStudioDevice',
-  'sanctionAudienceMember',
-  'searchAudience',
   'settleModerationItem',
   'signInStudio',
   'signOutStudio',

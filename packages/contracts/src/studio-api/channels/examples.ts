@@ -1,19 +1,25 @@
 import type { z } from 'zod';
 
 import {
+  AudienceSanction,
   ChatMode,
   CrewRole,
   DisplayState,
   FilterSeverity,
   Locale,
   MemberRole,
+  ModerationReason,
+  PlanTier,
   Surface,
   TaxJurisdictionLevel,
   TaxSupplyKind,
 } from '@arthome/core';
 
 import type {
+  AddBannedWordBody,
   AgendaList,
+  BannedWordAddition,
+  SanctionAudienceMemberBody,
   CloseReconciliationPeriodBody,
   PayoutPage,
   ReconciliationClosure,
@@ -35,7 +41,10 @@ import type {
   UpsertMerchItemBody,
 } from './schemas.js';
 import {
+  AddBannedWordBodySchema,
   AgendaListSchema,
+  BannedWordAdditionSchema,
+  SanctionAudienceMemberBodySchema,
   CloseReconciliationPeriodBodySchema,
   PayoutPageSchema,
   ReconciliationClosureSchema,
@@ -58,7 +67,7 @@ import {
 } from './schemas.js';
 import type { ModuleExamples } from '../../openapi/docs.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
-import { JournalEntrySchema } from '../../studio-desk/index.js';
+import { AudienceMemberSchema, JournalEntrySchema } from '../../studio-desk/index.js';
 import { DashboardScreenSchema, PayoutLineSchema } from '../../studio-money/index.js';
 import { EventsRowSchema, MerchItemAdminSchema } from '../../studio-stage/index.js';
 
@@ -375,6 +384,32 @@ const requestChannelExportBody: RequestChannelExportBody = {
   to: '2026-09-30',
 };
 
+const audienceMember: z.output<typeof AudienceMemberSchema> = {
+  id: '019928e1-0000-7000-8000-000000000001',
+  handle: '@anon.7742',
+  sanction: AudienceSanction.MUTED,
+  sanctionExpiresAt: '2026-09-21T20:30:00Z',
+  messagesCount: 0,
+  firstSeenAt: '2026-02-11T20:10:00Z',
+  subscriberTier: PlanTier.PASS,
+  holdsSeat: true,
+  present: true,
+};
+
+const sanctionAudienceMemberBody: SanctionAudienceMemberBody = {
+  kind: AudienceSanction.MUTED,
+  expiresAt: '2026-09-21T20:30:00Z',
+  reason: ModerationReason.HARASSMENT,
+};
+
+const addBannedWordBody: AddBannedWordBody = { word: 'exemple', retroactive: true };
+
+const bannedWordAddition: BannedWordAddition = {
+  word: 'exemple',
+  reprocessing: true,
+  estimatedAffectedMessages: 312,
+};
+
 export const channelsExamples: ModuleExamples = [
   [ChannelReplaySchema, [channelReplay]],
   [ChannelIdentitySchema, [channelIdentity]],
@@ -397,6 +432,10 @@ export const channelsExamples: ModuleExamples = [
   [StatsAnswerSchema, [statsAnswer]],
   [AgendaListSchema, [agendaList]],
   [PayoutLineSchema, [payoutLine]],
+  [AudienceMemberSchema, [audienceMember]],
+  [SanctionAudienceMemberBodySchema, [sanctionAudienceMemberBody]],
+  [AddBannedWordBodySchema, [addBannedWordBody]],
+  [BannedWordAdditionSchema, [bannedWordAddition]],
   [PayoutPageSchema, [payoutPage]],
   [RequestBankChangeBodySchema, [requestBankChangeBody]],
   [CloseReconciliationPeriodBodySchema, [closeReconciliationPeriodBody]],

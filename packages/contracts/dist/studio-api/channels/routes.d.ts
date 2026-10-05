@@ -1,4 +1,4 @@
-import type { ChangeMemberRolesRoute, CloseReconciliationPeriodRoute, GetChannelAgendaRoute, GetChannelDashboardRoute, GetChannelSettingsRoute, GetChannelStatsRoute, InviteMemberRoute, ListChannelEventsRoute, ListChannelJournalRoute, ListChannelMembersRoute, ListChannelMerchItemsRoute, ListChannelReplaysRoute, ListPayoutsRoute, RemoveMemberRoute, RequestBankChangeRoute, RequestChannelExportRoute, TransferChannelOwnershipRoute, UpdateChannelIdentityRoute, UpdateChannelSettingsRoute, UpsertMerchItemRoute } from './types.js';
+import type { AddBannedWordRoute, ChangeMemberRolesRoute, CloseReconciliationPeriodRoute, GetChannelAgendaRoute, GetChannelDashboardRoute, GetChannelSettingsRoute, GetChannelStatsRoute, InviteMemberRoute, ListChannelEventsRoute, ListChannelJournalRoute, ListChannelMembersRoute, ListChannelMerchItemsRoute, ListChannelReplaysRoute, ListModerationQueueRoute, ListPayoutsRoute, RemoveBannedWordRoute, RemoveMemberRoute, RequestBankChangeRoute, RequestChannelExportRoute, SanctionAudienceMemberRoute, SearchAudienceRoute, TransferChannelOwnershipRoute, UpdateChannelIdentityRoute, UpdateChannelSettingsRoute, UpsertMerchItemRoute } from './types.js';
 export declare const listChannelReplays: ListChannelReplaysRoute;
 export declare const getChannelSettings: GetChannelSettingsRoute;
 export declare const updateChannelSettings: UpdateChannelSettingsRoute;
@@ -19,4 +19,9 @@ export declare const listPayouts: ListPayoutsRoute;
 export declare const requestBankChange: RequestBankChangeRoute;
 export declare const closeReconciliationPeriod: CloseReconciliationPeriodRoute;
 export declare const requestChannelExport: RequestChannelExportRoute;
+export declare const listModerationQueue: ListModerationQueueRoute;
+export declare const searchAudience: SearchAudienceRoute;
+export declare const sanctionAudienceMember: SanctionAudienceMemberRoute;
+export declare const addBannedWord: AddBannedWordRoute;
+export declare const removeBannedWord: RemoveBannedWordRoute;
 //# sourceMappingURL=routes.d.ts.map

@@ -112,4 +112,29 @@ export const channelsDocs: ModuleDocs = {
       '**An asynchronous job** (BullMQ **internal to its service**), never a synchronous download:\nover 24 months that is not tenable. The URL returned is **signed, short-lived, and usable\nwithout a session cookie** — an export protected by a cookie is undownloadable from the native\nshell.\n',
     upstream: [Service.PAYOUTS, Service.CATALOG, Service.CHAT],
   },
+  listModerationQueue: {
+    description:
+      "**A moderation queue grows while it is being read.** Offset pagination duplicates rows there\nand skips others — **mechanically, not exceptionally**. It is a stream, even hosted in the\nstudio, hence a cursor (D-010).\n\nThe **separate total** (`pendingCount`) feeds the badge: it is not counted over the current\npage, otherwise the bottom bar would display the number of rows loaded.\n\n**Other people's claims are visible**: `claimedBy` and `claimExpiresAt` arrive on the same\nchannel, with the name of whoever is acting. Without that, two moderators work blind to each\nother and collide on every row.\n",
+    upstream: [Service.CHAT],
+  },
+  searchAudience: {
+    description:
+      '**A collection queryable in its own right, not a projection of the chat**: the console looks\nfor "a viewer **present, who has not written**". Thousands of nicknames, hence **server-side\nsearch is mandatory**.\n',
+    upstream: [Service.CHAT],
+  },
+  sanctionAudienceMember: {
+    description:
+      '**The sanction bears on the person, within a channel**: the same person is banned at one\nartist\'s and welcome at another\'s. That is why it belongs to `chat` and not to `identity` —\nhousing the sanction there would force every verdict, the most frequent gesture of a saturated\nlive show, into a cross-service write to the most sensitive service in the system.\n\n**A sanction carries an instant of expiry, never a label.** "No limit", 1 min, 10 min, 1 h and\na free-form duration are **a single field**, computed once.\n',
+    upstream: [Service.CHAT],
+  },
+  addBannedWord: {
+    description:
+      '**The ambiguity is settled: retroactive processing is asynchronous.** The command answers\n**immediately** with `reprocessing: true` and the **estimated** number of messages affected;\nthe new queue items arrive over the real-time channel, marked `origin: retroactive_filter` so\nthe log can tell them apart from a human decision.\n\nReason: a synchronous reclassification over thousands of messages **would block the command in\nthe middle of a live show**.\n',
+    upstream: [Service.CHAT],
+  },
+  removeBannedWord: {
+    description:
+      'Removal **does not republish** messages already removed: a moderation decision stays a fact.',
+    upstream: [Service.CHAT],
+  },
 };

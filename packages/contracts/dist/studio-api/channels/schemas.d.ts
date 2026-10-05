@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CHAT_MODES, FILTER_SEVERITIES, MEMBER_ROLES, PAYOUT_STATES } from '@arthome/core';
+import { AUDIENCE_SANCTIONS, CHAT_MODES, FILTER_SEVERITIES, MEMBER_ROLES, MODERATION_REASONS, PAYOUT_STATES } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
 import { StudioEnvelopeMetaSchema } from '../../envelope/index.js';
@@ -191,5 +191,31 @@ export type RequestBankChangeBody = z.output<typeof RequestBankChangeBodySchema>
 export type CloseReconciliationPeriodBody = z.output<typeof CloseReconciliationPeriodBodySchema>;
 export type ReconciliationClosure = z.output<typeof ReconciliationClosureSchema>;
 export type RequestChannelExportBody = z.output<typeof RequestChannelExportBodySchema>;
+declare const MODERATION_QUEUE_FILTERS: readonly ["all", "pending", "settled"];
+export declare const ModerationDateParameter: QueryParameter<'dateId', z.ZodString>;
+export declare const ModerationQueueFilterParameter: QueryParameter<'filter', z.ZodDefault<VocabularyIn<typeof MODERATION_QUEUE_FILTERS>>>;
+export declare const ModerationSearch: QueryParameter<'q', z.ZodString>;
+export declare const AudienceSearch: QueryParameter<'q', z.ZodString>;
+export declare const PresentOnDateParameter: QueryParameter<'presentOnDateId', z.ZodString>;
+export declare const AudienceSanctionParameter: QueryParameter<'sanction', VocabularyIn<typeof AUDIENCE_SANCTIONS>>;
+export declare const AudienceMemberIdParameter: PathParameter<'memberId', z.ZodString>;
+export declare const SanctionAudienceMemberBodySchema: z.ZodObject<{
+    kind: VocabularyIn<typeof AUDIENCE_SANCTIONS>;
+    expiresAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    reason: z.ZodOptional<VocabularyIn<typeof MODERATION_REASONS>>;
+}, z.core.$strip>;
+export declare const BannedWordParameter: PathParameter<'word', z.ZodString>;
+export declare const AddBannedWordBodySchema: z.ZodObject<{
+    word: z.ZodString;
+    retroactive: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
+}, z.core.$strip>;
+export declare const BannedWordAdditionSchema: z.ZodOptional<z.ZodObject<{
+    word: z.ZodOptional<z.ZodString>;
+    reprocessing: z.ZodOptional<z.ZodBoolean>;
+    estimatedAffectedMessages: z.ZodOptional<z.ZodInt>;
+}, z.core.$loose>>;
+export type SanctionAudienceMemberBody = z.output<typeof SanctionAudienceMemberBodySchema>;
+export type AddBannedWordBody = z.output<typeof AddBannedWordBodySchema>;
+export type BannedWordAddition = z.output<typeof BannedWordAdditionSchema>;
 export {};
 //# sourceMappingURL=schemas.d.ts.map

@@ -1,6 +1,14 @@
 import { z } from 'zod';
 
-import { CHAT_MODES, FILTER_SEVERITIES, MEMBER_ROLES, PAYOUT_STATES } from '@arthome/core';
+import {
+  AUDIENCE_SANCTIONS,
+  CHAT_MODES,
+  FILTER_SEVERITIES,
+  MEMBER_ROLES,
+  MODERATION_REASONS,
+  OrderState,
+  PAYOUT_STATES,
+} from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import {
   InstantOut,
@@ -657,3 +665,115 @@ export type RequestBankChangeBody = z.output<typeof RequestBankChangeBodySchema>
 export type CloseReconciliationPeriodBody = z.output<typeof CloseReconciliationPeriodBodySchema>;
 export type ReconciliationClosure = z.output<typeof ReconciliationClosureSchema>;
 export type RequestChannelExportBody = z.output<typeof RequestChannelExportBodySchema>;
+
+const MODERATION_QUEUE_FILTERS = ['all', 'pending', 'settled'] as const;
+
+export const ModerationDateParameter: QueryParameter<'dateId', z.ZodString> = {
+  name: 'dateId',
+  in: 'query',
+  required: false,
+  schema: uuidIn(),
+};
+
+export const ModerationQueueFilterParameter: QueryParameter<
+  'filter',
+  z.ZodDefault<VocabularyIn<typeof MODERATION_QUEUE_FILTERS>>
+> = {
+  name: 'filter',
+  in: 'query',
+  required: false,
+  schema: localVocabulary(
+    MODERATION_QUEUE_FILTERS,
+    "A sort or filter key. It is a property of THIS endpoint's list — which orders it offers — not of the domain, and adding one is an endpoint change rather than a vocabulary change.",
+  ).default(OrderState.PENDING),
+};
+
+export const ModerationSearch: QueryParameter<'q', z.ZodString> = searchText({
+  description: '**Server-side** search on the nickname and the text.',
+});
+
+export const AudienceSearch: QueryParameter<'q', z.ZodString> = searchText();
+
+export const PresentOnDateParameter: QueryParameter<'presentOnDateId', z.ZodString> = {
+  name: 'presentOnDateId',
+  in: 'query',
+  required: false,
+  schema: uuidIn(),
+};
+
+export const AudienceSanctionParameter: QueryParameter<
+  'sanction',
+  VocabularyIn<typeof AUDIENCE_SANCTIONS>
+> = {
+  name: 'sanction',
+  in: 'query',
+  required: false,
+  schema: vocabularyIn(AUDIENCE_SANCTIONS).meta({
+    'x-arthome-vocabulary-source': 'AUDIENCE_SANCTIONS',
+  }),
+};
+
+export const AudienceMemberIdParameter: PathParameter<'memberId', z.ZodString> = {
+  name: 'memberId',
+  in: 'path',
+  required: true,
+  schema: uuidIn(),
+};
+
+export const SanctionAudienceMemberBodySchema: z.ZodObject<
+  {
+    kind: VocabularyIn<typeof AUDIENCE_SANCTIONS>;
+    expiresAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    reason: z.ZodOptional<VocabularyIn<typeof MODERATION_REASONS>>;
+  },
+  z.core.$strip
+> = z.object({
+  kind: vocabularyIn(AUDIENCE_SANCTIONS).meta({
+    'x-arthome-vocabulary-source': 'AUDIENCE_SANCTIONS',
+  }),
+  expiresAt: z
+    .string()
+    .regex(new RegExp('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$'))
+    .nullable()
+    .meta({ format: 'date-time' })
+    .optional(),
+  reason: vocabularyIn(MODERATION_REASONS)
+    .meta({ 'x-arthome-vocabulary-source': 'MODERATION_REASONS' })
+    .optional(),
+});
+
+export const BannedWordParameter: PathParameter<'word', z.ZodString> = {
+  name: 'word',
+  in: 'path',
+  required: true,
+  schema: z.string(),
+};
+
+export const AddBannedWordBodySchema: z.ZodObject<
+  { word: z.ZodString; retroactive: z.ZodOptional<z.ZodDefault<z.ZodBoolean>> },
+  z.core.$strip
+> = z.object({
+  word: z.string().min(1).max(60),
+  retroactive: z.boolean().default(false).optional(),
+});
+
+export const BannedWordAdditionSchema: z.ZodOptional<
+  z.ZodObject<
+    {
+      word: z.ZodOptional<z.ZodString>;
+      reprocessing: z.ZodOptional<z.ZodBoolean>;
+      estimatedAffectedMessages: z.ZodOptional<z.ZodInt>;
+    },
+    z.core.$loose
+  >
+> = z
+  .looseObject({
+    word: z.string().optional(),
+    reprocessing: z.boolean().optional(),
+    estimatedAffectedMessages: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
+  })
+  .optional();
+
+export type SanctionAudienceMemberBody = z.output<typeof SanctionAudienceMemberBodySchema>;
+export type AddBannedWordBody = z.output<typeof AddBannedWordBodySchema>;
+export type BannedWordAddition = z.output<typeof BannedWordAdditionSchema>;

@@ -74,7 +74,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
 ];
 
 const STUDIO_STILL_INLINE: readonly string[] = [
-  'addBannedWord',
   'claimModerationItem',
   'countersignBankChange',
   'createDateDraft',
@@ -88,7 +87,6 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'getStudioBootstrap',
   'listDuties',
   'listInbox',
-  'listModerationQueue',
   'listReauthFactors',
   'listStudioChanges',
   'listStudioDevices',
@@ -96,14 +94,11 @@ const STUDIO_STILL_INLINE: readonly string[] = [
   'refundSeat',
   'registerStudioPushToken',
   'releaseModerationItem',
-  'removeBannedWord',
   'requestPasswordResetStudio',
   'resolveIncident',
   'respondToInvitation',
   'revokeDateAccess',
   'revokeStudioDevice',
-  'sanctionAudienceMember',
-  'searchAudience',
   'settleModerationItem',
   'signInStudio',
   'signOutStudio',

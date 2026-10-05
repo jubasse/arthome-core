@@ -1,8 +1,14 @@
 import { ApiErrorCode, ChannelErrorCode, DomainErrorCode, PayoutErrorCode } from '@arthome/core';
 
 import {
+  AddBannedWordBodySchema,
   AgendaListSchema,
   AgendaPeriod,
+  AudienceMemberIdParameter,
+  AudienceSanctionParameter,
+  AudienceSearch,
+  BannedWordAdditionSchema,
+  BannedWordParameter,
   ChangeMemberRolesBodySchema,
   ChannelDefaultsSchema,
   ChannelMemberPageSchema,
@@ -20,15 +26,20 @@ import {
   InviteMemberBodySchema,
   JournalPeriod,
   MemberRoleParameter,
+  ModerationDateParameter,
+  ModerationQueueFilterParameter,
+  ModerationSearch,
   MemberSearch,
   OwnershipTransferSchema,
   PayoutPageSchema,
   PayoutStateParameter,
+  PresentOnDateParameter,
   PersonIdParameter,
   ReconciliationClosureSchema,
   ReconciliationPeriodIdParameter,
   RequestBankChangeBodySchema,
   RequestChannelExportBodySchema,
+  SanctionAudienceMemberBodySchema,
   StatsAnswerSchema,
   StatsPeriod,
   StatsPeriodPresetParameter,
@@ -42,6 +53,7 @@ import {
   UpsertMerchItemBodySchema,
 } from './schemas.js';
 import type {
+  AddBannedWordRoute,
   ChangeMemberRolesRoute,
   CloseReconciliationPeriodRoute,
   GetChannelAgendaRoute,
@@ -54,18 +66,26 @@ import type {
   ListChannelMembersRoute,
   ListChannelMerchItemsRoute,
   ListChannelReplaysRoute,
+  ListModerationQueueRoute,
   ListPayoutsRoute,
+  RemoveBannedWordRoute,
   RemoveMemberRoute,
   RequestBankChangeRoute,
   RequestChannelExportRoute,
+  SanctionAudienceMemberRoute,
+  SearchAudienceRoute,
   TransferChannelOwnershipRoute,
   UpdateChannelIdentityRoute,
   UpdateChannelSettingsRoute,
   UpsertMerchItemRoute,
 } from './types.js';
-import { Deleted, Freshness, cache, pages, recentAuth } from '../../http/index.js';
+import { Deleted, Freshness, cache, cursor, pages, recentAuth } from '../../http/index.js';
 import { ChannelMemberSchema } from '../../studio-access/index.js';
-import { JournalEntrySchema } from '../../studio-desk/index.js';
+import {
+  AudienceMemberSchema,
+  JournalEntrySchema,
+  ModerationItemSchema,
+} from '../../studio-desk/index.js';
 import {
   BankChangeRequestSchema,
   DashboardScreenSchema,
@@ -323,3 +343,54 @@ export const requestChannelExport: RequestChannelExportRoute = payoutsChannel
     follow: 'getChannelExport',
     answer: 'Export queued.',
   });
+
+const moderationChannel = channels
+  .tags(StudioTag.MODERATION)
+  .resource('channels', { id: ChannelIdParameter });
+const moderation = moderationChannel.path('moderation');
+
+export const listModerationQueue: ListModerationQueueRoute = moderation.single('queue').findAll({
+  operationId: 'listModerationQueue',
+  summary: 'The moderation queue — **by cursor**, the first exception to page + total.',
+  item: ModerationItemSchema,
+  paging: cursor({ maxLimit: 200 }),
+  parameters: [ModerationDateParameter, ModerationQueueFilterParameter, ModerationSearch],
+  answer: 'A page of the queue, plus the total for the badge.',
+});
+
+const audience = moderationChannel.resource('audience', { id: AudienceMemberIdParameter });
+
+export const searchAudience: SearchAudienceRoute = audience.findAll({
+  operationId: 'searchAudience',
+  summary: "A channel's audience — searchable, including those who have not written.",
+  item: AudienceMemberSchema,
+  paging: pages({ maxPageSize: 100 }),
+  parameters: [AudienceSearch, PresentOnDateParameter, AudienceSanctionParameter],
+  answer: 'A page of the audience.',
+});
+
+export const sanctionAudienceMember: SanctionAudienceMemberRoute = audience.action('sanction', {
+  operationId: 'sanctionAudienceMember',
+  summary: 'Sanctions a person — per channel, with an instant of expiry.',
+  body: SanctionAudienceMemberBodySchema,
+  response: AudienceMemberSchema,
+  answer: 'Sanction applied.',
+});
+
+const bannedWords = moderation.resource('banned-words', { id: BannedWordParameter });
+
+export const addBannedWord: AddBannedWordRoute = bannedWords.create({
+  operationId: 'addBannedWord',
+  summary: 'Adds a word to the dictionary — the reclassification is asynchronous.',
+  body: AddBannedWordBodySchema,
+  item: BannedWordAdditionSchema,
+  status: 202,
+  answer: 'Word added; the reclassification runs in the background.',
+});
+
+export const removeBannedWord: RemoveBannedWordRoute = bannedWords.delete({
+  operationId: 'removeBannedWord',
+  summary: 'Removes a word from the dictionary.',
+  response: Deleted,
+  answer: 'Word removed.',
+});
