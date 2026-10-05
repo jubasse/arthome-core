@@ -105,10 +105,13 @@ type BuiltResponses<E extends Responses, D extends { readonly responses: Respons
 > &
   D['responses'];
 
-/** The codes of each error status the route declares, where any: what the server may refuse with. */
-type ErrorCodesMember<R> = [keyof ErrorCodesIn<R>] extends [never]
-  ? unknown
-  : { readonly errorCodes: ErrorCodesIn<R> };
+/**
+ * The codes of each error status the route declares: what the server may refuse with. Always
+ * present, possibly empty: testing it for emptiness cost 2.3M type instantiations over the two apis.
+ */
+interface ErrorCodesMember<R> {
+  readonly errorCodes: ErrorCodesIn<R>;
+}
 
 /** The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors. */
 export type BuiltRoute<
@@ -667,7 +670,7 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
         ...(hasBody && { bodyLimit: rest.bodyLimit ?? settings.bodyLimit ?? DEFAULT_BODY_LIMIT }),
         ...(parameters.length > 0 && { parameters }),
         responses,
-        ...(Object.keys(errorCodes).length > 0 && { errorCodes }),
+        errorCodes,
       });
     },
     resource: (name: string, options: ResourceOptions<never, never>, closure?: Closure) => {

@@ -124,7 +124,7 @@ Declarations: `dist/http/index.d.ts` — 178 exported names.
 - `ErrorDefinition` (interface)
 - `ErrorList` (type) — `type ErrorList<Allowed extends string> = readonly Allowed[];` — The errors a route declares: a list of codes, each answered with its status from 'ERRORS'.
 - `ErrorModel` (interface) — An api's error vocabulary: the response it documents once per status (a component, so a route that adds nothing keeps its '$ref'), the code…
-- `ErrorResponse` (type) — `type ErrorResponse<C extends string> = JsonResponse<z.ZodType<ErrorBody<C>>>;` — An error response whose body is one of the envelopes of 'C'.
+- `ErrorResponse` (type) — `type ErrorResponse<C extends string> = JsonResponse<z.ZodType<ErrorBody<C>>> & CodedResponse<C>;` — An error response whose body is one of the envelopes of 'C'.
 - `ErrorStatus` (type) — `type ErrorStatus = 400 | 401 | 402 | 403 | 404 | 409 | 410 | 412 | 413 | 415 | 422 | 423 | 429 | 500 | 502 | 503 | 504;`
 - `ErrorStatusMap` (interface) — The status of each code, as a type, so a route's codes are grouped by status at compile time.
 - `ErrorsInput` (type) — `type ErrorsInput<Allowed extends string> = Readonly<Partial<Record<ErrorStatus, Response | readonly Allowed[]>>>;` — What a group declares where a response must be written whole (a foreign error format), keyed by status.

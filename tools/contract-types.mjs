@@ -429,7 +429,9 @@ function typesJob(file) {
           .map(({ name: status, text }) => `    ${status}: ${text};`);
         members.push(`  responses: {\n${own.join('\n')}\n  };`);
       } else if (member === 'errorCodes') {
-        members.push(`  errorCodes: ${errorCodesText(type, declaration)};`);
+        if (type.getProperties().length > 0) {
+          members.push(`  errorCodes: ${errorCodesText(type, declaration)};`);
+        }
       } else if (type.isStringLiteral()) {
         members.push(`  ${member}: '${type.value}';`);
       } else if (type.isNumberLiteral()) {

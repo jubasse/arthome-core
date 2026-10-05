@@ -50,10 +50,13 @@ type OwnErrors<D> = D extends {
 type BuiltResponses<E extends Responses, D extends {
     readonly responses: Responses;
 }> = Omit<MergedErrors<E, OwnErrors<D>>, keyof D['responses']> & D['responses'];
-/** The codes of each error status the route declares, where any: what the server may refuse with. */
-type ErrorCodesMember<R> = [keyof ErrorCodesIn<R>] extends [never] ? unknown : {
+/**
+ * The codes of each error status the route declares: what the server may refuse with. Always
+ * present, possibly empty: testing it for emptiness cost 2.3M type instantiations over the two apis.
+ */
+interface ErrorCodesMember<R> {
     readonly errorCodes: ErrorCodesIn<R>;
-};
+}
 /** The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors. */
 export type BuiltRoute<V extends number, P extends readonly Parameter[], E extends Responses, D extends Omit<BuiltRouteDefinition, 'errors'> & {
     readonly errors?: unknown;

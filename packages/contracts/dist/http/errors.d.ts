@@ -21,7 +21,7 @@ export type ErrorBody<C extends string> = C extends string ? {
     readonly servedAt: string;
 } : never;
 /** An error response whose body is one of the envelopes of `C`. */
-export type ErrorResponse<C extends string> = JsonResponse<z.ZodType<ErrorBody<C>>>;
+export type ErrorResponse<C extends string> = JsonResponse<z.ZodType<ErrorBody<C>>> & CodedResponse<C>;
 /** The codes an error response declares, or `never` for a response that does not name them. */
 export type CodesOf<R> = R extends JsonResponse<infer S> ? z.output<S> extends {
     readonly error: {
@@ -42,7 +42,7 @@ export type GroupedByStatus<C extends string> = {
 type NamedCode<R> = R extends {
     readonly '~code'?: infer C;
 } ? C extends string ? string extends C ? never : C : never : never;
-type CodesInResponse<R> = CodesOf<R> | NamedCode<R>;
+type CodesInResponse<R> = NamedCode<R>;
 /** The codes each error response of `R` names in its type, by status: what a route's `errorCodes` holds. */
 export type ErrorCodesIn<R> = {
     readonly [S in keyof R as [CodesInResponse<R[S]>] extends [never] ? never : S]: readonly CodesInResponse<R[S]>[];
