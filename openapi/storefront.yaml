@@ -7206,9 +7206,16 @@ paths:
         trigger another call.
 
         **`Cache-Control: no-store`.** A right read back from disk is a false right.
+
+        **Refused (`403`).** The code is one of the ten of the closed vocabulary of watch denials, and each produces a
+        different screen. On `watch.concurrent_limit_reached`, `params.activeSessions` carries the **list
+        of active sessions** so the surface can offer to release one: a bare refusal would leave the
+        viewer with no way out.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
+      tags:
+      - playback
       x-arthome-idempotency-exemption: |
         **Idempotency would be redundant here, because resumption already provides it.** An opening
         on a `deviceId` that holds a live lease **resumes that lease** and returns the same
@@ -7216,8 +7223,6 @@ paths:
         by memorisation. Adding a key would additionally memorise a `PlaybackTicket` — hence a signed
         token and its expiry instant — in a 24-hour store, for a response the contract says is
         **never** cached.
-      tags:
-      - playback
       security:
       - sessionCookie: []
         csrfToken: []
@@ -7292,12 +7297,6 @@ paths:
       responses:
         '200':
           description: Right granted. The token, the lease and the complete screen.
-          headers:
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
-              description: '`no-store` is not an optimisation: it is what keeps the token out of the HTTP cache and out of the application snapshot taken when it goes to the background.'
           content:
             application/json:
               schema:
@@ -7311,8 +7310,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:05:00.000Z'
-                validUntil: '2026-09-21T19:07:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   sessionId: 019928f7-0000-7000-8000-000000000001
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
@@ -7338,37 +7336,30 @@ paths:
                     kind: main
                   subtitleTracks: []
                   incident: null
-        '403':
-          description: |
-            Right refused. The `code` is one of the ten in the closed vocabulary, and each produces a
-            different screen. On `watch.concurrent_limit_reached`, `params.activeSessions` carries the **list
-            of active sessions** so the surface can offer to release one: a bare refusal would leave the
-            viewer with no way out.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
-          content:
-            application/json:
+          headers:
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: watch.concurrent_limit_reached
-                  nature: refused
-                  params:
-                    allowed: 2
-                    activeSessions:
-                    - sessionId: 019928f7-0000-7000-8000-0000000000aa
-                      deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
-                      isCurrentDevice: false
-                      deviceLabel: Téléviseur du salon
-                      city: Paris
-                      openedAt: '2026-09-21T19:00:00Z'
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T19:05:00.000Z'
+                type: string
+                const: no-store
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
-        '503':
-          $ref: '#/components/responses/Unavailable'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/playback/sessions/{sessionId}/renew:
     post:
       operationId: renewPlaybackTicket
@@ -7383,16 +7374,21 @@ paths:
 
         **Four distinct refusal codes**, because the surface displays four different messages. A
         generic code would produce a false one three times out of four.
+
+        **Refused (`403`).** `SEAT_EXPIRED` · `watch.concurrent_limit_reached` · `identity.signed_out_elsewhere` ·
+        `watch.preview_exhausted` · `DATE_INTERRUPTED`. `identity.signed_out_elsewhere` is what the television
+        signed out from the web sees — **not a network error**. **Real window: up to 120 s** — see
+        `revokeDevice`.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
+      tags:
+      - playback
       x-arthome-idempotency-exemption: |
         **A renewal must produce a fresh window, never a memorised one.** Returning the original
         response would return a token already part-spent — and, at the worst moment, an already
         expired one — when the call exists precisely to obtain a new one. It is also this renewal
         that carries the concurrent-screen limit: replaying it from a store would bypass the count.
-      tags:
-      - playback
       security:
       - sessionCookie: []
         csrfToken: []
@@ -7422,7 +7418,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:05:45.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   expiresAt: '2026-09-21T19:07:45.000Z'
                   renewAfterSec: 45
@@ -7431,29 +7427,39 @@ paths:
                     queryToken: Expires=1790000120&Signature=def
                     cookieSet: null
                   qualityCap: fhd
+          headers:
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Renewal refused. `SEAT_EXPIRED` · `watch.concurrent_limit_reached` · `identity.signed_out_elsewhere` ·
-            `watch.preview_exhausted` · `DATE_INTERRUPTED`. `identity.signed_out_elsewhere` is what the television
-            signed out from the web sees — **not a network error**. **Real window: up to 120 s** — see
-            `revokeDevice`.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
+            A write with the session cookie came without its `X-Arthome-Csrf` token, or with another
+            session's (`api.forbidden`). A write with a bearer token never meets it.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: identity.signed_out_elsewhere
-                  nature: refused
-                  params: {}
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T19:06:30.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/IdentitySignedOutElsewhereError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                identity.signed_out_elsewhere:
+                  $ref: '#/components/examples/IdentitySignedOutElsewhereError'
         '404':
           $ref: '#/components/responses/NotFound'
-        '503':
-          $ref: '#/components/responses/Unavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/playback/sessions/{sessionId}/release:
     post:
       operationId: releasePlayback
@@ -7469,12 +7475,12 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
+      tags:
+      - playback
       x-arthome-idempotency-exemption: |
         **Idempotent by nature, and nothing depends on it.** Releasing twice leaves the same state,
         and it is the **expiring lease** that is authoritative — this call merely speeds things up. A
         key would protect an effect that has neither accumulation nor consequence.
-      tags:
-      - playback
       security:
       - sessionCookie: []
         csrfToken: []
@@ -7489,30 +7495,22 @@ paths:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
       responses:
-        '200':
-          description: Released, or already released — both succeed.
-          content:
-            application/json:
-              schema:
-                allOf:
-                - $ref: '#/components/schemas/EnvelopeMeta'
-                - type: object
-                  properties:
-                    data:
-                      type: object
-                      properties:
-                        released:
-                          type: boolean
-                      additionalProperties: {}
-                  additionalProperties: {}
-              example:
-                servedAt: '2026-09-21T20:40:00.000Z'
-                data:
-                  released: true
+        '204':
+          description: Done.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/me/progress/{dateId}:
     put:
       operationId: recordPlaybackPosition
@@ -12094,9 +12092,11 @@ components:
           type: object
           properties:
             queryToken:
-              type:
-              - string
-              - 'null'
+              anyOf:
+              - type: string
+                format: password
+                x-arthome-sensitive: true
+              - type: 'null'
             cookieSet:
               type:
               - boolean
@@ -12240,9 +12240,11 @@ components:
           type: object
           properties:
             queryToken:
-              type:
-              - string
-              - 'null'
+              anyOf:
+              - type: string
+                format: password
+                x-arthome-sensitive: true
+              - type: 'null'
             cookieSet:
               type:
               - boolean
@@ -13192,6 +13194,60 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    IdentitySignedOutElsewhereError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.signed_out_elsewhere
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     ChatHoldersOnlyError:
       type: object
       properties:
@@ -13276,6 +13332,14 @@ components:
       value:
         error:
           code: chat.holders_only
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    IdentitySignedOutElsewhereError:
+      value:
+        error:
+          code: identity.signed_out_elsewhere
           nature: refused
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736

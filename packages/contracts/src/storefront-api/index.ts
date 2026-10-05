@@ -129,7 +129,7 @@ import {
   getAccountDeepLink,
   pollPairing,
 } from './pairing.js';
-import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
+import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback/routes.js';
 import { extendRail } from './rails/routes.js';
 import { listReplays } from './replays/routes.js';
 import { resolvePublicLink } from './resolve/routes.js';

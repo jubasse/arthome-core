@@ -104,7 +104,8 @@ export declare const STOREFRONT_RELAYED_CODES: readonly [
     typeof IdentityErrorCode.EMAIL_TAKEN,
     typeof IdentityErrorCode.INVALID_CREDENTIALS,
     typeof IdentityErrorCode.VERIFICATION_LINK_INVALID,
-    typeof ChatErrorCode.HOLDERS_ONLY
+    typeof ChatErrorCode.HOLDERS_ONLY,
+    typeof IdentityErrorCode.SIGNED_OUT_ELSEWHERE
 ];
 /** The codes a storefront operation may declare: only what a surface can be handed. */
 export type StorefrontRelayedCode = (typeof STOREFRONT_RELAYED_CODES)[number];

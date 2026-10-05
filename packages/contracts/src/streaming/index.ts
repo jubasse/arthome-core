@@ -38,6 +38,7 @@ import {
 } from '@arthome/core/schema';
 
 import { ChapterSchema, DateCardSchema } from '../catalog/index.js';
+import { sensitive } from '../http/marks.js';
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
 
 export const IncidentSchema: z.ZodNullable<
@@ -85,7 +86,7 @@ const playbackSignature = (): z.ZodObject<
   z.core.$loose
 > =>
   z.looseObject({
-    queryToken: z.string().nullable().optional(),
+    queryToken: sensitive(z.string()).nullable().optional(),
     cookieSet: z.boolean().nullable().optional(),
   });
 

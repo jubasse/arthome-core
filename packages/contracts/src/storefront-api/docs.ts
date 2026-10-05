@@ -17,6 +17,8 @@ import { liveDocs } from './live/docs.js';
 import { liveExamples } from './live/examples.js';
 import { meDocs } from './me/docs.js';
 import { meExamples } from './me/examples.js';
+import { playbackDocs } from './playback/docs.js';
+import { playbackExamples } from './playback/examples.js';
 import { railsDocs } from './rails/docs.js';
 import { railsExamples } from './rails/examples.js';
 import { replaysDocs } from './replays/docs.js';
@@ -144,6 +146,7 @@ export const storefrontDocs: ApiDocs = apiDocs({
   },
   modules: [
     statedMaturities,
+    playbackDocs,
     chatDocs,
     resolveDocs,
     railsDocs,
@@ -157,6 +160,7 @@ export const storefrontDocs: ApiDocs = apiDocs({
   ],
   examples: [
     sharedExamples,
+    playbackExamples,
     chatExamples,
     resolveExamples,
     railsExamples,

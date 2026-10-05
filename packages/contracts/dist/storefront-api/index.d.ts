@@ -9,7 +9,7 @@ import { getHomeScreen } from './home/routes.js';
 import { getLiveScreen } from './live/routes.js';
 import { addPasskey, addPaymentMethod, addToWatchlist, cancelAccountDeletion, clearReminder, createSavedSearch, deleteSavedSearch, followArtist, getAccountScreen, getExport, listFollowedArtists, listMyOrders, listMyReplays, listMyTickets, listNotifications, listSavedSearches, listWatchlist, markNotificationsRead, recordPlaybackPosition, removeFromWatchlist, removePasskey, removePaymentMethod, requestAccountDeletion, requestExport, revokeDevice, setReminder, signOutProfile, unfollowArtist, updateConsents, updateNotificationPreferences, updatePreferences, updateProfile, updateSavedSearch } from './me/routes.js';
 import { cancelPairing, createPairing, decidePairing, engagePairing, getAccountDeepLink, pollPairing } from './pairing.js';
-import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
+import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback/routes.js';
 import { extendRail } from './rails/routes.js';
 import { listReplays } from './replays/routes.js';
 import { resolvePublicLink } from './resolve/routes.js';
