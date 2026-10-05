@@ -72,7 +72,8 @@ is part of `pnpm run verify`.
 ## Adding or changing an operation
 
 Every operation of both contracts is declared once, in `src/storefront-api/` or `src/studio-api/`:
-one module per tag (`discovery.ts`, `payouts.ts`), the shared parameters, headers and responses in
+a module folder per URL block (`studio-api/dates/`, below) or, until it converts, one module per tag
+(`discovery.ts`, `payouts.ts`), the shared parameters, headers and responses in
 `components.ts`, the api itself and its component names in `index.ts`, and the document's
 introduction (`info`, `servers`, `tags`, the security schemes) in `docs.ts`, which also gathers what
 each module documents (below).
@@ -96,11 +97,11 @@ What only the maintainers need is a TypeScript comment; what the document says g
 A surface imports an api to call it, and the operations' prose and examples are dead weight there.
 What only the document reads is registered per module, beside the routes:
 
-- `<module>/docs.ts`: `export const datesDocs = { publishDate: { description, upstream } } satisfies
-  ModuleDocs`, the operation's prose and the services it calls (`x-arthome-upstream`), owning service
-  first. The one-line `summary` stays on the route.
-- `<module>/examples.ts`: typed example constants (`export const dateExample: StudioDate = { ... }`)
-  and `export const datesExamples = [[DateSchema, [dateExample]]] as const satisfies ModuleExamples`.
+- `<module>/docs.ts`: `export const datesDocs: ModuleDocs = { publishDate: { description, upstream } }`,
+  the operation's prose and the services it calls (`x-arthome-upstream`), owning service first. The
+  one-line `summary` stays on the route.
+- `<module>/examples.ts`: typed example constants (`const dateSheet: DateSheet = { ... }`) and
+  `export const datesExamples: ModuleExamples = [[DateSheetSchema, [dateSheet]]]`.
 - The api's `docs.ts` gathers them: `apiDocs({ info, servers, tags, securitySchemes, modules,
   examples })`. Only the emitter and the tests import it, and `pnpm run check:contract-docs` (in
   `verify`) fails when a subpath a surface imports reaches a docs or examples module, or `./openapi`.
@@ -345,27 +346,98 @@ compile errors that name the operation. Measured on the 32 routes under a date, 
 - **Deny by default is a ratchet**: `deny-by-default.spec.ts` lists the routes not yet declared through
   an identity or `.public()`; the list only shrinks, and the fan-out ends with it empty.
 
-### Converting a route
+### Converting a module
 
-1. Put the route under its scope: `studioV1.identity(operator).tags(...).headers(...).errors(...)`,
-   then `.resource('dates', { id })`, `.single('prices')`, `.path('panes')`.
-2. Replace `builder.defineRoute({ method, path, ... })` by the member (`date.single('prices').replace({
-   ... })`), drop the parameters the scope and the convention now add, drop `security`, and turn
-   `requestBody` into `body` and `example`.
-3. Keep the route's `Route<{ ... }>` annotation, and run
-   `node tools/sync-route-annotations.mjs <module.ts>`: it rewrites the four members a conversion
-   changes (`method`, `path`, `parameters`, `access`), drops a status the route no longer answers, and
-   adds the imports; `--check` fails when one is out of line. Then `pnpm run fix`.
-4. `pnpm run generate:openapi`, and read what moved. The documents grow by the derived errors and the
-   derived security, and are allowed to until the first client ships (`transport.md` §5.11).
+A module is the block of routes under one URL prefix, converted in one pass: `studio-api/dates/`
+holds everything under `/dates/{dateId}` and is the reference, so read it before starting. The
+routes keep their tags and their operation ids; they leave the tag modules they were declared in.
+
+| File | Holds | Written by |
+|---|---|---|
+| `schemas.ts` | named schemas (`DateTechPaneSchema`), named parameters (`ChapterIdParameter`), local vocabularies, and the types `X` (`z.output`) and `XIn` (`z.input`, only where it differs) of each `XSchema` | hand; `pnpm run generate:contract-types` adds the explicit types |
+| `examples.ts` | one typed example per schema the module accepts or answers, and `export const datesExamples: ModuleExamples = [[XSchema, [x]], ...]` | hand |
+| `docs.ts` | `export const datesDocs: ModuleDocs = { operationId: { description, upstream, ... } }` | `node tools/route-docs.mjs <api> <operationId>...` prints the entries |
+| `routes.ts` | the routes and nothing else | hand; the tool adds each annotation |
+| `types.ts` | each route's annotation, `GetDateSheetRoute` | `pnpm run generate:contract-types`, never edited; `check:contract-types` fails when stale |
+
+`routes.ts` never imports `examples.ts` or `docs.ts`: only the api's `docs.ts` does
+(`check:contract-docs`).
+
+1. **Docs.** `pnpm -r run build`, then `node tools/route-docs.mjs studio getDateSheet ...` and paste
+   its entries into `docs.ts`: the description, the upstream services, the idempotency exemption.
+   Move each stated maturity of these operations from the api's `docs.ts` into the module's, with its
+   reason. A route's 4xx prose that the description does not already say goes into the description.
+2. **Schemas.** Move every inline schema of the routes into `schemas.ts`, verbatim, so the document
+   does not move for nothing:
+   - a request body is `<OperationId>BodySchema`; on `update`, `replace` and `subresource().replace()`
+     of a shared record, drop its `expectedVersion`, which the convention adds; on an `action`, keep it;
+   - the data of an answer has a domain name when it is a record (`DateCrewPaneSchema`), else the
+     name of what happened (`CapacityTierOpeningSchema`); never redeclare what a subpath exports;
+   - a path or query parameter is an exported `XParameter` with its explicit type;
+   - a local vocabulary is a const tuple: `localVocabulary(values, reason)` on a request,
+     `vocabularyOutLocal(values, reason)` on an answer; a narrowing of a core vocabulary is a tuple
+     of its accessor members, typed member by member;
+   - a field only some callers see is `restricted(schema, right, meta)`, its own meta given there;
+   - a body carrying a re-authentication proof extends `ReauthProof`, and the route
+     `requires: [recentAuth()]`.
+3. **Examples.** Move each inline example onto the schema it shows: a request's `example` onto its
+   body, the `data` of an answer's example onto the data's schema. Type it (`const x: DateTechPane`, or
+   `z.output<typeof RunConsoleSchema>` for a subpath's schema) and register it once: the registry
+   refuses a schema registered twice in one api. Write in the current vocabulary
+   (`Surface.STUDIO_MOBILE`, never `'studio-mobile'`). Never write what is derived: the envelope
+   (`servedAt`, `rightsVersion`), a versioned write's `expectedVersion`, an error's example (the
+   registry `ERRORS` gives it). A factory's schema (`Deleted`, `Acknowledged`, `ReauthProof`) is
+   registered once, in the api's `docs.ts`.
+4. **Routes.** One builder for the block, its identity, headers and the errors every route answers
+   (`studioV1.identity(operator).headers(...).errors([ApiErrorCode.FORBIDDEN, ApiErrorCode.NOT_FOUND])`),
+   then a resource per tag (`.tags(StudioTag.RUN).resource('dates', { id: DateIdParameter })`). Each
+   route is a member, `single`, nested `resource` or `path` of it, and says only:
+   - `operationId` (the published name), `summary`, and `answer` (the success's description);
+   - `item`, `response` or `body`, each a named schema; `parameters`, each a named parameter;
+   - `errors`: every code the route refuses with beyond the derived ones, as a list; a status that
+     adds a code becomes a union with one example per code;
+   - `paging`, `sortable`, `filters`, `expand`, `cache(Freshness.X)` (never `x-arthome-freshness`),
+     `requires`, `status` (201 on an action that creates, 202 on a write only accepted),
+     `idempotent: false` (its reason in `docs.ts` as `idempotencyExemption`);
+   - an action that only acknowledges answers 204 (no `response`); a removal answers `Deleted`;
+     `Acknowledged` only where clients already read `accepted`; a union with a discriminator is
+     `tagged(key, variants)`.
+
+   Never: a description, `x-arthome-upstream` or `x-arthome-maturity` (they are in `docs.ts`), an
+   inline schema, parameter or example, a `responses` written by hand, `security`, a hand error
+   response.
+5. **Move them out.** Delete the routes from their old modules, then
+   `node tools/prune-unused.mjs <old modules>` drops what nothing uses any more. List the module's
+   routes in the api's `index.ts` by name, where they were (the document keeps its order), add the
+   module to `routes-listed.spec.ts`, its docs and examples to the api's `docs.ts` (`modules`,
+   `examples`), and move its `tools/enum-literals.allow.json` entries to `routes.ts`.
+6. **Generate and check.** `pnpm run generate:contract-types`, `pnpm run fix`, `pnpm -r run build`,
+   `pnpm run generate:openapi`, `pnpm exec arthome-generate-map`, `pnpm run verify`.
+7. **Read what moved.** Each operation keeps its path, method, statuses and parameters. Examples,
+   the order of `required`, the coded error unions and what is derived (security, errors, headers)
+   may move until the first client ships (`transport.md` §5.11); the commit lists them per
+   operation. A change of wire shape (a field renamed, a page's envelope) is a ruling: ask first.
 
 ```ts
-const date = publicationRoutes.resource('dates', { id: DateIdParameter });
+const dates = studioV1
+  .identity(operator)
+  .headers(SurfaceParameter, TraceparentParameter)
+  .errors([ApiErrorCode.FORBIDDEN, ApiErrorCode.NOT_FOUND]);
+const runDate = dates.tags(StudioTag.RUN).resource('dates', { id: DateIdParameter });
 
-export const setDateReplayPolicy: Route<{ /* the annotation, synced */ }> = date
-  .single('replay-policy')
-  .replace({ operationId: 'setDateReplayPolicy', body: SetReplayPolicyBody, item: PublicationSchema });
+export const rehearseRun: RehearseRunRoute = runDate.single('run').action('rehearse', {
+  operationId: 'rehearseRun',
+  summary: 'Starts the rehearsal.',
+  body: RunTransitionBodySchema,
+  response: RunConsoleSchema,
+  answer: 'The console up to date.',
+  errors: [CatalogErrorCode.TECHNICAL_CHECK_REQUIRED, DomainErrorCode.STATE_CONFLICT],
+});
 ```
+
+A route left in a tag module keeps its hand annotation until its module converts:
+`node tools/sync-route-annotations.mjs <module.ts>` rewrites the four members a scope changes
+(`method`, `path`, `parameters`, `access`).
 
 ### Versions
 
