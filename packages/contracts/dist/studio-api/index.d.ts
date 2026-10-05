@@ -1,8 +1,8 @@
-import { getChannelAgenda, getChannelDashboard, getChannelStats, listChannelEvents, listDuties } from './agenda.js';
+import { getChannelAgenda, getChannelDashboard, getChannelStats, listChannelEvents } from './agenda.js';
 import { signInStudio, verifyTwoFactorStudio, requestPasswordResetStudio } from './auth/routes.js';
 import { countersignBankChange } from './bank-change-requests/routes.js';
 import { getStudioBootstrap } from './bootstrap/routes.js';
-import { createReauthToken, listReauthFactors, listStudioChanges, listStudioDevices, registerStudioPushToken, revokeStudioDevice, signOutStudio, updateStudioPreferences } from './bootstrap.js';
+import { listStudioChanges } from './bootstrap.js';
 import { deleteChannel, getChannelSettings, listChannelJournal, listChannelMerchItems, listChannelReplays, updateChannelIdentity, updateChannelSettings, upsertMerchItem } from './channel.js';
 import { changeMemberRoles, inviteMember, listChannelMembers, removeMember, transferChannelOwnership } from './crew.js';
 import { revokeDateAccess } from './date-access-grants/routes.js';
@@ -11,6 +11,7 @@ import { getChannelExport } from './exports/routes.js';
 import { listInbox, markInboxRead } from './inbox/routes.js';
 import { resolveIncident, escalateIncidentToProduction } from './incidents/routes.js';
 import { respondToInvitation } from './invitations/routes.js';
+import { createReauthToken, listReauthFactors, listStudioDevices, revokeStudioDevice, signOutStudio, registerStudioPushToken, updateStudioPreferences, listDuties } from './me/routes.js';
 import { claimModerationItem, releaseModerationItem, settleModerationItem } from './moderation/routes.js';
 import { addBannedWord, listModerationQueue, removeBannedWord, sanctionAudienceMember, searchAudience } from './moderation.js';
 import { closeReconciliationPeriod, listPayouts, requestBankChange, requestChannelExport } from './payouts.js';

@@ -22,6 +22,8 @@ import { incidentsDocs } from './incidents/docs.js';
 import { incidentsExamples } from './incidents/examples.js';
 import { invitationsDocs } from './invitations/docs.js';
 import { invitationsExamples } from './invitations/examples.js';
+import { meDocs } from './me/docs.js';
+import { meExamples } from './me/examples.js';
 import { moderationDocs } from './moderation/docs.js';
 import { moderationExamples } from './moderation/examples.js';
 import { seatsDocs } from './seats/docs.js';
@@ -37,26 +39,6 @@ const statedMaturities = {
   listStudioChanges: {
     maturity: 'stable',
     maturityReason: 'realtime is not a service, and the change feed is a shape the BFF owns',
-  },
-  createReauthToken: {
-    maturity: 'provisional',
-    maturityReason: 'studio re-authentication is not built',
-  },
-  listReauthFactors: {
-    maturity: 'provisional',
-    maturityReason: 'studio re-authentication is not built',
-  },
-  listStudioDevices: {
-    maturity: 'provisional',
-    maturityReason: 'studio device sessions (D-118) are not built',
-  },
-  revokeStudioDevice: {
-    maturity: 'provisional',
-    maturityReason: 'studio device sessions (D-118) are not built',
-  },
-  signOutStudio: {
-    maturity: 'provisional',
-    maturityReason: 'studio device sessions (D-118) are not built',
   },
   getChannelTicketing: {
     maturity: 'provisional',
@@ -181,6 +163,7 @@ export const studioDocs: ApiDocs = apiDocs({
     authDocs,
     inboxDocs,
     bootstrapDocs,
+    meDocs,
   ],
   examples: [
     sharedExamples,
@@ -195,6 +178,7 @@ export const studioDocs: ApiDocs = apiDocs({
     authExamples,
     inboxExamples,
     bootstrapExamples,
+    meExamples,
   ],
 });
 

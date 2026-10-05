@@ -39,21 +39,22 @@ export const VerifyTwoFactorStudioBodySchema: z.ZodObject<
   deviceId: uuidOut().nullable().optional(),
 });
 
+export const LocaleInputSchema: VocabularyIn<readonly ['fr', 'en']> = vocabularyIn(LOCALES).meta({
+  'x-arthome-vocabulary-source': 'LOCALES',
+  description:
+    '**The domain declares exactly two.** This one is an **input**, so the enum is strict:\na locale we cannot render is refused rather than silently answered in another\nlanguage.\n',
+  examples: [Locale.FR],
+});
+
 export const RequestPasswordResetStudioBodySchema: z.ZodObject<
-  { email: z.ZodString; locale: z.ZodOptional<VocabularyIn<readonly ['fr', 'en']>> },
+  { email: z.ZodString; locale: z.ZodOptional<typeof LocaleInputSchema> },
   z.core.$strip
 > = z.object({
   email: z.string().meta({ format: 'email' }),
-  locale: vocabularyIn(LOCALES)
-    .meta({
-      'x-arthome-vocabulary-source': 'LOCALES',
-      description:
-        '**The domain declares exactly two.** This one is an **input**, so the enum is strict:\na locale we cannot render is refused rather than silently answered in another\nlanguage.\n',
-      examples: [Locale.FR],
-    })
-    .optional(),
+  locale: LocaleInputSchema.optional(),
 });
 
 export type SignInStudioBody = z.output<typeof SignInStudioBodySchema>;
 export type VerifyTwoFactorStudioBody = z.output<typeof VerifyTwoFactorStudioBodySchema>;
+export type LocaleInput = z.output<typeof LocaleInputSchema>;
 export type RequestPasswordResetStudioBody = z.output<typeof RequestPasswordResetStudioBodySchema>;

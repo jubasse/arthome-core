@@ -1,33 +1,14 @@
 import { z } from 'zod';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { BadRequestResponse, ChannelIdParameter, ForbiddenResponse, IfRightsVersionParameter, NotFoundResponse, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter, UnauthorizedResponse } from './components.js';
+import { BadRequestResponse, ChannelIdParameter, ForbiddenResponse, IfRightsVersionParameter, NotFoundResponse, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
 import type { JsonResponse, QueryParameter, Route } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
-import { DutySchema } from '../studio-access/index.js';
 import { DashboardScreenSchema, StatsAudienceSchema, StatsSeriesSchema } from '../studio-money/index.js';
 import { EventsRowSchema } from '../studio-stage/index.js';
 declare const LIST_CHANNEL_EVENTS_WINDOW: readonly ["upcoming", "past"];
 declare const GET_CHANNEL_DASHBOARD_PERIOD: readonly ["last_7_days", "last_30_days", "last_90_days", "season", "custom"];
 declare const GET_CHANNEL_STATS_TAB: readonly ["audience", "series"];
-export declare const listDuties: Route<{
-    method: 'get';
-    version: 1;
-    path: '/me/duties';
-    parameters: readonly [
-        QueryParameter<'from', z.ZodString, true>,
-        QueryParameter<'to', z.ZodString, true>,
-        typeof SurfaceParameter,
-        typeof IfRightsVersionParameter,
-        typeof TraceparentParameter
-    ];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            items: z.ZodArray<typeof DutySchema>;
-        }, z.core.$loose>>>;
-        401: typeof UnauthorizedResponse;
-    };
-}>;
 export declare const listChannelEvents: Route<{
     method: 'get';
     version: 1;

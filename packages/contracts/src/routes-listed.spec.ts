@@ -25,6 +25,7 @@ import * as studioInbox from './studio-api/inbox/routes.js';
 import * as studioIncidents from './studio-api/incidents/routes.js';
 import { studioApi } from './studio-api/index.js';
 import * as studioInvitations from './studio-api/invitations/routes.js';
+import * as studioMe from './studio-api/me/routes.js';
 import * as studioModerationItems from './studio-api/moderation/routes.js';
 import * as studioModeration from './studio-api/moderation.js';
 import * as studioPayouts from './studio-api/payouts.js';
@@ -97,6 +98,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       studioAuth,
       studioInbox,
       studioBootstrapItems,
+      studioMe,
     ],
   ],
 ];

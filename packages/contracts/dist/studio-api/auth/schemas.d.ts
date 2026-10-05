@@ -14,11 +14,13 @@ export declare const VerifyTwoFactorStudioBodySchema: z.ZodObject<{
     mode: typeof StudioSessionModeSchema;
     deviceId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, z.core.$strip>;
+export declare const LocaleInputSchema: VocabularyIn<readonly ['fr', 'en']>;
 export declare const RequestPasswordResetStudioBodySchema: z.ZodObject<{
     email: z.ZodString;
-    locale: z.ZodOptional<VocabularyIn<readonly ['fr', 'en']>>;
+    locale: z.ZodOptional<typeof LocaleInputSchema>;
 }, z.core.$strip>;
 export type SignInStudioBody = z.output<typeof SignInStudioBodySchema>;
 export type VerifyTwoFactorStudioBody = z.output<typeof VerifyTwoFactorStudioBodySchema>;
+export type LocaleInput = z.output<typeof LocaleInputSchema>;
 export type RequestPasswordResetStudioBody = z.output<typeof RequestPasswordResetStudioBodySchema>;
 //# sourceMappingURL=schemas.d.ts.map

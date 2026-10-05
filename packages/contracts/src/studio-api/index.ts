@@ -5,21 +5,11 @@ import {
   getChannelDashboard,
   getChannelStats,
   listChannelEvents,
-  listDuties,
 } from './agenda.js';
 import { signInStudio, verifyTwoFactorStudio, requestPasswordResetStudio } from './auth/routes.js';
 import { countersignBankChange } from './bank-change-requests/routes.js';
 import { getStudioBootstrap } from './bootstrap/routes.js';
-import {
-  createReauthToken,
-  listReauthFactors,
-  listStudioChanges,
-  listStudioDevices,
-  registerStudioPushToken,
-  revokeStudioDevice,
-  signOutStudio,
-  updateStudioPreferences,
-} from './bootstrap.js';
+import { listStudioChanges } from './bootstrap.js';
 import {
   deleteChannel,
   getChannelSettings,
@@ -109,6 +99,16 @@ import { getChannelExport } from './exports/routes.js';
 import { listInbox, markInboxRead } from './inbox/routes.js';
 import { resolveIncident, escalateIncidentToProduction } from './incidents/routes.js';
 import { respondToInvitation } from './invitations/routes.js';
+import {
+  createReauthToken,
+  listReauthFactors,
+  listStudioDevices,
+  revokeStudioDevice,
+  signOutStudio,
+  registerStudioPushToken,
+  updateStudioPreferences,
+  listDuties,
+} from './me/routes.js';
 import {
   claimModerationItem,
   releaseModerationItem,
