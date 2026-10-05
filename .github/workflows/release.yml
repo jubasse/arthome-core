@@ -29,6 +29,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - run: pnpm -r run build
+
       - run: pnpm run verify
 
       - run: node tools/pack-release.mjs "$GITHUB_REF_NAME" release-assets
