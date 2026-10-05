@@ -91,7 +91,7 @@ export const SurfaceParameter: HeaderParameter<
     'x-arthome-vocabulary-source': 'SURFACES',
     'x-arthome-vocabulary-narrowing':
       'The two that may call the studio BFF. An input refuses where an output keeps an unknown value raw.',
-    examples: ['studio-mobile'],
+    examples: [Surface.STUDIO_MOBILE],
   }),
 };
 

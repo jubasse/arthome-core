@@ -3,7 +3,7 @@
 
 The two documents are GENERATED (D-120): every operation is declared in TypeScript in
 `@arthome/contracts/storefront-api` and `/studio-api`, and `@arthome/contracts/openapi` turns
-each api into its document. This tool is the YAML writer on top of that emission and the gate
+each api, with its docs module (`docs.ts` beside its `index.ts`), into its document. This tool is the YAML writer on top of that emission and the gate
 that holds the committed files to it.
 
     python3 tools/generate-openapi.py            write both documents
@@ -74,7 +74,13 @@ def build():
 
 def generated(product):
     run = subprocess.run(
-        ["node", "tools/emit-openapi.mjs", f"packages/contracts/dist/{product}-api/index.js"],
+        [
+            "node",
+            "tools/emit-openapi.mjs",
+            f"packages/contracts/dist/{product}-api/index.js",
+            "--docs",
+            f"packages/contracts/dist/{product}-api/docs.js",
+        ],
         cwd=ROOT,
         capture_output=True,
         text=True,

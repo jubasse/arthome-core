@@ -8,7 +8,7 @@ API contracts every surface reads, and records why each irreversible decision wa
 was.
 
 > **Status: the foundation is built, the applications are not.** The domain, the contracts, the
-> tooling and twelve gates exist and are verified. **Every schema in both contracts is generated from a
+> tooling and thirteen gates exist and are verified. **Every schema in both contracts is generated from a
 > zod source and checked against the document it publishes.** No application code has been written
 > yet. What is
 > here is the part that is expensive to change later.
@@ -78,10 +78,11 @@ pnpm run verify:offline   # the subset that needs no install — it prints what 
 pnpm run fix              # prettier, eslint, prettier — in that order, and the order matters
 ```
 
-**Twelve gates, and each says what it looked at — including where it stops looking.** They check that
+**Thirteen gates, and each says what it looked at — including where it stops looking.** They check that
 no enumeration value is copied, that the domain and the contracts share one vocabulary — **and that
 an architecture document naming an error code names one that exists** — that the `.`
-entry point reaches neither zod nor a Node API, that every version is pinned, that ESLint and
+entry point reaches neither zod nor a Node API, that no surface bundles the contracts' prose and
+examples, that every version is pinned, that ESLint and
 Prettier do not overlap, that the two contracts conform to twenty rules, that everything committed
 is written in English and carries no warning sign, check mark or emoji, that the repository map still matches the installed declarations, that
 **every schema emits exactly what the contract publishes**, and that `DECISIONS-INDEX.md` still

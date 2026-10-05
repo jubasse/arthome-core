@@ -589,6 +589,13 @@ compile. It is one of §2.3's eight traps, and the most visible on every deploym
 It is the same cut as `buf.yaml` for the events, with the same exit rule: the exception line is
 removed **the day the context's tier ships**, never before.
 
+**An operation's maturity is its owning service's**: the first service in its `x-arthome-upstream`.
+A BFF keeps its own shape stable over a provisional service it translates, so a composed read owned
+by `catalog` stays stable when `streaming` contributes to it. The contracts derive it from this table
+(`maturityOf` and `MATURITY_BY_SERVICE` in `@arthome/contracts/openapi`, the table held to this one by
+`check-contract-docs`), and an operation states its own only where it differs, with the reason in
+one phrase: a flow not built or not settled on a stable service, or a feed that calls no service.
+
 **What "stable" allows, and nothing else**: adding an entry point, adding an **optional** property
 to a response, adding a value to an enumeration, adding an **optional** parameter. Everything else
 is a `v2` of the service, served **beside** the `v1` until both BFFs have migrated.

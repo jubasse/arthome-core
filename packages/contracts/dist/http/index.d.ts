@@ -30,6 +30,13 @@ export interface MediaType extends Extensions {
     readonly schema: z.ZodType;
     readonly example?: unknown;
     readonly examples?: Readonly<Record<string, unknown>>;
+    /** The example the emitter derives from a registered one, when the schema has none of its own. */
+    readonly exampleFrom?: DerivedExample;
+}
+/** A record's registered example, shown as this answer: wrapped in the api's envelope. */
+export interface DerivedExample {
+    readonly of: z.ZodType;
+    readonly as: (example: unknown) => unknown;
 }
 export interface Header extends Extensions {
     readonly description?: string;
@@ -162,7 +169,8 @@ export interface ApiComponents {
  */
 export interface ApiDefinition<Routes extends Readonly<Record<string, Route>>> extends Extensions {
     readonly openapi: string;
-    readonly info: Readonly<Record<string, unknown>>;
+    /** Usually in the api's docs module, beside the rest of its prose. */
+    readonly info?: Readonly<Record<string, unknown>>;
     readonly servers?: readonly Readonly<Record<string, unknown>>[];
     readonly tags?: readonly Readonly<Record<string, unknown>>[];
     readonly security?: readonly SecurityRequirement[];

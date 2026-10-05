@@ -57,12 +57,12 @@
       "reason": "OpenAPI's parameter location, the `in` of a parameter or an API key carried in a cookie. It shares the word with SESSION_MODES without being a session mode: a route's location and a session's transport are unrelated facts, and SessionMode.COOKIE there would read as one."
     },
     {
-      "file": "packages/contracts/src/storefront-api/index.ts",
+      "file": "packages/contracts/src/storefront-api/docs.ts",
       "value": "cookie",
       "reason": "OpenAPI's location of an API key, `in: cookie`, in the session cookie's security scheme: the word SESSION_MODES also holds, for a different fact (the same entry as http/index.ts)."
     },
     {
-      "file": "packages/contracts/src/storefront-api/index.ts",
+      "file": "packages/contracts/src/storefront-api/docs.ts",
       "value": "bearer",
       "reason": "The HTTP authentication scheme of RFC 6750, `scheme: bearer`, in the bearer token's security scheme. SESSION_MODES holds the word for the session's transport, which is not what an OpenAPI scheme names."
     },
@@ -77,12 +77,12 @@
       "reason": "The NAME of a query parameter, `state`, which filters a resource by its own state machine. TAX_JURISDICTION_LEVELS holds the same word for a level of tax jurisdiction, which is a different fact and not what is named here."
     },
     {
-      "file": "packages/contracts/src/studio-api/index.ts",
+      "file": "packages/contracts/src/studio-api/docs.ts",
       "value": "cookie",
       "reason": "OpenAPI's location of an API key, `in: cookie`, in the session cookie's security scheme: the word SESSION_MODES also holds, for a different fact (the same entry as http/index.ts)."
     },
     {
-      "file": "packages/contracts/src/studio-api/index.ts",
+      "file": "packages/contracts/src/studio-api/docs.ts",
       "value": "bearer",
       "reason": "The HTTP authentication scheme of RFC 6750, `scheme: bearer`, in the bearer token's security scheme. SESSION_MODES holds the word for the session's transport, which is not what an OpenAPI scheme names."
     },

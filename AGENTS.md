@@ -27,6 +27,7 @@ here, and a skill for one of them would be the wrong instrument.
 | `pnpm run generate:openapi` | writes `openapi/storefront.yaml` and `openapi/studio.yaml` from the route declarations. Run it after any change to `packages/contracts` that reaches a document, and commit both |
 | `pnpm run fix` | Prettier, then ESLint `--fix`, then Prettier again |
 | `node tools/sync-route-annotations.mjs <module.ts>` | after a route moves under a scope, an identity or a resource: rewrites the `method`, `path`, `parameters` and `access` of its explicit annotation (`--check` only reports) |
+| `pnpm run measure:surface-bundle` | what a surface ships for `createClient(api)`, minified and gzipped, part by part. A report, not a gate |
 
 The gates, and what each proves: `check-versions` (one version per dependency across manifests) ·
 `check-tsconfig` (the compiler locks are intact) · `check-enums` (no enumeration value copied as a
@@ -34,7 +35,9 @@ literal — the project's dominant fault, E2) · `check-language` (no French *se
 file; an isolated French term is out of scope and the gate says so) · `check-symbols` (no warning
 sign, check mark, cross or emoji outside Markdown inline code; `tools/symbols.allow.json` names the
 read-only design content) · `check-core-entry` (nothing
-reachable from the `.` entry point imports zod or a Node API) · `check-decisions-index`
+reachable from the `.` entry point imports zod or a Node API) · `check-contract-docs` (no
+subpath a surface imports reaches a docs or examples module of the contracts, and the maturity
+regimes match `transport.md` §5.11) · `check-decisions-index`
 (`DECISIONS-INDEX.md` matches what regenerating from `DECISIONS.md` produces) · `check-openapi` (both documents
 conform) · `check-openapi-generated` (each committed document is byte for byte what the route declarations generate, D-120) · `check-vocabulary` (the documents, the architecture prose and `@arthome/core` agree
 member for member) · `check-map` (`REPOSITORY_MAP.md` matches the installed

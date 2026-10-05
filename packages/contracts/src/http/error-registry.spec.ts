@@ -11,7 +11,9 @@ import { ERROR_PARAMS } from '@arthome/core/schema';
 
 import { ERRORS, NATURE_BY_STATUS, exampleOf, natureOf, statusOf } from './error-registry.js';
 import { openApiDocumentOf } from '../openapi/index.js';
+import { storefrontDocs } from '../storefront-api/docs.js';
 import { storefrontApi } from '../storefront-api/index.js';
+import { studioDocs } from '../studio-api/docs.js';
 import { studioApi } from '../studio-api/index.js';
 
 function isErrorCode(value: unknown): value is ErrorCode {
@@ -64,10 +66,10 @@ describe('the registry of error codes', () => {
   });
 
   it.each([
-    ['storefront', storefrontApi],
-    ['studio', studioApi],
-  ])('gives each code the status the %s document shows it under', (_name, api) => {
-    const shown = statusesShown(openApiDocumentOf(api));
+    ['storefront', storefrontApi, storefrontDocs],
+    ['studio', studioApi, studioDocs],
+  ])('gives each code the status the %s document shows it under', (_name, api, docs) => {
+    const shown = statusesShown(openApiDocumentOf(api, docs));
     expect(shown.length).toBeGreaterThan(0);
     const disagreeing = shown.filter(([status, code]) => statusOf(code) !== status);
     expect(disagreeing).toEqual([]);

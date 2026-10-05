@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 172 exported names.
+Declarations: `dist/http/index.d.ts` — 173 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
@@ -114,6 +114,7 @@ Declarations: `dist/http/index.d.ts` — 172 exported names.
 - `Degraded` (type) — `type Degraded<R> = R extends { readonly degradable: infer D extends readonly string[]; } ? { readonly degraded?: readonly D[number][]; } : unknown;` — 'degraded' is typed from the route's 'degradable': only the parts it names.
 - `DeleteRoute` (type)
 - `Deleted` (const) — `Deleted: z.ZodOptional<z.ZodObject<{ deleted: z.ZodOptional<z.ZodBoolean>; }, z.core.$loose>>` — The data of a removal: replayed on something already removed, it still succeeds.
+- `DerivedExample` (interface) — A record's registered example, shown as this answer: wrapped in the api's envelope.
 - `DerivedStatus` (type) — `type DerivedStatus = keyof typeof DERIVED_ERROR_CODES;`
 - `ERRORS` (const) — `ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C>; }`
 - `Endpoints` (type) — One method per operation id of a block of routes, each taking its 'HandlerInput' and returning its 'HandlerOutput'.
@@ -301,10 +302,22 @@ Declarations: `dist/money/index.d.ts` — 4 exported names.
 
 #### @arthome/contracts/openapi
 
-Declarations: `dist/openapi/index.d.ts` — 2 exported names.
+Declarations: `dist/openapi/index.d.ts` — 14 exported names.
 
+- `ApiDocs` (interface)
+- `ApiDocsDefinition` (interface)
+- `DocumentDocs` (interface) — The parts of an api's document no consumer reads: its introduction and the names it documents.
+- `ExampleEntry` (type) — `type ExampleEntry = readonly [schema: z.ZodType, examples: readonly unknown[]];`
+- `ExampleRegistry` (class) — The examples of each schema, registered once.
+- `MATURITY_BY_SERVICE` (const) — `MATURITY_BY_SERVICE: Readonly<Record<Service, Maturity>>` — The regime of each service's contract: a copy of 'transport.md' §5.11, held to it by 'check-contract-docs'.
+- `Maturity` (type) — `type Maturity = 'stable' | 'provisional';`
+- `ModuleDocs` (type) — `type ModuleDocs = Readonly<Record<string, OperationDoc>>;` — A module's operations, by operation id: 'export const datesDocs = { ...
+- `ModuleExamples` (type) — `type ModuleExamples = readonly ExampleEntry[];` — A module's examples, by schema: '[[DateSchema, [dateExample]]] as const satisfies ModuleExamples'.
 - `OpenApiDocument` (type) — `type OpenApiDocument = Readonly<Record<string, unknown>>;`
-- `openApiDocumentOf` (function) — `function openApiDocumentOf(api: Api): OpenApiDocument;`
+- `OperationDoc` (type)
+- `apiDocs` (function) — `function apiDocs(definition: ApiDocsDefinition): ApiDocs;` — Gathers an api's modules, and refuses an operation documented twice.
+- `maturityOf` (function) — `function maturityOf(upstream: readonly Upstream[]): Maturity | undefined;` — The regime of the operation's owning service, the first service in its upstream: a BFF keeps its own shape stable over a provisional servic…
+- `openApiDocumentOf` (function) — `function openApiDocumentOf(api: Api, docs?: ApiDocs): OpenApiDocument;`
 
 #### @arthome/contracts/pagination
 

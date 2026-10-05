@@ -5,6 +5,7 @@ import {
   DEVICE_KINDS,
   DeviceKind,
   Locale,
+  MessageDomain,
   PlanTier,
   Service,
   Upstream,
@@ -235,11 +236,13 @@ export const getViewerContext: Route<{
                 creditDelayCode: 'refund_delay_business_days_3_5',
               },
               labelCatalog: {
+                domain: MessageDomain.STOREFRONT,
                 locale: Locale.FR,
                 version: 41,
                 url: 'https://cdn.arthome.fr/i18n/storefront/fr/v41.json',
               },
               taxonomyArtifact: {
+                domain: MessageDomain.TAXONOMY,
                 locale: Locale.FR,
                 version: 12,
                 url: 'https://cdn.arthome.fr/taxonomy/fr/v12.json',

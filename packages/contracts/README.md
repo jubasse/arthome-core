@@ -61,7 +61,7 @@ So: **one subpath per bounded context**, added as each lands and never before.
 | `./studio-money` | payouts, bank changes, statistics, the dashboard — 10 |
 | `./http` | `defineRoute` and `defineApi`: an operation as TypeScript, typed for a handler and a client — no schema |
 | `./http-client` | `createClient(api, { baseUrl, fetch, headers })`: one typed method per operation id — no schema |
-| `./openapi` | the OpenAPI document an api emits, `components/schemas` included — no schema |
+| `./openapi` | the OpenAPI document an api emits, `components/schemas` included, and the registries of its docs and examples — no schema |
 | `./storefront-api` | `storefrontApi`: every operation of the storefront contract, declared once, and the source of `openapi/storefront.yaml` |
 | `./studio-api` | `studioApi`: the same for the studio, and the source of `openapi/studio.yaml` |
 
@@ -73,7 +73,9 @@ is part of `pnpm run verify`.
 
 Every operation of both contracts is declared once, in `src/storefront-api/` or `src/studio-api/`:
 one module per tag (`discovery.ts`, `payouts.ts`), the shared parameters, headers and responses in
-`components.ts`, and the api itself, with the document's prose and its component names, in `index.ts`.
+`components.ts`, the api itself and its component names in `index.ts`, and the document's
+introduction (`info`, `servers`, `tags`, the security schemes) in `docs.ts`, which also gathers what
+each module documents (below).
 `openapi/storefront.yaml` and `openapi/studio.yaml` are **generated** from those declarations (D-120),
 and committed for readers and tools.
 
@@ -86,8 +88,43 @@ and committed for readers and tools.
    components and top-level keys included.
 
 Never edit a document by hand: the next generation overwrites it, and the gate refuses it before.
-Prose that belongs to the operation stays in the declaration, as `description` where the document
-should say it and as a TypeScript comment where only the maintainers need it.
+What only the maintainers need is a TypeScript comment; what the document says goes in the module's
+`docs.ts`.
+
+### Docs and examples: registered beside the routes, never bundled
+
+A surface imports an api to call it, and the operations' prose and examples are dead weight there.
+What only the document reads is registered per module, beside the routes:
+
+- `<module>/docs.ts`: `export const datesDocs = { publishDate: { description, upstream } } satisfies
+  ModuleDocs`, the operation's prose and the services it calls (`x-arthome-upstream`), owning service
+  first. The one-line `summary` stays on the route.
+- `<module>/examples.ts`: typed example constants (`export const dateExample: StudioDate = { ... }`)
+  and `export const datesExamples = [[DateSchema, [dateExample]]] as const satisfies ModuleExamples`.
+- The api's `docs.ts` gathers them: `apiDocs({ info, servers, tags, securitySchemes, modules,
+  examples })`. Only the emitter and the tests import it, and `pnpm run check:contract-docs` (in
+  `verify`) fails when a subpath a surface imports reaches a docs or examples module, or `./openapi`.
+
+`openApiDocumentOf(api, docs)` reads both:
+
+- **What is registered wins** over what a route still carries, so a module converts without its
+  operations moving in the document; a test refuses an operation documented in both places.
+- **The maturity is derived** from the upstream: the regime of the owning service, the first one the
+  operation calls (`maturityOf`, `MATURITY_BY_SERVICE`, `transport.md` §5.11). A module states
+  `maturity` only where an operation differs, always with its `maturityReason` in one phrase, and the
+  emitter refuses one that repeats the derived value; an operation that calls no service
+  (`realtime`) states it. Until a module converts, its stated maturities sit in the api's
+  `docs.ts`; `maturity.spec.ts` holds every operation to the rule.
+- **A media type's example** is its schema's registered example, or else the one derived from the
+  record it wraps: a resource member's answer shows its item's registered example in the api's
+  envelope (`itemExample`, `pageExample`). An example a route still writes is kept when nothing is
+  registered.
+- **Every registered example parses with its schema** (ADR §9.6, `examples-parse.spec.ts`), and so
+  does every example a route or a schema still writes itself.
+
+`pnpm run measure:surface-bundle` prints what a surface ships for `createClient(api)`, minified and
+gzipped, part by part. Measured on 2026-10-05, before any module moved its docs: storefront 126.9 KB
+gzip, studio 140.7 KB; with the two introductions moved out, 123.2 KB and 137.5 KB.
 
 ### The route builder
 

@@ -7,6 +7,7 @@ import type { BuiltRoute, BuiltRouteDefinition, RouteBuilder, Scope } from './bu
 import type { ErrorList, ErrorsInput } from './errors.js';
 import { groupByStatus } from './errors.js';
 import type {
+  DerivedExample,
   Header,
   JsonRequestBody,
   JsonResponse,
@@ -900,17 +901,27 @@ function mergeErrors(
   return out;
 }
 
+/** An answer's example: written now from the schema's `.meta`, or derived later from a registered one. */
+interface Shown {
+  readonly example?: unknown;
+  readonly exampleFrom: DerivedExample;
+}
+
 function jsonResponse(
   description: string,
   schema: z.ZodType,
   headers?: Readonly<Record<string, Header>>,
-  example?: unknown,
+  shown?: Shown,
 ): Response {
   return {
     description,
     ...(headers !== undefined && Object.keys(headers).length > 0 && { headers }),
     content: {
-      'application/json': { schema, ...(example !== undefined && { example }) },
+      'application/json': {
+        schema,
+        ...(shown?.example !== undefined && { example: shown.example }),
+        ...(shown !== undefined && { exampleFrom: shown.exampleFrom }),
+      },
     },
   };
 }
@@ -1042,9 +1053,14 @@ export function makeResource(
   };
 
   /** The example of an answer, derived from the item's own example by the api's envelope. */
-  const shown = (item: z.ZodType | undefined): unknown => {
+  const shown = (item: z.ZodType | undefined): Shown | undefined => {
+    const envelope = conventions.itemExample;
+    if (item === undefined || envelope === undefined) return undefined;
     const example = firstExample(item);
-    return example === undefined ? undefined : conventions.itemExample?.(example);
+    return {
+      ...(example !== undefined && { example: envelope(example) }),
+      exampleFrom: { of: item, as: envelope },
+    };
   };
   const said = (docs: AnyDocs | undefined, fallback: string): string => docs?.answer ?? fallback;
 
@@ -1126,9 +1142,14 @@ export function makeResource(
         errors[403] = [ApiErrorCode.SORT_KEY_FORBIDDEN];
       }
     }
-    const pageShown = (data: z.ZodType): unknown => {
+    const pageShown = (data: z.ZodType): Shown | undefined => {
+      const envelope = conventions.pageExample;
+      if (envelope === undefined) return undefined;
       const example = firstExample(data);
-      return example === undefined ? undefined : conventions.pageExample?.([example]);
+      return {
+        ...(example !== undefined && { example: envelope([example]) }),
+        exampleFrom: { of: data, as: (registered) => envelope([registered]) },
+      };
     };
     return {
       parameters: [
