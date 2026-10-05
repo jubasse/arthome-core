@@ -15,6 +15,8 @@ import { liveDocs } from './live/docs.js';
 import { liveExamples } from './live/examples.js';
 import { meDocs } from './me/docs.js';
 import { meExamples } from './me/examples.js';
+import { searchDocs } from './search/docs.js';
+import { searchExamples } from './search/examples.js';
 
 /**
  * The operations whose maturity is not their owning service's (`transport.md` §5.11). Each entry
@@ -133,9 +135,10 @@ export const storefrontDocs: ApiDocs = apiDocs({
         'ES256 JWT, `aud: "arthome.device"`, 180 days, **rotated on every use**, carrying `device_id`\nand nothing else. Obtained on first launch through `registerDevice`, **before any session**.\nIt is not a session: it opens only pairing, pairing polling and the public bootstrap, and\n**opens no personal data** — in particular not the real-time channel (`adr-auth.md` §4/Q3,\n§5.3).\n',
     },
   },
-  modules: [statedMaturities, artistsDocs, categoriesDocs, liveDocs, homeDocs, meDocs],
+  modules: [statedMaturities, searchDocs, artistsDocs, categoriesDocs, liveDocs, homeDocs, meDocs],
   examples: [
     sharedExamples,
+    searchExamples,
     artistsExamples,
     categoriesExamples,
     liveExamples,

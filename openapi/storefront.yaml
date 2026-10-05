@@ -4956,14 +4956,13 @@ paths:
       - ticketing
       - identity
       - streaming
-      x-arthome-freshness: 60
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
@@ -5013,11 +5012,6 @@ paths:
       responses:
         '200':
           description: Results, facets and structured filters.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5065,10 +5059,27 @@ paths:
                   nextCursor: eyJjIjoiMjAyNi0wOS0yMVQyMDowMDowMFoifQ
                   approximateTotal: 10000
                   totalIsLowerBound: true
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '410':
           $ref: '#/components/responses/Gone'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/replays:
     get:
       operationId: listReplays

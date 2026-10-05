@@ -55,7 +55,6 @@ const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
   'resendEmailVerification',
   'resetPassword',
   'resolvePublicLink',
-  'search',
   'sendChatMessage',
   'sendReaction',
   'setSubscriptionPlan',

@@ -1,40 +1,12 @@
 import { z } from 'zod';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
 import { BadRequestResponse, CursorParameter, GoneResponse, LimitParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter, UnavailableResponse } from './components.js';
-import { ArtistSummarySchema, DateCardSchema, FacetSchema, RailSchema, SearchCriteriaSchema, ShowGroupSchema, StructuredFilterSchema } from '../catalog/index.js';
+import { ArtistSummarySchema, DateCardSchema, RailSchema } from '../catalog/index.js';
 import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
 import type { JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
 import { StorefrontCursorPageInfoSchema } from '../pagination/index.js';
-declare const GET_CATEGORY_SCREEN_SORT: readonly ["relevance", "soon", "popularity", "price_asc", "price_desc"];
-declare const SEARCH_TAB: readonly ["best", "lives", "replays", "artists"];
 declare const LIST_REPLAYS_SORT: readonly ["expiring_first", "recent", "popularity"];
 declare const RESOLVE_PUBLIC_LINK_KIND: readonly ["date", "show", "artist", "category"];
-export declare const search: Route<{
-    method: 'get';
-    version: 1;
-    path: '/search';
-    parameters: readonly [
-        typeof CursorParameter,
-        typeof LimitParameter,
-        QueryParameter<'q', z.ZodString>,
-        QueryParameter<'tab', z.ZodDefault<VocabularyIn<typeof SEARCH_TAB>>>,
-        QueryParameter<'sort', z.ZodDefault<VocabularyIn<typeof GET_CATEGORY_SCREEN_SORT>>>,
-        QueryParameter<'filters', typeof SearchCriteriaSchema>,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            groups: z.ZodOptional<z.ZodArray<typeof ShowGroupSchema>>;
-            artists: z.ZodOptional<z.ZodArray<typeof ArtistSummarySchema>>;
-            facets: z.ZodArray<typeof FacetSchema>;
-            structuredFilters: z.ZodOptional<z.ZodArray<typeof StructuredFilterSchema>>;
-            page: typeof StorefrontCursorPageInfoSchema;
-        }, z.core.$loose>>>;
-        400: typeof BadRequestResponse;
-        410: typeof GoneResponse;
-    };
-}>;
 export declare const listReplays: Route<{
     method: 'get';
     version: 1;
