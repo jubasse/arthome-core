@@ -605,6 +605,11 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -745,6 +750,12 @@ paths:
                       locale: fr
                       version: 12
                       url: https://cdn.arthome.fr/taxonomy/fr/v12.json
+          headers:
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1408,6 +1419,11 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -1799,6 +1815,11 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -10708,7 +10729,11 @@ components:
             a device token.
         accessToken:
           type: string
+          format: password
+          x-arthome-sensitive: true
         refreshToken:
+          format: password
+          x-arthome-sensitive: true
           description: |
             **Always `null` on the storefront.** The session slides instead: seven days, renewed by
             use at most once a day (`adr-auth.md` §6.1), so the access token is the session and no

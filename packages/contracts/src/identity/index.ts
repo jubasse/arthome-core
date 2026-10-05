@@ -51,6 +51,7 @@ import {
   LabelArtifactRefSchema,
 } from '../catalog/index.js';
 import { NotificationPreferencesSchema } from '../engagement/index.js';
+import { sensitive } from '../http/marks.js';
 import { OrderSchema, SubscriptionSchema, TicketCardSchema } from '../ticketing/index.js';
 
 // The document's name for a vocabulary local to the contract. The preferred
@@ -314,14 +315,10 @@ export const SessionEstablishedBearerSchema: z.ZodObject<
     ).describe(
       '**A narrowing of `SessionMode` to the two token-bearing modes.** `cookie` is absent\nbecause a cookie response carries **nothing in the body** — that is the whole point of the\nsplit — so this branch cannot describe it. `device` shares this schema rather than having\nits own: a device session is token-shaped, and the discriminator maps both values here.\n\nThe studio has no such branch because it has no device sessions; only a television carries\na device token.\n',
     ),
-    accessToken: z.string(),
-    refreshToken: z
-      .string()
-      .nullable()
-      .optional()
-      .describe(
-        '**Always `null` on the storefront.** The session slides instead: seven days, renewed by\nuse at most once a day (`adr-auth.md` §6.1), so the access token is the session and no\noperation takes a refresh token.\n',
-      ),
+    accessToken: sensitive(z.string()),
+    refreshToken: sensitive(z.string().nullable().optional()).describe(
+      '**Always `null` on the storefront.** The session slides instead: seven days, renewed by\nuse at most once a day (`adr-auth.md` §6.1), so the access token is the session and no\noperation takes a refresh token.\n',
+    ),
     expiresAt: InstantOut,
     viewerContext: ViewerContextSchema,
   })
