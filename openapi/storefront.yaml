@@ -391,6 +391,9 @@ paths:
       - realtime
       tags:
       - bootstrap
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - name: since
         in: query
@@ -401,7 +404,6 @@ paths:
           format: date-time
       - name: scope
         in: query
-        required: false
         description: |
           Which invalidations to return. `profile` covers what follows the account — tickets,
           orders, subscription, cart — and is what a surface wants on returning to the
@@ -437,7 +439,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T20:44:02.010Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   invalidated:
                   - date:019928a0-7d31-7a10-b8c4-2f9e11a4c001
@@ -447,6 +449,12 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/auth/sign-up:
     post:
       operationId: signUp

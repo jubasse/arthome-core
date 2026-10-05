@@ -4,6 +4,7 @@ import type { Api, Route } from './http/index.js';
 import * as storefrontAccountDeepLink from './storefront-api/account-deep-link/routes.js';
 import * as storefrontAccount from './storefront-api/account.js';
 import * as storefrontBootstrap from './storefront-api/bootstrap.js';
+import * as storefrontChanges from './storefront-api/changes/routes.js';
 import * as storefrontChat from './storefront-api/chat.js';
 import * as storefrontCommerce from './storefront-api/commerce.js';
 import * as storefrontDate from './storefront-api/date.js';
@@ -53,6 +54,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
     storefrontApi,
     [
       storefrontAccount,
+      storefrontChanges,
       storefrontDevices,
       storefrontAccountDeepLink,
       storefrontBootstrap,

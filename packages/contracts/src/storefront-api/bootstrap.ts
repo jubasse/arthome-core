@@ -1,11 +1,8 @@
 import { z } from 'zod';
 
-import { AccountStatus, Locale, MessageDomain, PlanTier, Service, Upstream } from '@arthome/core';
-import type { VocabularyIn } from '@arthome/core/schema';
-import { VOCABULARY_SOURCE_LOCAL, vocabularyIn, dateTimeIn } from '@arthome/core/schema';
+import { AccountStatus, Locale, MessageDomain, PlanTier, Service } from '@arthome/core';
 
 import {
-  BadRequestResponse,
   ServedAtHeader,
   StorefrontTag,
   SurfaceParameter,
@@ -15,17 +12,14 @@ import {
   ViewerTimezoneParameter,
   storefrontV1,
 } from './components.js';
-import { ChangeFeedSchema } from '../engagement/index.js';
 import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
-import type { JsonResponse, QueryParameter, Route } from '../http/index.js';
+import type { JsonResponse, Route } from '../http/index.js';
 import { ViewerContextSchema } from '../identity/index.js';
 
 const bootstrapRoutes = storefrontV1
   .tags(StorefrontTag.BOOTSTRAP)
   .headers(SurfaceParameter, TraceparentParameter);
 const bootstrapReads = bootstrapRoutes.errors({ 401: UnauthorizedResponse });
-
-const LIST_CHANGES_SCOPE = ['profile', 'device'] as const;
 
 export const getViewerContext: Route<{
   method: 'get';
@@ -137,86 +131,5 @@ export const getViewerContext: Route<{
       },
     },
     503: UnavailableResponse,
-  },
-});
-
-export const listChanges: Route<{
-  method: 'get';
-  version: 1;
-  path: '/changes';
-  parameters: readonly [
-    QueryParameter<'since', z.ZodString, true>,
-    QueryParameter<'scope', z.ZodDefault<VocabularyIn<typeof LIST_CHANGES_SCOPE>>>,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StorefrontEnvelopeMetaSchema,
-        z.ZodObject<{ data: typeof ChangeFeedSchema }, z.core.$loose>
-      >
-    >;
-    400: typeof BadRequestResponse;
-    401: typeof UnauthorizedResponse;
-  };
-}> = bootstrapReads.defineRoute({
-  method: 'get',
-  path: '/changes',
-  operationId: 'listChanges',
-  summary: 'The invalidations since a given instant — not the data.',
-  description:
-    "**One request instead of twelve.** On returning to the foreground, every observed read\nrevalidates at the same time; an account screen shows half a dozen, a category page as many.\nRefusing that burst means refusing to open the application.\n\nIt is also the path by which the storefront learns what it **did not cause** — Kafka being\nforbidden outside inter-service traffic, it is the only one possible. For Next's server\nrendering, the same tags feed `revalidateTag`: they are **named by the contract**, never\ninvented by a surface.\n\n## This feed requires a credential, and the public side has no feed at all\n\n**The `401` is a ruling, not an oversight** (D-022's rule applied). This path answers \"what\nchanged **for you** since your cursor\". A public invalidation stream would answer \"what\nchanged in the catalogue since T\". They are **two resources**, and their cacheability\nrequirements are opposite: this one must `Vary` on the credential and can never be\nedge-cached; a public one is worthless unless it is. Served from one path, the public half\ninherits the private half's `Vary`, so Next's server rendering would reach origin on every\nrevalidation check — which is most of what this path exists to save.\n\nThe direction was chosen on reversibility. Making this path anonymous **cannot be undone**:\nonce clients call it without a credential, the credential cannot come back. Adding a\nseparate public path later is **purely additive**.\n\n**The cost, named rather than shrugged at.** Signed-out pages have no invalidation path and\nfall back to **time-based revalidation** on their family's freshness — 60 s for `home` and\nthe lists, 300 s for `category` and `artist` (§ the freshness table). A catalogue change is\ntherefore visible to a signed-out reader in **up to one freshness window**, where a feed\nwould cut it to the push latency. That is a performance property, not a contract property,\nand it is the number to beat: a measurement showing a public page stale past its window, or\nan origin-hit cost that the time-based fallback makes unacceptable, reopens this.\n\n**What it would take to fill the gap, and why the shape is not written here.** Nobody has\ndesigned a public catalogue-change stream: whether it is keyed on time or on entity, what\nwindow it covers, what a client that has been away for a week receives, and whether it is a\nfeed at all rather than an `ETag` on each catalogue read. What has no source does not enter\nthe contract, so the gap is named and the shape is left alone.\n",
-  'x-arthome-maturity': 'stable',
-  // This feed queries NO service: it reads the Redis resume buffer that the real-time
-  // gateway already keeps per room (30 min / 5,000 events). It is the HTTP pull of the same
-  // stream the channel pushes. Declaring it over four services described a composition that
-  // does not happen, and would have counted it as a four-call screen.
-  'x-arthome-upstream': [Upstream.REALTIME],
-  parameters: [
-    {
-      name: 'since',
-      in: 'query',
-      required: true,
-      description: "The `servedAt` of the client's last known response.",
-      schema: dateTimeIn(),
-    },
-    {
-      name: 'scope',
-      in: 'query',
-      required: false,
-      description:
-        'Which invalidations to return. `profile` covers what follows the account — tickets,\norders, subscription, cart — and is what a surface wants on returning to the\nforeground. `device` restricts the answer to what follows **this device**, and exists\nfor the television, where five profiles share one device and a switch of profile must\nnot force the other four to reload.\n\nA **closed** vocabulary, and legitimately so: this is an input, and the server must\nrefuse a scope it does not know rather than silently widen the answer.\n',
-      schema: vocabularyIn(LIST_CHANGES_SCOPE)
-        .meta({
-          'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL,
-          'x-arthome-vocabulary-reason':
-            'An account-management shape, local to this endpoint: what the person asked for, not a fact the domain reasons about.',
-        })
-        .default('profile'),
-    },
-  ],
-  responses: {
-    200: {
-      description: 'A list of invalidations.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StorefrontEnvelopeMetaSchema,
-            z.looseObject({
-              data: ChangeFeedSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T20:44:02.010Z',
-            data: {
-              invalidated: ['date:019928a0-7d31-7a10-b8c4-2f9e11a4c001', 'account:tickets'],
-              complete: true,
-            },
-          },
-        },
-      },
-    },
-    400: BadRequestResponse,
   },
 });

@@ -41,7 +41,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
   'leaveWaitlist',
   'listArtists',
   'listCategories',
-  'listChanges',
   'listChatMessages',
   'listPlans',
   'listReplays',

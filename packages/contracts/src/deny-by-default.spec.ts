@@ -41,7 +41,6 @@ const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
   'leaveWaitlist',
   'listArtists',
   'listCategories',
-  'listChanges',
   'listChatMessages',
   'listPlans',
   'listReplays',

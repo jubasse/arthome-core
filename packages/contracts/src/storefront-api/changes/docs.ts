@@ -1,0 +1,15 @@
+import { Upstream } from '@arthome/core';
+
+import type { ModuleDocs } from '../../openapi/docs.js';
+
+export const changesDocs: ModuleDocs = {
+  listChanges: {
+    description:
+      "**One request instead of twelve.** On returning to the foreground, every observed read\nrevalidates at the same time; an account screen shows half a dozen, a category page as many.\nRefusing that burst means refusing to open the application.\n\nIt is also the path by which the storefront learns what it **did not cause** — Kafka being\nforbidden outside inter-service traffic, it is the only one possible. For Next's server\nrendering, the same tags feed `revalidateTag`: they are **named by the contract**, never\ninvented by a surface.\n\n## This feed requires a credential, and the public side has no feed at all\n\n**The `401` is a ruling, not an oversight** (D-022's rule applied). This path answers \"what\nchanged **for you** since your cursor\". A public invalidation stream would answer \"what\nchanged in the catalogue since T\". They are **two resources**, and their cacheability\nrequirements are opposite: this one must `Vary` on the credential and can never be\nedge-cached; a public one is worthless unless it is. Served from one path, the public half\ninherits the private half's `Vary`, so Next's server rendering would reach origin on every\nrevalidation check — which is most of what this path exists to save.\n\nThe direction was chosen on reversibility. Making this path anonymous **cannot be undone**:\nonce clients call it without a credential, the credential cannot come back. Adding a\nseparate public path later is **purely additive**.\n\n**The cost, named rather than shrugged at.** Signed-out pages have no invalidation path and\nfall back to **time-based revalidation** on their family's freshness — 60 s for `home` and\nthe lists, 300 s for `category` and `artist` (§ the freshness table). A catalogue change is\ntherefore visible to a signed-out reader in **up to one freshness window**, where a feed\nwould cut it to the push latency. That is a performance property, not a contract property,\nand it is the number to beat: a measurement showing a public page stale past its window, or\nan origin-hit cost that the time-based fallback makes unacceptable, reopens this.\n\n**What it would take to fill the gap, and why the shape is not written here.** Nobody has\ndesigned a public catalogue-change stream: whether it is keyed on time or on entity, what\nwindow it covers, what a client that has been away for a week receives, and whether it is a\nfeed at all rather than an `ETag` on each catalogue read. What has no source does not enter\nthe contract, so the gap is named and the shape is left alone.\n",
+    // Reads the Redis resume buffer the real-time gateway keeps per room, the HTTP pull of the
+    // stream the channel pushes. Declaring four services described a composition that does not happen.
+    upstream: [Upstream.REALTIME],
+    maturity: 'stable',
+    maturityReason: 'realtime is not a service, and the change feed is a shape the BFF owns',
+  },
+};
