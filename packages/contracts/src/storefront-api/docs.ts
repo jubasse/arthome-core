@@ -18,6 +18,8 @@ import { meExamples } from './me/examples.js';
 import { railsDocs } from './rails/docs.js';
 import { railsExamples } from './rails/examples.js';
 import { replaysDocs } from './replays/docs.js';
+import { resolveDocs } from './resolve/docs.js';
+import { resolveExamples } from './resolve/examples.js';
 import { searchDocs } from './search/docs.js';
 import { searchExamples } from './search/examples.js';
 
@@ -140,6 +142,7 @@ export const storefrontDocs: ApiDocs = apiDocs({
   },
   modules: [
     statedMaturities,
+    resolveDocs,
     railsDocs,
     replaysDocs,
     searchDocs,
@@ -151,6 +154,7 @@ export const storefrontDocs: ApiDocs = apiDocs({
   ],
   examples: [
     sharedExamples,
+    resolveExamples,
     railsExamples,
     searchExamples,
     artistsExamples,

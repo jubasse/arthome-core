@@ -17,6 +17,7 @@ import * as storefrontPairing from './storefront-api/pairing.js';
 import * as storefrontPlayback from './storefront-api/playback.js';
 import * as storefrontRails from './storefront-api/rails/routes.js';
 import * as storefrontReplays from './storefront-api/replays/routes.js';
+import * as storefrontResolve from './storefront-api/resolve/routes.js';
 import * as storefrontSearch from './storefront-api/search/routes.js';
 import * as studioAgenda from './studio-api/agenda.js';
 import * as studioBootstrap from './studio-api/bootstrap.js';
@@ -70,6 +71,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       storefrontSearch,
       storefrontReplays,
       storefrontRails,
+      storefrontResolve,
       storefrontMe,
       storefrontPairing,
       storefrontPlayback,

@@ -5313,14 +5313,13 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - catalog
-      x-arthome-freshness: 300
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - name: url
         in: query
@@ -5349,11 +5348,6 @@ paths:
       responses:
         '200':
           description: The designated resource, and enough to paint immediately.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5396,15 +5390,32 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:50.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   kind: date
                   id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/plans:
     get:
       operationId: listPlans

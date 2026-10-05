@@ -79,7 +79,6 @@ import {
   ViewerTimezoneParameter,
 } from './components.js';
 import { getDateDetail } from './date.js';
-import { resolvePublicLink } from './discovery.js';
 import { getHomeScreen } from './home/routes.js';
 import { getLiveScreen } from './live/routes.js';
 import {
@@ -128,6 +127,7 @@ import {
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
 import { extendRail } from './rails/routes.js';
 import { listReplays } from './replays/routes.js';
+import { resolvePublicLink } from './resolve/routes.js';
 import { search } from './search/routes.js';
 import {
   ArtistDetailSchema,

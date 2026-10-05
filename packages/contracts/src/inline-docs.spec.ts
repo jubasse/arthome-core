@@ -52,7 +52,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
   'requestPasswordReset',
   'resendEmailVerification',
   'resetPassword',
-  'resolvePublicLink',
   'sendChatMessage',
   'sendReaction',
   'setSubscriptionPlan',

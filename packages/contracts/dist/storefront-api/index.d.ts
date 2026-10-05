@@ -5,7 +5,6 @@ import { getCategoryScreen, listCategories } from './categories/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
 import { addCartLine, cancelSeat, cancelSubscription, checkoutCart, enterSalesQueue, getCart, getOrder, getSalesQueuePosition, joinWaitlist, leaveWaitlist, listPlans, purchaseSeat, quoteCart, quoteSeat, refreshDateAvailability, removeCartLine, setSubscriptionPlan, updateCartLine } from './commerce.js';
 import { getDateDetail } from './date.js';
-import { resolvePublicLink } from './discovery.js';
 import { getHomeScreen } from './home/routes.js';
 import { getLiveScreen } from './live/routes.js';
 import { addPasskey, addPaymentMethod, addToWatchlist, cancelAccountDeletion, clearReminder, createSavedSearch, deleteSavedSearch, followArtist, getAccountScreen, getExport, listFollowedArtists, listMyOrders, listMyReplays, listMyTickets, listNotifications, listSavedSearches, listWatchlist, markNotificationsRead, recordPlaybackPosition, removeFromWatchlist, removePasskey, removePaymentMethod, requestAccountDeletion, requestExport, revokeDevice, setReminder, signOutProfile, unfollowArtist, updateConsents, updateNotificationPreferences, updatePreferences, updateProfile, updateSavedSearch } from './me/routes.js';
@@ -13,6 +12,7 @@ import { cancelPairing, createPairing, decidePairing, engagePairing, getAccountD
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
 import { extendRail } from './rails/routes.js';
 import { listReplays } from './replays/routes.js';
+import { resolvePublicLink } from './resolve/routes.js';
 import { search } from './search/routes.js';
 import type { Api } from '../http/index.js';
 export declare const storefrontApi: Api<{
