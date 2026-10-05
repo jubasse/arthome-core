@@ -4,11 +4,11 @@ import type { ApiErrorCode, DomainErrorCode, NOTIFICATION_CHANNELS } from '@arth
 import type { VocabularyIn } from '@arthome/core/schema';
 import type { ArtistSummarySchema, DateCardSchema, SavedSearchSchema } from '../../catalog/index.js';
 import type { NotificationPreferencesSchema } from '../../engagement/index.js';
-import type { Deleted, IdentifiedAccess, ItemResponse, JsonRequestBody, JsonResponse, Route } from '../../http/index.js';
+import type { Deleted, IdentifiedAccess, ItemResponse, JsonRequestBody, JsonResponse, PageResponse, Route } from '../../http/index.js';
 import type { AccountScreenSchema, ConsentsSchema, ViewerContextSchema, ViewerPreferencesSchema } from '../../identity/index.js';
-import type { ExportRequestSchema } from '../../ticketing/index.js';
+import type { ExportRequestSchema, TicketCardSchema } from '../../ticketing/index.js';
 import type { ArtistIdParameter, CursorDirectionParameter, CursorParameter, DateIdParameter, IdempotencyKeyParameter, LimitParameter, SurfaceParameter, TraceparentParameter, storefrontConventions, viewer } from '../components.js';
-import type { AccountDeletionSchema, AddPasskeyBodySchema, AddPaymentMethodBodySchema, ArtistSummaryPageSchema, CreateSavedSearchBodySchema, DateCardPageSchema, DeletionCancellationSchema, DeviceIdParameter, DeviceRevocationSchema, DeviceSessionIdParameter, ExportIdParameter, ExportRequestAcceptedSchema, FollowArtistBodySchema, FollowedArtistsSortParameter, LiveOnlyParameter, MarkNotificationsReadBodySchema, NotificationBadgeAnswerSchema, NotificationPageSchema, OrderEntryPageSchema, PasskeyEnrolmentSchema, PasskeyIdParameter, PaymentMethodIdParameter, PaymentMethodSetupSchema, PlaybackPositionSchema, ProfileUpdateAnswerSchema, RecordPlaybackPositionBodySchema, ReminderSchema, RequestAccountDeletionBodySchema, RequestExportBodySchema, SavedSearchIdParameter, SavedSearchListSchema, TicketCardPageSchema, TicketWindowParameter } from './schemas.js';
+import type { AccountDeletionSchema, AddPasskeyBodySchema, AddPaymentMethodBodySchema, CreateSavedSearchBodySchema, DeletionCancellationSchema, DeviceIdParameter, DeviceRevocationSchema, DeviceSessionIdParameter, ExportIdParameter, ExportRequestAcceptedSchema, FollowArtistBodySchema, FollowedArtistsSortParameter, LiveOnlyParameter, MarkNotificationsReadBodySchema, NotificationBadgeAnswerSchema, NotificationPageSchema, OrderEntrySchema, PasskeyEnrolmentSchema, PasskeyIdParameter, PaymentMethodIdParameter, PaymentMethodSetupSchema, PlaybackPositionSchema, ProfileUpdateAnswerSchema, RecordPlaybackPositionBodySchema, ReminderSchema, RequestAccountDeletionBodySchema, RequestExportBodySchema, SavedSearchIdParameter, SavedSearchListSchema, TicketWindowParameter } from './schemas.js';
 export type AddPasskeyRoute = Route<{
     method: 'post';
     version: 1;
@@ -107,14 +107,7 @@ export type ListMyTicketsRoute = Route<{
     ];
     access: IdentifiedAccess<typeof viewer, false>;
     responses: {
-        200: {
-            readonly description: 'Page of seats.';
-            readonly content: {
-                readonly 'application/json': {
-                    readonly schema: typeof TicketCardPageSchema;
-                };
-            };
-        };
+        200: PageResponse<typeof storefrontConventions, typeof TicketCardSchema>;
     };
     errorCodes: {
         400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
@@ -132,14 +125,7 @@ export type ListMyReplaysRoute = Route<{
     ];
     access: IdentifiedAccess<typeof viewer, false>;
     responses: {
-        200: {
-            readonly description: 'Page of replays.';
-            readonly content: {
-                readonly 'application/json': {
-                    readonly schema: typeof DateCardPageSchema;
-                };
-            };
-        };
+        200: PageResponse<typeof storefrontConventions, typeof DateCardSchema>;
     };
     errorCodes: {
         400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
@@ -157,14 +143,7 @@ export type ListWatchlistRoute = Route<{
     ];
     access: IdentifiedAccess<typeof viewer, false>;
     responses: {
-        200: {
-            readonly description: 'Page of dates set aside.';
-            readonly content: {
-                readonly 'application/json': {
-                    readonly schema: typeof DateCardPageSchema;
-                };
-            };
-        };
+        200: PageResponse<typeof storefrontConventions, typeof DateCardSchema>;
     };
     errorCodes: {
         400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
@@ -222,14 +201,7 @@ export type ListFollowedArtistsRoute = Route<{
     ];
     access: IdentifiedAccess<typeof viewer, false>;
     responses: {
-        200: {
-            readonly description: 'Page of followed artists. Each carries `alertEnabled` — **following and being alerted are two\nsettings** — and `nextDate` when there is one, which gives the split the screen displays\nwithout a call per artist.\n';
-            readonly content: {
-                readonly 'application/json': {
-                    readonly schema: typeof ArtistSummaryPageSchema;
-                };
-            };
-        };
+        200: PageResponse<typeof storefrontConventions, typeof ArtistSummarySchema>;
     };
     errorCodes: {
         400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
@@ -402,14 +374,7 @@ export type ListMyOrdersRoute = Route<{
     ];
     access: IdentifiedAccess<typeof viewer, false>;
     responses: {
-        200: {
-            readonly description: 'Page of orders.';
-            readonly content: {
-                readonly 'application/json': {
-                    readonly schema: typeof OrderEntryPageSchema;
-                };
-            };
-        };
+        200: PageResponse<typeof storefrontConventions, typeof OrderEntrySchema>;
     };
     errorCodes: {
         400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];

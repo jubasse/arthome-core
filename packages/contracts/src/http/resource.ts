@@ -146,9 +146,9 @@ export type ItemResponse<K, S extends z.ZodType, Relations = unknown> = JsonResp
   z.ZodType<EnvelopeOf<K> & { readonly data: z.output<S> & Relations }>
 >;
 
-/** The answer of a list: the api's envelope, the records under `data` and the page. */
+/** The answer of a list: the api's envelope, the records under `items` and the page (`transport.md` §5.5). */
 export type PageResponse<K, S extends z.ZodType> = JsonResponse<
-  z.ZodType<EnvelopeOf<K> & { readonly data: readonly z.output<S>[]; readonly page: unknown }>
+  z.ZodType<EnvelopeOf<K> & { readonly items: readonly z.output<S>[]; readonly page: unknown }>
 >;
 
 type Envelope<C extends ResourceContext> = EnvelopeOf<Conv<C>>;

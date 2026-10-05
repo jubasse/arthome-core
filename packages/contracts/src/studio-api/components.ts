@@ -365,7 +365,7 @@ export const studioConventions: {
   page: (data) =>
     z.intersection(
       StudioEnvelopeMetaSchema,
-      z.looseObject({ data: z.array(data), page: OffsetPageInfoSchema }),
+      z.looseObject({ items: z.array(data), page: OffsetPageInfoSchema }),
     ),
   listParameters: OWN_LIST_PARAMETERS,
   readParameters: [IfNoneMatchParameter],
@@ -374,11 +374,11 @@ export const studioConventions: {
   writeParameters: [IdempotencyKeyParameter],
   replayedHeader: IdempotencyReplayedHeader,
   itemExample: (data) => ({ servedAt: '2026-09-21T19:00:00.000Z', rightsVersion: 412, data }),
-  pageExample: (data) => ({
+  pageExample: (items) => ({
     servedAt: '2026-09-21T19:00:00.000Z',
     rightsVersion: 412,
-    data,
-    page: { page: 1, pageSize: 20, totalItems: data.length, totalPages: 1 },
+    items,
+    page: { page: 1, pageSize: 20, totalItems: items.length, totalPages: 1 },
   }),
   expectedVersion: int64(),
   paging: pages({ maxPageSize: 100 }),
@@ -398,7 +398,7 @@ export const studioConventions: {
       page: (data) =>
         z.intersection(
           StudioEnvelopeMetaSchema,
-          z.looseObject({ data: z.array(data), page: OffsetPageInfoSchema }),
+          z.looseObject({ items: z.array(data), page: OffsetPageInfoSchema }),
         ),
     },
     cursor: {
@@ -414,7 +414,7 @@ export const studioConventions: {
       page: (data) =>
         z.intersection(
           StudioEnvelopeMetaSchema,
-          z.looseObject({ data: z.array(data), page: StudioCursorPageInfoSchema }),
+          z.looseObject({ items: z.array(data), page: StudioCursorPageInfoSchema }),
         ),
     },
   },

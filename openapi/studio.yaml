@@ -8304,7 +8304,7 @@ paths:
                 - $ref: '#/components/schemas/EnvelopeMeta'
                 - type: object
                   properties:
-                    data:
+                    items:
                       type: array
                       items:
                         type: object
@@ -8352,13 +8352,13 @@ paths:
                     page:
                       $ref: '#/components/schemas/CursorPageInfo'
                   required:
-                  - data
+                  - items
                   - page
                   additionalProperties: {}
               example:
                 servedAt: '2026-09-21T19:00:00.000Z'
                 rightsVersion: 412
-                data:
+                items:
                 - id: 019928f8-0000-7000-8000-000000000009
                   seq: 41280
                   authorHandle: '@anon.7742'

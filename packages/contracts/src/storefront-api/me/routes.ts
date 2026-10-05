@@ -4,9 +4,7 @@ import {
   AccountDeletionSchema,
   AddPasskeyBodySchema,
   AddPaymentMethodBodySchema,
-  ArtistSummaryPageSchema,
   CreateSavedSearchBodySchema,
-  DateCardPageSchema,
   DeletionCancellationSchema,
   DeviceIdParameter,
   DeviceRevocationSchema,
@@ -19,7 +17,7 @@ import {
   MarkNotificationsReadBodySchema,
   NotificationBadgeAnswerSchema,
   NotificationPageSchema,
-  OrderEntryPageSchema,
+  OrderEntrySchema,
   PasskeyEnrolmentSchema,
   PasskeyIdParameter,
   PaymentMethodIdParameter,
@@ -32,7 +30,6 @@ import {
   RequestExportBodySchema,
   SavedSearchIdParameter,
   SavedSearchListSchema,
-  TicketCardPageSchema,
   TicketWindowParameter,
   UpdateConsentsBodySchema,
   UpdateNotificationPreferencesBodySchema,
@@ -84,7 +81,7 @@ import {
   ViewerContextSchema,
   ViewerPreferencesSchema,
 } from '../../identity/index.js';
-import { ExportRequestSchema } from '../../ticketing/index.js';
+import { TicketCardSchema, ExportRequestSchema } from '../../ticketing/index.js';
 import {
   ArtistIdParameter,
   CursorDirectionParameter,
@@ -156,12 +153,8 @@ export const listMyTickets: ListMyTicketsRoute = account
     paging: cursor({ maxLimit: 50 }),
     parameters: [CursorDirectionParameter, TicketWindowParameter],
     cache: cache(Freshness.MINUTE),
-    responses: {
-      200: {
-        description: 'Page of seats.',
-        content: { 'application/json': { schema: TicketCardPageSchema } },
-      },
-    },
+    item: TicketCardSchema,
+    answer: 'Page of seats.',
   });
 
 export const listMyReplays: ListMyReplaysRoute = account
@@ -171,12 +164,8 @@ export const listMyReplays: ListMyReplaysRoute = account
     summary: 'My replays, the ones expiring first.',
     paging: cursor({ maxLimit: 50 }),
     cache: cache(Freshness.MINUTE),
-    responses: {
-      200: {
-        description: 'Page of replays.',
-        content: { 'application/json': { schema: DateCardPageSchema } },
-      },
-    },
+    item: DateCardSchema,
+    answer: 'Page of replays.',
   });
 
 const watchlist = account.resource('watchlist', { id: DateIdParameter, owner: 'caller' });
@@ -186,12 +175,8 @@ export const listWatchlist: ListWatchlistRoute = watchlist.findAll({
   summary: 'Ma liste.',
   paging: cursor({ maxLimit: 50 }),
   cache: cache(Freshness.MINUTE),
-  responses: {
-    200: {
-      description: 'Page of dates set aside.',
-      content: { 'application/json': { schema: DateCardPageSchema } },
-    },
-  },
+  item: DateCardSchema,
+  answer: 'Page of dates set aside.',
 });
 
 export const addToWatchlist: AddToWatchlistRoute = watchlist.upsert({
@@ -218,13 +203,9 @@ export const listFollowedArtists: ListFollowedArtistsRoute = follows.findAll({
   paging: cursor({ maxLimit: 50 }),
   parameters: [FollowedArtistsSortParameter, LiveOnlyParameter],
   cache: cache(Freshness.MINUTE),
-  responses: {
-    200: {
-      description:
-        'Page of followed artists. Each carries `alertEnabled` — **following and being alerted are two\nsettings** — and `nextDate` when there is one, which gives the split the screen displays\nwithout a call per artist.\n',
-      content: { 'application/json': { schema: ArtistSummaryPageSchema } },
-    },
-  },
+  item: ArtistSummarySchema,
+  answer:
+    'Page of followed artists. Each carries `alertEnabled` — **following and being alerted are two\nsettings** — and `nextDate` when there is one, which gives the split the screen displays\nwithout a call per artist.\n',
 });
 
 export const followArtist: FollowArtistRoute = follows.upsert({
@@ -311,12 +292,8 @@ export const listMyOrders: ListMyOrdersRoute = account
     summary: 'My orders, including the reflection of orders placed with a third party.',
     paging: cursor({ maxLimit: 50 }),
     cache: cache(Freshness.FIVE_MINUTES),
-    responses: {
-      200: {
-        description: 'Page of orders.',
-        content: { 'application/json': { schema: OrderEntryPageSchema } },
-      },
-    },
+    item: OrderEntrySchema,
+    answer: 'Page of orders.',
   });
 
 const notifications = account.single('notifications', { owner: 'caller' });

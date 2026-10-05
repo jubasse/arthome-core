@@ -415,7 +415,7 @@ export const storefrontConventions: {
   page: (data) =>
     z.intersection(
       StorefrontEnvelopeMetaSchema,
-      z.looseObject({ data: z.array(data), page: StorefrontCursorPageInfoSchema }),
+      z.looseObject({ items: z.array(data), page: StorefrontCursorPageInfoSchema }),
     ),
   listParameters: OWN_LIST_PARAMETERS,
   readParameters: [IfNoneMatchParameter],
@@ -424,7 +424,11 @@ export const storefrontConventions: {
   writeParameters: [IdempotencyKeyParameter],
   replayedHeader: IdempotencyReplayedHeader,
   itemExample: (data) => ({ servedAt: '2026-09-21T19:00:00.000Z', data }),
-  pageExample: (data) => ({ servedAt: '2026-09-21T19:00:00.000Z', data, page: { hasMore: false } }),
+  pageExample: (items) => ({
+    servedAt: '2026-09-21T19:00:00.000Z',
+    items,
+    page: { hasMore: false },
+  }),
   expectedVersion: int64(),
   paging: cursor({ maxLimit: 50 }),
   paginations: {
@@ -443,7 +447,7 @@ export const storefrontConventions: {
       page: (data) =>
         z.intersection(
           StorefrontEnvelopeMetaSchema,
-          z.looseObject({ data: z.array(data), page: StorefrontCursorPageInfoSchema }),
+          z.looseObject({ items: z.array(data), page: StorefrontCursorPageInfoSchema }),
         ),
     },
   },

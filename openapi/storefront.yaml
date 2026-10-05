@@ -1979,12 +1979,44 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:56:00.000Z'
-                items: []
+                servedAt: '2026-09-21T19:00:00.000Z'
+                items:
+                - seatId: 019928e6-0000-7000-8000-000000000001
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  orderId: 019928e5-0000-7000-8000-000000000001
+                  seatCode: ATH-7QK2-4M
+                  tier: full
+                  state: active
+                  date:
+                    id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                    showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
+                    channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                    slug: '2026-09-21'
+                    canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+                    title: Nuit blanche
+                    startsAt: '2026-09-21T19:00:00Z'
+                    venueClock:
+                      venueTimezone: Europe/Paris
+                      venueUtcOffsetMin: 120
+                    runtimeMin: 95
+                    roomOpensAt: '2026-09-21T18:30:00Z'
+                    displayState: live
+                    displayStateValidUntil: '2026-09-21T20:35:00Z'
+                    replay:
+                      policy: included
+                      windowHours: 72
+                    rights:
+                      scope: worldwide
+                      blackoutCountries: []
+                    media:
+                      wide: []
+                      poster: []
+                    viewerRelations:
+                      inWatchlist: true
+                      reminderSet: false
+                      followsArtist: false
                 page:
                   hasMore: false
-                  emptyReason: no_ticket_yet
-                  emptyActionCode: browse_catalog
           headers:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
@@ -2043,7 +2075,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:57:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 items:
                 - id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
@@ -2133,7 +2165,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:57:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 items:
                 - id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
@@ -2426,7 +2458,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:58:40.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 items:
                 - id: 019928a0-7d31-7a10-b8c4-2f9e11a4c333
                   channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
@@ -2438,8 +2470,6 @@ paths:
                   alertEnabled: true
                 page:
                   hasMore: false
-                  emptyReason: no_followed_artist
-                  emptyActionCode: browse_artists
           headers:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
@@ -2518,6 +2548,9 @@ paths:
                   name: Compagnie Verticale
                   categoryId: dance-contemporary
                   followedByViewer: true
+                  followers: 4120
+                  isLiveNow: true
+                  alertEnabled: true
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
@@ -2585,6 +2618,9 @@ paths:
                   name: Compagnie Verticale
                   categoryId: dance-contemporary
                   followedByViewer: true
+                  followers: 4120
+                  isLiveNow: true
+                  alertEnabled: true
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
@@ -3143,7 +3179,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:02:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 items:
                 - external:
                     externalRef: SHOP-9912
@@ -3153,8 +3189,6 @@ paths:
                     syncSource: shopify
                 page:
                   hasMore: false
-                  emptyReason: no_order_yet
-                  emptyActionCode: browse_shop
           headers:
             Cache-Control:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'

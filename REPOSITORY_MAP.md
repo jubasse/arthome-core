@@ -151,7 +151,7 @@ Declarations: `dist/http/index.d.ts` — 178 exported names.
 - `MergedErrors` (type) — The error responses a set of 'errors' declarations makes, over those already held.
 - `NATURE_BY_STATUS` (const) — `NATURE_BY_STATUS: Readonly<Record<ErrorStatus, FailureNature>>` — transport.md §5.5: a 4xx is refused, except 429; a 5xx is unavailable.
 - `NO_STORE_HEADER` (const) — `NO_STORE_HEADER: Header` — On an answer carrying a 'sensitive' field: kept out of every cache, and out of the app snapshot.
-- `PageResponse` (type) — `type PageResponse<K, S extends z.ZodType> = JsonResponse<z.ZodType<EnvelopeOf<K> & { readonly data: readonly z.output<S>[]; readonly page: unknown; }>>;` — The answer of a list: the api's envelope, the records under 'data' and the page.
+- `PageResponse` (type) — `type PageResponse<K, S extends z.ZodType> = JsonResponse<z.ZodType<EnvelopeOf<K> & { readonly items: readonly z.output<S>[]; readonly page: unknown; }>>;` — The answer of a list: the api's envelope, the records under 'items' and the page ('transport.md' §5.5).
 - `Paging` (type)
 - `PagingConvention` (interface) — What an api says about a kind of paging: its parameters, and the envelope of one page of 'data'.
 - `PagingConventions` (interface)

@@ -46,7 +46,7 @@
  *   week on.
  */
 import { z } from 'zod';
-import { ApiErrorCode, IdentityErrorCode } from '@arthome/core';
+import { ApiErrorCode, DomainErrorCode, IdentityErrorCode } from '@arthome/core';
 import { ErrorSchema } from '@arthome/core/schema';
 /** The meta every STOREFRONT response composes. */
 export declare const StorefrontEnvelopeMetaSchema: z.ZodObject<{
@@ -100,6 +100,7 @@ export declare const STOREFRONT_RELAYED_CODES: readonly [
     typeof ApiErrorCode.NOT_FOUND,
     typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
     typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
+    typeof DomainErrorCode.STATE_CONFLICT,
     typeof IdentityErrorCode.EMAIL_TAKEN,
     typeof IdentityErrorCode.INVALID_CREDENTIALS,
     typeof IdentityErrorCode.VERIFICATION_LINK_INVALID

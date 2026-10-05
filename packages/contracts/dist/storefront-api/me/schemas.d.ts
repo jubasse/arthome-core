@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import { NOTIFICATION_CHANNELS } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { ArtistSummarySchema, DateCardSchema, SavedSearchSchema } from '../../catalog/index.js';
+import { SavedSearchSchema } from '../../catalog/index.js';
 import { NotificationEntrySchema } from '../../engagement/index.js';
 import { StorefrontEnvelopeMetaSchema } from '../../envelope/index.js';
 import type { PathParameter, QueryParameter } from '../../http/index.js';
 import { DeviceSchema } from '../../identity/index.js';
 import { StorefrontCursorPageInfoSchema } from '../../pagination/index.js';
-import { ExportRequestSchema, ExternalOrderRefSchema, OrderSchema, TicketCardSchema } from '../../ticketing/index.js';
+import { ExportRequestSchema, ExternalOrderRefSchema, OrderSchema } from '../../ticketing/index.js';
 declare const TICKET_WINDOWS: readonly ["upcoming", "past"];
 declare const FOLLOWED_ARTISTS_SORTS: readonly ["alpha", "followers", "next_date"];
 declare const SAVED_SEARCH_SCOPES: readonly ["search", "category"];
@@ -38,18 +38,6 @@ export declare const PaymentMethodSetupSchema: z.ZodObject<{
     returnUrl: z.ZodString;
     expiresAt: z.ZodOptional<z.ZodString>;
 }, z.core.$loose>;
-export declare const TicketCardPageSchema: z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-    items: z.ZodArray<typeof TicketCardSchema>;
-    page: typeof StorefrontCursorPageInfoSchema;
-}, z.core.$loose>>;
-export declare const DateCardPageSchema: z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-    items: z.ZodArray<typeof DateCardSchema>;
-    page: typeof StorefrontCursorPageInfoSchema;
-}, z.core.$loose>>;
-export declare const ArtistSummaryPageSchema: z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-    items: z.ZodArray<typeof ArtistSummarySchema>;
-    page: typeof StorefrontCursorPageInfoSchema;
-}, z.core.$loose>>;
 export declare const FollowArtistBodySchema: z.ZodObject<{
     alertEnabled: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
 }, z.core.$strip>;
@@ -77,10 +65,6 @@ export declare const OrderEntrySchema: z.ZodObject<{
     order: z.ZodOptional<typeof OrderSchema>;
     external: z.ZodOptional<typeof ExternalOrderRefSchema>;
 }, z.core.$loose>;
-export declare const OrderEntryPageSchema: z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-    items: z.ZodArray<typeof OrderEntrySchema>;
-    page: typeof StorefrontCursorPageInfoSchema;
-}, z.core.$loose>>;
 export declare const NotificationPageSchema: z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
     items: z.ZodArray<typeof NotificationEntrySchema>;
     unreadCount: z.ZodInt;
@@ -164,16 +148,12 @@ export type AddPasskeyBody = z.output<typeof AddPasskeyBodySchema>;
 export type PasskeyEnrolment = z.output<typeof PasskeyEnrolmentSchema>;
 export type AddPaymentMethodBody = z.output<typeof AddPaymentMethodBodySchema>;
 export type PaymentMethodSetup = z.output<typeof PaymentMethodSetupSchema>;
-export type TicketCardPage = z.output<typeof TicketCardPageSchema>;
-export type DateCardPage = z.output<typeof DateCardPageSchema>;
-export type ArtistSummaryPage = z.output<typeof ArtistSummaryPageSchema>;
 export type FollowArtistBody = z.output<typeof FollowArtistBodySchema>;
 export type Reminder = z.output<typeof ReminderSchema>;
 export type SavedSearchList = z.output<typeof SavedSearchListSchema>;
 export type CreateSavedSearchBody = z.output<typeof CreateSavedSearchBodySchema>;
 export type UpdateSavedSearchBody = z.output<typeof UpdateSavedSearchBodySchema>;
 export type OrderEntry = z.output<typeof OrderEntrySchema>;
-export type OrderEntryPage = z.output<typeof OrderEntryPageSchema>;
 export type NotificationPage = z.output<typeof NotificationPageSchema>;
 export type MarkNotificationsReadBody = z.output<typeof MarkNotificationsReadBodySchema>;
 export type NotificationBadgeAnswer = z.output<typeof NotificationBadgeAnswerSchema>;

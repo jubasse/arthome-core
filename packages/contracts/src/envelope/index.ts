@@ -225,6 +225,7 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   typeof ApiErrorCode.NOT_FOUND,
   typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
   typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
+  typeof DomainErrorCode.STATE_CONFLICT,
   typeof IdentityErrorCode.EMAIL_TAKEN,
   typeof IdentityErrorCode.INVALID_CREDENTIALS,
   typeof IdentityErrorCode.VERIFICATION_LINK_INVALID,
@@ -235,6 +236,8 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   // transport.md §5.4's two refusals of a key: the surface reuses a key or waits, the BFF cannot.
   ApiErrorCode.IDEMPOTENCY_KEY_REUSED,
   ApiErrorCode.IDEMPOTENCY_IN_FLIGHT,
+  // A versioned write (the profile, a cart line) refused on a stale expectedVersion.
+  DomainErrorCode.STATE_CONFLICT,
   IdentityErrorCode.EMAIL_TAKEN,
   IdentityErrorCode.INVALID_CREDENTIALS,
   IdentityErrorCode.VERIFICATION_LINK_INVALID,

@@ -7,17 +7,17 @@ import {
   MessageDomain,
   NotificationChannel,
   PlanTier,
+  PriceTier,
   ReplayPolicy,
   RightsScope,
+  SeatState,
 } from '@arthome/core';
 
 import type {
   AccountDeletion,
   AddPasskeyBody,
   AddPaymentMethodBody,
-  ArtistSummaryPage,
   CreateSavedSearchBody,
-  DateCardPage,
   DeletionCancellation,
   DeviceRevocation,
   ExportRequestAccepted,
@@ -25,7 +25,7 @@ import type {
   MarkNotificationsReadBody,
   NotificationBadgeAnswer,
   NotificationPage,
-  OrderEntryPage,
+  OrderEntry,
   PasskeyEnrolment,
   PaymentMethodSetup,
   PlaybackPosition,
@@ -35,7 +35,6 @@ import type {
   RequestAccountDeletionBody,
   RequestExportBody,
   SavedSearchList,
-  TicketCardPage,
   UpdateConsentsBody,
   UpdateNotificationPreferencesBody,
   UpdatePreferencesBody,
@@ -46,9 +45,7 @@ import {
   AccountDeletionSchema,
   AddPasskeyBodySchema,
   AddPaymentMethodBodySchema,
-  ArtistSummaryPageSchema,
   CreateSavedSearchBodySchema,
-  DateCardPageSchema,
   DeletionCancellationSchema,
   DeviceRevocationSchema,
   ExportRequestAcceptedSchema,
@@ -56,7 +53,7 @@ import {
   MarkNotificationsReadBodySchema,
   NotificationBadgeAnswerSchema,
   NotificationPageSchema,
-  OrderEntryPageSchema,
+  OrderEntrySchema,
   PasskeyEnrolmentSchema,
   PaymentMethodSetupSchema,
   PlaybackPositionSchema,
@@ -66,7 +63,6 @@ import {
   RequestAccountDeletionBodySchema,
   RequestExportBodySchema,
   SavedSearchListSchema,
-  TicketCardPageSchema,
   UpdateConsentsBodySchema,
   UpdateNotificationPreferencesBodySchema,
   UpdatePreferencesBodySchema,
@@ -82,8 +78,7 @@ import {
   ViewerPreferencesSchema,
 } from '../../identity/index.js';
 import type { ModuleExamples } from '../../openapi/docs.js';
-import { EmptyReason } from '../../pagination/index.js';
-import { ExportRequestSchema } from '../../ticketing/index.js';
+import { ExportRequestSchema, TicketCardSchema } from '../../ticketing/index.js';
 
 const DEVICE_ID = '019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77';
 const EXPORT_ID = '019928fc-0000-7000-8000-000000000001';
@@ -134,16 +129,6 @@ const accountScreen: z.output<typeof AccountScreenSchema> = {
   deletion: null,
 };
 
-const ticketCardPage: TicketCardPage = {
-  servedAt: '2026-09-21T18:56:00.000Z',
-  items: [],
-  page: {
-    hasMore: false,
-    emptyReason: EmptyReason.NO_TICKET_YET,
-    emptyActionCode: 'browse_catalog',
-  },
-};
-
 const dateCard: z.output<typeof DateCardSchema> = {
   id: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
   showId: '019928a0-7d31-7a10-b8c4-2f9e11a4c111',
@@ -163,10 +148,14 @@ const dateCard: z.output<typeof DateCardSchema> = {
   viewerRelations: { inWatchlist: true, reminderSet: false, followsArtist: false },
 };
 
-const dateCardPage: DateCardPage = {
-  servedAt: '2026-09-21T18:57:00.000Z',
-  items: [dateCard],
-  page: { hasMore: false },
+const ticketCard: z.output<typeof TicketCardSchema> = {
+  seatId: '019928e6-0000-7000-8000-000000000001',
+  dateId: dateCard.id,
+  orderId: '019928e5-0000-7000-8000-000000000001',
+  seatCode: 'ATH-7QK2-4M',
+  tier: PriceTier.FULL,
+  state: SeatState.ACTIVE,
+  date: dateCard,
 };
 
 const artistSummary: z.output<typeof ArtistSummarySchema> = {
@@ -175,16 +164,9 @@ const artistSummary: z.output<typeof ArtistSummarySchema> = {
   name: 'Compagnie Verticale',
   categoryId: 'dance-contemporary',
   followedByViewer: true,
-};
-
-const artistSummaryPage: ArtistSummaryPage = {
-  servedAt: '2026-09-21T18:58:40.000Z',
-  items: [{ ...artistSummary, followers: 4120, isLiveNow: true, alertEnabled: true }],
-  page: {
-    hasMore: false,
-    emptyReason: EmptyReason.NO_FOLLOWED_ARTIST,
-    emptyActionCode: 'browse_artists',
-  },
+  followers: 4120,
+  isLiveNow: true,
+  alertEnabled: true,
 };
 
 const followArtistBody: FollowArtistBody = { alertEnabled: true };
@@ -218,23 +200,13 @@ const createSavedSearchBody: CreateSavedSearchBody = {
 
 const updateSavedSearchBody: UpdateSavedSearchBody = { active: false };
 
-const orderEntryPage: OrderEntryPage = {
-  servedAt: '2026-09-21T19:02:00.000Z',
-  items: [
-    {
-      external: {
-        externalRef: 'SHOP-9912',
-        externalHost: 'boutique.compagnie-verticale.fr',
-        state: 'external',
-        syncedAt: '2026-09-20T22:14:00Z',
-        syncSource: 'shopify',
-      },
-    },
-  ],
-  page: {
-    hasMore: false,
-    emptyReason: EmptyReason.NO_ORDER_YET,
-    emptyActionCode: 'browse_shop',
+const orderEntry: OrderEntry = {
+  external: {
+    externalRef: 'SHOP-9912',
+    externalHost: 'boutique.compagnie-verticale.fr',
+    state: 'external',
+    syncedAt: '2026-09-20T22:14:00Z',
+    syncSource: 'shopify',
   },
 };
 
@@ -372,18 +344,16 @@ export const meExamples: ModuleExamples = [
   [AddPaymentMethodBodySchema, [addPaymentMethodBody]],
   [PaymentMethodSetupSchema, [paymentMethodSetup]],
   [AccountScreenSchema, [accountScreen]],
-  [TicketCardPageSchema, [ticketCardPage]],
+  [TicketCardSchema, [ticketCard]],
   [DateCardSchema, [dateCard]],
-  [DateCardPageSchema, [dateCardPage]],
   [ArtistSummarySchema, [artistSummary]],
-  [ArtistSummaryPageSchema, [artistSummaryPage]],
   [FollowArtistBodySchema, [followArtistBody]],
   [ReminderSchema, [reminder]],
   [SavedSearchSchema, [savedSearch]],
   [SavedSearchListSchema, [savedSearchList]],
   [CreateSavedSearchBodySchema, [createSavedSearchBody]],
   [UpdateSavedSearchBodySchema, [updateSavedSearchBody]],
-  [OrderEntryPageSchema, [orderEntryPage]],
+  [OrderEntrySchema, [orderEntry]],
   [NotificationPageSchema, [notificationPage]],
   [MarkNotificationsReadBodySchema, [markNotificationsReadBody]],
   [NotificationBadgeAnswerSchema, [notificationBadgeAnswer]],
