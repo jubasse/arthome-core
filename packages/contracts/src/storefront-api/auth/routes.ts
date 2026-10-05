@@ -64,7 +64,7 @@ export const signUp: SignUpRoute = signedOut.action('sign-up', {
   body: SignUpBodySchema,
   response: StorefrontSessionEstablishedSchema,
   status: 201,
-  requires: [throttle('auth')],
+  requires: [throttle('SIGN_UP_PER_ADDRESS')],
   errors: [IdentityErrorCode.EMAIL_TAKEN],
   answer: 'Account created and session opened, in the requested mode.',
 });
@@ -75,7 +75,7 @@ export const signIn: SignInRoute = signedOut.action('sign-in', {
   body: SignInBodySchema,
   response: StorefrontSessionEstablishedSchema,
   idempotent: false,
-  requires: [throttle('auth')],
+  requires: [throttle('SIGN_IN_PER_ADDRESS'), throttle('SIGN_IN_PER_EMAIL')],
   errors: [IdentityErrorCode.INVALID_CREDENTIALS, IdentityErrorCode.TWO_FACTOR_REQUIRED],
   answer: 'Session opened, in the requested mode.',
 });
@@ -95,7 +95,7 @@ export const confirmEmailVerification: ConfirmEmailVerificationRoute = signedOut
     'x-arthome-invalidates': ['account:profile'],
     body: ConfirmEmailVerificationBodySchema,
     response: EmailVerificationSchema,
-    requires: [throttle('auth')],
+    requires: [throttle('EMAIL_VERIFICATION_CONFIRM_PER_ADDRESS')],
     errors: [IdentityErrorCode.VERIFICATION_LINK_INVALID],
     answer: 'The address is verified.',
   },
@@ -107,7 +107,10 @@ export const resendEmailVerification: ResendEmailVerificationRoute = signedIn.ac
     operationId: 'resendEmailVerification',
     summary: "Queues a fresh verification link for the signed-in account's address.",
     response: EmailVerificationQueueingSchema,
-    requires: [throttle('auth')],
+    requires: [
+      throttle('EMAIL_VERIFICATION_RESEND_PER_ACCOUNT'),
+      throttle('EMAIL_VERIFICATION_RESEND_PER_ACCOUNT_DAILY'),
+    ],
     answer: 'A link was queued for sending, or the address is already verified.',
   },
 );
@@ -118,7 +121,7 @@ export const requestPasswordReset: RequestPasswordResetRoute = signedOut.action(
   body: RequestPasswordResetBodySchema,
   response: Acknowledged,
   status: 202,
-  requires: [throttle('auth')],
+  requires: [throttle('password-reset')],
   answer: 'Request accepted — the answer is the same in both cases.',
 });
 

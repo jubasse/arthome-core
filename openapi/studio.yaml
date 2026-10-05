@@ -165,7 +165,9 @@ paths:
         submit is rate limiting, not the idempotency store.
       x-arthome-requires:
       - name: throttle
-        bucket: sign-in
+        bucket: SIGN_IN_PER_ADDRESS
+      - name: throttle
+        bucket: SIGN_IN_PER_EMAIL
       security: []
       parameters:
       - $ref: '#/components/parameters/Surface'

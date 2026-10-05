@@ -417,7 +417,8 @@ routes keep their tags and their operation ids; they leave the tag modules they 
      (its reason in `docs.ts` as `idempotencyExemption`), and `x-arthome-invalidates`, which stays on
      the route because a surface reads it;
    - `requires`: a rule, on the route or on the builder, adds its codes (`throttle('export')` its
-     `429`, `recentAuth()` its `403`); a rate limit is always a `throttle` rule;
+     `429`, `recentAuth()` its `403`); a rate limit is always a `throttle` rule, named by the key of core's `AuthRateLimit` when one exists
+     (`throttle('SIGN_IN_PER_ADDRESS')`; `throttle-buckets.spec.ts` lists the buckets that have none yet);
    - a secret in an answer is `sensitive(schema)`, which derives `Cache-Control: no-store`: never a
      hand header;
    - a list is `findAll` with its `item`: the convention answers `items` and `page`

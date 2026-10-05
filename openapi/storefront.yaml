@@ -501,7 +501,7 @@ paths:
       - account
       x-arthome-requires:
       - name: throttle
-        bucket: auth
+        bucket: SIGN_UP_PER_ADDRESS
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -667,7 +667,9 @@ paths:
         here is rate limiting per `device_id`, not the idempotency store.
       x-arthome-requires:
       - name: throttle
-        bucket: auth
+        bucket: SIGN_IN_PER_ADDRESS
+      - name: throttle
+        bucket: SIGN_IN_PER_EMAIL
       security: []
       parameters:
       - $ref: '#/components/parameters/Surface'
@@ -864,7 +866,7 @@ paths:
       - account
       x-arthome-requires:
       - name: throttle
-        bucket: auth
+        bucket: EMAIL_VERIFICATION_CONFIRM_PER_ADDRESS
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
@@ -960,7 +962,9 @@ paths:
       - account
       x-arthome-requires:
       - name: throttle
-        bucket: auth
+        bucket: EMAIL_VERIFICATION_RESEND_PER_ACCOUNT
+      - name: throttle
+        bucket: EMAIL_VERIFICATION_RESEND_PER_ACCOUNT_DAILY
       security:
       - sessionCookie: []
         csrfToken: []
@@ -1031,7 +1035,7 @@ paths:
       - account
       x-arthome-requires:
       - name: throttle
-        bucket: auth
+        bucket: password-reset
       security: []
       parameters:
       - $ref: '#/components/parameters/IdempotencyKey'
