@@ -13,6 +13,8 @@ export interface TaggedBrand<Tag extends string> {
 type Union<Tag extends string, V extends Variants> = {
     [K in keyof V & string]: z.output<V[K]> & Readonly<Record<Tag, K>> & TaggedBrand<Tag>;
 }[keyof V & string];
+/** What `tagged` returns: the explicit type of an exported union, under `isolatedDeclarations`. */
+export type TaggedSchema<Tag extends string, V extends Variants> = z.ZodType<Union<Tag, V>>;
 /** A variant the client does not know yet: kept raw, and treated as neutral (`transport.md` §5.11). */
 export type UnknownVariant<Tag extends string> = Readonly<Record<Tag, string & {}>> & Readonly<Record<string, unknown>>;
 /**
@@ -29,7 +31,7 @@ export type ClientView<T> = T extends readonly (infer Item)[] ? ClientView<Item>
  * schema without the tag, and the helper adds it. Two keys may name one schema (a variant that
  * serves two tag values), and its tag then takes both.
  */
-export declare function tagged<const Tag extends string, const V extends Variants>(tag: Tag, variants: V): z.ZodType<Union<Tag, V>>;
+export declare function tagged<const Tag extends string, const V extends Variants>(tag: Tag, variants: V): TaggedSchema<Tag, V>;
 export type TolerantParse = {
     readonly ok: true;
     readonly value: unknown;

@@ -21,8 +21,10 @@ import {
 import type { StorefrontRelayedCode } from '../envelope/index.js';
 import type {
   AccessorOf,
+  CachePolicy,
   ErrorBody,
   ErrorModel,
+  Freshness,
   Header,
   Identity,
   Paging,
@@ -38,6 +40,7 @@ import type {
 } from '../http/index.js';
 import {
   accessorOf,
+  cache,
   cursor,
   defineErrorModel,
   errorResponse,
@@ -242,6 +245,18 @@ export const CacheControlPublicHeader: Header = {
     examples: ['public, max-age=60'],
   }),
 };
+
+const PUBLIC_READ_VARY: readonly string[] = [
+  'Cookie',
+  'Authorization',
+  'X-Arthome-Device-Token',
+  'X-Arthome-Surface',
+];
+
+/** The freshness of a public read: `public` for an anonymous caller, varying on every credential and the surface. */
+export function publicRead(freshness: Freshness): CachePolicy {
+  return cache(freshness, { scope: 'public', vary: PUBLIC_READ_VARY });
+}
 
 export const VaryAuthHeader: Header = {
   description:
@@ -519,8 +534,8 @@ export const viewer: Identity<
 });
 
 /**
- * A signed-in viewer, or a device that holds only its device token: the bootstrap is read before
- * any session. Reads accept either credential, a write takes the viewer's, and the principal says
+ * A signed-in viewer, or a device that holds only its device token: the bootstrap is read and a
+ * pairing driven before any session. Either credential reads and writes, and the principal says
  * which one called.
  */
 export const viewerOrDevice: Identity<
@@ -532,7 +547,7 @@ export const viewerOrDevice: Identity<
 > = identity('viewer_or_device', {
   schemes: {
     read: [{ sessionCookie: [] }, { bearerToken: [] }, { deviceToken: [] }],
-    write: [{ sessionCookie: [], csrfToken: [] }, { bearerToken: [] }],
+    write: [{ sessionCookie: [], csrfToken: [] }, { bearerToken: [] }, { deviceToken: [] }],
   },
   principal: z.union([ViewerPrincipalSchema, DevicePrincipalSchema]),
   writeErrors: [ApiErrorCode.FORBIDDEN],

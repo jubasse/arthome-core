@@ -22,15 +22,17 @@ A declaration longer than 160 characters is listed by kind only — read the `.d
 
 #### @arthome/contracts/catalog
 
-Declarations: `dist/catalog/index.d.ts` — 22 exported names.
+Declarations: `dist/catalog/index.d.ts` — 24 exported names.
 
 - `ArtistDetailSchema` (const) — 'ArtistDetail' and 'DateDetail' — the two pages.
+- `ArtistRailSchema` (const) — `ArtistRailSchema: z.ZodObject<ReturnType<typeof railFields<typeof ArtistSummarySchema>>, z.core.$loose>`
 - `ArtistSummarySchema` (const)
 - `CategoryScreenSchema` (const)
 - `CategoryTileSchema` (const)
 - `ChapterSchema` (const) — `ChapterSchema: z.ZodObject<{ id: z.ZodString; vocabId: z.ZodString; atMediaSec: z.ZodNumber; }, z.core.$loose>`
 - `DateCardSchema` (const)
 - `DateDetailSchema` (const)
+- `DateRailSchema` (const) — `DateRailSchema: z.ZodObject<ReturnType<typeof railFields<typeof DateCardSchema>>, z.core.$loose>`
 - `DomainConstantsSchema` (const)
 - `FacetSchema` (const) — `FacetSchema: z.ZodObject<{ facetId: z.ZodString; values: z.ZodArray<z.ZodObject<{ id: z.ZodString; count: z.ZodNumber; }, z.core.$loose>>; }, z.core.$loose>`
 - `HomeScreenSchema` (const)
@@ -40,7 +42,7 @@ Declarations: `dist/catalog/index.d.ts` — 22 exported names.
 - `MediaSetSchema` (const)
 - `MerchItemSchema` (const) — An item of merchandise sold alongside an artist or a date.
 - `PriceTierSchema` (const)
-- `RailSchema` (const)
+- `RailSchema` (const) — `RailSchema: TaggedSchema<'itemKind', { date: typeof DateRailSchema; artist: typeof ArtistRailSchema; }>`
 - `SavedSearchSchema` (const)
 - `ScheduleSlotSchema` (const)
 - `SearchCriteriaSchema` (const)
@@ -78,7 +80,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 180 exported names.
+Declarations: `dist/http/index.d.ts` — 181 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
@@ -205,6 +207,7 @@ Declarations: `dist/http/index.d.ts` — 180 exported names.
 - `Strict` (type) — A declared shape without the index signatures its loose objects carry, so a handler returning an undeclared field is a compile error.
 - `SubresourceReplaceRoute` (type)
 - `TaggedBrand` (interface) — Type-only: marks a union as tagged on 'Tag', so the client's view of it can add the unknown variant.
+- `TaggedSchema` (type) — `type TaggedSchema<Tag extends string, V extends Variants> = z.ZodType<Union<Tag, V>>;` — What 'tagged' returns: the explicit type of an exported union, under 'isolatedDeclarations'.
 - `TolerantParse` (type)
 - `UnknownVariant` (type) — `type UnknownVariant<Tag extends string> = Readonly<Record<Tag, string & {}>> & Readonly<Record<string, unknown>>;` — A variant the client does not know yet: kept raw, and treated as neutral ('transport.md' §5.11).
 - `UpdateRoute` (type)
@@ -257,7 +260,7 @@ Declarations: `dist/http/index.d.ts` — 180 exported names.
 - `stripping` (function) — `function stripping(schema: z.ZodType): z.ZodType;` — The schema with each loose object turned into a stripping one.
 - `strippingBodiesOf` (function) — `function strippingBodiesOf(route: RouteShape): Readonly<Record<string, z.ZodType>>;` — The stripping schema of each success response of a route that has a JSON body, by status.
 - `successStatusOf` (function) — `function successStatusOf(route: RouteShape): number;` — The lowest 2xx a route declares — the status a handler answers with when it succeeds.
-- `tagged` (function) — `function tagged<const Tag extends string, const V extends Variants>(tag: Tag, variants: V): z.ZodType<Union<Tag, V>>;` — 'tagged('outcome', { succeeded: Succeeded, declined: Declined })': each variant is an object schema without the tag, and the helper adds it.
+- `tagged` (function) — `function tagged<const Tag extends string, const V extends Variants>(tag: Tag, variants: V): TaggedSchema<Tag, V>;` — 'tagged('outcome', { succeeded: Succeeded, declined: Declined })': each variant is an object schema without the tag, and the helper adds it.
 - `throttle` (function) — `function throttle<const Bucket extends string>(bucket: Bucket): Requirement<'throttle', { readonly bucket: Bucket; }, typeof ApiErrorCode.RATE_LIMITED>;` — A rate-limit bucket by name: the server binds the cap, and the '429' is derived.
 - `versionedPath` (function) — `function versionedPath(route: Pick<RouteShape, 'version' | 'path'>): string;` — The only versioning strategy: the version is a path prefix, '/v1/dates/{dateId}'.
 

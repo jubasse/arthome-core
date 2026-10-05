@@ -74,7 +74,7 @@ is part of `pnpm run verify`.
 
 Every operation of both contracts is declared once, in `src/storefront-api/` or `src/studio-api/`:
 a module folder per URL block (`studio-api/dates/`, below) or, until it converts, one module per tag
-(`discovery.ts`, `payouts.ts`), the shared parameters, headers and responses in
+(`payouts.ts`), the shared parameters, headers and responses in
 `components.ts`, the api itself and its component names in `index.ts`, and the document's
 introduction (`info`, `servers`, `tags`, the security schemes) in `docs.ts`, which also gathers what
 each module documents (below).
@@ -286,7 +286,9 @@ status in its type: `errors: [PRICE_STALE, SOLD_OUT]` gives `errorCodes: { 409: 
   only when it was asked for).
 - **`cache(Freshness.FIVE_MINUTES, { etag, scope, vary })`** is the freshness family of
   `transport.md` §5.9. `budgetMs`, `bodyLimit` and `degradable` are the other values the server reads.
-- **`tagged('outcome', { succeeded, declined })`** is a strict union for the server, a `oneOf` with its
+  A storefront read that serves an anonymous caller (`.optionalAuth()`) declares `publicRead(Freshness.X)`
+  (`storefront-api/components.ts`): `cache` with the `public` scope and the `Vary` of every credential and the surface.
+- **`tagged('outcome', { succeeded, declined })`** (an exported one is annotated `TaggedSchema<'outcome', { succeeded: typeof Succeeded, declined: typeof Declined }>`) is a strict union for the server, a `oneOf` with its
   `discriminator` and its mapping for the document, and `parseTolerant` for a client that keeps a
   variant it does not know. **`accepted({ operation })`** is a `202` that names the operation to follow.
 - **`restricted(schema, right)`** is a field only some callers see: optional in the type and the

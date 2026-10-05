@@ -2,19 +2,26 @@ import { describe, expect, it } from 'vitest';
 
 import type { Api, Route } from './http/index.js';
 import * as storefrontAccountDeepLink from './storefront-api/account-deep-link/routes.js';
+import * as storefrontArtists from './storefront-api/artists/routes.js';
 import * as storefrontAuth from './storefront-api/auth/routes.js';
 import * as storefrontCart from './storefront-api/cart/routes.js';
+import * as storefrontCategories from './storefront-api/categories/routes.js';
 import * as storefrontChanges from './storefront-api/changes/routes.js';
-import * as storefrontChat from './storefront-api/chat.js';
+import * as storefrontChat from './storefront-api/chat/routes.js';
 import * as storefrontDates from './storefront-api/dates/routes.js';
 import * as storefrontDevices from './storefront-api/devices/routes.js';
-import * as storefrontDiscovery from './storefront-api/discovery.js';
+import * as storefrontHome from './storefront-api/home/routes.js';
 import { storefrontApi } from './storefront-api/index.js';
+import * as storefrontLive from './storefront-api/live/routes.js';
 import * as storefrontMe from './storefront-api/me/routes.js';
 import * as storefrontOrders from './storefront-api/orders/routes.js';
-import * as storefrontPairing from './storefront-api/pairing.js';
+import * as storefrontPairings from './storefront-api/pairings/routes.js';
 import * as storefrontPlans from './storefront-api/plans/routes.js';
-import * as storefrontPlayback from './storefront-api/playback.js';
+import * as storefrontPlayback from './storefront-api/playback/routes.js';
+import * as storefrontRails from './storefront-api/rails/routes.js';
+import * as storefrontReplays from './storefront-api/replays/routes.js';
+import * as storefrontResolve from './storefront-api/resolve/routes.js';
+import * as storefrontSearch from './storefront-api/search/routes.js';
 import * as storefrontSeats from './storefront-api/seats/routes.js';
 import * as storefrontSubscription from './storefront-api/subscription/routes.js';
 import * as storefrontSupport from './storefront-api/support/routes.js';
@@ -59,18 +66,25 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
     storefrontApi,
     [
       storefrontAccountDeepLink,
+      storefrontArtists,
       storefrontAuth,
       storefrontCart,
+      storefrontCategories,
       storefrontChanges,
       storefrontChat,
       storefrontDates,
       storefrontDevices,
-      storefrontDiscovery,
+      storefrontHome,
+      storefrontLive,
       storefrontMe,
       storefrontOrders,
-      storefrontPairing,
+      storefrontPairings,
       storefrontPlans,
       storefrontPlayback,
+      storefrontRails,
+      storefrontReplays,
+      storefrontResolve,
+      storefrontSearch,
       storefrontSeats,
       storefrontSubscription,
       storefrontSupport,

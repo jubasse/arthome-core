@@ -11,27 +11,7 @@ import { studioApi } from './studio-api/index.js';
  * clean, and a route in them that is now clean must leave them: the lists only shrink, and the
  * fan-out ends with both empty.
  */
-const STOREFRONT_STILL_INLINE: readonly string[] = [
-  'cancelPairing',
-  'createPairing',
-  'decidePairing',
-  'engagePairing',
-  'extendRail',
-  'getArtistDetail',
-  'getCategoryScreen',
-  'getHomeScreen',
-  'getLiveScreen',
-  'listArtists',
-  'listCategories',
-  'listReplays',
-  'openPlayback',
-  'pollPairing',
-  'releasePlayback',
-  'renewPlaybackTicket',
-  'reportChatMessage',
-  'resolvePublicLink',
-  'search',
-];
+const STOREFRONT_STILL_INLINE: readonly string[] = [];
 
 const STUDIO_STILL_INLINE: readonly string[] = [
   'addBannedWord',

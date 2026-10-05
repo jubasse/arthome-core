@@ -3,7 +3,7 @@ import { ApiErrorCode, ChatErrorCode, OrderErrorCode, Surface } from '@arthome/c
 import type { VocabularyIn } from '@arthome/core/schema';
 import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
 import type { StorefrontRelayedCode } from '../envelope/index.js';
-import type { AccessorOf, ErrorBody, ErrorModel, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement, CodedResponse } from '../http/index.js';
+import type { AccessorOf, CachePolicy, ErrorBody, ErrorModel, Freshness, Header, Identity, Paging, HeaderParameter, JsonResponse, PathParameter, QueryParameter, Response, ResourceConventions, RouteBuilder, SecurityRequirement, CodedResponse } from '../http/index.js';
 declare const SURFACE: readonly [
     typeof Surface.STOREFRONT_WEB,
     typeof Surface.STOREFRONT_MOBILE,
@@ -36,6 +36,8 @@ export declare const ServedAtHeader: Header;
 export declare const IdempotencyReplayedHeader: Header;
 export declare const RetryAfterMsHeader: Header;
 export declare const CacheControlPublicHeader: Header;
+/** The freshness of a public read: `public` for an anonymous caller, varying on every credential and the surface. */
+export declare function publicRead(freshness: Freshness): CachePolicy;
 export declare const VaryAuthHeader: Header;
 /** `api.schema_invalid`'s envelope, so the document says what a refused field carries. */
 declare const SchemaInvalidEnvelopeSchema: z.ZodType<ErrorBody<typeof ApiErrorCode.SCHEMA_INVALID>>;
@@ -96,8 +98,8 @@ export declare const DevicePrincipalSchema: z.ZodObject<{
 /** A signed-in viewer, by session cookie (a write carries its CSRF token) or bearer token. */
 export declare const viewer: Identity<'viewer', typeof ViewerPrincipalSchema, typeof ApiErrorCode.FORBIDDEN, readonly [], readonly []>;
 /**
- * A signed-in viewer, or a device that holds only its device token: the bootstrap is read before
- * any session. Reads accept either credential, a write takes the viewer's, and the principal says
+ * A signed-in viewer, or a device that holds only its device token: the bootstrap is read and a
+ * pairing driven before any session. Either credential reads and writes, and the principal says
  * which one called.
  */
 export declare const viewerOrDevice: Identity<'viewer_or_device', z.ZodUnion<readonly [typeof ViewerPrincipalSchema, typeof DevicePrincipalSchema]>, typeof ApiErrorCode.FORBIDDEN, readonly [], readonly []>;

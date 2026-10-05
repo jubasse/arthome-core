@@ -7,22 +7,43 @@ import type { ApiDocs, OperationDocumentation } from '../openapi/docs.js';
 import { apiDocs, documentationLookup } from '../openapi/docs.js';
 import { accountDeepLinkDocs } from './account-deep-link/docs.js';
 import { accountDeepLinkExamples } from './account-deep-link/examples.js';
+import { artistsDocs } from './artists/docs.js';
+import { artistsExamples } from './artists/examples.js';
 import { authDocs } from './auth/docs.js';
 import { authExamples } from './auth/examples.js';
 import { cartDocs } from './cart/docs.js';
 import { cartExamples } from './cart/examples.js';
+import { categoriesDocs } from './categories/docs.js';
+import { categoriesExamples } from './categories/examples.js';
 import { changesDocs } from './changes/docs.js';
 import { changesExamples } from './changes/examples.js';
+import { chatDocs } from './chat/docs.js';
+import { chatExamples } from './chat/examples.js';
 import { datesDocs } from './dates/docs.js';
 import { datesExamples } from './dates/examples.js';
 import { devicesDocs } from './devices/docs.js';
 import { devicesExamples } from './devices/examples.js';
+import { homeDocs } from './home/docs.js';
+import { homeExamples } from './home/examples.js';
+import { liveDocs } from './live/docs.js';
+import { liveExamples } from './live/examples.js';
 import { meDocs } from './me/docs.js';
 import { meExamples } from './me/examples.js';
 import { ordersDocs } from './orders/docs.js';
 import { ordersExamples } from './orders/examples.js';
+import { pairingsDocs } from './pairings/docs.js';
+import { pairingsExamples } from './pairings/examples.js';
 import { plansDocs } from './plans/docs.js';
 import { plansExamples } from './plans/examples.js';
+import { playbackDocs } from './playback/docs.js';
+import { playbackExamples } from './playback/examples.js';
+import { railsDocs } from './rails/docs.js';
+import { railsExamples } from './rails/examples.js';
+import { replaysDocs } from './replays/docs.js';
+import { resolveDocs } from './resolve/docs.js';
+import { resolveExamples } from './resolve/examples.js';
+import { searchDocs } from './search/docs.js';
+import { searchExamples } from './search/examples.js';
 import { seatsDocs } from './seats/docs.js';
 import { seatsExamples } from './seats/examples.js';
 import { subscriptionDocs } from './subscription/docs.js';
@@ -129,14 +150,25 @@ export const storefrontDocs: ApiDocs = apiDocs({
   },
   modules: [
     accountDeepLinkDocs,
+    artistsDocs,
     authDocs,
     cartDocs,
+    categoriesDocs,
     changesDocs,
+    chatDocs,
     datesDocs,
     devicesDocs,
+    homeDocs,
+    liveDocs,
     meDocs,
     ordersDocs,
+    pairingsDocs,
     plansDocs,
+    playbackDocs,
+    railsDocs,
+    replaysDocs,
+    resolveDocs,
+    searchDocs,
     seatsDocs,
     subscriptionDocs,
     supportDocs,
@@ -145,14 +177,24 @@ export const storefrontDocs: ApiDocs = apiDocs({
   examples: [
     sharedExamples,
     accountDeepLinkExamples,
+    artistsExamples,
     authExamples,
     cartExamples,
+    categoriesExamples,
     changesExamples,
+    chatExamples,
     datesExamples,
     devicesExamples,
+    homeExamples,
+    liveExamples,
     meExamples,
     ordersExamples,
+    pairingsExamples,
     plansExamples,
+    playbackExamples,
+    railsExamples,
+    resolveExamples,
+    searchExamples,
     seatsExamples,
     subscriptionExamples,
     supportExamples,

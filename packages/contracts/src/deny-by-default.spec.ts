@@ -11,27 +11,7 @@ import { studioApi } from './studio-api/index.js';
  * that now does must leave it, so the list only shrinks. The fan-out of the model ends with both
  * lists empty.
  */
-const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [
-  'cancelPairing',
-  'createPairing',
-  'decidePairing',
-  'engagePairing',
-  'extendRail',
-  'getArtistDetail',
-  'getCategoryScreen',
-  'getHomeScreen',
-  'getLiveScreen',
-  'listArtists',
-  'listCategories',
-  'listReplays',
-  'openPlayback',
-  'pollPairing',
-  'releasePlayback',
-  'renewPlaybackTicket',
-  'reportChatMessage',
-  'resolvePublicLink',
-  'search',
-];
+const STOREFRONT_NOT_YET_OPTED_IN: readonly string[] = [];
 
 const STUDIO_NOT_YET_OPTED_IN: readonly string[] = [
   'addBannedWord',

@@ -4739,14 +4739,13 @@ paths:
       - ticketing
       - identity
       - streaming
-      x-arthome-freshness: 60
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/ViewerTimezone'
       - $ref: '#/components/parameters/Surface'
@@ -4754,11 +4753,6 @@ paths:
       responses:
         '200':
           description: Home.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -4772,10 +4766,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:13.900Z'
-                validUntil: '2026-09-21T18:03:13.900Z'
-                lastEventSeq: 918233
-                degraded: []
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   billboard:
                     previewStartsAfterSec: 4
@@ -4812,10 +4803,23 @@ paths:
                     cardForm: wide
                     items: []
                     nextCursor: null
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '503':
-          $ref: '#/components/responses/Unavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/live:
     get:
       operationId: getLiveScreen
@@ -4836,14 +4840,13 @@ paths:
       - ticketing
       - streaming
       - identity
-      x-arthome-freshness: 15
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/ViewerTimezone'
       - $ref: '#/components/parameters/Surface'
@@ -4851,11 +4854,6 @@ paths:
       responses:
         '200':
           description: Tonight's grid.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -4869,15 +4867,29 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:14.210Z'
-                validUntil: '2026-09-21T18:02:29.210Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   slots:
                   - localHourLabelKey: '20'
                     startsAt: '2026-09-21T18:00:00Z'
                     dates: []
-        '503':
-          $ref: '#/components/responses/Unavailable'
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/categories:
     get:
       operationId: listCategories
@@ -4895,25 +4907,19 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - catalog
-      x-arthome-freshness: 300
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
           description: The disciplines.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -4937,8 +4943,23 @@ paths:
                   datesCount: 84
                   liveCount: 2
                   featured: true
-        '503':
-          $ref: '#/components/responses/Unavailable'
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/categories/{categoryId}:
     get:
       operationId: getCategoryScreen
@@ -4958,14 +4979,13 @@ paths:
       - ticketing
       - identity
       - streaming
-      x-arthome-freshness: 300
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/CategoryId'
       - name: section
@@ -5018,11 +5038,6 @@ paths:
       responses:
         '200':
           description: The discipline.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5036,7 +5051,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:16.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   categoryId: dance-contemporary
                   subGenres:
@@ -5048,8 +5063,27 @@ paths:
                     items: []
                     nextCursor: null
                   facets: []
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/artists:
     get:
       operationId: listArtists
@@ -5068,18 +5102,17 @@ paths:
       x-arthome-upstream:
       - catalog
       - identity
-      x-arthome-freshness: 300
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/Cursor'
-      - $ref: '#/components/parameters/CursorDirection'
       - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/CursorDirection'
       - name: categoryId
         in: query
         schema:
@@ -5104,11 +5137,6 @@ paths:
       responses:
         '200':
           description: A page of artists.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5127,18 +5155,39 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:17.000Z'
-                items: []
+                servedAt: '2026-09-21T19:00:00.000Z'
+                items:
+                - id: 019928a0-7d31-7a10-b8c4-2f9e11a4c333
+                  channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                  name: Compagnie Verticale
+                  categoryId: dance-contemporary
+                  followedByViewer: true
+                  followers: 4120
+                  isLiveNow: true
+                  alertEnabled: true
                 page:
                   hasMore: false
-                  nextCursor: null
-                  prevCursor: null
-                  approximateTotal: 213
-                  totalIsLowerBound: false
-                  emptyReason: no_match_with_filters
-                  emptyActionCode: clear_filters
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '410':
           $ref: '#/components/responses/Gone'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/artists/{artistId}:
     get:
       operationId: getArtistDetail
@@ -5159,14 +5208,13 @@ paths:
       - ticketing
       - identity
       - streaming
-      x-arthome-freshness: 300
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/ArtistId'
       - $ref: '#/components/parameters/Surface'
@@ -5174,11 +5222,6 @@ paths:
       responses:
         '200':
           description: The page.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5192,7 +5235,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:18.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   id: 019928a0-7d31-7a10-b8c4-2f9e11a4c333
                   channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
@@ -5200,8 +5243,27 @@ paths:
                   categoryId: dance-contemporary
                   followers: 4120
                   isLiveNow: true
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/search:
     get:
       operationId: search
@@ -5231,14 +5293,13 @@ paths:
       - ticketing
       - identity
       - streaming
-      x-arthome-freshness: 60
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
@@ -5288,11 +5349,6 @@ paths:
       responses:
         '200':
           description: Results, facets and structured filters.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5340,10 +5396,27 @@ paths:
                   nextCursor: eyJjIjoiMjAyNi0wOS0yMVQyMDowMDowMFoifQ
                   approximateTotal: 10000
                   totalIsLowerBound: true
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '410':
           $ref: '#/components/responses/Gone'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/replays:
     get:
       operationId: listReplays
@@ -5368,14 +5441,13 @@ paths:
       - catalog
       - ticketing
       - streaming
-      x-arthome-freshness: 60
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - $ref: '#/components/parameters/Cursor'
       - $ref: '#/components/parameters/Limit'
@@ -5400,11 +5472,6 @@ paths:
       responses:
         '200':
           description: Page of online replays, sorted by shortest remaining window first.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5423,17 +5490,58 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:40.000Z'
-                validUntil: '2026-09-21T18:03:40.000Z'
-                items: []
+                servedAt: '2026-09-21T19:00:00.000Z'
+                items:
+                - id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
+                  channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                  slug: '2026-09-21'
+                  canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+                  title: Nuit blanche
+                  startsAt: '2026-09-21T19:00:00Z'
+                  venueClock:
+                    venueTimezone: Europe/Paris
+                    venueUtcOffsetMin: 120
+                  runtimeMin: 95
+                  roomOpensAt: '2026-09-21T18:30:00Z'
+                  displayState: live
+                  displayStateValidUntil: '2026-09-21T20:35:00Z'
+                  replay:
+                    policy: included
+                    windowHours: 72
+                  rights:
+                    scope: worldwide
+                    blackoutCountries: []
+                  media:
+                    wide: []
+                    poster: []
+                  viewerRelations:
+                    inWatchlist: true
+                    reminderSet: false
+                    followsArtist: false
                 page:
                   hasMore: false
-                  emptyReason: no_replay_available
-                  emptyActionCode: browse_catalog
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '410':
           $ref: '#/components/responses/Gone'
-        '503':
-          $ref: '#/components/responses/Unavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/rails/{railId}:
     get:
       operationId: extendRail
@@ -5452,14 +5560,13 @@ paths:
       - ticketing
       - identity
       - streaming
-      x-arthome-freshness: 60
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - name: railId
         in: path
@@ -5474,11 +5581,6 @@ paths:
       responses:
         '200':
           description: The rest of the rail.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5492,7 +5594,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:45.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   id: cat-dance-contemporary
                   titleCode: home.rail.category
@@ -5503,10 +5605,29 @@ paths:
                   total: 84
                   totalIsLowerBound: false
                   nextCursor: null
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
         '410':
           $ref: '#/components/responses/Gone'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/resolve:
     get:
       operationId: resolvePublicLink
@@ -5529,14 +5650,13 @@ paths:
       x-arthome-maturity: stable
       x-arthome-upstream:
       - catalog
-      x-arthome-freshness: 300
       tags:
       - discovery
       security:
-      - {}
       - sessionCookie: []
       - bearerToken: []
       - deviceToken: []
+      - {}
       parameters:
       - name: url
         in: query
@@ -5565,11 +5685,6 @@ paths:
       responses:
         '200':
           description: The designated resource, and enough to paint immediately.
-          headers:
-            Cache-Control:
-              $ref: '#/components/headers/CacheControlPublic'
-            Vary:
-              $ref: '#/components/headers/VaryAuth'
           content:
             application/json:
               schema:
@@ -5612,15 +5727,32 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:02:50.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   kind: date
                   id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                   canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+            Vary:
+              description: The request headers the answer depends on.
+              schema:
+                type: string
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/plans:
     get:
       operationId: listPlans
@@ -7804,9 +7936,16 @@ paths:
         trigger another call.
 
         **`Cache-Control: no-store`.** A right read back from disk is a false right.
+
+        **Refused (`403`).** The code is one of the ten of the closed vocabulary of watch denials, and each produces a
+        different screen. On `watch.concurrent_limit_reached`, `params.activeSessions` carries the **list
+        of active sessions** so the surface can offer to release one: a bare refusal would leave the
+        viewer with no way out.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
+      tags:
+      - playback
       x-arthome-idempotency-exemption: |
         **Idempotency would be redundant here, because resumption already provides it.** An opening
         on a `deviceId` that holds a live lease **resumes that lease** and returns the same
@@ -7814,8 +7953,6 @@ paths:
         by memorisation. Adding a key would additionally memorise a `PlaybackTicket` — hence a signed
         token and its expiry instant — in a 24-hour store, for a response the contract says is
         **never** cached.
-      tags:
-      - playback
       security:
       - sessionCookie: []
         csrfToken: []
@@ -7890,12 +8027,6 @@ paths:
       responses:
         '200':
           description: Right granted. The token, the lease and the complete screen.
-          headers:
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
-              description: '`no-store` is not an optimisation: it is what keeps the token out of the HTTP cache and out of the application snapshot taken when it goes to the background.'
           content:
             application/json:
               schema:
@@ -7909,8 +8040,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:05:00.000Z'
-                validUntil: '2026-09-21T19:07:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   sessionId: 019928f7-0000-7000-8000-000000000001
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
@@ -7936,37 +8066,30 @@ paths:
                     kind: main
                   subtitleTracks: []
                   incident: null
-        '403':
-          description: |
-            Right refused. The `code` is one of the ten in the closed vocabulary, and each produces a
-            different screen. On `watch.concurrent_limit_reached`, `params.activeSessions` carries the **list
-            of active sessions** so the surface can offer to release one: a bare refusal would leave the
-            viewer with no way out.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
-          content:
-            application/json:
+          headers:
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: watch.concurrent_limit_reached
-                  nature: refused
-                  params:
-                    allowed: 2
-                    activeSessions:
-                    - sessionId: 019928f7-0000-7000-8000-0000000000aa
-                      deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
-                      isCurrentDevice: false
-                      deviceLabel: Téléviseur du salon
-                      city: Paris
-                      openedAt: '2026-09-21T19:00:00Z'
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T19:05:00.000Z'
+                type: string
+                const: no-store
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
-        '503':
-          $ref: '#/components/responses/Unavailable'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/playback/sessions/{sessionId}/renew:
     post:
       operationId: renewPlaybackTicket
@@ -7981,16 +8104,21 @@ paths:
 
         **Four distinct refusal codes**, because the surface displays four different messages. A
         generic code would produce a false one three times out of four.
+
+        **Refused (`403`).** `SEAT_EXPIRED` · `watch.concurrent_limit_reached` · `identity.signed_out_elsewhere` ·
+        `watch.preview_exhausted` · `DATE_INTERRUPTED`. `identity.signed_out_elsewhere` is what the television
+        signed out from the web sees — **not a network error**. **Real window: up to 120 s** — see
+        `revokeDevice`.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
+      tags:
+      - playback
       x-arthome-idempotency-exemption: |
         **A renewal must produce a fresh window, never a memorised one.** Returning the original
         response would return a token already part-spent — and, at the worst moment, an already
         expired one — when the call exists precisely to obtain a new one. It is also this renewal
         that carries the concurrent-screen limit: replaying it from a store would bypass the count.
-      tags:
-      - playback
       security:
       - sessionCookie: []
         csrfToken: []
@@ -8020,7 +8148,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:05:45.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   expiresAt: '2026-09-21T19:07:45.000Z'
                   renewAfterSec: 45
@@ -8029,29 +8157,39 @@ paths:
                     queryToken: Expires=1790000120&Signature=def
                     cookieSet: null
                   qualityCap: fhd
+          headers:
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            Renewal refused. `SEAT_EXPIRED` · `watch.concurrent_limit_reached` · `identity.signed_out_elsewhere` ·
-            `watch.preview_exhausted` · `DATE_INTERRUPTED`. `identity.signed_out_elsewhere` is what the television
-            signed out from the web sees — **not a network error**. **Real window: up to 120 s** — see
-            `revokeDevice`.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
+            A write with the session cookie came without its `X-Arthome-Csrf` token, or with another
+            session's (`api.forbidden`). A write with a bearer token never meets it.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: identity.signed_out_elsewhere
-                  nature: refused
-                  params: {}
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T19:06:30.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/IdentitySignedOutElsewhereError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                identity.signed_out_elsewhere:
+                  $ref: '#/components/examples/IdentitySignedOutElsewhereError'
         '404':
           $ref: '#/components/responses/NotFound'
-        '503':
-          $ref: '#/components/responses/Unavailable'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/playback/sessions/{sessionId}/release:
     post:
       operationId: releasePlayback
@@ -8067,12 +8205,12 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
+      tags:
+      - playback
       x-arthome-idempotency-exemption: |
         **Idempotent by nature, and nothing depends on it.** Releasing twice leaves the same state,
         and it is the **expiring lease** that is authoritative — this call merely speeds things up. A
         key would protect an effect that has neither accumulation nor consequence.
-      tags:
-      - playback
       security:
       - sessionCookie: []
         csrfToken: []
@@ -8087,30 +8225,22 @@ paths:
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
       responses:
-        '200':
-          description: Released, or already released — both succeed.
-          content:
-            application/json:
-              schema:
-                allOf:
-                - $ref: '#/components/schemas/EnvelopeMeta'
-                - type: object
-                  properties:
-                    data:
-                      type: object
-                      properties:
-                        released:
-                          type: boolean
-                      additionalProperties: {}
-                  additionalProperties: {}
-              example:
-                servedAt: '2026-09-21T20:40:00.000Z'
-                data:
-                  released: true
+        '204':
+          description: Done.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/me/progress/{dateId}:
     put:
       operationId: recordPlaybackPosition
@@ -8567,29 +8697,30 @@ paths:
               reason: harassment
       responses:
         '202':
-          description: Report recorded. A second report from the same account does not create another.
-          content:
-            application/json:
-              schema:
-                allOf:
-                - $ref: '#/components/schemas/EnvelopeMeta'
-                - type: object
-                  properties:
-                    data:
-                      type: object
-                      properties:
-                        reported:
-                          type: boolean
-                      additionalProperties: {}
-                  additionalProperties: {}
-              example:
-                servedAt: '2026-09-21T19:37:00.000Z'
-                data:
-                  reported: true
+          description: Done.
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/pairings:
     post:
       operationId: createPairing
@@ -8620,16 +8751,19 @@ paths:
       - ticketing
       tags:
       - pairing
+      x-arthome-requires:
+      - name: throttle
+        bucket: pairing_create
       security:
-      - deviceToken: []
-      - bearerToken: []
       - sessionCookie: []
         csrfToken: []
+      - bearerToken: []
+      - deviceToken: []
       parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/AdmissionToken'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -8684,7 +8818,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:50:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   pairingId: 019928f9-0000-7000-8000-000000000001
                   intent: seat
@@ -8694,31 +8828,42 @@ paths:
                   expiresAt: '2026-09-21T18:55:00.000Z'
                   pollIntervalSec: 2
                   state: pending
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            `order.sales_queue_admission_required`: a `seat` pairing on a date whose sales queue is armed,
-            without a valid admission (D-086). The television enters the queue and opens the pairing once
-            admitted.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
+            A write with the session cookie came without its `X-Arthome-Csrf` token, or with another
+            session's (`api.forbidden`). A write with a bearer token never meets it.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: order.sales_queue_admission_required
-                  nature: refused
-                  params:
-                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:50:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/OrderSalesQueueAdmissionRequiredError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                order.sales_queue_admission_required:
+                  $ref: '#/components/examples/OrderSalesQueueAdmissionRequiredError'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/pairings/{pairingId}:
     get:
       operationId: pollPairing
@@ -8737,6 +8882,8 @@ paths:
         after the television restarts.
 
         The response is **complete**: the confirmation screen costs **zero further calls**.
+
+        **Slow down (`429`).** RFC 8628 `slow_down` (`pairing.slow_down`, with `Retry-After-Ms`): the surface **slows down**, it does not retry faster.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
@@ -8745,9 +8892,9 @@ paths:
       tags:
       - pairing
       security:
-      - deviceToken: []
-      - bearerToken: []
       - sessionCookie: []
+      - bearerToken: []
+      - deviceToken: []
       parameters:
       - name: pairingId
         in: path
@@ -8773,7 +8920,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:52:10.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   pairingId: 019928f9-0000-7000-8000-000000000001
                   intent: seat
@@ -8809,41 +8956,55 @@ paths:
                       media:
                         wide: []
                         poster: []
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
         '410':
           $ref: '#/components/responses/Gone'
         '429':
-          description: RFC 8628 `slow_down`. The surface **slows down**, it does not retry faster.
-          headers:
-            Retry-After-Ms:
-              $ref: '#/components/headers/RetryAfterMs'
+          description: Rate limit reached. `params.retryAfterMs` allows the control to be disabled instead of stacking up refusals.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: pairing.slow_down
-                  nature: unavailable
-                  params:
-                    retryAfterMs: 5000
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:52:10.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiRateLimitedError'
+                - $ref: '#/components/schemas/PairingSlowDownError'
+              examples:
+                api.rate_limited:
+                  $ref: '#/components/examples/ApiRateLimitedError'
+                pairing.slow_down:
+                  $ref: '#/components/examples/PairingSlowDownError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     delete:
       operationId: cancelPairing
       summary: Closes a pending pairing.
-      description: Triggered by the Back button. The television often leaves without waiting for the response.
+      description: |
+        Triggered by the Back button. The television often leaves without waiting for the response.
+        **`pairing.execution_engaged` (`409`) — the pairing can no longer be cancelled.** The phone has
+        entered the payment journey; cancelling here would orphan a purchase in flight.
+
+        **What the surface does with this refusal**: it **stays on the waiting screen** and keeps
+        polling. It does not go back. This is the only case in the contract where pressing Back does
+        not go up one level, and the reason is written down: we do not let a remote control cancel a
+        payment it triggered itself.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
       tags:
       - pairing
       security:
-      - deviceToken: []
-      - bearerToken: []
       - sessionCookie: []
         csrfToken: []
+      - bearerToken: []
+      - deviceToken: []
       parameters:
       - name: pairingId
         in: path
@@ -8851,9 +9012,9 @@ paths:
         schema:
           type: string
           format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IdempotencyKey'
       responses:
         '200':
           description: Cancelled, or already settled — **a second call returns the original outcome, never an error**.
@@ -8870,38 +9031,77 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:53:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   pairingId: 019928f9-0000-7000-8000-000000000001
                   intent: seat
-                  state: cancelled
+                  state: approved
                   pollIntervalSec: 5
+                  ticket:
+                    seatId: 019928f5-0000-7000-8000-000000000001
+                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                    seatCode: ATH-7QK2-4M
+                    tier: full
+                    state: active
+                    date:
+                      id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                      showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
+                      channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                      slug: '2026-09-21'
+                      canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+                      title: Nuit blanche
+                      startsAt: '2026-09-21T19:00:00Z'
+                      venueClock:
+                        venueTimezone: Europe/Paris
+                        venueUtcOffsetMin: 120
+                      runtimeMin: 95
+                      roomOpensAt: '2026-09-21T18:30:00Z'
+                      displayState: room_open
+                      displayStateValidUntil: '2026-09-21T19:00:00Z'
+                      replay:
+                        policy: included
+                        windowHours: 72
+                      rights:
+                        scope: worldwide
+                        blackoutCountries: []
+                      media:
+                        wide: []
+                        poster: []
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
           description: |
-            **`pairing.execution_engaged` — the pairing can no longer be cancelled.** The phone has
-            entered the payment journey; cancelling here would orphan a purchase in flight.
-
-            **What the surface does with this refusal**: it **stays on the waiting screen** and keeps
-            polling. It does not go back. This is the only case in the contract where pressing Back does
-            not go up one level, and the reason is written down: we do not let a remote control cancel a
-            payment it triggered itself.
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: pairing.execution_engaged
-                  nature: refused
-                  params:
-                    state: engaged
-                    engagedAt: '2026-09-21T18:52:04Z'
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:52:06.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/PairingExecutionEngagedError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                pairing.execution_engaged:
+                  $ref: '#/components/examples/PairingExecutionEngagedError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/pairings/{pairingId}/engagement:
     post:
       operationId: engagePairing
@@ -8925,6 +9125,8 @@ paths:
 
         **Idempotent**: a second call on an already `engaged` pairing returns the same state, not an
         error — the phone may replay its entry into the journey on a network that switches over.
+
+        Refused with `pairing.identity_mismatch`, or `pairing.intent_not_engageable` on `signin`.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
@@ -8941,9 +9143,9 @@ paths:
         schema:
           type: string
           format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: false
         content:
@@ -8973,31 +9175,81 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:52:04.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   pairingId: 019928f9-0000-7000-8000-000000000001
                   intent: seat
-                  state: engaged
-                  pollIntervalSec: 2
+                  state: approved
+                  pollIntervalSec: 5
+                  ticket:
+                    seatId: 019928f5-0000-7000-8000-000000000001
+                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                    seatCode: ATH-7QK2-4M
+                    tier: full
+                    state: active
+                    date:
+                      id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                      showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
+                      channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                      slug: '2026-09-21'
+                      canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+                      title: Nuit blanche
+                      startsAt: '2026-09-21T19:00:00Z'
+                      venueClock:
+                        venueTimezone: Europe/Paris
+                        venueUtcOffsetMin: 120
+                      runtimeMin: 95
+                      roomOpensAt: '2026-09-21T18:30:00Z'
+                      displayState: room_open
+                      displayStateValidUntil: '2026-09-21T19:00:00Z'
+                      replay:
+                        policy: included
+                        windowHours: 72
+                      rights:
+                        scope: worldwide
+                        blackoutCountries: []
+                      media:
+                        wide: []
+                        poster: []
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            `pairing.identity_mismatch`, or `pairing.intent_not_engageable` on `signin`.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
+            A write with the session cookie came without its `X-Arthome-Csrf` token, or with another
+            session's (`api.forbidden`). A write with a bearer token never meets it.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: pairing.intent_not_engageable
-                  nature: refused
-                  params:
-                    intent: signin
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:52:04.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/PairingIdentityMismatchError'
+                - $ref: '#/components/schemas/PairingIntentNotEngageableError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                pairing.identity_mismatch:
+                  $ref: '#/components/examples/PairingIdentityMismatchError'
+                pairing.intent_not_engageable:
+                  $ref: '#/components/examples/PairingIntentNotEngageableError'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '410':
           $ref: '#/components/responses/Gone'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/pairings/{pairingId}/decision:
     post:
       operationId: decidePairing
@@ -9016,6 +9268,8 @@ paths:
         rights and deliver the seat to the wrong account — in a living room, at the precise moment
         two people are watching the same screen. The phone offers "switch account": a gesture by the
         person, never by the system.
+
+        Refused with `pairing.identity_mismatch` — the bearer is not the profile that opened the pairing. Impossible on `signin`.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
@@ -9032,9 +9286,9 @@ paths:
         schema:
           type: string
           format: uuid
+      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
-      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -9078,30 +9332,78 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:52:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   pairingId: 019928f9-0000-7000-8000-000000000001
                   intent: seat
                   state: approved
                   pollIntervalSec: 5
+                  ticket:
+                    seatId: 019928f5-0000-7000-8000-000000000001
+                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                    seatCode: ATH-7QK2-4M
+                    tier: full
+                    state: active
+                    date:
+                      id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                      showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
+                      channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
+                      slug: '2026-09-21'
+                      canonicalUrl: https://arthome.fr/show/nuit-blanche/date/2026-09-21
+                      title: Nuit blanche
+                      startsAt: '2026-09-21T19:00:00Z'
+                      venueClock:
+                        venueTimezone: Europe/Paris
+                        venueUtcOffsetMin: 120
+                      runtimeMin: 95
+                      roomOpensAt: '2026-09-21T18:30:00Z'
+                      displayState: room_open
+                      displayStateValidUntil: '2026-09-21T19:00:00Z'
+                      replay:
+                        policy: included
+                        windowHours: 72
+                      rights:
+                        scope: worldwide
+                        blackoutCountries: []
+                      media:
+                        wide: []
+                        poster: []
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           description: |
-            `pairing.identity_mismatch` — the bearer is not the profile that opened the pairing. Impossible on `signin`.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
+            A write with the session cookie came without its `X-Arthome-Csrf` token, or with another
+            session's (`api.forbidden`). A write with a bearer token never meets it.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: pairing.identity_mismatch
-                  nature: refused
-                  params: {}
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:52:00.000Z'
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/PairingIdentityMismatchError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                pairing.identity_mismatch:
+                  $ref: '#/components/examples/PairingIdentityMismatchError'
+        '409':
+          $ref: '#/components/responses/Conflict'
         '410':
           $ref: '#/components/responses/Gone'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/account-deep-link:
     get:
       operationId: getAccountDeepLink
@@ -11197,102 +11499,171 @@ components:
       - atMediaSec
       additionalProperties: {}
     Rail:
-      type: object
-      properties:
-        id:
-          type: string
-        titleCode:
-          type: string
-          examples:
-          - home.rail.resume
-          description: An i18n **code**, never an authored title.
-        kind:
-          type: string
-          x-arthome-vocabulary:
-          - resume
-          - live_now
-          - my_seats
-          - upcoming_tonight
-          - followed
-          - editorial
-          - category
-          - replay_expiring
-          - artists_to_follow
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.
-          description: |
-            `my_seats` carries "Your seats": it is **not** editorial but personal, and its behaviour is
-            its own — the card becomes "Enter the room" when the room opens. Filing it under `editorial`
-            would have erased that difference.
-        itemKind:
-          type: string
-          x-arthome-vocabulary:
-          - date
-          - artist
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.
-          examples:
-          - date
-          description: |
-            **What the rail carries.** Without this field, an artist rail is inexpressible:
-            `ArtistSummary` exists in the contract but no rail could transport it, and the surface would
-            have had to guess the type from the rail identifier — that is, from a parallel literal.
-        cardForm:
-          type: string
-          x-arthome-vocabulary:
-          - wide
-          - poster
-          - portrait
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it.
-          examples:
-          - wide
-          description: |
-            **The card form is an editorial choice, hence server-side**, exactly like the order of the
-            rails. `poster` serves the "Posters" rail in vertical 2:3, `portrait` the artists as circles.
-            Without this field the surface would choose from the rail identifier, and *"variety of format
-            is what stops the screen looking like a spreadsheet"* — nine rails of identical 16:9 cards is
-            a television's defect number one.
-        items:
-          type: array
+      oneOf:
+      - type: object
+        properties:
+          id:
+            type: string
+          titleCode:
+            type: string
+            examples:
+            - home.rail.resume
+            description: An i18n **code**, never an authored title.
+          kind:
+            type: string
+            x-arthome-vocabulary:
+            - resume
+            - live_now
+            - my_seats
+            - upcoming_tonight
+            - followed
+            - editorial
+            - category
+            - replay_expiring
+            - artists_to_follow
+            x-arthome-vocabulary-source: none
+            x-arthome-vocabulary-reason: A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.
+            description: |
+              `my_seats` carries "Your seats": it is **not** editorial but personal, and its behaviour is
+              its own — the card becomes "Enter the room" when the room opens. Filing it under `editorial`
+              would have erased that difference.
+          cardForm:
+            type: string
+            x-arthome-vocabulary:
+            - wide
+            - poster
+            - portrait
+            x-arthome-vocabulary-source: none
+            x-arthome-vocabulary-reason: A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it.
+            examples:
+            - wide
+            description: |
+              **The card form is an editorial choice, hence server-side**, exactly like the order of the
+              rails. `poster` serves the "Posters" rail in vertical 2:3, `portrait` the artists as circles.
+              Without this field the surface would choose from the rail identifier, and *"variety of format
+              is what stops the screen looking like a spreadsheet"* — nine rails of identical 16:9 cards is
+              a television's defect number one.
           items:
-            oneOf:
-            - $ref: '#/components/schemas/DateCard'
-            - $ref: '#/components/schemas/ArtistSummary'
-          description: |
-            **Union discriminated by `itemKind`**: `DateCard` when `itemKind` is `date`,
-            `ArtistSummary` when it is `artist`.
-        total:
-          description: |
-            **The rail's count, not the served slice's.** Every rail displays a counter to the right of
-            its title; without this field it can only display `items.length`, that is, the page size — a
-            false number. Same guarantee as `CursorPageInfo.approximateTotal`: exact up to the served
-            threshold, a lower bound beyond it.
-          anyOf:
-          - type: integer
-          - type: 'null'
-        totalIsLowerBound:
-          default: false
-          type: boolean
-        nextCursor:
-          description: |
-            **Per-rail** cursor, consumed by `extendRail`. A rail is an excerpt; it does not paginate on
-            screen, it extends.
-          type:
-          - string
-          - 'null'
-      required:
-      - id
-      - titleCode
-      - kind
-      - itemKind
-      - cardForm
-      - items
-      additionalProperties: {}
+            type: array
+            items:
+              $ref: '#/components/schemas/DateCard'
+            description: The dates the rail carries.
+          total:
+            description: |
+              **The rail's count, not the served slice's.** Every rail displays a counter to the right of
+              its title; without this field it can only display `items.length`, that is, the page size — a
+              false number. Same guarantee as `CursorPageInfo.approximateTotal`: exact up to the served
+              threshold, a lower bound beyond it.
+            anyOf:
+            - type: integer
+            - type: 'null'
+          totalIsLowerBound:
+            default: false
+            type: boolean
+          nextCursor:
+            description: |
+              **Per-rail** cursor, consumed by `extendRail`. A rail is an excerpt; it does not paginate on
+              screen, it extends.
+            type:
+            - string
+            - 'null'
+          itemKind:
+            type: string
+            const: date
+        required:
+        - id
+        - titleCode
+        - kind
+        - cardForm
+        - items
+        - itemKind
+        additionalProperties: {}
+      - type: object
+        properties:
+          id:
+            type: string
+          titleCode:
+            type: string
+            examples:
+            - home.rail.resume
+            description: An i18n **code**, never an authored title.
+          kind:
+            type: string
+            x-arthome-vocabulary:
+            - resume
+            - live_now
+            - my_seats
+            - upcoming_tonight
+            - followed
+            - editorial
+            - category
+            - replay_expiring
+            - artists_to_follow
+            x-arthome-vocabulary-source: none
+            x-arthome-vocabulary-reason: A screen composition the server decides so that five surfaces do not each decide it differently. The domain has no opinion on which rails exist.
+            description: |
+              `my_seats` carries "Your seats": it is **not** editorial but personal, and its behaviour is
+              its own — the card becomes "Enter the room" when the room opens. Filing it under `editorial`
+              would have erased that difference.
+          cardForm:
+            type: string
+            x-arthome-vocabulary:
+            - wide
+            - poster
+            - portrait
+            x-arthome-vocabulary-source: none
+            x-arthome-vocabulary-reason: A presentation choice the contract serves so that five surfaces do not each invent one. The domain has no opinion on it.
+            examples:
+            - wide
+            description: |
+              **The card form is an editorial choice, hence server-side**, exactly like the order of the
+              rails. `poster` serves the "Posters" rail in vertical 2:3, `portrait` the artists as circles.
+              Without this field the surface would choose from the rail identifier, and *"variety of format
+              is what stops the screen looking like a spreadsheet"* — nine rails of identical 16:9 cards is
+              a television's defect number one.
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/ArtistSummary'
+            description: The artists the rail carries.
+          total:
+            description: |
+              **The rail's count, not the served slice's.** Every rail displays a counter to the right of
+              its title; without this field it can only display `items.length`, that is, the page size — a
+              false number. Same guarantee as `CursorPageInfo.approximateTotal`: exact up to the served
+              threshold, a lower bound beyond it.
+            anyOf:
+            - type: integer
+            - type: 'null'
+          totalIsLowerBound:
+            default: false
+            type: boolean
+          nextCursor:
+            description: |
+              **Per-rail** cursor, consumed by `extendRail`. A rail is an excerpt; it does not paginate on
+              screen, it extends.
+            type:
+            - string
+            - 'null'
+          itemKind:
+            type: string
+            const: artist
+        required:
+        - id
+        - titleCode
+        - kind
+        - cardForm
+        - items
+        - itemKind
+        additionalProperties: {}
+      discriminator:
+        propertyName: itemKind
       description: |
-        A home rail. **Composition and order are server-side**: the design loads 1,814 dates
-        (1.79 MB) and filters client-side, which the contract must make impossible on a device that
-        has 300 to 500 MB for everything, video included.
+        A home rail, tagged by `itemKind`, **what the rail carries**: `date` for `DateCard`s, `artist` for
+        `ArtistSummary`s. Without the tag an artist rail is inexpressible, and the surface would guess
+        the type from the rail identifier, that is, from a parallel literal. **Composition and order are
+        server-side**: the design loads 1,814 dates (1.79 MB) and filters client-side, which the contract
+        must make impossible on a device that has 300 to 500 MB for everything, video included.
     HomeScreen:
       type: object
       properties:
@@ -12650,9 +13021,11 @@ components:
           type: object
           properties:
             queryToken:
-              type:
-              - string
-              - 'null'
+              anyOf:
+              - type: string
+                format: password
+                x-arthome-sensitive: true
+              - type: 'null'
             cookieSet:
               type:
               - boolean
@@ -12796,9 +13169,11 @@ components:
           type: object
           properties:
             queryToken:
-              type:
-              - string
-              - 'null'
+              anyOf:
+              - type: string
+                format: password
+                x-arthome-sensitive: true
+              - type: 'null'
             cookieSet:
               type:
               - boolean
@@ -14932,6 +15307,60 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    IdentitySignedOutElsewhereError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.signed_out_elsewhere
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     ChatHoldersOnlyError:
       type: object
       properties:
@@ -15104,6 +15533,238 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    PairingSlowDownError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: pairing.slow_down
+            params:
+              type: object
+              properties:
+                retryAfterMs:
+                  type: integer
+                  format: int64
+              required:
+              - retryAfterMs
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    PairingExecutionEngagedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: pairing.execution_engaged
+            params:
+              type: object
+              properties:
+                state:
+                  type: string
+                engagedAt:
+                  type: string
+              required:
+              - state
+              - engagedAt
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    PairingIdentityMismatchError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: pairing.identity_mismatch
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    PairingIntentNotEngageableError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: pairing.intent_not_engageable
+            params:
+              type: object
+              properties:
+                intent:
+                  type: string
+              required:
+              - intent
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
   examples:
     ApiCursorTooOldError:
       value:
@@ -15201,6 +15862,14 @@ components:
       value:
         error:
           code: identity.reset_token_expired
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    IdentitySignedOutElsewhereError:
+      value:
+        error:
+          code: identity.signed_out_elsewhere
           nature: refused
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
@@ -15327,6 +15996,42 @@ components:
           code: order.tier_unavailable
           nature: refused
           params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    PairingExecutionEngagedError:
+      value:
+        error:
+          code: pairing.execution_engaged
+          nature: refused
+          params:
+            state: engaged
+            engagedAt: '2026-09-21T18:52:04Z'
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    PairingIdentityMismatchError:
+      value:
+        error:
+          code: pairing.identity_mismatch
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    PairingIntentNotEngageableError:
+      value:
+        error:
+          code: pairing.intent_not_engageable
+          nature: refused
+          params:
+            intent: signin
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    PairingSlowDownError:
+      value:
+        error:
+          code: pairing.slow_down
+          nature: unavailable
+          params:
+            retryAfterMs: 5000
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     SeatCancelDeadlinePassedError:

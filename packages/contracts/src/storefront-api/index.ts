@@ -6,6 +6,7 @@ import {
 } from '@arthome/core/schema';
 
 import { getAccountDeepLink } from './account-deep-link/routes.js';
+import { getArtistDetail, listArtists } from './artists/routes.js';
 import {
   changePassword,
   confirmEmailVerification,
@@ -22,8 +23,9 @@ import {
   verifyTwoFactor,
 } from './auth/routes.js';
 import { addCartLine, getCart, quoteCart, removeCartLine, updateCartLine } from './cart/routes.js';
+import { getCategoryScreen, listCategories } from './categories/routes.js';
 import { listChanges } from './changes/routes.js';
-import { reportChatMessage } from './chat.js';
+import { reportChatMessage } from './chat/routes.js';
 import {
   AdmissionTokenParameter,
   ArtistIdParameter,
@@ -70,18 +72,8 @@ import {
   sendReaction,
 } from './dates/routes.js';
 import { registerDevice } from './devices/routes.js';
-import {
-  extendRail,
-  getArtistDetail,
-  getCategoryScreen,
-  getHomeScreen,
-  getLiveScreen,
-  listArtists,
-  listCategories,
-  listReplays,
-  resolvePublicLink,
-  search,
-} from './discovery.js';
+import { getHomeScreen } from './home/routes.js';
+import { getLiveScreen } from './live/routes.js';
 import {
   addPasskey,
   addPaymentMethod,
@@ -124,9 +116,13 @@ import {
   decidePairing,
   engagePairing,
   pollPairing,
-} from './pairing.js';
+} from './pairings/routes.js';
 import { listPlans } from './plans/routes.js';
-import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback.js';
+import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback/routes.js';
+import { extendRail } from './rails/routes.js';
+import { listReplays } from './replays/routes.js';
+import { resolvePublicLink } from './resolve/routes.js';
+import { search } from './search/routes.js';
 import { cancelSeat } from './seats/routes.js';
 import { cancelSubscription, setSubscriptionPlan } from './subscription/routes.js';
 import { contactSupport } from './support/routes.js';

@@ -26,6 +26,7 @@ import { z } from 'zod';
 import { DisplayState, LANGUAGE_DEPENDENCIES, REPLAY_POLICIES } from '@arthome/core';
 import { MoneyOut, VenueClockSchema, type VocabularyIn, type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
 import { WatchVerdictSchema } from '../entitlement/index.js';
+import type { TaggedSchema } from '../http/tagged.js';
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
 export declare const ImageRenditionSchema: z.ZodObject<{
     url: z.ZodString;
@@ -156,17 +157,22 @@ export declare const ArtistSummarySchema: z.ZodObject<{
     alertEnabled: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
     nextDate: z.ZodOptional<typeof DateCardSchema>;
 }, z.core.$loose>;
-export declare const RailSchema: z.ZodObject<{
+declare function railFields<Item extends z.ZodType>(items: Item, itemDescription: string): {
     id: z.ZodString;
     titleCode: z.ZodString;
     kind: VocabularyOut;
-    itemKind: VocabularyOut;
     cardForm: VocabularyOut;
-    items: z.ZodArray<z.ZodXor<readonly [typeof DateCardSchema, typeof ArtistSummarySchema]>>;
+    items: z.ZodArray<Item>;
     total: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
     totalIsLowerBound: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
     nextCursor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-}, z.core.$loose>;
+};
+export declare const DateRailSchema: z.ZodObject<ReturnType<typeof railFields<typeof DateCardSchema>>, z.core.$loose>;
+export declare const ArtistRailSchema: z.ZodObject<ReturnType<typeof railFields<typeof ArtistSummarySchema>>, z.core.$loose>;
+export declare const RailSchema: TaggedSchema<'itemKind', {
+    date: typeof DateRailSchema;
+    artist: typeof ArtistRailSchema;
+}>;
 export declare const ScheduleSlotSchema: z.ZodObject<{
     localHourLabelKey: z.ZodString;
     startsAt: z.ZodOptional<z.ZodString>;

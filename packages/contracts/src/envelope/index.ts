@@ -55,6 +55,7 @@ import {
   FailureNature,
   IdentityErrorCode,
   OrderErrorCode,
+  PairingErrorCode,
   PublicationChecklistItem,
   PublicationPromise,
   PublicationState,
@@ -249,6 +250,11 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   typeof OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED,
   typeof ChatErrorCode.HOLDERS_ONLY,
   typeof ChatErrorCode.RATE_LIMITED,
+  typeof IdentityErrorCode.SIGNED_OUT_ELSEWHERE,
+  typeof PairingErrorCode.SLOW_DOWN,
+  typeof PairingErrorCode.IDENTITY_MISMATCH,
+  typeof PairingErrorCode.INTENT_NOT_ENGAGEABLE,
+  typeof PairingErrorCode.EXECUTION_ENGAGED,
 ] = [
   ApiErrorCode.SCHEMA_INVALID,
   ApiErrorCode.CURSOR_TOO_OLD,
@@ -281,6 +287,11 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED,
   ChatErrorCode.HOLDERS_ONLY,
   ChatErrorCode.RATE_LIMITED,
+  IdentityErrorCode.SIGNED_OUT_ELSEWHERE,
+  PairingErrorCode.SLOW_DOWN,
+  PairingErrorCode.IDENTITY_MISMATCH,
+  PairingErrorCode.INTENT_NOT_ENGAGEABLE,
+  PairingErrorCode.EXECUTION_ENGAGED,
 ];
 
 /** The codes a storefront operation may declare: only what a surface can be handed. */
