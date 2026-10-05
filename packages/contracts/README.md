@@ -259,9 +259,12 @@ without a business rule is `PATCH`, every business state change is an action, an
 disappears is a `DELETE` even when guarded.
 
 **Errors** are declared by code in three levels (`transport.md` §5.12). A status whose codes the api
-already documents keeps its shared response; a status that adds a code gets a `oneOf` of one envelope
-per code, each with the `params` schema of `ERROR_PARAMS` in `@arthome/core/schema`, which is what
-`check-openapi` R10 accepts. A storefront operation may declare only a code of
+already documents keeps its shared response; a status that adds a code is a union of references to
+one envelope per code, each with the `params` schema of `ERROR_PARAMS` in `@arthome/core/schema`,
+which is what `check-openapi` R10 accepts. Each code's envelope is one named component
+(`components/schemas/StateConflictError`) and its example one `components/examples` entry of the same
+name, emitted once whatever the number of routes naming the code, and the status's `examples` map
+refers to them. A storefront operation may declare only a code of
 `STOREFRONT_RELAYED_CODES`. Each code has one status, `ERRORS` (and `statusOf(code)`) in `./http`, which a test holds the generated documents to; `ErrorParamsMap` in `@arthome/core` types each code's params.
 `ErrorStatusMap` restates each code's status as a type, and `ERRORS` is held to it entry by entry
 (`isolatedDeclarations` cannot infer the table's literals), so the codes a route lists are grouped by
@@ -396,7 +399,7 @@ routes keep their tags and their operation ids; they leave the tag modules they 
    - `operationId` (the published name), `summary`, and `answer` (the success's description);
    - `item`, `response` or `body`, each a named schema; `parameters`, each a named parameter;
    - `errors`: every code the route refuses with beyond the derived ones, as a list; a status that
-     adds a code becomes a union with one example per code;
+     adds a code becomes a union of references to each code's envelope and example components;
    - `paging`, `sortable`, `filters`, `expand`, `cache(Freshness.X)` (never `x-arthome-freshness`),
      `requires`, `status` (201 on an action that creates, 202 on a write only accepted),
      `idempotent: false` (its reason in `docs.ts` as `idempotencyExemption`);

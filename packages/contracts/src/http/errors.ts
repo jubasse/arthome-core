@@ -140,10 +140,39 @@ function unique(values: readonly string[]): string[] {
   return [...new Set(values)];
 }
 
+const ENVELOPES = new WeakMap<ErrorModel<string>, Map<string, z.ZodType>>();
+const ENVELOPE_CODES = new WeakMap<z.ZodType, string>();
+
+/** The envelope of one code, built once per api so the document names it once and refers to it. */
+function codedEnvelope(model: ErrorModel<string>, code: string): z.ZodType {
+  const held = ENVELOPES.get(model) ?? new Map<string, z.ZodType>();
+  ENVELOPES.set(model, held);
+  const known = held.get(code);
+  if (known !== undefined) return known;
+  const envelope = model.envelopeOf(code);
+  held.set(code, envelope);
+  ENVELOPE_CODES.set(envelope, code);
+  return envelope;
+}
+
+/** A code's envelope and example as the document names them: `state.conflict` is `StateConflictError`. */
+export function errorComponentNameOf(code: string): string {
+  const words = code.split(/[._]/).filter(Boolean);
+  return `${words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join('')}Error`;
+}
+
+/** The coded envelopes `schema` is, itself or as the members of a union, each with its code. */
+export function codedEnvelopesIn(schema: z.ZodType): readonly (readonly [string, z.ZodType])[] {
+  const own = ENVELOPE_CODES.get(schema);
+  if (own !== undefined) return [[own, schema]];
+  if (!(schema instanceof z.ZodUnion)) return [];
+  return (schema.options as readonly z.ZodType[]).flatMap((option) => codedEnvelopesIn(option));
+}
+
 /**
  * The response for a status. A response already standing for every code asked, or asking for none,
  * is the api's own and is returned as it is; otherwise a response is built that lists the standard
- * codes and the added ones, with one example per code from the registry.
+ * codes and the added ones: one named envelope per code, and its example by reference.
  */
 export function errorResponseFor(
   model: ErrorModel<string> | undefined,
@@ -158,7 +187,7 @@ export function errorResponseFor(
   if (model === undefined)
     throw new Error(`errors: status ${String(status)} names codes with no error model.`);
   const all = unique([...known, ...codes]);
-  const schemas = all.map((code) => model.envelopeOf(code));
+  const schemas = all.map((code) => codedEnvelope(model, code));
   const [first, ...rest] = schemas;
   if (first === undefined) throw new Error(`errors: status ${String(status)} has no code.`);
   return {
@@ -167,7 +196,10 @@ export function errorResponseFor(
       'application/json': {
         schema: rest.length === 0 ? first : z.union([first, ...rest]),
         examples: Object.fromEntries(
-          all.map((code) => [code, { value: errorExampleOf(code as ErrorCode) }]),
+          all.map((code) => [
+            code,
+            { $ref: `#/components/examples/${errorComponentNameOf(code)}` },
+          ]),
         ),
       },
     },

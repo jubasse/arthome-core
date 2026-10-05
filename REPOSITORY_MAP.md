@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 178 exported names.
+Declarations: `dist/http/index.d.ts` — 180 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
@@ -217,12 +217,14 @@ Declarations: `dist/http/index.d.ts` — 178 exported names.
 - `cache` (function) — `function cache(freshness: Freshness, options?: CacheOptions): CachePolicy;` — 'cache(Freshness.FIVE_MINUTES)': the family of 'transport.md' §5.9, with its directive.
 - `cacheControlOf` (function) — `function cacheControlOf(policy: CachePolicy): string;` — The 'Cache-Control' value of a policy, as the BFF writes it.
 - `changesSince` (function) — `function changesSince(): { readonly kind: 'changesSince'; };` — The token a change feed takes: '410' when it is too old.
+- `codedEnvelopesIn` (function) — `function codedEnvelopesIn(schema: z.ZodType): readonly (readonly [string, z.ZodType])[];` — The coded envelopes 'schema' is, itself or as the members of a union, each with its code.
 - `collect` (function) — `function collect<const Trees extends readonly RouteTree[]>(...trees: Trees): Collected<Trees>;`
 - `cursor` (function) — `function cursor(options: { readonly maxLimit: number; }): { readonly kind: 'cursor'; readonly maxLimit: number; };` — 'cursor' and 'limit': '400 api.schema_invalid' on a malformed cursor, '410 api.cursor_too_old' on an old one.
 - `defineApi` (function) — `function defineApi<const Routes extends Readonly<Record<string, Route>>>(definition: ApiDefinition<Routes>): Api<Routes>;`
 - `defineErrorModel` (function) — `function defineErrorModel<Allowed extends string>(model: ErrorModel<Allowed>): ErrorModel<Allowed>;`
 - `defineRoute` (function) — `function defineRoute<const T extends RouteDefinition>(definition: T): Route<T>;`
 - `errorCodesOf` (function) — The codes a route's error response stands for, or 'undefined' when the route wrote it whole.
+- `errorComponentNameOf` (function) — `function errorComponentNameOf(code: string): string;` — A code's envelope and example as the document names them: 'state.conflict' is 'StateConflictError'.
 - `errorExampleOf` (function) — `function errorExampleOf(code: ErrorCode): unknown;` — The envelope an example of 'code' shows: its params and its nature from the registry.
 - `errorResponse` (function) — A shared error response: its description, the api's envelope, and an example written once per code from the registry.
 - `errorResponseFor` (function) — `function errorResponseFor(model: ErrorModel<string> | undefined, status: number, codes: readonly string[], base: Response | undefined): Response;` — The response for a status.

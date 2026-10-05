@@ -3439,206 +3439,16 @@ paths:
             application/json:
               schema:
                 anyOf:
-                - type: object
-                  properties:
-                    error:
-                      type: object
-                      properties:
-                        code:
-                          type: string
-                          const: api.idempotency_key_reused
-                        params:
-                          type: object
-                          properties: {}
-                          additionalProperties: {}
-                        traceId:
-                          type: string
-                          minLength: 1
-                          examples:
-                          - 4bf92f3577b34da6a3ce929d0e0e4736
-                          description: |
-                            The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
-                            mobile it is the only link between "my application crashed" and a server log.
-                        nature:
-                          type: string
-                          x-arthome-vocabulary:
-                          - refused
-                          - unavailable
-                          - offline_forbidden
-                          x-arthome-vocabulary-source: FAILURE_NATURES
-                          x-arthome-unknown-fallback: unavailable
-                          examples:
-                          - refused
-                          description: |
-                            The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
-                            retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
-                            the server**, present in the vocabulary so the surface has only one error shape to render.
-
-                            **Open vocabulary on read, and this is where it matters most.** An unknown nature —
-                            `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
-                            `enum` here would make a television on an earlier version reject the whole envelope: it would
-                            not lose a card, it would lose its ability to **read errors**, precisely when something is
-                            already wrong, and on a fleet we cannot update.
-                      required:
-                      - code
-                      - params
-                      - traceId
-                      - nature
-                      additionalProperties: {}
-                    servedAt:
-                      type: string
-                      format: date-time
-                  required:
-                  - error
-                  - servedAt
-                  additionalProperties: {}
-                - type: object
-                  properties:
-                    error:
-                      type: object
-                      properties:
-                        code:
-                          type: string
-                          const: api.idempotency_in_flight
-                        params:
-                          type: object
-                          properties:
-                            retryAfterMs:
-                              type: integer
-                              format: int64
-                          required:
-                          - retryAfterMs
-                          additionalProperties: {}
-                        traceId:
-                          type: string
-                          minLength: 1
-                          examples:
-                          - 4bf92f3577b34da6a3ce929d0e0e4736
-                          description: |
-                            The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
-                            mobile it is the only link between "my application crashed" and a server log.
-                        nature:
-                          type: string
-                          x-arthome-vocabulary:
-                          - refused
-                          - unavailable
-                          - offline_forbidden
-                          x-arthome-vocabulary-source: FAILURE_NATURES
-                          x-arthome-unknown-fallback: unavailable
-                          examples:
-                          - refused
-                          description: |
-                            The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
-                            retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
-                            the server**, present in the vocabulary so the surface has only one error shape to render.
-
-                            **Open vocabulary on read, and this is where it matters most.** An unknown nature —
-                            `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
-                            `enum` here would make a television on an earlier version reject the whole envelope: it would
-                            not lose a card, it would lose its ability to **read errors**, precisely when something is
-                            already wrong, and on a fleet we cannot update.
-                      required:
-                      - code
-                      - params
-                      - traceId
-                      - nature
-                      additionalProperties: {}
-                    servedAt:
-                      type: string
-                      format: date-time
-                  required:
-                  - error
-                  - servedAt
-                  additionalProperties: {}
-                - type: object
-                  properties:
-                    error:
-                      type: object
-                      properties:
-                        code:
-                          type: string
-                          const: state.conflict
-                        params:
-                          type: object
-                          properties:
-                            currentVersion:
-                              type: integer
-                              format: int64
-                            state:
-                              type: string
-                              description: Present when the record has a lifecycle state.
-                          required:
-                          - currentVersion
-                          additionalProperties: {}
-                        traceId:
-                          type: string
-                          minLength: 1
-                          examples:
-                          - 4bf92f3577b34da6a3ce929d0e0e4736
-                          description: |
-                            The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
-                            mobile it is the only link between "my application crashed" and a server log.
-                        nature:
-                          type: string
-                          x-arthome-vocabulary:
-                          - refused
-                          - unavailable
-                          - offline_forbidden
-                          x-arthome-vocabulary-source: FAILURE_NATURES
-                          x-arthome-unknown-fallback: unavailable
-                          examples:
-                          - refused
-                          description: |
-                            The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
-                            retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
-                            the server**, present in the vocabulary so the surface has only one error shape to render.
-
-                            **Open vocabulary on read, and this is where it matters most.** An unknown nature —
-                            `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
-                            `enum` here would make a television on an earlier version reject the whole envelope: it would
-                            not lose a card, it would lose its ability to **read errors**, precisely when something is
-                            already wrong, and on a fleet we cannot update.
-                      required:
-                      - code
-                      - params
-                      - traceId
-                      - nature
-                      additionalProperties: {}
-                    servedAt:
-                      type: string
-                      format: date-time
-                  required:
-                  - error
-                  - servedAt
-                  additionalProperties: {}
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/StateConflictError'
               examples:
                 api.idempotency_key_reused:
-                  value:
-                    error:
-                      code: api.idempotency_key_reused
-                      nature: refused
-                      params: {}
-                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                    servedAt: '2026-09-21T20:31:04.118Z'
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
                 api.idempotency_in_flight:
-                  value:
-                    error:
-                      code: api.idempotency_in_flight
-                      nature: unavailable
-                      params:
-                        retryAfterMs: 1000
-                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                    servedAt: '2026-09-21T20:31:04.118Z'
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
                 state.conflict:
-                  value:
-                    error:
-                      code: state.conflict
-                      nature: refused
-                      params:
-                        currentVersion: 8
-                        state: live
-                      traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                    servedAt: '2026-09-21T20:31:04.118Z'
+                  $ref: '#/components/examples/StateConflictError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -12901,3 +12711,206 @@ components:
         acknowledgement and an identifier; the state is queryable; the document arrives through a
         **short-lived signed URL** — usable **without a session cookie**, because an export protected
         by a cookie is undownloadable from a native shell.
+    ApiIdempotencyKeyReusedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.idempotency_key_reused
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ApiIdempotencyInFlightError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.idempotency_in_flight
+            params:
+              type: object
+              properties:
+                retryAfterMs:
+                  type: integer
+                  format: int64
+              required:
+              - retryAfterMs
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    StateConflictError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: state.conflict
+            params:
+              type: object
+              properties:
+                currentVersion:
+                  type: integer
+                  format: int64
+                state:
+                  type: string
+                  description: Present when the record has a lifecycle state.
+              required:
+              - currentVersion
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+  examples:
+    ApiIdempotencyInFlightError:
+      value:
+        error:
+          code: api.idempotency_in_flight
+          nature: unavailable
+          params:
+            retryAfterMs: 1000
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ApiIdempotencyKeyReusedError:
+      value:
+        error:
+          code: api.idempotency_key_reused
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    StateConflictError:
+      value:
+        error:
+          code: state.conflict
+          nature: refused
+          params:
+            currentVersion: 8
+            state: live
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'

@@ -12,6 +12,8 @@
 
 import { z } from 'zod';
 
+import type { ErrorCode } from '@arthome/core';
+
 import type { ApiDocs, ExampleRegistry, OperationDoc } from './docs.js';
 import { documentationOf } from './docs.js';
 import type {
@@ -24,7 +26,12 @@ import type {
   Response,
   Route,
 } from '../http/index.js';
-import { versionedPath } from '../http/index.js';
+import {
+  codedEnvelopesIn,
+  errorComponentNameOf,
+  errorExampleOf,
+  versionedPath,
+} from '../http/index.js';
 
 type Io = 'input' | 'output';
 
@@ -71,6 +78,7 @@ class DocumentBuilder {
   private readonly slots: SchemaSlot[] = [];
   private readonly componentRefs = new Map<object, string>();
   private readonly schemaNames = new Map<z.ZodType, string>();
+  private readonly errorCodes = new Set<string>();
   private slotCount = 0;
 
   public constructor(
@@ -119,6 +127,11 @@ class DocumentBuilder {
   }
 
   private media(media: MediaType, io: Io): Record<string, unknown> {
+    for (const [code, envelope] of codedEnvelopesIn(media.schema)) {
+      if (!this.schemaNames.has(envelope))
+        this.schemaNames.set(envelope, errorComponentNameOf(code));
+      this.errorCodes.add(code);
+    }
     const { exampleFrom: _derivation, ...declared } = media;
     const out = this.withSchema(declared, media.schema, io);
     const registered = this.registeredExampleOf(media);
@@ -204,6 +217,15 @@ class DocumentBuilder {
     }
     out.responses = responses;
     return out;
+  }
+
+  /** One example per code a coded error response referred to, under the code's name. */
+  public errorExamples(): Record<string, unknown> {
+    return Object.fromEntries(
+      [...this.errorCodes]
+        .sort()
+        .map((code) => [errorComponentNameOf(code), { value: errorExampleOf(code as ErrorCode) }]),
+    );
   }
 
   /** Emits every slot, and returns `components/schemas` as the output direction emits it. */
@@ -372,6 +394,14 @@ export function openApiDocumentOf(api: Api, docs?: ApiDocs): OpenApiDocument {
   const out = resolved(document) as Record<string, unknown>;
   if (api.components.schemas !== undefined) {
     out.components = { ...(out.components as Record<string, unknown>), schemas };
+  }
+  const errorExamples = builder.errorExamples();
+  if (Object.keys(errorExamples).length > 0) {
+    const held = out.components as Record<string, unknown>;
+    out.components = {
+      ...held,
+      examples: { ...(held.examples as Record<string, unknown> | undefined), ...errorExamples },
+    };
   }
   return mapped(out, schemas) as Record<string, unknown>;
 }

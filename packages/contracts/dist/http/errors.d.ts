@@ -71,10 +71,14 @@ export interface ErrorModel<Allowed extends string> {
     readonly allowed?: readonly Allowed[];
 }
 export declare function defineErrorModel<Allowed extends string>(model: ErrorModel<Allowed>): ErrorModel<Allowed>;
+/** A code's envelope and example as the document names them: `state.conflict` is `StateConflictError`. */
+export declare function errorComponentNameOf(code: string): string;
+/** The coded envelopes `schema` is, itself or as the members of a union, each with its code. */
+export declare function codedEnvelopesIn(schema: z.ZodType): readonly (readonly [string, z.ZodType])[];
 /**
  * The response for a status. A response already standing for every code asked, or asking for none,
  * is the api's own and is returned as it is; otherwise a response is built that lists the standard
- * codes and the added ones, with one example per code from the registry.
+ * codes and the added ones: one named envelope per code, and its example by reference.
  */
 export declare function errorResponseFor(model: ErrorModel<string> | undefined, status: number, codes: readonly string[], base: Response | undefined): Response;
 /**
