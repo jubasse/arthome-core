@@ -126,7 +126,7 @@ What only the document reads is registered per module, beside the routes:
 `pnpm run measure:surface-bundle` prints what a surface ships for `createClient(api)`, minified and
 gzipped, part by part. Measured on 2026-10-05, before any module moved its docs: storefront 126.9 KB
 gzip, studio 140.7 KB; with the two introductions moved out, 123.2 KB and 137.5 KB; with every
-module's docs and examples registered beside its routes (606c2da), 100.9 KB and 117.6 KB.
+module's docs and examples registered beside its routes (11fa4af), 100.7 KB and 117.4 KB.
 
 ### The route builder
 
