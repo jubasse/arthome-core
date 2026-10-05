@@ -647,6 +647,8 @@ paths:
           headers:
             X-Arthome-Rights-Version:
               $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -1048,6 +1050,8 @@ paths:
           headers:
             X-Arthome-Rights-Version:
               $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -1142,6 +1146,8 @@ paths:
           headers:
             X-Arthome-Rights-Version:
               $ref: '#/components/headers/RightsVersion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -1294,6 +1300,8 @@ paths:
               $ref: '#/components/headers/RightsVersion'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':

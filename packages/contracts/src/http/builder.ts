@@ -380,7 +380,12 @@ function derivedCodes(
   const write = definition.method !== 'get';
   const hasInput =
     definition.requestBody !== undefined ||
-    definition.parameters.some((parameter) => parameter.in === 'path' || parameter.in === 'query');
+    definition.parameters.some(
+      (parameter) =>
+        parameter.in === 'path' ||
+        parameter.in === 'query' ||
+        (parameter.in === 'header' && parameter.required === true),
+    );
   if (hasInput) add({ 400: [ApiErrorCode.SCHEMA_INVALID] });
   if (definition.requestBody !== undefined) {
     add({

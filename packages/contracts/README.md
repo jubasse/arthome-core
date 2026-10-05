@@ -213,7 +213,7 @@ loads. So every route derives, and nothing the server can answer is undocumented
 
 | The route declares | Added |
 |---|---|
-| a path or query parameter, or a body | `400 api.schema_invalid` |
+| a path or query parameter, a required header, or a body | `400 api.schema_invalid` |
 | a body | `413 api.payload_too_large`, `415 api.unsupported_media_type`, and a `bodyLimit` (1 MiB; 2 MiB on a batch) |
 | an `Idempotency-Key` | `409` with the two idempotency codes, and the `Idempotency-Replayed` header on its successes |
 | an identity | `401` (unless a refused credential counts as none), the identity's codes, and on a write its write codes (the CSRF `403`, a stale rights version) |

@@ -163,9 +163,9 @@ describe('routeBuilder', () => {
       responses: { 200: { description: 'Dates.' } },
     });
 
-    expect(Object.keys(kept.responses)).toEqual(['200', '404', '500']);
+    expect(Object.keys(kept.responses)).toEqual(['200', '400', '404', '500']);
     expect(kept.tags).toEqual(['dates']);
-    expect(Object.keys(changed.responses)).toEqual(['200', '403', '404', '500']);
+    expect(Object.keys(changed.responses)).toEqual(['200', '400', '403', '404', '500']);
     expect(changed.tags).toEqual(['other']);
   });
 
@@ -187,6 +187,25 @@ describe('routeBuilder', () => {
     expect(route.responses[400].description).toBe('Bad date.');
     expect(route.version).toBe(1);
     expect(versionedPath(route)).toBe('/v1/dates/{dateId}');
+  });
+
+  it('derives api.schema_invalid from a required header, and not from an optional one', () => {
+    const define = (headers: readonly (typeof surface)[]) =>
+      routeBuilder(model)
+        .version(1)
+        .public()
+        .headers(...headers)
+        .defineRoute({
+          method: 'get',
+          path: '/dates',
+          operationId: 'listDates',
+          responses: { 200: { description: 'Dates.' } },
+        }) as unknown as { readonly errorCodes: Record<string, readonly string[] | undefined> };
+    const optional = { ...surface, required: false } as unknown as typeof surface;
+
+    expect(define([surface]).errorCodes['400']).toEqual([ApiErrorCode.SCHEMA_INVALID]);
+    expect(define([]).errorCodes['400']).toBeUndefined();
+    expect(define([optional]).errorCodes['400']).toBeUndefined();
   });
 
   it('refuses a route before a version is set', () => {

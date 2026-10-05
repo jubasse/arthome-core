@@ -344,6 +344,8 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -846,6 +848,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '409':
           $ref: '#/components/responses/Conflict'
         '500':
@@ -1012,6 +1016,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -2271,6 +2277,8 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -3202,6 +3210,8 @@ paths:
               description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
               schema:
                 type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -4695,6 +4705,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -4935,6 +4947,8 @@ paths:
               description: The request headers the answer depends on.
               schema:
                 type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -5007,6 +5021,8 @@ paths:
               description: The request headers the answer depends on.
               schema:
                 type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -5079,6 +5095,8 @@ paths:
               description: The request headers the answer depends on.
               schema:
                 type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -5964,6 +5982,8 @@ paths:
               description: The request headers the answer depends on.
               schema:
                 type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -7173,6 +7193,8 @@ paths:
                   - channelId: 019928a0-7d31-7a10-b8c4-2f9e11a4c222
                     lineIds:
                     - 019928f6-0000-7000-8000-000000000001
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -7982,6 +8004,8 @@ paths:
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -9721,6 +9745,8 @@ paths:
                 servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   url: https://arthome.fr/compte
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':

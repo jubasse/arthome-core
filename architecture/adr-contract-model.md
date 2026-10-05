@@ -510,7 +510,7 @@ viewer: restricted(ViewerOverlaySchema, 'signedIn'),
 
 | What the route declares | Errors added |
 |---|---|
-| any input: body, query, path | `400 api.schema_invalid`, with the field paths in `params` |
+| any input: body, query, path, required header | `400 api.schema_invalid`, with the field paths in `params` |
 | a body | `413` (code promised in `tools/codes-promised.json`), `415` (code to add) |
 | a write carrying `Idempotency-Key` | `409 api.idempotency_key_reused`, `api.idempotency_in_flight` (covers the 61 writes) |
 | an identity | `401` with its codes |
