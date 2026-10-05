@@ -1,40 +1,12 @@
 import { z } from 'zod';
-import { CREW_ROLES, MEMBER_ROLES } from '@arthome/core';
-import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
-import { ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, PageParameter, PageSizeParameter, SurfaceParameter, TraceparentParameter, operator } from './components.js';
+import { MEMBER_ROLES } from '@arthome/core';
+import type { VocabularyIn } from '@arthome/core/schema';
+import { ChannelIdParameter, ConflictResponse, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, PageParameter, PageSizeParameter, SurfaceParameter, TraceparentParameter } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route, IdentifiedAccess } from '../http/index.js';
+import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
-import { ChannelMemberSchema, DateAccessGrantSchema, EffectiveRightsSchema } from '../studio-access/index.js';
+import { ChannelMemberSchema, EffectiveRightsSchema } from '../studio-access/index.js';
 declare const RESPOND_TO_INVITATION_DECISION: readonly ["accept", "decline"];
-export declare const getDateCrewPane: Route<{
-    method: 'get';
-    version: 1;
-    path: '/dates/{dateId}/panes/crew';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    access: IdentifiedAccess<typeof operator, false>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodObject<{
-                slots: z.ZodArray<z.ZodObject<{
-                    crewRole: VocabularyOut;
-                    covered: z.ZodBoolean;
-                    personId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-                    displayName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-                    membershipKind: z.ZodOptional<VocabularyOut>;
-                }, z.core.$loose>>;
-                grants: z.ZodArray<typeof DateAccessGrantSchema>;
-                missingRoles: z.ZodOptional<z.ZodArray<z.ZodString>>;
-            }, z.core.$loose>;
-        }, z.core.$loose>>>;
-        403: typeof ForbiddenResponse;
-        404: typeof NotFoundResponse;
-    };
-}>;
 export declare const listChannelMembers: Route<{
     method: 'get';
     version: 1;
@@ -147,30 +119,6 @@ export declare const removeMember: Route<{
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
         409: typeof ConflictResponse;
-    };
-}>;
-export declare const grantDateAccess: Route<{
-    method: 'post';
-    version: 1;
-    path: '/dates/{dateId}/crew';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof IfRightsVersionParameter
-    ];
-    access: IdentifiedAccess<typeof operator, false>;
-    requestBody: JsonRequestBody<z.ZodObject<{
-        personId: z.ZodString;
-        crewRole: VocabularyIn<typeof CREW_ROLES>;
-        expiresAt: z.ZodString;
-    }, z.core.$strip>>;
-    responses: {
-        201: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof DateAccessGrantSchema;
-        }, z.core.$loose>>>;
-        403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
     };
 }>;
 export declare const revokeDateAccess: Route<{

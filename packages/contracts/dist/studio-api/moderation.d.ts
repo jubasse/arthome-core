@@ -1,66 +1,12 @@
 import { z } from 'zod';
-import { AUDIENCE_SANCTIONS, CHAT_MODES, FILTER_SEVERITIES, MODERATION_REASONS, MODERATION_VERDICTS } from '@arthome/core';
-import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
-import { ChannelIdParameter, ConflictResponse, CursorParameter, DateIdParameter, ForbiddenResponse, GoneResponse, IdempotencyKeyParameter, IfRightsVersionParameter, LimitParameter, NotFoundResponse, PageParameter, PageSizeParameter, SurfaceParameter, TraceparentParameter, operator } from './components.js';
+import { AUDIENCE_SANCTIONS, MODERATION_REASONS, MODERATION_VERDICTS } from '@arthome/core';
+import type { VocabularyIn } from '@arthome/core/schema';
+import { ChannelIdParameter, CursorParameter, ForbiddenResponse, GoneResponse, IdempotencyKeyParameter, IfRightsVersionParameter, LimitParameter, NotFoundResponse, PageParameter, PageSizeParameter, SurfaceParameter, TraceparentParameter } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route, IdentifiedAccess } from '../http/index.js';
+import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
 import { OffsetPageInfoSchema, StudioCursorPageInfoSchema } from '../pagination/index.js';
-import { AudienceMemberSchema, ChatPolicySchema, ModerationItemSchema } from '../studio-desk/index.js';
-import { StudioLocalizedTextSchema } from '../text/index.js';
+import { AudienceMemberSchema, ModerationItemSchema } from '../studio-desk/index.js';
 declare const LIST_MODERATION_QUEUE_FILTER: readonly ["all", "pending", "settled"];
-export declare const getDateChatPane: Route<{
-    method: 'get';
-    version: 1;
-    path: '/dates/{dateId}/panes/chat';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    access: IdentifiedAccess<typeof operator, false>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodObject<{
-                policy: z.ZodOptional<typeof ChatPolicySchema>;
-                throughputPerMinute: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
-                pendingModerationCount: z.ZodOptional<z.ZodInt>;
-                assignedModerators: z.ZodOptional<z.ZodArray<z.ZodObject<{
-                    personId: z.ZodOptional<z.ZodString>;
-                    displayName: z.ZodOptional<z.ZodString>;
-                }, z.core.$loose>>>;
-            }, z.core.$loose>;
-        }, z.core.$loose>>>;
-        403: typeof ForbiddenResponse;
-        404: typeof NotFoundResponse;
-    };
-}>;
-export declare const setDateChatPolicy: Route<{
-    method: 'put';
-    version: 1;
-    path: '/dates/{dateId}/chat-policy';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof IfRightsVersionParameter
-    ];
-    access: IdentifiedAccess<typeof operator, false>;
-    requestBody: JsonRequestBody<z.ZodObject<{
-        expectedVersion: z.ZodInt;
-        mode: z.ZodOptional<VocabularyIn<typeof CHAT_MODES>>;
-        filterSeverity: z.ZodOptional<VocabularyIn<typeof FILTER_SEVERITIES>>;
-        slowModeSec: z.ZodOptional<z.ZodInt>;
-        holdersOnly: z.ZodOptional<z.ZodBoolean>;
-        retroactiveFilter: z.ZodOptional<z.ZodBoolean>;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof ChatPolicySchema;
-        }, z.core.$loose>>>;
-        409: typeof ConflictResponse;
-    };
-}>;
 export declare const listModerationQueue: Route<{
     method: 'get';
     version: 1;
@@ -239,42 +185,6 @@ export declare const removeBannedWord: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         404: typeof NotFoundResponse;
-    };
-}>;
-export declare const listStudioChatMessages: Route<{
-    method: 'get';
-    version: 1;
-    path: '/dates/{dateId}/chat/messages';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof CursorParameter,
-        typeof LimitParameter,
-        {
-            readonly name: 'sinceSeq';
-            readonly in: 'query';
-            readonly description: 'Resume by sequence number after a channel break.';
-            readonly schema: z.ZodNumber;
-        },
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    access: IdentifiedAccess<typeof operator, false>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            items: z.ZodArray<z.ZodObject<{
-                id: z.ZodString;
-                seq: z.ZodNumber;
-                authorHandle: z.ZodString;
-                atMediaSec: z.ZodInt;
-                sentAt: z.ZodString;
-                state: VocabularyOut;
-                badge: VocabularyOut;
-                body: typeof StudioLocalizedTextSchema;
-            }, z.core.$loose>>;
-            page: typeof StudioCursorPageInfoSchema;
-        }, z.core.$loose>>>;
-        403: typeof ForbiddenResponse;
-        410: typeof GoneResponse;
     };
 }>;
 export {};

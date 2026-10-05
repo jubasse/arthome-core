@@ -380,7 +380,9 @@ export type CreateRoute<C extends ResourceContext, D> = Member<
     ...C['parents'],
     ...(D extends { readonly idempotent: false } ? readonly [] : Added<C, 'writeParameters'>),
   ],
-  { readonly 201: ItemResponse<Conv<C>, ResponseSchema<D>> },
+  D extends { readonly status: infer S extends number }
+    ? Readonly<Record<S, ItemResponse<Conv<C>, ResponseSchema<D>>>>
+    : { readonly 201: ItemResponse<Conv<C>, ResponseSchema<D>> },
   D extends { readonly idempotent: false }
     ? Record<never, never>
     : { readonly 409: IdempotencyCodes },
@@ -690,6 +692,8 @@ export interface Resource<C extends ResourceContext> {
         readonly response?: z.ZodType;
         /** `false`: no idempotency key, for a write that is a stream of samples. */
         readonly idempotent?: false;
+        /** `202` for a write that is only accepted, not yet applied. */
+        readonly status?: 202;
       }
     >,
   >(
@@ -1205,7 +1209,7 @@ export function makeResource(
       docs,
       parameters: [...parents, ...(docs.idempotent === false ? [] : conventions.writeParameters)],
       responses: {
-        201: jsonResponse(
+        [(docs.status as number | undefined) ?? 201]: jsonResponse(
           said(docs, 'Created.'),
           docs.response !== undefined ? conventions.item(docs.response as z.ZodType) : itemOf(docs),
           undefined,

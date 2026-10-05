@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { CHAT_MODES, FILTER_SEVERITIES } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
-import { BadRequestResponse, ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter, operator } from './components.js';
+import { BadRequestResponse, ChannelIdParameter, ConflictResponse, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, PageParameter, PageSizeParameter, SortByParameter, SortDirParameter, SurfaceParameter, TraceparentParameter } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, PathParameter, JsonResponse, QueryParameter, Route, IdentifiedAccess } from '../http/index.js';
+import type { JsonRequestBody, PathParameter, JsonResponse, QueryParameter, Route } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import { JournalEntrySchema } from '../studio-desk/index.js';
 import { MerchItemAdminSchema, UploadTicketSchema } from '../studio-stage/index.js';
@@ -236,55 +236,6 @@ export declare const upsertMerchItem: Route<{
             data: typeof MerchItemAdminSchema;
         }, z.core.$loose>>>;
         409: typeof ConflictResponse;
-    };
-}>;
-export declare const pinMerchDuringLive: Route<{
-    method: 'post';
-    version: 1;
-    path: '/dates/{dateId}/merch-pin';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof IfRightsVersionParameter
-    ];
-    access: IdentifiedAccess<typeof operator, false>;
-    requestBody: JsonRequestBody<z.ZodObject<{
-        itemId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodOptional<z.ZodObject<{
-                pinnedItemId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-            }, z.core.$loose>>;
-        }, z.core.$loose>>>;
-        404: typeof NotFoundResponse;
-    };
-}>;
-export declare const reopenReplayWindow: Route<{
-    method: 'post';
-    version: 1;
-    path: '/dates/{dateId}/replay-window';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof IfRightsVersionParameter
-    ];
-    access: IdentifiedAccess<typeof operator, false>;
-    requestBody: JsonRequestBody<z.ZodObject<{
-        additionalHours: z.ZodInt;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodOptional<z.ZodObject<{
-                expiresAt: z.ZodOptional<z.ZodString>;
-                windowHours: z.ZodOptional<z.ZodInt>;
-            }, z.core.$loose>>;
-        }, z.core.$loose>>>;
-        409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
     };
 }>;
 export declare const updateChannelIdentity: Route<{

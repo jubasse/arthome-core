@@ -11,6 +11,7 @@ import type { Response } from './index.js';
 import { restricted, restrictedFieldsOf, sensitive, sensitivePathsOf } from './marks.js';
 import { Freshness, cache, DEFAULT_BODY_LIMIT } from './policy.js';
 import { accepted } from './responses.js';
+import { ReauthProof } from './schemas.js';
 import { parseTolerant, tagged } from './tagged.js';
 
 const model = defineErrorModel<string>({
@@ -176,11 +177,32 @@ describe('derived errors', () => {
   it('merges the codes of a rule into its status', () => {
     const route = builder
       .requires(roles('production').on('channelId'), recentAuth(), throttle('auth'))
-      .defineRoute({ method: 'get', path: '/a', operationId: 'a', responses: ok });
+      .defineRoute({
+        method: 'post',
+        path: '/a',
+        operationId: 'a',
+        requestBody: { content: { 'application/json': { schema: ReauthProof } } },
+        responses: ok,
+      });
 
     expect(Object.keys(route.responses)).toEqual(expect.arrayContaining(['403', '429']));
     expect(route.requires?.map((rule) => rule.name)).toEqual(['roles', 'recentAuth', 'throttle']);
     expect(route.requires?.[0]?.params).toEqual({ allowed: ['production'], on: 'channelId' });
+  });
+
+  it('refuses a route whose body lacks the proof a rule reads', () => {
+    const define = (): unknown =>
+      builder.requires(recentAuth()).defineRoute({
+        method: 'post',
+        path: '/a',
+        operationId: 'a',
+        requestBody: {
+          content: { 'application/json': { schema: z.object({ name: z.string() }) } },
+        },
+        responses: ok,
+      });
+
+    expect(define).toThrow('reads the body field "reauthToken"');
   });
 
   it('marks the routes of an internal identity internal, with the deadline of a service', () => {

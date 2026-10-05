@@ -78,7 +78,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 176 exported names.
+Declarations: `dist/http/index.d.ts` — 178 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — `type Access = { readonly kind: 'anyone'; } | { readonly kind: 'identified'; readonly identity: Identity; readonly optional: boolean; };` — A route's caller: nobody in particular, or an identity, optionally.
@@ -150,6 +150,7 @@ Declarations: `dist/http/index.d.ts` — 176 exported names.
 - `MemberDocs` (type) — What a member says beyond the convention: prose, metadata, extra parameters, responses and codes.
 - `MergedErrors` (type) — The error responses a set of 'errors' declarations makes, over those already held.
 - `NATURE_BY_STATUS` (const) — `NATURE_BY_STATUS: Readonly<Record<ErrorStatus, FailureNature>>` — transport.md §5.5: a 4xx is refused, except 429; a 5xx is unavailable.
+- `NO_STORE_HEADER` (const) — `NO_STORE_HEADER: Header` — On an answer carrying a 'sensitive' field: kept out of every cache, and out of the app snapshot.
 - `PageResponse` (type) — `type PageResponse<K, S extends z.ZodType> = JsonResponse<z.ZodType<EnvelopeOf<K> & { readonly data: readonly z.output<S>[]; readonly page: unknown; }>>;` — The answer of a list: the api's envelope, the records under 'data' and the page.
 - `Paging` (type)
 - `PagingConvention` (interface) — What an api says about a kind of paging: its parameters, and the envelope of one page of 'data'.
@@ -165,6 +166,7 @@ Declarations: `dist/http/index.d.ts` — 176 exported names.
 - `PublicAccess` (interface)
 - `QueryParameter` (type)
 - `RESTRICTED_KEY` (const) — `RESTRICTED_KEY = "x-arthome-restricted"`
+- `ReauthProof` (const) — `ReauthProof: z.ZodObject<{ reauthToken: z.ZodString; }, z.core.$strip>` — The proof 'recentAuth()' reads: the body of a route that requires it extends this.
 - `ReplaceRoute` (type)
 - `RequestBody` (interface)
 - `Requirement` (interface) — A rule beyond identity: a name the server maps to a guard, its parameters, and the codes it can answer.
@@ -237,7 +239,7 @@ Declarations: `dist/http/index.d.ts` — 176 exported names.
 - `period` (function) — `function period<const Required extends boolean = true>(options: PeriodOptions<Required>): Period<Required>;`
 - `perishable` (function) — `function perishable<S extends z.core.$ZodShape, C extends z.core.$ZodObjectConfig>(schema: z.ZodObject<S, C>): z.ZodObject<S & { validUntil: ValidUntil; }, C>;` — 'schema' with the 'validUntil' the envelope declares, for data that stops being true at an instant.
 - `querySchemaOf` (function) — `function querySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteQuery<R>, unknown>;` — The query a server validates: undeclared parameters refused, defaults not materialised.
-- `recentAuth` (function) — The caller holds a recent re-authentication: the proof is the body field 'proof' names (a token 'createReauthToken' minted), and the refusa…
+- `recentAuth` (function) — The caller holds a recent re-authentication: the proof is the body field 'proof' names (a token 'createReauthToken' minted), declared by ex…
 - `requirement` (function)
 - `restricted` (function) — `function restricted<S extends z.ZodType, const Right extends string>(schema: S, right: Right, meta?: Readonly<Record<string, unknown>>): z.ZodOptional<S>;` — A field present only for a caller who holds 'right': optional in the type and in the document, absent from the answer otherwise, never pres…
 - `restrictedFieldsOf` (function) — `function restrictedFieldsOf(schema: z.ZodType): readonly RestrictedField[];` — Each restricted field with the right that unlocks it.

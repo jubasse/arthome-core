@@ -2,7 +2,6 @@ import { z } from 'zod';
 
 import {
   ChannelErrorCode,
-  CREW_ROLES,
   CrewRole,
   DatePane,
   FailureNature,
@@ -11,23 +10,19 @@ import {
   NavigationEntry,
   OrderState,
   Service,
-  Surface,
 } from '@arthome/core';
-import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
+import type { VocabularyIn } from '@arthome/core/schema';
 import {
   InstantOut,
   uuidOut,
   VOCABULARY_SOURCE_LOCAL,
   vocabularyIn,
-  vocabularyOut,
-  vocabularyOutLocal,
   uuidIn,
 } from '@arthome/core/schema';
 
 import {
   ChannelIdParameter,
   ConflictResponse,
-  DateIdParameter,
   ForbiddenResponse,
   IdempotencyKeyParameter,
   IfRightsVersionParameter,
@@ -38,7 +33,6 @@ import {
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
-  operator,
   studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
@@ -48,26 +42,15 @@ import type {
   PathParameter,
   QueryParameter,
   Route,
-  IdentifiedAccess,
 } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
-import {
-  ChannelMemberSchema,
-  DateAccessGrantSchema,
-  EffectiveRightsSchema,
-} from '../studio-access/index.js';
+import { ChannelMemberSchema, EffectiveRightsSchema } from '../studio-access/index.js';
 
 const crewRoutes = studioV1
   .tags(StudioTag.CREW)
   .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 const crewReads = crewRoutes.errors({ 403: ForbiddenResponse });
 const crewWrites = crewRoutes.headers(IdempotencyKeyParameter);
-const crewDates = studioV1
-  .identity(operator)
-  .tags(StudioTag.CREW)
-  .headers(SurfaceParameter, TraceparentParameter)
-  .errors({ 403: ForbiddenResponse, 404: NotFoundResponse });
-const date = crewDates.resource('dates', { id: DateIdParameter });
 const InvitationIdParameter: PathParameter<'invitationId', z.ZodString> = {
   name: 'invitationId',
   in: 'path',
@@ -76,136 +59,7 @@ const InvitationIdParameter: PathParameter<'invitationId', z.ZodString> = {
 };
 const invitations = crewWrites.resource('invitations', { id: InvitationIdParameter });
 
-const GET_DATE_CREW_PANE_MEMBERSHIP_KIND = ['member', 'grant'] as const;
 const RESPOND_TO_INVITATION_DECISION = ['accept', 'decline'] as const;
-
-export const getDateCrewPane: Route<{
-  method: 'get';
-  version: 1;
-  path: '/dates/{dateId}/panes/crew';
-  parameters: readonly [
-    typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  access: IdentifiedAccess<typeof operator, false>;
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<
-          {
-            data: z.ZodObject<
-              {
-                slots: z.ZodArray<
-                  z.ZodObject<
-                    {
-                      crewRole: VocabularyOut;
-                      covered: z.ZodBoolean;
-                      personId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-                      displayName: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-                      membershipKind: z.ZodOptional<VocabularyOut>;
-                    },
-                    z.core.$loose
-                  >
-                >;
-                grants: z.ZodArray<typeof DateAccessGrantSchema>;
-                missingRoles: z.ZodOptional<z.ZodArray<z.ZodString>>;
-              },
-              z.core.$loose
-            >;
-          },
-          z.core.$loose
-        >
-      >
-    >;
-    403: typeof ForbiddenResponse;
-    404: typeof NotFoundResponse;
-  };
-}> = date.path('panes').defineRoute({
-  method: 'get',
-  path: '/crew',
-  operationId: 'getDateCrewPane',
-  summary: "A date's crew pane — assignments and one-off accesses, with their identifiers.",
-  description:
-    'Three gaps compounded on the same page, the one belonging to the `coordination` persona,\nwhose entire navigation is `crew · log · help`:\n\n- `/v1/dates/{dateId}/crew` was **POST only**: the dates × posts matrix and the "tonight"\n  list had no read path at all. `listDuties` gives **my** duties,\n  `EffectiveRights.dateGrants` gives **my** accesses — neither gives the coverage;\n- **`revokeDateAccess` revokes by `grantId`, an identifier no read handed out**;\n- `moderator_assigned` is one of the checklist items and `datesToCover` a served counter:\n  **both were computed against a coverage the studio could not read.**\n\nOpen to `artist`, `production` and `coordination`.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.IDENTITY],
-  responses: {
-    200: {
-      description: 'Posts covered, posts missing, one-off accesses with their `grantId`.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              data: z.looseObject({
-                slots: z
-                  .array(
-                    z.looseObject({
-                      crewRole: vocabularyOut(CREW_ROLES),
-                      covered: z.boolean(),
-                      personId: uuidOut().nullable().optional(),
-                      displayName: z.string().nullable().optional(),
-                      membershipKind: vocabularyOutLocal(
-                        GET_DATE_CREW_PANE_MEMBERSHIP_KIND,
-                        'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.',
-                      )
-                        .meta({
-                          description:
-                            '**The two scales, distinguished on read**: `member` is a permanent\nmembership assigned to a post, `grant` is a one-off stand-in\nthat expires.\n',
-                        })
-                        .optional(),
-                    }),
-                  )
-                  .meta({
-                    description:
-                      'One post per slot, covered or not. **`missing` is served, never inferred.**',
-                  }),
-                grants: z.array(DateAccessGrantSchema),
-                missingRoles: z.array(z.string()).optional(),
-              }),
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:20:20.000Z',
-            rightsVersion: 412,
-            data: {
-              slots: [
-                {
-                  crewRole: CrewRole.DIRECTOR,
-                  covered: true,
-                  personId: '019928b2-0000-7000-8000-000000000001',
-                  displayName: 'Yann P.',
-                  membershipKind: 'grant',
-                },
-                {
-                  crewRole: CrewRole.MODERATION,
-                  covered: false,
-                  personId: null,
-                  displayName: null,
-                  membershipKind: 'member',
-                },
-              ],
-              grants: [
-                {
-                  grantId: '019928b3-0000-7000-8000-000000000001',
-                  dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
-                  personId: '019928b2-0000-7000-8000-000000000001',
-                  displayName: 'Yann P.',
-                  crewRole: CrewRole.DIRECTOR,
-                  expiresAt: '2026-09-21T21:45:00Z',
-                },
-              ],
-              missingRoles: [CrewRole.MODERATION],
-            },
-          },
-        },
-      },
-    },
-    404: NotFoundResponse,
-  },
-});
 
 export const listChannelMembers: Route<{
   method: 'get';
@@ -681,114 +535,6 @@ export const removeMember: Route<{
     },
     403: ForbiddenResponse,
     409: ConflictResponse,
-  },
-});
-
-export const grantDateAccess: Route<{
-  method: 'post';
-  version: 1;
-  path: '/dates/{dateId}/crew';
-  parameters: readonly [
-    typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-    typeof IfRightsVersionParameter,
-  ];
-  access: IdentifiedAccess<typeof operator, false>;
-  requestBody: JsonRequestBody<
-    z.ZodObject<
-      { personId: z.ZodString; crewRole: VocabularyIn<typeof CREW_ROLES>; expiresAt: z.ZodString },
-      z.core.$strip
-    >
-  >;
-  responses: {
-    201: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<{ data: typeof DateAccessGrantSchema }, z.core.$loose>
-      >
-    >;
-    403: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-  };
-}> = date.single('crew').create({
-  operationId: 'grantDateAccess',
-  item: DateAccessGrantSchema,
-  summary: 'Assigns a stand-in to a date, with an instant of expiry.',
-  description:
-    '**Scoped to one date, expiry served as an instant.** "Expires at curtain call + 1 h" is a\nscreen sentence; the contract carries the instant. Revocable **without touching channel\nmembership** — conflating the two would turn revoking a stand-in into expulsion.\n\n**Assignment to the `director` slot grants access to the stream key.** It is therefore\nreserved to `artist ∨ production`, and the contract makes **that reason** explicit rather than\nleaving it to be guessed.\n\n**Sixty seconds is not good enough for an access that expires**: the internal token carries the\nroles, but the service checks the time-boxed access **on the loaded resource**.\n',
-  'x-arthome-maturity': 'stable',
-  'x-arthome-upstream': [Service.IDENTITY],
-  body: z.object({
-    personId: uuidOut(),
-    crewRole: vocabularyIn(CREW_ROLES).meta({
-      'x-arthome-vocabulary-source': 'CREW_ROLES',
-    }),
-    expiresAt: z
-      .string()
-      .regex(new RegExp('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,3})?Z$'))
-      .meta({
-        format: 'date-time',
-      }),
-  }),
-  example: {
-    personId: '019928b2-0000-7000-8000-000000000001',
-    crewRole: CrewRole.DIRECTOR,
-    expiresAt: '2026-09-21T21:45:00Z',
-  },
-  responses: {
-    201: {
-      description: 'One-off access granted.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              data: DateAccessGrantSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:20:00.000Z',
-            rightsVersion: 412,
-            data: {
-              grantId: '019928b3-0000-7000-8000-000000000001',
-              dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
-              personId: '019928b2-0000-7000-8000-000000000001',
-              displayName: 'Yann P.',
-              crewRole: CrewRole.DIRECTOR,
-              expiresAt: '2026-09-21T21:45:00Z',
-              grantedBy: {
-                personId: '019928b0-0000-7000-8000-000000000001',
-                displayName: 'Claire D.',
-                surface: Surface.STUDIO_WEB,
-              },
-            },
-          },
-        },
-      },
-    },
-    403: {
-      description:
-        '`channel.crew_role_reserved` — the `director` assignment grants access to the stream key.',
-      content: {
-        'application/json': {
-          schema: StudioErrorEnvelopeSchema,
-          example: {
-            error: {
-              code: ChannelErrorCode.CREW_ROLE_RESERVED,
-              nature: FailureNature.REFUSED,
-              params: {
-                crewRole: CrewRole.DIRECTOR,
-                reservedTo: [MemberRole.ARTIST, MemberRole.PRODUCTION],
-                reasonCode: 'grants_stream_key_access',
-              },
-              traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-            },
-            servedAt: '2026-09-21T18:20:00.000Z',
-          },
-        },
-      },
-    },
   },
 });
 

@@ -243,7 +243,9 @@ export type CreateRoute<C extends ResourceContext, D> = Member<C, D, 'post', Col
     ...(D extends {
         readonly idempotent: false;
     } ? readonly [] : Added<C, 'writeParameters'>)
-], {
+], D extends {
+    readonly status: infer S extends number;
+} ? Readonly<Record<S, ItemResponse<Conv<C>, ResponseSchema<D>>>> : {
     readonly 201: ItemResponse<Conv<C>, ResponseSchema<D>>;
 }, D extends {
     readonly idempotent: false;
@@ -450,6 +452,8 @@ export interface Resource<C extends ResourceContext> {
         readonly response?: z.ZodType;
         /** `false`: no idempotency key, for a write that is a stream of samples. */
         readonly idempotent?: false;
+        /** `202` for a write that is only accepted, not yet applied. */
+        readonly status?: 202;
     }>>(docs: D): CreateRoute<C, D>;
     /**
      * PATCH: a partial change of one or several properties, with no business rule. An absent field

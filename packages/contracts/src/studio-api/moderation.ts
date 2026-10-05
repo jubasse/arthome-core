@@ -3,16 +3,9 @@ import { z } from 'zod';
 import {
   AUDIENCE_SANCTIONS,
   AudienceSanction,
-  CHAT_MODES,
-  ChatMode,
   DatePane,
   FailureNature,
-  FILTER_SEVERITIES,
-  FilterSeverity,
   Locale,
-  MESSAGE_STATES,
-  MessageState,
-  MODERATION_BADGES,
   MODERATION_REASONS,
   MODERATION_VERDICTS,
   ModerationErrorCode,
@@ -23,22 +16,12 @@ import {
   PlanTier,
   StateChangeOrigin,
 } from '@arthome/core';
-import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
-import {
-  InstantOut,
-  int64,
-  uuidOut,
-  VOCABULARY_SOURCE_LOCAL,
-  vocabularyIn,
-  vocabularyOut,
-  uuidIn,
-} from '@arthome/core/schema';
+import type { VocabularyIn } from '@arthome/core/schema';
+import { VOCABULARY_SOURCE_LOCAL, vocabularyIn, uuidIn } from '@arthome/core/schema';
 
 import {
   ChannelIdParameter,
-  ConflictResponse,
   CursorParameter,
-  DateIdParameter,
   ForbiddenResponse,
   GoneResponse,
   IdempotencyKeyParameter,
@@ -50,38 +33,24 @@ import {
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
-  operator,
   studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import { cursor } from '../http/index.js';
 import type {
   JsonRequestBody,
   JsonResponse,
   PathParameter,
   QueryParameter,
   Route,
-  IdentifiedAccess,
 } from '../http/index.js';
 import { OffsetPageInfoSchema, StudioCursorPageInfoSchema } from '../pagination/index.js';
-import {
-  AudienceMemberSchema,
-  ChatPolicySchema,
-  ModerationItemSchema,
-} from '../studio-desk/index.js';
-import { StudioLocalizedTextSchema } from '../text/index.js';
+import { AudienceMemberSchema, ModerationItemSchema } from '../studio-desk/index.js';
 
 const moderationRoutes = studioV1
   .tags(StudioTag.MODERATION)
   .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 const moderationReads = moderationRoutes.errors({ 403: ForbiddenResponse });
 const moderationWrites = moderationRoutes.headers(IdempotencyKeyParameter);
-const moderationDates = studioV1
-  .identity(operator)
-  .tags(StudioTag.MODERATION)
-  .headers(SurfaceParameter, TraceparentParameter)
-  .errors({ 403: ForbiddenResponse, 404: NotFoundResponse });
-const date = moderationDates.resource('dates', { id: DateIdParameter });
 const ModerationItemIdParameter: PathParameter<'itemId', z.ZodString> = {
   name: 'itemId',
   in: 'path',
@@ -93,207 +62,6 @@ const moderationItems = moderationWrites.resource('moderation/items', {
 });
 
 const LIST_MODERATION_QUEUE_FILTER = ['all', 'pending', 'settled'] as const;
-
-export const getDateChatPane: Route<{
-  method: 'get';
-  version: 1;
-  path: '/dates/{dateId}/panes/chat';
-  parameters: readonly [
-    typeof DateIdParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  access: IdentifiedAccess<typeof operator, false>;
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<
-          {
-            data: z.ZodObject<
-              {
-                policy: z.ZodOptional<typeof ChatPolicySchema>;
-                throughputPerMinute: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
-                pendingModerationCount: z.ZodOptional<z.ZodInt>;
-                assignedModerators: z.ZodOptional<
-                  z.ZodArray<
-                    z.ZodObject<
-                      {
-                        personId: z.ZodOptional<z.ZodString>;
-                        displayName: z.ZodOptional<z.ZodString>;
-                      },
-                      z.core.$loose
-                    >
-                  >
-                >;
-              },
-              z.core.$loose
-            >;
-          },
-          z.core.$loose
-        >
-      >
-    >;
-    403: typeof ForbiddenResponse;
-    404: typeof NotFoundResponse;
-  };
-}> = date.path('panes').defineRoute({
-  method: 'get',
-  path: '/chat',
-  operationId: 'getDateChatPane',
-  summary: "A date's chat pane — the moderator's pane.",
-  description:
-    '**This is the pane that justified the whole mechanism**: *"a moderator must be able to load\nthe `chat` pane without loading the whole record, otherwise ticketing travels for nothing"*.\nThe argument was quoted in the contract and undone by its own implementation.\n\nOpen to `artist`, `production` and `moderation`.\n',
-  'x-arthome-maturity': 'provisional',
-  'x-arthome-upstream': [DatePane.CHAT],
-  responses: {
-    200: {
-      description: 'Chat regime, measured rate, queue waiting.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              data: z.looseObject({
-                policy: ChatPolicySchema.optional(),
-                throughputPerMinute: z
-                  .int()
-                  .meta({ minimum: undefined, maximum: undefined })
-                  .nullable()
-                  .optional(),
-                pendingModerationCount: z
-                  .int()
-                  .meta({ minimum: undefined, maximum: undefined })
-                  .optional(),
-                assignedModerators: z
-                  .array(
-                    z.looseObject({
-                      personId: uuidOut().optional(),
-                      displayName: z.string().optional(),
-                    }),
-                  )
-                  .optional(),
-              }),
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T19:30:20.000Z',
-            rightsVersion: 412,
-            data: {
-              policy: {
-                dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
-                mode: ChatMode.OPEN,
-                filterSeverity: FilterSeverity.MEDIUM,
-                slowModeSec: 0,
-                holdersOnly: false,
-                locked: true,
-                version: 5,
-              },
-              throughputPerMinute: 41,
-              pendingModerationCount: 14,
-              assignedModerators: [],
-            },
-          },
-        },
-      },
-    },
-    404: NotFoundResponse,
-  },
-});
-
-export const setDateChatPolicy: Route<{
-  method: 'put';
-  version: 1;
-  path: '/dates/{dateId}/chat-policy';
-  parameters: readonly [
-    typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-    typeof IfRightsVersionParameter,
-  ];
-  access: IdentifiedAccess<typeof operator, false>;
-  requestBody: JsonRequestBody<
-    z.ZodObject<
-      {
-        expectedVersion: z.ZodInt;
-        mode: z.ZodOptional<VocabularyIn<typeof CHAT_MODES>>;
-        filterSeverity: z.ZodOptional<VocabularyIn<typeof FILTER_SEVERITIES>>;
-        slowModeSec: z.ZodOptional<z.ZodInt>;
-        holdersOnly: z.ZodOptional<z.ZodBoolean>;
-        retroactiveFilter: z.ZodOptional<z.ZodBoolean>;
-      },
-      z.core.$strip
-    >
-  >;
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<{ data: typeof ChatPolicySchema }, z.core.$loose>
-      >
-    >;
-    409: typeof ConflictResponse;
-  };
-}> = date.single('chat-policy').replace({
-  operationId: 'setDateChatPolicy',
-  item: ChatPolicySchema,
-  summary: "Sets the date's chat regime.",
-  description:
-    '**`chat` applies its own lock.** Once publication is committed, a live chat can still be\n**closed**; it can no longer be **opened wider**. `chat` knows this because it consumed the\nevent, not because it asked `catalog`.\n',
-  'x-arthome-maturity': 'provisional',
-  'x-arthome-upstream': [DatePane.CHAT],
-  body: z.object({
-    expectedVersion: z.int().meta({ minimum: undefined, maximum: undefined }),
-    mode: vocabularyIn(CHAT_MODES)
-      .meta({
-        'x-arthome-vocabulary-source': 'CHAT_MODES',
-      })
-      .optional(),
-    filterSeverity: vocabularyIn(FILTER_SEVERITIES)
-      .meta({
-        'x-arthome-vocabulary-source': 'FILTER_SEVERITIES',
-      })
-      .optional(),
-    slowModeSec: z.int().min(0).max(300).optional(),
-    holdersOnly: z.boolean().optional(),
-    retroactiveFilter: z.boolean().optional(),
-  }),
-  example: {
-    expectedVersion: 4,
-    mode: ChatMode.EMOJI,
-    slowModeSec: 10,
-  },
-  responses: {
-    200: {
-      description: 'Regime up to date.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              data: ChatPolicySchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T18:07:00.000Z',
-            rightsVersion: 412,
-            data: {
-              dateId: '019928a0-7d31-7a10-b8c4-2f9e11a4c001',
-              mode: ChatMode.EMOJI,
-              filterSeverity: FilterSeverity.MEDIUM,
-              slowModeSec: 10,
-              holdersOnly: false,
-              locked: true,
-              version: 5,
-            },
-          },
-        },
-      },
-    },
-    409: ConflictResponse,
-  },
-});
 
 export const listModerationQueue: Route<{
   method: 'get';
@@ -1075,132 +843,5 @@ export const removeBannedWord: Route<{
       },
     },
     404: NotFoundResponse,
-  },
-});
-
-export const listStudioChatMessages: Route<{
-  method: 'get';
-  version: 1;
-  path: '/dates/{dateId}/chat/messages';
-  parameters: readonly [
-    typeof DateIdParameter,
-    typeof CursorParameter,
-    typeof LimitParameter,
-    {
-      readonly name: 'sinceSeq';
-      readonly in: 'query';
-      readonly description: 'Resume by sequence number after a channel break.';
-      readonly schema: z.ZodNumber;
-    },
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
-  access: IdentifiedAccess<typeof operator, false>;
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<
-          {
-            items: z.ZodArray<
-              z.ZodObject<
-                {
-                  id: z.ZodString;
-                  seq: z.ZodNumber;
-                  authorHandle: z.ZodString;
-                  atMediaSec: z.ZodInt;
-                  sentAt: z.ZodString;
-                  state: VocabularyOut;
-                  badge: VocabularyOut;
-                  body: typeof StudioLocalizedTextSchema;
-                },
-                z.core.$loose
-              >
-            >;
-            page: typeof StudioCursorPageInfoSchema;
-          },
-          z.core.$loose
-        >
-      >
-    >;
-    403: typeof ForbiddenResponse;
-    410: typeof GoneResponse;
-  };
-}> = date.path('chat').defineRoute({
-  method: 'get',
-  path: '/messages',
-  operationId: 'listStudioChatMessages',
-  paging: cursor({ maxLimit: 50 }),
-  summary:
-    'The live chat as the studio sees it — **by cursor**, the second exception to page + total.',
-  description:
-    "**The studio sees both states of a message, the viewer sees one.** A removed message never\nreaches a public surface; here it is served with its state, because that is what moderation\narbitrates.\n\nCursor, never page + total: counting a live show's messages in order to display a total is a\npointless cost, and the total changes between the call and the display.\n",
-  'x-arthome-maturity': 'provisional',
-  'x-arthome-upstream': [DatePane.CHAT],
-  parameters: [
-    CursorParameter,
-    LimitParameter,
-    {
-      name: 'sinceSeq',
-      in: 'query',
-      description: 'Resume by sequence number after a channel break.',
-      schema: int64(),
-    },
-  ],
-  responses: {
-    200: {
-      description: 'A page of messages, with their state and their badge.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              items: z.array(
-                z.looseObject({
-                  id: uuidOut(),
-                  seq: int64(),
-                  authorHandle: z.string(),
-                  atMediaSec: z.int().meta({ minimum: undefined, maximum: undefined }),
-                  sentAt: InstantOut,
-                  state: vocabularyOut(MESSAGE_STATES),
-                  badge: vocabularyOut(MODERATION_BADGES).meta({
-                    description:
-                      '**Derived** by `moderationBadgeOf` and served. Precedence: banned > silenced > removed > published.',
-                  }),
-                  body: StudioLocalizedTextSchema,
-                }),
-              ),
-              page: StudioCursorPageInfoSchema,
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T19:36:00.000Z',
-            rightsVersion: 412,
-            lastEventSeq: 41287,
-            items: [
-              {
-                id: '019928f8-0000-7000-8000-000000000009',
-                seq: 41280,
-                authorHandle: '@anon.7742',
-                atMediaSec: 1812,
-                sentAt: '2026-09-21T19:29:42Z',
-                state: MessageState.REMOVED,
-                badge: AudienceSanction.MUTED,
-                body: {
-                  contentLanguage: Locale.FR,
-                  text: '…',
-                },
-              },
-            ],
-            page: {
-              hasMore: true,
-              nextCursor: null,
-              pendingCount: 14,
-            },
-          },
-        },
-      },
-    },
-    410: GoneResponse,
   },
 });

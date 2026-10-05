@@ -186,7 +186,7 @@ export function roles<const Allowed extends string>(
 
 /**
  * The caller holds a recent re-authentication: the proof is the body field `proof` names (a token
- * `createReauthToken` minted), and the refusal asks for one.
+ * `createReauthToken` minted), declared by extending `ReauthProof`, and the refusal asks for one.
  */
 export function recentAuth<const Proof extends string = 'reauthToken'>(
   proof?: Proof,

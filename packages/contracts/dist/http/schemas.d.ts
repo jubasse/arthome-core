@@ -1,6 +1,10 @@
 /** Schemas that several routes repeat, written once. */
 import { z } from 'zod';
 import type { VocabularyIn } from '@arthome/core/schema';
+/** The proof `recentAuth()` reads: the body of a route that requires it extends this. */
+export declare const ReauthProof: z.ZodObject<{
+    reauthToken: z.ZodString;
+}, z.core.$strip>;
 /** The data of a removal: replayed on something already removed, it still succeeds. */
 export declare const Deleted: z.ZodOptional<z.ZodObject<{
     deleted: z.ZodOptional<z.ZodBoolean>;

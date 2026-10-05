@@ -111,7 +111,7 @@ export interface RolesRequirement<Allowed extends string> extends Requirement<'r
 export declare function roles<const Allowed extends string>(...allowed: readonly Allowed[]): RolesRequirement<Allowed>;
 /**
  * The caller holds a recent re-authentication: the proof is the body field `proof` names (a token
- * `createReauthToken` minted), and the refusal asks for one.
+ * `createReauthToken` minted), declared by extending `ReauthProof`, and the refusal asks for one.
  */
 export declare function recentAuth<const Proof extends string = 'reauthToken'>(proof?: Proof): Requirement<'recentAuth', {
     readonly proof: {

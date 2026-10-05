@@ -31,6 +31,8 @@ export type OperationDoc = {
     /** Absent while the route still carries its own. */
     readonly description?: string;
     readonly upstream?: readonly Upstream[];
+    /** Why a write that takes no `Idempotency-Key` (`idempotent: false`) is safe without one. */
+    readonly idempotencyExemption?: string;
 } & (DerivedMaturity | StatedMaturity);
 /** A module's operations, by operation id: `export const datesDocs = { ... } satisfies ModuleDocs`. */
 export type ModuleDocs = Readonly<Record<string, OperationDoc>>;

@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
 import {
-  AudienceSanction,
-  CatalogErrorCode,
   ChannelErrorCode,
   CHAT_MODES,
   ChatMode,
@@ -33,11 +31,9 @@ import {
   BadRequestResponse,
   ChannelIdParameter,
   ConflictResponse,
-  DateIdParameter,
   ForbiddenResponse,
   IdempotencyKeyParameter,
   IfRightsVersionParameter,
-  NotFoundResponse,
   PageParameter,
   PageSizeParameter,
   SortByParameter,
@@ -45,7 +41,6 @@ import {
   StudioTag,
   SurfaceParameter,
   TraceparentParameter,
-  operator,
   studioV1,
 } from './components.js';
 import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
@@ -55,8 +50,8 @@ import type {
   JsonResponse,
   QueryParameter,
   Route,
-  IdentifiedAccess,
 } from '../http/index.js';
+import { ReauthProof, recentAuth } from '../http/index.js';
 import { OffsetPageInfoSchema } from '../pagination/index.js';
 import { JournalEntrySchema } from '../studio-desk/index.js';
 import { MerchItemAdminSchema, UploadTicketSchema } from '../studio-stage/index.js';
@@ -66,13 +61,6 @@ const channelRoutes = studioV1
   .headers(SurfaceParameter, IfRightsVersionParameter, TraceparentParameter);
 const channelReads = channelRoutes.errors({ 403: ForbiddenResponse });
 const channelWrites = channelRoutes.headers(IdempotencyKeyParameter);
-const channelDates = studioV1
-  .identity(operator)
-  .tags(StudioTag.CHANNEL)
-  .headers(SurfaceParameter, TraceparentParameter)
-  .errors({ 403: ForbiddenResponse, 404: NotFoundResponse });
-const date = channelDates.resource('dates', { id: DateIdParameter });
-
 const LIST_CHANNEL_REPLAYS_STATE = ['online', 'expired', 'archived'] as const;
 const GET_CHANNEL_SETTINGS_SOURCE = [
   'shopify',
@@ -125,15 +113,13 @@ export const deleteChannel: Route<{
     '**Refused while a date remains on sale or a payout is owed.** These facts are **projected\nand held locally** by `identity` (`channel_dues`), never asked of `ticketing` or `payouts`\nsynchronously: that is precisely the kind of call "no synchronous call between services"\nforbids.\n',
   'x-arthome-maturity': 'stable',
   'x-arthome-upstream': [Service.IDENTITY],
+  requires: [recentAuth()],
   parameters: [ChannelIdParameter],
   requestBody: {
     required: true,
     content: {
       'application/json': {
-        schema: z.object({
-          reauthToken: z.string(),
-          confirmName: z.string(),
-        }),
+        schema: ReauthProof.extend({ confirmName: z.string() }),
         example: {
           reauthToken: 'ott_9f2ac1',
           confirmName: 'Compagnie Verticale',
@@ -1074,180 +1060,6 @@ export const upsertMerchItem: Route<{
       },
     },
     409: ConflictResponse,
-  },
-});
-
-export const pinMerchDuringLive: Route<{
-  method: 'post';
-  version: 1;
-  path: '/dates/{dateId}/merch-pin';
-  parameters: readonly [
-    typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-    typeof IfRightsVersionParameter,
-  ];
-  access: IdentifiedAccess<typeof operator, false>;
-  requestBody: JsonRequestBody<
-    z.ZodObject<{ itemId: z.ZodOptional<z.ZodNullable<z.ZodString>> }, z.core.$strip>
-  >;
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<
-          {
-            data: z.ZodOptional<
-              z.ZodObject<
-                { pinnedItemId: z.ZodOptional<z.ZodNullable<z.ZodString>> },
-                z.core.$loose
-              >
-            >;
-          },
-          z.core.$loose
-        >
-      >
-    >;
-    404: typeof NotFoundResponse;
-  };
-}> = date.action('merch-pin', {
-  operationId: 'pinMerchDuringLive',
-  summary: 'Pins an item during the live show.',
-  description: '**A put**: pinning the same item twice does not pin it twice.',
-  'x-arthome-maturity': 'provisional',
-  'x-arthome-upstream': [Service.TICKETING],
-  body: z.object({
-    itemId: uuidOut()
-      .nullable()
-      .meta({
-        description: '`null` removes the pin.',
-      })
-      .optional(),
-  }),
-  example: {
-    itemId: '019928a0-7d31-7a10-b8c4-2f9e11a4d001',
-  },
-  responses: {
-    200: {
-      description: 'Pin up to date.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              data: z
-                .looseObject({
-                  pinnedItemId: uuidOut().nullable().optional(),
-                })
-                .optional(),
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-21T19:40:00.000Z',
-            rightsVersion: 412,
-            data: {
-              pinnedItemId: '019928a0-7d31-7a10-b8c4-2f9e11a4d001',
-            },
-          },
-        },
-      },
-    },
-    404: NotFoundResponse,
-  },
-});
-
-export const reopenReplayWindow: Route<{
-  method: 'post';
-  version: 1;
-  path: '/dates/{dateId}/replay-window';
-  parameters: readonly [
-    typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-    typeof IfRightsVersionParameter,
-  ];
-  access: IdentifiedAccess<typeof operator, false>;
-  requestBody: JsonRequestBody<z.ZodObject<{ additionalHours: z.ZodInt }, z.core.$strip>>;
-  responses: {
-    200: JsonResponse<
-      z.ZodIntersection<
-        typeof StudioEnvelopeMetaSchema,
-        z.ZodObject<
-          {
-            data: z.ZodOptional<
-              z.ZodObject<
-                { expiresAt: z.ZodOptional<z.ZodString>; windowHours: z.ZodOptional<z.ZodInt> },
-                z.core.$loose
-              >
-            >;
-          },
-          z.core.$loose
-        >
-      >
-    >;
-    409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-  };
-}> = date.action('replay-window', {
-  operationId: 'reopenReplayWindow',
-  summary: 'Reopens the replay window.',
-  description:
-    'Possible **only** if the policy was not `none`: the promise made before the purchase does not\nreopen. The new expiry is **derived** from the end of the live show and the served window,\nnever set by hand — otherwise the replay policy would end up encoded in a storage lifecycle,\nout of reach of the tests.\n',
-  'x-arthome-maturity': 'provisional',
-  'x-arthome-upstream': [Service.STREAMING],
-  body: z.object({
-    additionalHours: z.int().min(1).max(720),
-  }),
-  example: {
-    additionalHours: 48,
-  },
-  responses: {
-    200: {
-      description: 'Window reopened, with the new **derived** expiry.',
-      content: {
-        'application/json': {
-          schema: z.intersection(
-            StudioEnvelopeMetaSchema,
-            z.looseObject({
-              data: z
-                .looseObject({
-                  expiresAt: InstantOut.optional(),
-                  windowHours: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
-                })
-                .optional(),
-            }),
-          ),
-          example: {
-            servedAt: '2026-09-22T10:00:00.000Z',
-            rightsVersion: 412,
-            data: {
-              expiresAt: '2026-09-26T21:30:00Z',
-              windowHours: 120,
-            },
-          },
-        },
-      },
-    },
-    409: {
-      description: '`date.replay_policy_final` when the policy was `none`.',
-      content: {
-        'application/json': {
-          schema: StudioErrorEnvelopeSchema,
-          example: {
-            error: {
-              code: CatalogErrorCode.REPLAY_POLICY_FINAL,
-              nature: FailureNature.REFUSED,
-              params: {
-                currentPolicy: AudienceSanction.NONE,
-              },
-              traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-            },
-            servedAt: '2026-09-22T10:00:00.000Z',
-          },
-        },
-      },
-    },
   },
 });
 

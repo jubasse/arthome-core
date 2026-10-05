@@ -5,6 +5,15 @@ import { z } from 'zod';
 import { VOCABULARY_SOURCE_LOCAL, vocabularyIn, InstantOut } from '@arthome/core/schema';
 import type { VocabularyIn } from '@arthome/core/schema';
 
+import { sensitive } from './marks.js';
+
+/** The proof `recentAuth()` reads: the body of a route that requires it extends this. */
+export const ReauthProof: z.ZodObject<{ reauthToken: z.ZodString }, z.core.$strip> = z.object({
+  reauthToken: sensitive(z.string()).meta({
+    description: 'Single-use re-authentication token, short-lived.',
+  }),
+});
+
 /** The data of a removal: replayed on something already removed, it still succeeds. */
 export const Deleted: z.ZodOptional<
   z.ZodObject<{ deleted: z.ZodOptional<z.ZodBoolean> }, z.core.$loose>

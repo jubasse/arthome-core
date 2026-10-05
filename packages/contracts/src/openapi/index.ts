@@ -267,6 +267,9 @@ function documented(route: Route, doc: OperationDoc | undefined): Record<string,
     ...(doc.description !== undefined && { description: doc.description }),
     'x-arthome-maturity': maturity,
     ...(upstream !== undefined && { 'x-arthome-upstream': upstream }),
+    ...(doc.idempotencyExemption !== undefined && {
+      'x-arthome-idempotency-exemption': doc.idempotencyExemption,
+    }),
   };
 }
 

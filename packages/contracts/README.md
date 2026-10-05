@@ -206,7 +206,7 @@ still on a bare builder is unchanged. Nothing the server can answer is undocumen
 | a rule | the rule's codes (`403 api.reauthentication_required`, `429 api.rate_limited`) |
 | the surface | `500 api.internal`; on a BFF `502 api.upstream_unavailable`, `504 api.upstream_timeout` and `api.deadline_exceeded` |
 | a `cache` with an `etag` | `If-None-Match`, `ETag` and the `304` |
-| a response that carries a `sensitive` field | `Cache-Control` on it |
+| a response that carries a `sensitive` field | `Cache-Control: no-store` on it |
 
 A response the group or the route writes whole is kept over the derived one. The derived errors are
 **not** in the route's annotation: the annotation lists the route's own statuses, and the server and

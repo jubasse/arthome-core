@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 import { ApiErrorCode } from '@arthome/core';
 
 import type { Access, IdentifiedAccess, Identity, PublicAccess, Requirement } from './access.js';
@@ -25,6 +27,7 @@ import { sensitivePathsOf } from './marks.js';
 import type { CachePolicy } from './policy.js';
 import {
   CACHE_CONTROL_HEADER,
+  NO_STORE_HEADER,
   DEFAULT_BODY_LIMIT,
   IDEMPOTENCY_REPLAYED_HEADER,
   VARY_HEADER,
@@ -337,6 +340,26 @@ function split(
 
 type CodesByStatus = Record<string, readonly string[]>;
 
+/** A rule that reads a body field finds it declared: `recentAuth()` on a body extending `ReauthProof`. */
+function checkProofs(
+  operationId: string,
+  requires: readonly Requirement[],
+  requestBody: RequestBody | undefined,
+): void {
+  const schema = requestBody?.content['application/json']?.schema;
+  const fields = schema instanceof z.ZodObject ? Object.keys(schema.shape) : [];
+  for (const rule of requires) {
+    const proof = (
+      rule.params as { readonly proof?: { readonly in: string; readonly name: string } }
+    ).proof;
+    if (proof?.in === 'body' && !fields.includes(proof.name)) {
+      throw new Error(
+        `${operationId}: ${rule.name}() reads the body field "${proof.name}", which the body does not declare.`,
+      );
+    }
+  }
+}
+
 type Closure = (scoped: never) => unknown;
 
 const IDEMPOTENCY_KEY = 'Idempotency-Key';
@@ -474,9 +497,11 @@ function withHeaders(
         implied.replayed && {
           'Idempotency-Replayed': implied.replayedHeader ?? IDEMPOTENCY_REPLAYED_HEADER,
         }),
-      ...((carriesSecret || (status === '200' && implied.cache !== undefined)) && {
-        'Cache-Control': CACHE_CONTROL_HEADER,
-      }),
+      ...(status === '200' &&
+        implied.cache !== undefined && {
+          'Cache-Control': CACHE_CONTROL_HEADER,
+        }),
+      ...(carriesSecret && { 'Cache-Control': NO_STORE_HEADER }),
       ...(status === '200' ? implied.etag : {}),
       ...(status === '200' &&
         implied.cache !== undefined &&
@@ -596,6 +621,7 @@ function builderOf(settings: BuilderSettings): AnyBuilder {
           ? securityOf(access, rest.method)
           : (rest.security ?? settings.security);
       const requires = [...settings.requires, ...(rest.requires ?? [])];
+      checkProofs(rest.operationId, requires, rest.requestBody);
       const internal = access?.kind === 'identified' && access.identity.internal;
       const hasBody = rest.requestBody !== undefined;
       const budgetMs = rest.budgetMs ?? settings.budgetMs;

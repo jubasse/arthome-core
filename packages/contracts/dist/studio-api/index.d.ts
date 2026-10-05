@@ -1,13 +1,13 @@
 import { getChannelAgenda, getChannelDashboard, getChannelStats, listChannelEvents, listDuties } from './agenda.js';
 import { createReauthToken, getStudioBootstrap, listInbox, listReauthFactors, listStudioChanges, listStudioDevices, markInboxRead, registerStudioPushToken, requestPasswordResetStudio, revokeStudioDevice, signInStudio, signOutStudio, updateStudioPreferences, verifyTwoFactorStudio } from './bootstrap.js';
-import { createUploadTicket, deleteChannel, getChannelSettings, listChannelJournal, listChannelMerchItems, listChannelReplays, pinMerchDuringLive, reopenReplayWindow, updateChannelIdentity, updateChannelSettings, upsertMerchItem } from './channel.js';
-import { changeMemberRoles, getDateCrewPane, grantDateAccess, inviteMember, listChannelMembers, removeMember, respondToInvitation, revokeDateAccess, transferChannelOwnership } from './crew.js';
-import { decideDateOutcome, deleteDate, duplicateDate, getDatePublicPane, getDateReplayPane, getDateSheet, moveDatePublicationState, setDateReplayPolicy } from './dates/routes.js';
-import { addBannedWord, claimModerationItem, getDateChatPane, listModerationQueue, listStudioChatMessages, releaseModerationItem, removeBannedWord, sanctionAudienceMember, searchAudience, setDateChatPolicy, settleModerationItem } from './moderation.js';
+import { createUploadTicket, deleteChannel, getChannelSettings, listChannelJournal, listChannelMerchItems, listChannelReplays, updateChannelIdentity, updateChannelSettings, upsertMerchItem } from './channel.js';
+import { changeMemberRoles, inviteMember, listChannelMembers, removeMember, respondToInvitation, revokeDateAccess, transferChannelOwnership } from './crew.js';
+import { decideDateOutcome, deleteDate, duplicateDate, endRun, getDateChatPane, getDateCrewPane, getDatePublicPane, getDateReplayPane, getDateSheet, getDateTechPane, getDateTicketsPane, getHealthSeries, getRunConsole, goOnAir, grantDateAccess, issueComplimentary, listStudioChatMessages, moveDatePublicationState, openCapacityTier, pinMerchDuringLive, postChapter, raiseIncident, rehearseRun, removeChapter, reopenReplayWindow, resetRun, revealStreamKey, rotateStreamKey, runTechnicalCheck, setDateChatPolicy, setDatePrices, setDateReplayPolicy, setQualityProfile, setTechnicalProvision, submitHealthSample } from './dates/routes.js';
+import { addBannedWord, claimModerationItem, listModerationQueue, releaseModerationItem, removeBannedWord, sanctionAudienceMember, searchAudience, settleModerationItem } from './moderation.js';
 import { closeReconciliationPeriod, countersignBankChange, getChannelExport, listPayouts, requestBankChange, requestChannelExport } from './payouts.js';
 import { createDateDraft } from './publication.js';
-import { escalateIncidentToProduction, getChannelStreamSettings, getDateTechPane, getHealthSeries, getRunConsole, postChapter, raiseIncident, removeChapter, resolveIncident, revealStreamKey, rotateStreamKey, runTechnicalCheck, setQualityProfile, rehearseRun, goOnAir, endRun, resetRun, submitHealthSample } from './run.js';
-import { getChannelTicketing, getDateTicketsPane, issueComplimentary, openCapacityTier, refundSeat, setDatePrices, setTechnicalProvision } from './ticketing.js';
+import { escalateIncidentToProduction, getChannelStreamSettings, resolveIncident } from './run.js';
+import { getChannelTicketing, refundSeat } from './ticketing.js';
 import type { Api } from '../http/index.js';
 export declare const studioApi: Api<{
     signInStudio: typeof signInStudio;

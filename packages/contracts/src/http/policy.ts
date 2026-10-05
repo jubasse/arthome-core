@@ -70,6 +70,13 @@ export const CACHE_CONTROL_HEADER: Header = {
   schema: z.string(),
 };
 
+/** On an answer carrying a `sensitive` field: kept out of every cache, and out of the app snapshot. */
+export const NO_STORE_HEADER: Header = {
+  description:
+    'Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.',
+  schema: z.literal('no-store'),
+};
+
 export const VARY_HEADER: Header = {
   description: 'The request headers the answer depends on.',
   schema: z.string(),

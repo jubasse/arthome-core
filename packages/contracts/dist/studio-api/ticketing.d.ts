@@ -1,114 +1,16 @@
 import { z } from 'zod';
-import { PRICE_TIERS, RefundReason } from '@arthome/core';
+import { RefundReason } from '@arthome/core';
 import type { VocabularyIn, VocabularyOut } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
-import { ChannelIdParameter, ConflictResponse, DateIdParameter, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, NotFoundResponse, SurfaceParameter, TraceparentParameter, operator } from './components.js';
-import { StudioEnvelopeMetaSchema, StudioErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route, IdentifiedAccess } from '../http/index.js';
-import { DateSalesPaneSchema } from '../studio-money/index.js';
+import { ChannelIdParameter, ConflictResponse, ForbiddenResponse, IdempotencyKeyParameter, IfRightsVersionParameter, SurfaceParameter, TraceparentParameter } from './components.js';
+import { StudioEnvelopeMetaSchema } from '../envelope/index.js';
+import type { JsonRequestBody, JsonResponse, PathParameter, QueryParameter, Route } from '../http/index.js';
 declare const REFUND_SEAT_REFUND_REASON_CODE: readonly [
     typeof RefundReason.DATE_CANCELLED,
     typeof RefundReason.GOODWILL,
     typeof RefundReason.DUPLICATE,
     typeof RefundReason.DISPUTE
 ];
-export declare const getDateTicketsPane: Route<{
-    method: 'get';
-    version: 1;
-    path: '/dates/{dateId}/panes/tickets';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    access: IdentifiedAccess<typeof operator, false>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof DateSalesPaneSchema;
-        }, z.core.$loose>>>;
-        403: typeof ForbiddenResponse;
-        404: typeof NotFoundResponse;
-    };
-}>;
-export declare const setDatePrices: Route<{
-    method: 'put';
-    version: 1;
-    path: '/dates/{dateId}/prices';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof IfRightsVersionParameter
-    ];
-    access: IdentifiedAccess<typeof operator, false>;
-    requestBody: JsonRequestBody<z.ZodObject<{
-        expectedVersion: z.ZodInt;
-        tiers: z.ZodArray<z.ZodObject<{
-            tier: VocabularyIn<typeof PRICE_TIERS>;
-            amountMinor: z.ZodInt;
-            currencyCode: z.ZodString;
-            active: z.ZodBoolean;
-        }, z.core.$strip>>;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof DateSalesPaneSchema;
-        }, z.core.$loose>>>;
-        409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    };
-}>;
-export declare const openCapacityTier: Route<{
-    method: 'post';
-    version: 1;
-    path: '/dates/{dateId}/capacity-tiers';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof IfRightsVersionParameter
-    ];
-    access: IdentifiedAccess<typeof operator, false>;
-    requestBody: JsonRequestBody<z.ZodObject<{
-        additionalCapacity: z.ZodInt;
-        expectedVersion: z.ZodInt;
-        notifyWaitlist: z.ZodOptional<z.ZodDefault<z.ZodBoolean>>;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodObject<{
-                sales: z.ZodOptional<typeof DateSalesPaneSchema>;
-                waitlistNotified: z.ZodOptional<z.ZodInt>;
-                priorityUntil: z.ZodOptional<z.ZodString>;
-            }, z.core.$loose>;
-        }, z.core.$loose>>>;
-        409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    };
-}>;
-export declare const setTechnicalProvision: Route<{
-    method: 'put';
-    version: 1;
-    path: '/dates/{dateId}/technical-provision';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof IfRightsVersionParameter
-    ];
-    access: IdentifiedAccess<typeof operator, false>;
-    requestBody: JsonRequestBody<z.ZodObject<{
-        provisionedCapacity: z.ZodInt;
-        expectedVersion: z.ZodInt;
-    }, z.core.$strip>>;
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof DateSalesPaneSchema;
-        }, z.core.$loose>>>;
-        409: JsonResponse<typeof StudioErrorEnvelopeSchema>;
-    };
-}>;
 export declare const refundSeat: Route<{
     method: 'post';
     version: 1;
@@ -133,33 +35,6 @@ export declare const refundSeat: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         403: typeof ForbiddenResponse;
-        409: typeof ConflictResponse;
-    };
-}>;
-export declare const issueComplimentary: Route<{
-    method: 'post';
-    version: 1;
-    path: '/dates/{dateId}/complimentaries';
-    parameters: readonly [
-        typeof DateIdParameter,
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter,
-        typeof IfRightsVersionParameter
-    ];
-    access: IdentifiedAccess<typeof operator, false>;
-    requestBody: JsonRequestBody<z.ZodObject<{
-        categoryId: z.ZodString;
-        quantity: z.ZodInt;
-        note: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    }, z.core.$strip>>;
-    responses: {
-        201: JsonResponse<z.ZodIntersection<typeof StudioEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodOptional<z.ZodObject<{
-                seatCodes: z.ZodOptional<z.ZodArray<z.ZodString>>;
-                sales: z.ZodOptional<typeof DateSalesPaneSchema>;
-            }, z.core.$loose>>;
-        }, z.core.$loose>>>;
         409: typeof ConflictResponse;
     };
 }>;

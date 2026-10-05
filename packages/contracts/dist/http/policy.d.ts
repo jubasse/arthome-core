@@ -35,6 +35,8 @@ export declare const DEFAULT_BODY_LIMIT = 1048576;
 /** 2 MiB: the ceiling of a batched read. */
 export declare const BATCH_BODY_LIMIT = 2097152;
 export declare const CACHE_CONTROL_HEADER: Header;
+/** On an answer carrying a `sensitive` field: kept out of every cache, and out of the app snapshot. */
+export declare const NO_STORE_HEADER: Header;
 export declare const VARY_HEADER: Header;
 /** On a write carrying `Idempotency-Key`: `true` when the answer is the stored one of an earlier attempt. */
 export declare const IDEMPOTENCY_REPLAYED_HEADER: Header;

@@ -1,7 +1,7 @@
 import { MemberRole } from '@arthome/core';
 
 import { StudioTag } from './components.js';
-import { Deleted } from '../http/index.js';
+import { Acknowledged, Deleted, ReauthProof } from '../http/index.js';
 import type { ApiDocs, ModuleDocs, ModuleExamples } from '../openapi/docs.js';
 import { apiDocs } from '../openapi/docs.js';
 import { datesDocs } from './dates/docs.js';
@@ -36,10 +36,6 @@ const statedMaturities = {
     maturity: 'provisional',
     maturityReason: 'studio device sessions (D-118) are not built',
   },
-  issueComplimentary: {
-    maturity: 'provisional',
-    maturityReason: 'complimentary tickets entered the ticketing contract marked provisional',
-  },
   getChannelTicketing: {
     maturity: 'provisional',
     maturityReason: 'the channel ticketing read is new and not built',
@@ -49,10 +45,6 @@ const statedMaturities = {
     maturityReason: 'studio merchandise is not built',
   },
   upsertMerchItem: {
-    maturity: 'provisional',
-    maturityReason: 'studio merchandise is not built',
-  },
-  pinMerchDuringLive: {
     maturity: 'provisional',
     maturityReason: 'studio merchandise is not built',
   },
@@ -67,7 +59,11 @@ const statedMaturities = {
 } satisfies ModuleDocs;
 
 /** The examples of the schemas `./http` shares between modules. */
-const sharedExamples: ModuleExamples = [[Deleted, [{ deleted: true }]]];
+const sharedExamples: ModuleExamples = [
+  [Deleted, [{ deleted: true }]],
+  [Acknowledged, [{ accepted: true }]],
+  [ReauthProof, [{ reauthToken: 'ott_9f2ac1' }]],
+];
 
 /** The studio document's introduction, and the docs and examples its modules register. */
 export const studioDocs: ApiDocs = apiDocs({
