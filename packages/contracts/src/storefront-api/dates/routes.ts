@@ -3,6 +3,9 @@ import { ApiErrorCode } from '@arthome/core';
 import {
   DateAvailabilitySchema,
   QuoteSeatBodySchema,
+  SendChatMessageBodySchema,
+  SendReactionBodySchema,
+  SinceSeqParameter,
   WaitlistDepartureSchema,
   WaitlistRegistrationSchema,
 } from './schemas.js';
@@ -12,11 +15,15 @@ import type {
   GetSalesQueuePositionRoute,
   JoinWaitlistRoute,
   LeaveWaitlistRoute,
+  ListChatMessagesRoute,
   QuoteSeatRoute,
   RefreshDateAvailabilityRoute,
+  SendChatMessageRoute,
+  SendReactionRoute,
 } from './types.js';
 import { DateDetailSchema } from '../../catalog/index.js';
-import { Freshness, cache, throttle } from '../../http/index.js';
+import { ChatMessageSchema, ReactionQuotaSchema } from '../../engagement/index.js';
+import { Freshness, cache, cursor, throttle } from '../../http/index.js';
 import { SalesQueuePositionSchema, SeatQuoteSchema } from '../../ticketing/index.js';
 import {
   DateIdParameter,
@@ -113,4 +120,37 @@ export const leaveWaitlist: LeaveWaitlistRoute = waitlist.delete({
   answer:
     'Removed. A deletion replayed on an already-removed registration **succeeds**, it does not fail.',
   errors: [ApiErrorCode.NOT_FOUND],
+});
+
+const chat = identified
+  .tags(StorefrontTag.CHAT)
+  .resource('dates', { id: DateIdParameter })
+  .single('chat');
+const chatMessages = chat.single('messages');
+
+export const listChatMessages: ListChatMessagesRoute = chatMessages.findAll({
+  operationId: 'listChatMessages',
+  summary: "The chat's sliding window, by cursor.",
+  paging: cursor({ maxLimit: 50 }),
+  parameters: [SinceSeqParameter],
+  item: ChatMessageSchema,
+  answer: 'Messages.',
+  errors: [ApiErrorCode.NOT_FOUND],
+});
+
+export const sendChatMessage: SendChatMessageRoute = chatMessages.create({
+  operationId: 'sendChatMessage',
+  summary: 'Posts a chat message.',
+  body: SendChatMessageBodySchema,
+  item: ChatMessageSchema,
+  answer: 'Message posted.',
+});
+
+export const sendReaction: SendReactionRoute = chat.action('reactions', {
+  operationId: 'sendReaction',
+  summary: 'Sends a reaction, and returns the remaining quota.',
+  idempotent: false,
+  body: SendReactionBodySchema,
+  response: ReactionQuotaSchema,
+  answer: 'Reaction accepted, remaining quota.',
 });

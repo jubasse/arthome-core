@@ -2,9 +2,11 @@ import { z } from 'zod';
 
 import { PRICE_TIERS } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { MoneyOut, uuidOut, vocabularyIn } from '@arthome/core/schema';
+import { int64, MoneyOut, uuidOut, vocabularyIn } from '@arthome/core/schema';
 
 import { DateCardSchema, PriceTierSchema } from '../../catalog/index.js';
+import type { QueryParameter } from '../../http/index.js';
+import { localVocabulary } from '../../http/index.js';
 
 export const DateAvailabilitySchema: z.ZodObject<
   {
@@ -81,3 +83,34 @@ export type DateAvailability = z.output<typeof DateAvailabilitySchema>;
 export type QuoteSeatBody = z.output<typeof QuoteSeatBodySchema>;
 export type WaitlistRegistration = z.output<typeof WaitlistRegistrationSchema>;
 export type WaitlistDeparture = z.output<typeof WaitlistDepartureSchema>;
+
+const SEND_REACTION_REACTION_ID = ['applause', 'heart', 'bravo', 'laugh', 'wow', 'sad'] as const;
+
+export const SinceSeqParameter: QueryParameter<'sinceSeq', z.ZodNumber> = {
+  name: 'sinceSeq',
+  in: 'query',
+  description: 'Resume by sequence number, after a channel break.',
+  schema: int64(),
+};
+
+export const SendChatMessageBodySchema: z.ZodObject<
+  { text: z.ZodString; atMediaSec: z.ZodInt },
+  z.core.$strip
+> = z.object({
+  text: z.string().min(1).max(500),
+  atMediaSec: z.int().min(0).meta({ maximum: undefined }),
+});
+
+export const SendReactionBodySchema: z.ZodObject<
+  { reactionId: VocabularyIn<typeof SEND_REACTION_REACTION_ID>; atMediaSec: z.ZodInt },
+  z.core.$strip
+> = z.object({
+  reactionId: localVocabulary(
+    SEND_REACTION_REACTION_ID,
+    'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.',
+  ),
+  atMediaSec: z.int().min(0).meta({ maximum: undefined }),
+});
+
+export type SendChatMessageBody = z.output<typeof SendChatMessageBodySchema>;
+export type SendReactionBody = z.output<typeof SendReactionBodySchema>;

@@ -3,6 +3,8 @@ import type { z } from 'zod';
 import {
   BlackoutReason,
   DisplayState,
+  Locale,
+  MessageState,
   PriceTier,
   ReplayPolicy,
   RightsScope,
@@ -12,17 +14,22 @@ import {
 
 import type {
   DateAvailability,
+  SendChatMessageBody,
+  SendReactionBody,
   QuoteSeatBody,
   WaitlistDeparture,
   WaitlistRegistration,
 } from './schemas.js';
 import {
   DateAvailabilitySchema,
+  SendChatMessageBodySchema,
+  SendReactionBodySchema,
   QuoteSeatBodySchema,
   WaitlistDepartureSchema,
   WaitlistRegistrationSchema,
 } from './schemas.js';
 import { DateDetailSchema } from '../../catalog/index.js';
+import { ChatMessageSchema, ReactionQuotaSchema } from '../../engagement/index.js';
 import type { ModuleExamples } from '../../openapi/docs.js';
 import { SalesQueuePositionSchema, SeatQuoteSchema } from '../../ticketing/index.js';
 
@@ -113,6 +120,26 @@ const waitlistRegistration: WaitlistRegistration = {
 
 const waitlistDeparture: WaitlistDeparture = { joined: false };
 
+const sendChatMessageBody: SendChatMessageBody = { text: 'Quelle lumière.', atMediaSec: 2160 };
+
+const chatMessage: z.output<typeof ChatMessageSchema> = {
+  id: '019928f8-0000-7000-8000-000000000001',
+  dateId: DATE_ID,
+  seq: 41287,
+  authorHandle: '@marie.j',
+  atMediaSec: 2160,
+  sentAt: '2026-09-21T19:35:58Z',
+  badge: MessageState.PUBLISHED,
+  body: { contentLanguage: Locale.FR, text: 'Quelle lumière.' },
+};
+
+const sendReactionBody: SendReactionBody = { reactionId: 'applause', atMediaSec: 2165 };
+
+const reactionQuota: z.output<typeof ReactionQuotaSchema> = {
+  remaining: 17,
+  rechargesAt: '2026-09-21T19:41:05Z',
+};
+
 export const datesExamples: ModuleExamples = [
   [DateDetailSchema, [dateDetail]],
   [DateAvailabilitySchema, [dateAvailability]],
@@ -121,4 +148,8 @@ export const datesExamples: ModuleExamples = [
   [SalesQueuePositionSchema, [salesQueuePosition, salesQueueAdmission]],
   [WaitlistRegistrationSchema, [waitlistRegistration]],
   [WaitlistDepartureSchema, [waitlistDeparture]],
+  [ChatMessageSchema, [chatMessage]],
+  [SendChatMessageBodySchema, [sendChatMessageBody]],
+  [ReactionQuotaSchema, [reactionQuota]],
+  [SendReactionBodySchema, [sendReactionBody]],
 ];

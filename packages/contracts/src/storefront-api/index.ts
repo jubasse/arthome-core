@@ -23,7 +23,7 @@ import {
 } from './account.js';
 import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
 import { addCartLine, getCart, quoteCart, removeCartLine, updateCartLine } from './cart/routes.js';
-import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
+import { reportChatMessage } from './chat.js';
 import {
   AdmissionTokenParameter,
   ArtistIdParameter,
@@ -63,8 +63,11 @@ import {
   getSalesQueuePosition,
   joinWaitlist,
   leaveWaitlist,
+  listChatMessages,
   quoteSeat,
   refreshDateAvailability,
+  sendChatMessage,
+  sendReaction,
 } from './dates/routes.js';
 import {
   extendRail,

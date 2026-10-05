@@ -3,11 +3,20 @@
 import type { ApiErrorCode } from '@arthome/core';
 
 import type { DateDetailSchema } from '../../catalog/index.js';
-import type { IdentifiedAccess, ItemResponse, JsonRequestBody, Route } from '../../http/index.js';
+import type { ChatMessageSchema, ReactionQuotaSchema } from '../../engagement/index.js';
+import type {
+  IdentifiedAccess,
+  ItemResponse,
+  JsonRequestBody,
+  PageResponse,
+  Route,
+} from '../../http/index.js';
 import type { SalesQueuePositionSchema, SeatQuoteSchema } from '../../ticketing/index.js';
 import type {
+  CursorParameter,
   DateIdParameter,
   IdempotencyKeyParameter,
+  LimitParameter,
   SurfaceParameter,
   TraceparentParameter,
   storefrontConventions,
@@ -16,6 +25,9 @@ import type {
 import type {
   DateAvailabilitySchema,
   QuoteSeatBodySchema,
+  SendChatMessageBodySchema,
+  SendReactionBodySchema,
+  SinceSeqParameter,
   WaitlistDepartureSchema,
   WaitlistRegistrationSchema,
 } from './schemas.js';
@@ -157,6 +169,72 @@ export type LeaveWaitlistRoute = Route<{
   };
   errorCodes: {
     404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    409: readonly (
+      typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+    )[];
+  };
+}>;
+
+export type ListChatMessagesRoute = Route<{
+  method: 'get';
+  version: 1;
+  path: '/dates/{dateId}/chat/messages';
+  parameters: readonly [
+    typeof DateIdParameter,
+    typeof CursorParameter,
+    typeof LimitParameter,
+    typeof SinceSeqParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+  ];
+  access: IdentifiedAccess<typeof viewer, false>;
+  responses: {
+    200: PageResponse<typeof storefrontConventions, typeof ChatMessageSchema>;
+  };
+  errorCodes: {
+    400: readonly (typeof ApiErrorCode.SCHEMA_INVALID)[];
+    404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+  };
+}>;
+
+export type SendChatMessageRoute = Route<{
+  method: 'post';
+  version: 1;
+  path: '/dates/{dateId}/chat/messages';
+  parameters: readonly [
+    typeof DateIdParameter,
+    typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+  ];
+  requestBody: JsonRequestBody<typeof SendChatMessageBodySchema, true>;
+  access: IdentifiedAccess<typeof viewer, false>;
+  responses: {
+    201: ItemResponse<typeof storefrontConventions, typeof ChatMessageSchema, unknown>;
+  };
+  errorCodes: {
+    409: readonly (
+      typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+    )[];
+  };
+}>;
+
+export type SendReactionRoute = Route<{
+  method: 'post';
+  version: 1;
+  path: '/dates/{dateId}/chat/reactions';
+  parameters: readonly [
+    typeof DateIdParameter,
+    typeof IdempotencyKeyParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+  ];
+  requestBody: JsonRequestBody<typeof SendReactionBodySchema, true>;
+  access: IdentifiedAccess<typeof viewer, false>;
+  responses: {
+    200: ItemResponse<typeof storefrontConventions, typeof ReactionQuotaSchema, unknown>;
+  };
+  errorCodes: {
     409: readonly (
       typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
     )[];

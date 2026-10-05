@@ -7741,6 +7741,9 @@ paths:
       - chat
       tags:
       - chat
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
       - $ref: '#/components/parameters/Cursor'
@@ -7774,8 +7777,7 @@ paths:
                   - page
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:36:00.000Z'
-                lastEventSeq: 41287
+                servedAt: '2026-09-21T19:00:00.000Z'
                 items:
                 - id: 019928f8-0000-7000-8000-000000000001
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
@@ -7788,13 +7790,21 @@ paths:
                     contentLanguage: fr
                     text: Quelle lumière.
                 page:
-                  hasMore: true
-                  nextCursor: null
-                  prevCursor: null
+                  hasMore: false
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
         '410':
           $ref: '#/components/responses/Gone'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     post:
       operationId: sendChatMessage
       summary: Posts a chat message.
@@ -7859,36 +7869,39 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:36:02.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
-                  id: 019928f8-0000-7000-8000-000000000002
+                  id: 019928f8-0000-7000-8000-000000000001
                   dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
-                  seq: 41288
+                  seq: 41287
                   authorHandle: '@marie.j'
                   atMediaSec: 2160
-                  sentAt: '2026-09-21T19:36:02Z'
+                  sentAt: '2026-09-21T19:35:58Z'
                   badge: published
                   body:
                     contentLanguage: fr
                     text: Quelle lumière.
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
-          description: |
-            Chat mode closed, holders only, or the person is sanctioned in this channel.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: chat.holders_only
-                  nature: refused
-                  params: {}
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T19:36:02.000Z'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
+          $ref: '#/components/responses/CsrfRefused'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/chat/reactions:
     post:
       operationId: sendReaction
@@ -7900,12 +7913,12 @@ paths:
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - chat
+      tags:
+      - chat
       x-arthome-idempotency-exemption: |
         **The quota already bounds the effect**, and it is served with the response. A replayed key
         would return a **stale** quota — "17 left" when 12 are left — which is worse than no response
         at all: the surface disables its control on that number.
-      tags:
-      - chat
       security:
       - sessionCookie: []
         csrfToken: []
@@ -7957,14 +7970,26 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T19:36:05.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   remaining: 17
                   rechargesAt: '2026-09-21T19:41:05Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
-        '429':
-          $ref: '#/components/responses/TooManyRequests'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/chat/messages/{messageId}/report:
     post:
       operationId: reportChatMessage
