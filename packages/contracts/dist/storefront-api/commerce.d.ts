@@ -2,11 +2,11 @@ import { z } from 'zod';
 import { PRICE_TIERS } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
-import { AdmissionTokenParameter, BadRequestResponse, ConflictResponse, CsrfRefusedResponse, DateIdParameter, GoneResponse, IdempotencyKeyParameter, LateEntryAcknowledgedParameter, NotFoundResponse, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter, UnauthorizedResponse, UnavailableResponse } from './components.js';
+import { ConflictResponse, CsrfRefusedResponse, DateIdParameter, IdempotencyKeyParameter, NotFoundResponse, SurfaceParameter, TooManyRequestsResponse, TraceparentParameter, UnauthorizedResponse } from './components.js';
 import { DateCardSchema, PriceTierSchema } from '../catalog/index.js';
-import { StorefrontEnvelopeMetaSchema, StorefrontErrorEnvelopeSchema } from '../envelope/index.js';
-import type { JsonRequestBody, JsonResponse, PathParameter, Route } from '../http/index.js';
-import { CartSchema, OrderSchema, PaymentHandoffSchema, SalesQueuePositionSchema, SeatQuoteSchema, TicketCardSchema } from '../ticketing/index.js';
+import { StorefrontEnvelopeMetaSchema } from '../envelope/index.js';
+import type { JsonRequestBody, JsonResponse, Route } from '../http/index.js';
+import { SalesQueuePositionSchema, SeatQuoteSchema } from '../ticketing/index.js';
 export declare const refreshDateAvailability: Route<{
     method: 'get';
     version: 1;
@@ -90,69 +90,6 @@ export declare const getSalesQueuePosition: Route<{
         429: typeof TooManyRequestsResponse;
     };
 }>;
-export declare const purchaseSeat: Route<{
-    method: 'post';
-    version: 1;
-    path: '/orders/seats';
-    parameters: readonly [
-        typeof IdempotencyKeyParameter,
-        typeof AdmissionTokenParameter,
-        typeof LateEntryAcknowledgedParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        dateId: z.ZodString;
-        tier: VocabularyIn<typeof PRICE_TIERS>;
-        quantity: z.ZodInt;
-        expectedTotal: typeof MoneyOut;
-        contributionMinor: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
-        applyCreditId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-        profileId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-        declaredTaxLocation: z.ZodOptional<z.ZodNullable<z.ZodObject<{
-            country: z.ZodOptional<z.ZodString>;
-            subdivision: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-            postalCode: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-        }, z.core.$strip>>>;
-    }, z.core.$strip>>;
-    responses: {
-        201: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodObject<{
-                tickets: z.ZodArray<typeof TicketCardSchema>;
-                date: typeof DateCardSchema;
-                order: typeof OrderSchema;
-            }, z.core.$loose>;
-        }, z.core.$loose>>>;
-        202: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof PaymentHandoffSchema;
-        }, z.core.$loose>>>;
-        400: typeof BadRequestResponse;
-        401: typeof UnauthorizedResponse;
-        403: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-        409: typeof ConflictResponse;
-        503: typeof UnavailableResponse;
-    };
-}>;
-export declare const getOrder: Route<{
-    method: 'get';
-    version: 1;
-    path: '/orders/{orderId}';
-    parameters: readonly [
-        PathParameter<'orderId', z.ZodString>,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    responses: {
-        200: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodObject<{
-                order: typeof OrderSchema;
-                tickets: z.ZodOptional<z.ZodArray<typeof TicketCardSchema>>;
-                handoff: z.ZodOptional<typeof PaymentHandoffSchema>;
-            }, z.core.$loose>;
-        }, z.core.$loose>>>;
-        404: typeof NotFoundResponse;
-    };
-}>;
 export declare const joinWaitlist: Route<{
     method: 'put';
     version: 1;
@@ -195,40 +132,6 @@ export declare const leaveWaitlist: Route<{
             }, z.core.$loose>>;
         }, z.core.$loose>>>;
         404: typeof NotFoundResponse;
-        403: typeof CsrfRefusedResponse;
-    };
-}>;
-export declare const checkoutCart: Route<{
-    method: 'post';
-    version: 1;
-    path: '/orders/merch';
-    parameters: readonly [
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
-    requestBody: JsonRequestBody<z.ZodObject<{
-        quoteId: z.ZodString;
-        shippingAddress: z.ZodObject<{
-            line1: z.ZodString;
-            line2: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-            city: z.ZodString;
-            postalCode: z.ZodString;
-            countryCode: z.ZodString;
-        }, z.core.$strip>;
-    }, z.core.$strip>>;
-    responses: {
-        201: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: z.ZodObject<{
-                orders: z.ZodArray<typeof OrderSchema>;
-                cart: typeof CartSchema;
-            }, z.core.$loose>;
-        }, z.core.$loose>>>;
-        202: JsonResponse<z.ZodIntersection<typeof StorefrontEnvelopeMetaSchema, z.ZodObject<{
-            data: typeof PaymentHandoffSchema;
-        }, z.core.$loose>>>;
-        409: JsonResponse<typeof StorefrontErrorEnvelopeSchema>;
-        410: typeof GoneResponse;
         403: typeof CsrfRefusedResponse;
     };
 }>;

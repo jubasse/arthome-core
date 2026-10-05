@@ -25,13 +25,10 @@ import { getViewerContext, listChanges, registerDevice } from './bootstrap.js';
 import { addCartLine, getCart, quoteCart, removeCartLine, updateCartLine } from './cart/routes.js';
 import { listChatMessages, reportChatMessage, sendChatMessage, sendReaction } from './chat.js';
 import {
-  checkoutCart,
   enterSalesQueue,
-  getOrder,
   getSalesQueuePosition,
   joinWaitlist,
   leaveWaitlist,
-  purchaseSeat,
   quoteSeat,
   refreshDateAvailability,
 } from './commerce.js';
@@ -116,6 +113,7 @@ import {
   updateProfile,
   updateSavedSearch,
 } from './me/routes.js';
+import { checkoutCart, getOrder, purchaseSeat } from './orders/routes.js';
 import {
   cancelPairing,
   createPairing,

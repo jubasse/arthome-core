@@ -10,6 +10,7 @@ import * as storefrontDate from './storefront-api/date.js';
 import * as storefrontDiscovery from './storefront-api/discovery.js';
 import { storefrontApi } from './storefront-api/index.js';
 import * as storefrontMe from './storefront-api/me/routes.js';
+import * as storefrontOrders from './storefront-api/orders/routes.js';
 import * as storefrontPairing from './storefront-api/pairing.js';
 import * as storefrontPlans from './storefront-api/plans/routes.js';
 import * as storefrontPlayback from './storefront-api/playback.js';
@@ -62,6 +63,7 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       storefrontDate,
       storefrontDiscovery,
       storefrontMe,
+      storefrontOrders,
       storefrontPlans,
       storefrontSeats,
       storefrontSubscription,

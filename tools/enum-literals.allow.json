@@ -37,6 +37,11 @@
       "reason": "A path segment, /subscription/cancel. It shares its spelling with a replay policy, an order kind and a tax supply kind without being any of those vocabularies."
     },
     {
+      "file": "packages/contracts/src/storefront-api/orders/routes.ts",
+      "value": "merch",
+      "reason": "A path segment, POST /orders/merch. It shares its spelling with an order kind without being that vocabulary: the segment names the checkout of a cart, and the kind of the order it creates is answered in the body."
+    },
+    {
       "file": "packages/contracts/src/studio-money/index.ts",
       "value": "expired",
       "reason": "A bank-details change request's own state machine (pending_countersignature, countersigned, rejected, expired) and an export job's (queued, running, ready, failed, expired) — the contract's own, not the domain's (D-060 §B). They share the word with SEAT_HOLD_STATES without being the same vocabulary: a hold's expiry and a signing request's are unrelated facts."

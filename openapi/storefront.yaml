@@ -5827,10 +5827,10 @@ paths:
         '201':
           description: Seats created, and the updated date.
           headers:
-            X-Arthome-Served-At:
-              $ref: '#/components/headers/ServedAt'
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
           content:
             application/json:
               schema:
@@ -5940,44 +5940,38 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:41:30.000Z'
+                servedAt: '2026-09-21T18:47:00.000Z'
                 data:
-                  orderId: 019928f5-0000-7000-8000-0000000000aa
+                  orderId: 019928f7-3333-7000-8000-000000000001
                   state: awaiting_action
-                  paymentIntentRef: pi_3Ab2Cd
-                  clientSecret: pi_3Ab2Cd_secret_9f2
+                  paymentIntentRef: pi_3Ij5Kl
+                  clientSecret: pi_3Ij5Kl_secret_3c4
                   nextAction:
                     kind: redirect_to_url
                     redirectUrl: https://hooks.stripe.com/3ds/authenticate
-                  returnUrl: https://arthome.fr/paiement/retour?order=019928f5-0000-7000-8000-0000000000aa
-                  expiresAt: '2026-09-21T18:56:30Z'
+                  returnUrl: https://arthome.fr/paiement/retour?order=019928f7-3333-7000-8000-000000000001
+                  expiresAt: '2026-09-21T19:02:00Z'
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
-          description: |
-            `order.sales_queue_admission_required`: the date's sales queue is armed and the admission is
-            absent, lapsed, or issued to another account or date. The surface enters the queue
-            (`enterSalesQueue`) and comes back with the admission it is served.
-
-            Also `api.forbidden` when a write with the session cookie lacks its `X-Arthome-Csrf` token, or carries another session's (`CsrfRefused`).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: order.sales_queue_admission_required
-                  nature: refused
-                  params:
-                    dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:00:01.000Z'
+          $ref: '#/components/responses/CsrfRefused'
         '409':
           $ref: '#/components/responses/Conflict'
-        '503':
-          $ref: '#/components/responses/Unavailable'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/orders/{orderId}:
     get:
       operationId: getOrder
@@ -5994,6 +5988,9 @@ paths:
       - ticketing
       tags:
       - commerce
+      security:
+      - sessionCookie: []
+      - bearerToken: []
       parameters:
       - name: orderId
         in: path
@@ -6006,11 +6003,6 @@ paths:
       responses:
         '200':
           description: The order, and what it produced once it is `paid`.
-          headers:
-            Cache-Control:
-              schema:
-                type: string
-                const: no-store
           content:
             application/json:
               schema:
@@ -6037,7 +6029,7 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:43:00.000Z'
+                servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   order:
                     id: 019928f5-0000-7000-8000-0000000000aa
@@ -6047,8 +6039,23 @@ paths:
                     placedAt: '2026-09-21T18:41:30Z'
                     invoiceAvailable: true
                   tickets: []
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/seats/{seatId}/cancel:
     post:
       operationId: cancelSeat
@@ -6847,9 +6854,6 @@ paths:
       responses:
         '201':
           description: One order per vendor.
-          headers:
-            Idempotency-Replayed:
-              $ref: '#/components/headers/IdempotencyReplayed'
           content:
             application/json:
               schema:
@@ -6885,6 +6889,9 @@ paths:
                   cart:
                     lines: []
                     vendorGroups: []
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
         '202':
           description: '**Strong authentication required.** See `PaymentHandoff` — the return URL concludes nothing, `getOrder` is authoritative.'
           content:
@@ -6900,43 +6907,38 @@ paths:
                   - data
                   additionalProperties: {}
               example:
-                servedAt: '2026-09-21T18:46:00.000Z'
+                servedAt: '2026-09-21T18:47:00.000Z'
                 data:
-                  orderId: 019928f6-2222-7000-8000-000000000001
+                  orderId: 019928f7-3333-7000-8000-000000000001
                   state: awaiting_action
-                  paymentIntentRef: pi_3Ef4Gh
-                  clientSecret: pi_3Ef4Gh_secret_1a2
+                  paymentIntentRef: pi_3Ij5Kl
+                  clientSecret: pi_3Ij5Kl_secret_3c4
                   nextAction:
                     kind: redirect_to_url
                     redirectUrl: https://hooks.stripe.com/3ds/authenticate
-                  returnUrl: https://arthome.fr/paiement/retour?order=019928f6-2222-7000-8000-000000000001
-                  expiresAt: '2026-09-21T19:01:00Z'
+                  returnUrl: https://arthome.fr/paiement/retour?order=019928f7-3333-7000-8000-000000000001
+                  expiresAt: '2026-09-21T19:02:00Z'
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/CsrfRefused'
         '409':
-          description: |
-            `order.checkout_line_unavailable` (with `unavailableLineIds`), `order.quote_address_mismatch`, or
-            `order.price_stale`.
-
-            **`order.quote_address_mismatch` closes a gap**: the quote computes shipping from a country and a
-            postcode, the payment receives a full address, and nothing required them to match. **A
-            binding quote whose address changes in between no longer binds** — it needs a new quote, not
-            a silently different charge.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorEnvelope'
-              example:
-                error:
-                  code: order.quote_address_mismatch
-                  nature: refused
-                  params:
-                    quotedCountryCode: FR
-                    quotedPostalCode: '75011'
-                  traceId: 4bf92f3577b34da6a3ce929d0e0e4736
-                servedAt: '2026-09-21T18:46:00.000Z'
-        '410':
-          $ref: '#/components/responses/Gone'
+          $ref: '#/components/responses/Conflict'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
   /v1/subscription/change-plan:
     post:
       operationId: setSubscriptionPlan

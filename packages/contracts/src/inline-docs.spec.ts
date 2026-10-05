@@ -14,7 +14,6 @@ import { studioApi } from './studio-api/index.js';
 const STOREFRONT_STILL_INLINE: readonly string[] = [
   'cancelPairing',
   'changePassword',
-  'checkoutCart',
   'confirmEmailVerification',
   'contactSupport',
   'createPairing',
@@ -31,7 +30,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
   'getDateDetail',
   'getHomeScreen',
   'getLiveScreen',
-  'getOrder',
   'getSalesQueuePosition',
   'getViewerContext',
   'joinWaitlist',
@@ -43,7 +41,6 @@ const STOREFRONT_STILL_INLINE: readonly string[] = [
   'listReplays',
   'openPlayback',
   'pollPairing',
-  'purchaseSeat',
   'quoteSeat',
   'refreshDateAvailability',
   'registerDevice',
