@@ -198,7 +198,7 @@ function exportsOf(pattern) {
   );
 }
 
-const IDENT = /(?<![\w$.'"])([A-Za-z_$][\w$]*)(?![\w$'"])/g;
+const IDENT = /(?<![\w$.'"])([A-Za-z_$][\w$]*)(?![\w$'"]|\??:)/g;
 
 /** `import type` lines for the names a text uses, from the modules that give them. */
 function importsFor(text, { from, contextFiles, dictionary, extra }) {

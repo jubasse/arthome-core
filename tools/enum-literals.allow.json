@@ -67,7 +67,7 @@
       "reason": "The HTTP authentication scheme of RFC 6750, `scheme: bearer`, in the bearer token's security scheme. SESSION_MODES holds the word for the session's transport, which is not what an OpenAPI scheme names."
     },
     {
-      "file": "packages/contracts/src/studio-api/channel.ts",
+      "file": "packages/contracts/src/studio-api/channels/schemas.ts",
       "value": "state",
       "reason": "The NAME of a query parameter, `state`, which filters a resource by its own state machine. TAX_JURISDICTION_LEVELS holds the same word for a level of tax jurisdiction, which is a different fact and not what is named here."
     },
@@ -125,6 +125,26 @@
       "file": "packages/contracts/src/studio-money/index.ts",
       "value": "custom",
       "reason": "A period preset of the revenue screen, a period the person chose by hand, not a vocabulary of the domain."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/channels/routes.ts",
+      "value": "replays",
+      "reason": "A path segment, GET /channels/{channelId}/replays. It shares its spelling with a plan opening and a navigation entry without being that vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/channels/routes.ts",
+      "value": "settings",
+      "reason": "A path segment, GET /channels/{channelId}/settings. It shares its spelling with a navigation entry without being that vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/channels/routes.ts",
+      "value": "journal",
+      "reason": "A path segment, GET /channels/{channelId}/journal. It shares its spelling with a navigation entry without being that vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/studio-api/channels/routes.ts",
+      "value": "identity",
+      "reason": "A path segment, PATCH /channels/{channelId}/identity. It shares its spelling with a service without being that vocabulary."
     }
   ]
 }

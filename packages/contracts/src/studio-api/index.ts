@@ -23,9 +23,8 @@ import {
   updateStudioPreferences,
   verifyTwoFactorStudio,
 } from './bootstrap.js';
+import { createUploadTicket, deleteChannel } from './channel.js';
 import {
-  createUploadTicket,
-  deleteChannel,
   getChannelSettings,
   listChannelJournal,
   listChannelMerchItems,
@@ -33,7 +32,7 @@ import {
   updateChannelIdentity,
   updateChannelSettings,
   upsertMerchItem,
-} from './channel.js';
+} from './channels/routes.js';
 import {
   BadRequestResponse,
   ChannelIdParameter,
