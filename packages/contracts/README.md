@@ -242,6 +242,35 @@ per code, each with the `params` schema of `ERROR_PARAMS` in `@arthome/core/sche
 - **`restricted(schema, right)`** is a field only some callers see: optional in the type and the
   document, absent from the answer otherwise.
 
+### What repeats is a factory
+
+A schema or a parameter that several routes write the same way is declared once, in `./http`, and
+named. **Assign each factory's result to a named const and annotate it `typeof X`**: an inline call in
+a route is the repetition this removes, and `isolatedDeclarations` needs the name to annotate against.
+
+```ts
+const AuditPeriod = period({ type: 'dateTime' });
+const MemberSearch = searchText({ description: 'Server-side search on the nickname.' });
+const JournalNature = localVocabulary(NATURES, 'Four of the five are endpoint concerns.');
+
+parameters: [...AuditPeriod.parameters, MemberSearch],
+errors: [...AuditPeriod.errors],   // api.period_filter_required
+```
+
+| Factory | Gives | Emits the same as |
+|---|---|---|
+| `Deleted` | the data of a removal, `{ deleted? }`, absent or loose | `z.looseObject({ deleted: z.boolean().optional() }).optional()` |
+| `Acknowledged` | the data of an action that answers only that it was done, `{ accepted? }` | the same with `accepted` |
+| `perishable(schema)` | the object plus `validUntil`, nullable and optional, as the envelope declares it | `InstantOut.nullable().meta({ format: 'date-time' }).optional()` |
+| `localVocabulary(values, reason)` | a request vocabulary with `source: none` and its mandatory reason | `vocabularyIn(values).meta({ 'x-arthome-vocabulary-source': VOCABULARY_SOURCE_LOCAL, 'x-arthome-vocabulary-reason': reason })` |
+| `period({ type, required?, descriptions? })` | `parameters`: `from` and `to`, as `date` or `dateTime`; `errors`: `api.period_filter_required` when required (the default) | the two inline `from` and `to` of the studio |
+| `searchText({ description?, minLength? })` | the `q` query parameter | the inline `q` |
+
+An action that only acknowledges answers `204` with no body (the resource layer's default for an action without `response`); `Acknowledged` stays for the rare route whose clients already read `accepted`. A removal keeps `Deleted` (`200`).
+
+`Deleted` and `Acknowledged` are the `response` of a resource's `delete` and the `item` of a write,
+so the route's response is the envelope around them. Each equivalence above is a test.
+
 ### What a handler implements
 
 `HandlerInput<R>` (a type alias, so a hover shows `{ params, query, headers, body, principal }`
