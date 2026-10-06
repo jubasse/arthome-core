@@ -466,7 +466,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 468 exported names.
+Declarations: `dist/index.d.ts` — 470 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -628,7 +628,7 @@ Declarations: `dist/index.d.ts` — 468 exported names.
 - `PAIRING_CODE_NORMALISATION` (const) — `PAIRING_CODE_NORMALISATION: Readonly<Record<string, string>>` — The normalisation table, exhaustive over the mappable excluded glyphs.
 - `PAIRING_CONFUSABLE_CLASSES` (const) — `PAIRING_CONFUSABLE_CLASSES: readonly (readonly string[])[]` — The CONFUSABLE CLASSES this channel recognises, as data so the invariant is computed.
 - `PAIRING_ERROR_CODES` (const) — `PAIRING_ERROR_CODES: readonly ["pairing.slow_down", "pairing.identity_mismatch", "pairing.intent_not_engageable", "pairing.execution_engaged"]` — Device pairing, where the same code is polled repeatedly.
-- `PAYMENT_EVENT_KINDS` (const) — `PAYMENT_EVENT_KINDS: readonly ["intent_succeeded", "intent_requires_action", "intent_processing", "intent_failed", "intent_cancelled", "unhandled"]` — What a provider's webhook says happened to an intent, recorded before anything reads it.
+- `PAYMENT_EVENT_KINDS` (const) — What a provider's webhook says happened to a payment, recorded before anything reads it.
 - `PAYMENT_WEBHOOK_TOLERANCE_SECONDS` (const) — `PAYMENT_WEBHOOK_TOLERANCE_SECONDS = 300` — adr-payments.md §7.1: a webhook signed further in the past than this is rejected.
 - `PAYOUT_DELAY_DAYS` (const) — `PAYOUT_DELAY_DAYS = 14` — 'payoutDelayDays: 14'.
 - `PAYOUT_ERROR_CODES` (const) — `PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained", "payout.bank_change_request_expired"]` — Payout refusals: a period does not close over an unexplained discrepancy, and a bank change request past its deadline can no longer be coun…
@@ -827,6 +827,7 @@ Declarations: `dist/index.d.ts` — 468 exported names.
 - `hasLanguageBarrier` (function) — `function hasLanguageBarrier(profile: LanguageProfile): boolean;` — Is there a language barrier?
 - `hasReplayPolicy` (function) — `function hasReplayPolicy(timing: DateTiming): boolean;` — Does the date promise a replay at all, whatever the window?
 - `holdFor` (function) — `function holdFor(quantity: number, intentExpiresAt: Instant): SeatHold;` — Places a hold whose expiry IS the intent's.
+- `intentCancelIdempotencyKey` (function) — `function intentCancelIdempotencyKey(orderId: string): string;` — The provider's idempotency key for cancelling an order's intent; not a BullMQ job id either.
 - `irreversiblePromiseBlocking` (function) — `function irreversiblePromiseBlocking(from: PublicationState, to: PublicationState): PublicationPromise | null;` — The promise blocking this transition, or 'null' when it is merely unknown — two different refusals, two different messages.
 - `isAfter` (function) — `function isAfter(left: Instant, right: Instant): boolean;`
 - `isAvailableIn` (function) — `function isAvailableIn(rights: TerritoryRights, viewerCountry: string): boolean;` — Can the viewer watch from this country?
@@ -898,6 +899,7 @@ Declarations: `dist/index.d.ts` — 468 exported names.
 - `publicDisplayStateOf` (function) — `function publicDisplayStateOf(input: DisplayStateInput): DisplayStateResult;` — What a public surface shows.
 - `publicationReadiness` (function) — `function publicationReadiness(satisfied: readonly PublicationChecklistItem[]): PublicationReadiness;`
 - `quoteSeats` (function)
+- `refundIdempotencyKey` (function) — `function refundIdempotencyKey(refundId: string): string;` — The provider's idempotency key for one refund row, so two partial refunds of one order never share one.
 - `remainderAfterRate` (function) — `function remainderAfterRate(value: Money, rate: BasisPoints): Money;` — What remains after applying a rate — exactly 'x - applyRate(x, r)'.
 - `reminderInstantFor` (function) — `function reminderInstantFor(startsAt: Instant): Instant;`
 - `reminderStillValid` (function) — `function reminderStillValid(scheduledFor: Instant, currentStartsAt: Instant | null): boolean;` — Whether a scheduled reminder still matches the date it was placed for.
