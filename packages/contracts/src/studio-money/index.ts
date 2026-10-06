@@ -556,6 +556,9 @@ export const DateSalesPaneSchema: z.ZodObject<
     seatsAvailable: z.ZodNumber;
     seatsSold: z.ZodOptional<z.ZodNumber>;
     waitlistCount: z.ZodOptional<z.ZodNumber>;
+    priorityPool: z.ZodOptional<
+      z.ZodObject<{ seatsLeft: z.ZodNumber; priorityUntil: z.ZodString }, Looseness>
+    >;
     fillRateBps: z.ZodOptional<z.ZodNumber>;
     priceTiers: z.ZodArray<typeof PriceTierSchema>;
     promotions: z.ZodOptional<z.ZodArray<typeof PromotionSchema>>;
@@ -573,9 +576,15 @@ export const DateSalesPaneSchema: z.ZodObject<
     dateId: uuidOut(),
     capacityTotal: int(),
     capacityTiers: z.array(CapacityTierSchema).optional(),
-    seatsAvailable: int(),
+    seatsAvailable: int().describe('The public count: the priority pool is left out.'),
     seatsSold: int().optional(),
     waitlistCount: int().optional(),
+    priorityPool: z
+      .looseObject({ seatsLeft: int(), priorityUntil: InstantOut })
+      .optional()
+      .describe(
+        "**Present while a priority window is open** (D-083): the pool's seats neither held nor sold,\nwhich only the notified accounts buy, and the end of the window, when what is left returns to\npublic sale.\n",
+      ),
     fillRateBps: int().optional(),
     priceTiers: z.array(PriceTierSchema),
     promotions: z.array(PromotionSchema).optional(),

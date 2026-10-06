@@ -39,8 +39,10 @@ import {
   NOTIFICATION_CHANNELS,
   PRICE_TIERS,
   PROMOTION_REASONS,
+  REFUND_DELAY_CODES,
   REPLAY_POLICIES,
   RIGHTS_SCOPES,
+  RefundDelayCode,
 } from '@arthome/core';
 import {
   CountryCodeSchema,
@@ -130,7 +132,7 @@ export const DomainConstantsSchema: z.ZodObject<
     replayExpiryWarningHours: z.ZodNumber;
     previewSecondsTotal: z.ZodOptional<z.ZodNumber>;
     searchExactTotalLimit: z.ZodOptional<z.ZodNumber>;
-    creditDelayCode: z.ZodOptional<z.ZodString>;
+    creditDelayCode: z.ZodOptional<VocabularyOut>;
   },
   z.core.$loose
 > = z
@@ -190,9 +192,8 @@ export const DomainConstantsSchema: z.ZodObject<
       .describe(
         '**The threshold beyond which `approximateTotal` becomes a lower bound.** It was carved into\nthe prose as "exact up to 10,000": we were serving the default of a search engine parameter,\nin a vendor\'s name. Served as a constant, it survives a change of engine.\n',
       ),
-    creditDelayCode: z
-      .string()
-      .meta({ examples: ['refund_delay_business_days_3_5'] })
+    creditDelayCode: vocabularyOut(REFUND_DELAY_CODES)
+      .meta({ examples: [RefundDelayCode.BUSINESS_DAYS_3_5] })
       .optional()
       .describe(
         'The refund delay is a **code**, never the sentence "3 to 5 business days" — which is a\npolicy, hence translatable, hence i18n.\n',

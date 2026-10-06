@@ -32,7 +32,10 @@ import {
   PLAN_TIERS,
   PlanOpening,
   PRICE_TIERS,
+  REFUND_DELAY_CODES,
+  REFUND_METHODS,
   REFUND_REASONS,
+  RefundDelayCode,
   SEAT_STATES,
   SUBSCRIPTION_STATES,
 } from '@arthome/core';
@@ -52,8 +55,6 @@ import {
 import { DateCardSchema } from '../catalog/index.js';
 import { sensitive } from '../http/index.js';
 
-const REFUND_METHODS = ['original_payment_method', 'account_credit'] as const;
-
 export const TicketCardSchema: z.ZodObject<
   {
     seatId: z.ZodString;
@@ -69,7 +70,7 @@ export const TicketCardSchema: z.ZodObject<
         z.ZodObject<
           {
             amount: z.ZodOptional<typeof MoneyOut>;
-            delayCode: z.ZodOptional<z.ZodString>;
+            delayCode: z.ZodOptional<VocabularyOutNullable>;
             method: z.ZodOptional<VocabularyOut>;
             refundReasonCode: z.ZodOptional<VocabularyOutNullable>;
           },
@@ -100,14 +101,11 @@ export const TicketCardSchema: z.ZodObject<
   refund: z
     .looseObject({
       amount: MoneyOut.meta({ 'x-arthome-tax-basis': 'inherited' }).optional(),
-      delayCode: z
-        .string()
-        .meta({ examples: ['refund_delay_business_days_3_5'] })
-        .optional(),
-      method: vocabularyOutLocal(
-        REFUND_METHODS,
-        "Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends.",
-      ).optional(),
+      delayCode: vocabularyOutNullable(REFUND_DELAY_CODES)
+        .meta({ examples: [RefundDelayCode.BUSINESS_DAYS_3_5] })
+        .optional()
+        .describe('`null` for a credit, which is on the account at once (`refundDelayCodeOf`).'),
+      method: vocabularyOut(REFUND_METHODS).optional(),
       refundReasonCode: vocabularyOutNullable(REFUND_REASONS)
         .optional()
         .describe('Why the seat was refunded: `date_cancelled` when its date was cancelled.'),
@@ -115,7 +113,7 @@ export const TicketCardSchema: z.ZodObject<
     .nullable()
     .optional()
     .describe(
-      'What the viewer gets back, and **where**. The amount and a **delay code** — never the\nsentence "3 to 5 business days", which is a policy.\n',
+      'What the viewer gets back, and **where**. The amount and a **delay code** — never the\nsentence "3 to 5 business days", which is a policy.\n\nA **credited** seat serves `state: credited`, `method: account_credit`, `delayCode: null` and\n`refundReasonCode: null`: the cause is the date\'s interruption, which the card\'s `date` carries.\n',
     ),
 });
 
@@ -468,6 +466,7 @@ export const SeatQuoteSchema: z.ZodObject<
     >;
     total: typeof MoneyOut;
     validUntil: z.ZodOptional<z.ZodString>;
+    priorityUntil: z.ZodOptional<z.ZodString>;
     lateEntry: z.ZodOptional<
       z.ZodNullable<
         z.ZodObject<
@@ -503,6 +502,9 @@ export const SeatQuoteSchema: z.ZodObject<
     ),
     total: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }),
     validUntil: InstantOut.optional(),
+    priorityUntil: InstantOut.optional().describe(
+      '**Present when the caller quotes from an open priority pool** (D-083): the account was\nnotified, and the pool is its to buy from until then.\n',
+    ),
     lateEntry: z
       .looseObject({
         startedAt: InstantOut,

@@ -13,8 +13,7 @@ export const seatsExamples: ModuleExamples = [
     [
       {
         refunded: { amountMinor: 2400, currencyCode: 'EUR' },
-        commissionRefunded: { amountMinor: 273, currencyCode: 'EUR' },
-        payoutId: '019928e5-0000-7000-8000-000000000001',
+        payoutId: null,
       },
     ],
   ],

@@ -6292,6 +6292,9 @@ paths:
 
         **Past the end of seat sales**, thirty minutes after the start (D-089), the quote is refused
         with `409` `order.sales_closed` and `salesEndAt`, as the purchase is.
+
+        **From an open priority pool** (D-083), a notified account's quote carries `priorityUntil`: the
+        pool is the caller's to buy from until then.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -6357,7 +6360,7 @@ paths:
               quantity: 2
       responses:
         '200':
-          description: Devis.
+          description: The quote.
           content:
             application/json:
               schema:
@@ -6630,6 +6633,10 @@ paths:
         params, before any seat is held. Seats sell until thirty minutes after the start; past it,
         `409` `order.sales_closed` with `salesEndAt`, never `order.sold_out`, which is the waiting
         list's cue.
+
+        **A notified account buys from the priority pool** until `priorityUntil` (D-083), first come first
+        served, with the same request; the public reads availability without the pool. `order.sold_out`
+        answers when neither the pool, for a notified account, nor public sale has a seat for the caller.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -7023,8 +7030,20 @@ paths:
       summary: Cancels a seat before its deadline.
       description: |
         The deadline is **served as an instant** on the seat (`cancelDeadline`), never as the
-        sentence "up to 1 h before". The refusal after the deadline carries
-        `seat.cancel_deadline_passed`, with the instant as a parameter.
+        sentence "up to 1 h before". A cancellation at or after it is refused with
+        `seat.cancel_deadline_passed`, `cancelDeadline` as its parameter; a seat no longer active
+        (cancelled, refunded, credited or transferred) is refused with `seat.not_active` and its `state`.
+
+        **Cancelled at once, refunded once settled.** The answer serves the seat `cancelled`, with the
+        refund's amount, its `method` and its `delayCode`; the seat becomes `refunded` once the payment
+        provider confirms the money went back. On a disputed order the seat is cancelled and `refund` is
+        `null`: the provider holds the money (adr-payments.md §9).
+
+        **The seat returns to public sale at once** (D-093), first come first served: the waiting list is
+        not notified and gets no priority.
+
+        **On a cancelled date** the deadline does not apply, the refund carries `date_cancelled` (D-097),
+        and the seat does not return to sale.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -7058,19 +7077,8 @@ paths:
                   type: string
                   enum:
                   - viewer_request
-                  x-arthome-vocabulary-source: none
-                  x-arthome-vocabulary-reason: 'A single-member enum: it records the actor on an audit line, and this path has exactly one actor. Flagged in the description as a question, not settled as a vocabulary.'
-                  description: |
-                    **One member, and that is a question rather than a vocabulary.** A field whose
-                    enum has a single value carries no information: every request that reaches this
-                    path says the same thing. It is here because the audit line must record *who*
-                    asked — and a viewer cancelling their own seat is the only actor this path has.
-
-                    **What would make it a vocabulary is a second actor**, and there is one in the
-                    domain already: the studio cancels seats too, through `refundSeat`, with its own
-                    four-member `refundReasonCode`. If those two paths ever merge, this field becomes
-                    the merged reason and the single member becomes the first of several. Until then
-                    it is a placeholder that is honest about being one.
+                  x-arthome-vocabulary-source: SEAT_CANCEL_REASONS
+                  x-arthome-vocabulary-narrowing: 'The one a viewer gives. The others are raised by the system: a cancelled date and a deleted account.'
             example:
               cancelReasonCode: viewer_request
       responses:
@@ -7102,7 +7110,7 @@ paths:
                     dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                     seatCode: ATH-7QK2-4M
                     tier: full
-                    state: refunded
+                    state: cancelled
                     date:
                       id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                       showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
@@ -7181,12 +7189,15 @@ paths:
                 anyOf:
                 - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
                 - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/SeatNotActiveError'
                 - $ref: '#/components/schemas/SeatCancelDeadlinePassedError'
               examples:
                 api.idempotency_key_reused:
                   $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
                 api.idempotency_in_flight:
                   $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                seat.not_active:
+                  $ref: '#/components/examples/SeatNotActiveError'
                 seat.cancel_deadline_passed:
                   $ref: '#/components/examples/SeatCancelDeadlinePassedError'
         '413':
@@ -7202,13 +7213,143 @@ paths:
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/waitlist:
+    get:
+      operationId: getWaitlistRegistration
+      summary: Reads one's registration on a date's waiting list.
+      description: |
+        The caller's registration on a date's waiting list, and nobody else's: the session names the
+        account, never the path. `state` is `null` when the account never registered, and `joined` is true
+        for `waiting` or `notified` only.
+
+        **While the caller is `notified` into an open window** (D-083), the answer serves `priorityUntil`
+        and `priorityPoolSeats`, the pool's seats left. The public count, read from availability, leaves the
+        pool out, so the BFF adds them to build the caller's seat standing. Outside a window
+        `priorityPoolSeats` is absent, and `priorityUntil` is `null` unless the caller is `notified`. A tier
+        opened with `notifyWaitlist: false` makes no pool (D-094), and an entry its date's cancellation or
+        interruption ended is `closed` (D-096).
+
+        **`no-store`**: a registration is one account's, and its window is perishable.
+      x-arthome-maturity: stable
+      x-arthome-upstream:
+      - ticketing
+      tags:
+      - commerce
+      security:
+      - sessionCookie: []
+      - bearerToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: The caller's registration.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        joined:
+                          type: boolean
+                        state:
+                          description: |
+                            The caller's entry. `null` when the account never registered; `joined` is true for `waiting`
+                            or `notified` only.
+                          x-arthome-vocabulary:
+                          - waiting
+                          - notified
+                          - converted
+                          - left
+                          - lapsed
+                          - closed
+                          x-arthome-vocabulary-source: WAITLIST_ENTRY_STATES
+                          type:
+                          - string
+                          - 'null'
+                        rankDisclosed:
+                          type: boolean
+                        rank:
+                          anyOf:
+                          - type: integer
+                          - type: 'null'
+                        priorityWindowHours:
+                          type: integer
+                        priorityUntil:
+                          description: The end of the caller's priority window while `notified`, else `null`.
+                          anyOf:
+                          - type: string
+                            format: date-time
+                          - type: 'null'
+                        priorityPoolSeats:
+                          description: |
+                            The pool's seats left, **served only while the caller is notified into an open window**: the
+                            public count leaves them out, and the BFF adds them to build the caller's seat standing.
+                          type: integer
+                        date:
+                          $ref: '#/components/schemas/DateCard'
+                      required:
+                      - joined
+                      - rankDisclosed
+                      additionalProperties: {}
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  joined: true
+                  state: waiting
+                  rankDisclosed: false
+                  rank: null
+                  priorityWindowHours: 2
+                  priorityUntil: null
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+                const: no-store
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     put:
       operationId: joinWaitlist
-      summary: S'inscrit en liste d'attente.
+      summary: Joins a date's waiting list.
       description: |
-        **A state assignment, not a toggle**: two submissions leave one registration. The response
-        **states the rank, or states that it will not state it** — it is never silent. The priority
-        window (2 h) is served, never hardcoded in the surface.
+        **A state assignment, not a toggle**: two submissions leave one registration, and the answer is
+        the caller's registration as `getWaitlistRegistration` serves it.
+
+        **Joined only once the date is sold out**: while public seats remain it is refused with `409`
+        `waitlist.not_sold_out`, and the surface offers the purchase instead. Once sales have ended, by
+        time (D-089) or because the date was cancelled or interrupted, it is refused with `409`
+        `order.sales_closed` and `salesEndAt`. A postponed date keeps its list.
+
+        **Everyone registered gets the same chance** (D-083): there is no rank among them, so
+        `rankDisclosed` is `false`. A tier opening notifies the whole list at once, and each notified
+        account may buy from the priority pool until `priorityUntil`, first come first served; an account
+        that joins while a window is open is `notified` into it at once. One that does not buy in the
+        window becomes `lapsed`, and joins again to be told next time. The window's length is served in
+        `priorityWindowHours`, never written into the surface.
+
+        **A tier opened with `notifyWaitlist: false` notifies nobody and makes no pool** (D-094). **A
+        cancellation or an interruption ends the list** (D-096): every entry becomes `closed`, and nobody is
+        told beyond the date's own card.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -7225,7 +7366,7 @@ paths:
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
-          description: Inscrit.
+          description: The caller's registration.
           content:
             application/json:
               schema:
@@ -7238,6 +7379,21 @@ paths:
                       properties:
                         joined:
                           type: boolean
+                        state:
+                          description: |
+                            The caller's entry. `null` when the account never registered; `joined` is true for `waiting`
+                            or `notified` only.
+                          x-arthome-vocabulary:
+                          - waiting
+                          - notified
+                          - converted
+                          - left
+                          - lapsed
+                          - closed
+                          x-arthome-vocabulary-source: WAITLIST_ENTRY_STATES
+                          type:
+                          - string
+                          - 'null'
                         rankDisclosed:
                           type: boolean
                         rank:
@@ -7245,6 +7401,17 @@ paths:
                           - type: integer
                           - type: 'null'
                         priorityWindowHours:
+                          type: integer
+                        priorityUntil:
+                          description: The end of the caller's priority window while `notified`, else `null`.
+                          anyOf:
+                          - type: string
+                            format: date-time
+                          - type: 'null'
+                        priorityPoolSeats:
+                          description: |
+                            The pool's seats left, **served only while the caller is notified into an open window**: the
+                            public count leaves them out, and the BFF adds them to build the caller's seat standing.
                           type: integer
                         date:
                           $ref: '#/components/schemas/DateCard'
@@ -7259,9 +7426,11 @@ paths:
                 servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   joined: true
+                  state: waiting
                   rankDisclosed: false
                   rank: null
                   priorityWindowHours: 2
+                  priorityUntil: null
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
@@ -7276,7 +7445,26 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/WaitlistNotSoldOutError'
+                - $ref: '#/components/schemas/OrderSalesClosedError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                waitlist.not_sold_out:
+                  $ref: '#/components/examples/WaitlistNotSoldOutError'
+                order.sales_closed:
+                  $ref: '#/components/examples/OrderSalesClosedError'
         '500':
           $ref: '#/components/responses/InternalError'
         '502':
@@ -7290,7 +7478,8 @@ paths:
       summary: Leaves the waiting list.
       description: |
         **A state assignment**, like joining. Replayed on an already-removed registration, it
-        succeeds — an offline queue replays, and a failure there would be a false negative.
+        succeeds — an offline queue replays, and a failure there would be a false negative. Leaving while
+        `notified` gives up the priority window.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -10732,6 +10921,9 @@ components:
           - order.sales_closed
           - seat.cancel_deadline_passed
           - payment_method.in_use
+          - waitlist.not_sold_out
+          - seat.not_active
+          - refund.amount_exceeds_remaining
           - capacity.tier_must_widen
           - content.empty_in_both_languages
           - hold.quantity_invalid
@@ -11086,6 +11278,9 @@ components:
             The refund delay is a **code**, never the sentence "3 to 5 business days" — which is a
             policy, hence translatable, hence i18n.
           type: string
+          x-arthome-vocabulary:
+          - refund_delay_business_days_3_5
+          x-arthome-vocabulary-source: REFUND_DELAY_CODES
           examples:
           - refund_delay_business_days_3_5
       required:
@@ -12770,6 +12965,9 @@ components:
           description: |
             What the viewer gets back, and **where**. The amount and a **delay code** — never the
             sentence "3 to 5 business days", which is a policy.
+
+            A **credited** seat serves `state: credited`, `method: account_credit`, `delayCode: null` and
+            `refundReasonCode: null`: the cause is the date's interruption, which the card's `date` carries.
           anyOf:
           - type: object
             properties:
@@ -12777,16 +12975,21 @@ components:
                 x-arthome-tax-basis: inherited
                 $ref: '#/components/schemas/Money'
               delayCode:
-                type: string
+                description: '`null` for a credit, which is on the account at once (`refundDelayCodeOf`).'
+                x-arthome-vocabulary:
+                - refund_delay_business_days_3_5
+                x-arthome-vocabulary-source: REFUND_DELAY_CODES
                 examples:
                 - refund_delay_business_days_3_5
+                type:
+                - string
+                - 'null'
               method:
                 type: string
                 x-arthome-vocabulary:
                 - original_payment_method
                 - account_credit
-                x-arthome-vocabulary-source: none
-                x-arthome-vocabulary-reason: Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends.
+                x-arthome-vocabulary-source: REFUND_METHODS
               refundReasonCode:
                 description: 'Why the seat was refunded: `date_cancelled` when its date was cancelled.'
                 x-arthome-vocabulary:
@@ -13075,6 +13278,12 @@ components:
         validUntil:
           type: string
           format: date-time
+        priorityUntil:
+          type: string
+          format: date-time
+          description: |
+            **Present when the caller quotes from an open priority pool** (D-083): the account was
+            notified, and the pool is its to buy from until then.
         lateEntry:
           description: |
             **Present once the live has started** (D-089): what the buyer has already missed, to be
@@ -14326,8 +14535,15 @@ components:
                 x-arthome-vocabulary:
                 - interrupted_date
                 - goodwill
-                x-arthome-vocabulary-source: none
-                x-arthome-vocabulary-reason: A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.
+                x-arthome-vocabulary-source: CREDIT_ORIGINS
+              stateCode:
+                type: string
+                x-arthome-vocabulary:
+                - issued
+                - partially_used
+                - used
+                - expired
+                x-arthome-vocabulary-source: CREDIT_STATES
               expiresAt:
                 type: string
                 format: date-time
@@ -15635,6 +15851,71 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    SeatNotActiveError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: seat.not_active
+            params:
+              type: object
+              properties:
+                state:
+                  type: string
+                  x-arthome-vocabulary:
+                  - active
+                  - cancelled
+                  - refunded
+                  - transferred
+                  - credited
+                  x-arthome-vocabulary-source: SEAT_STATES
+              required:
+              - state
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     SeatCancelDeadlinePassedError:
       type: object
       properties:
@@ -15644,6 +15925,64 @@ components:
             code:
               type: string
               const: seat.cancel_deadline_passed
+            params:
+              type: object
+              properties:
+                cancelDeadline:
+                  type: string
+              required:
+              - cancelDeadline
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WaitlistNotSoldOutError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: waitlist.not_sold_out
             params:
               type: object
               properties: {}
@@ -17258,7 +17597,17 @@ components:
         error:
           code: seat.cancel_deadline_passed
           nature: refused
-          params: {}
+          params:
+            cancelDeadline: '2026-11-04T18:30:00Z'
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    SeatNotActiveError:
+      value:
+        error:
+          code: seat.not_active
+          nature: refused
+          params:
+            state: cancelled
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     StateConflictError:
@@ -17269,6 +17618,14 @@ components:
           params:
             currentVersion: 8
             state: live
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WaitlistNotSoldOutError:
+      value:
+        error:
+          code: waitlist.not_sold_out
+          nature: refused
+          params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     WatchConcurrentLimitReachedError:

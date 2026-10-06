@@ -50,7 +50,7 @@ export declare const DomainConstantsSchema: z.ZodObject<{
     replayExpiryWarningHours: z.ZodNumber;
     previewSecondsTotal: z.ZodOptional<z.ZodNumber>;
     searchExactTotalLimit: z.ZodOptional<z.ZodNumber>;
-    creditDelayCode: z.ZodOptional<z.ZodString>;
+    creditDelayCode: z.ZodOptional<VocabularyOut>;
 }, z.core.$loose>;
 export declare const LabelArtifactRefSchema: z.ZodObject<{
     domain: VocabularyOut;

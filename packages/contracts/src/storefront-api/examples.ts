@@ -7,6 +7,7 @@ import {
   MessageDomain,
   PlanTier,
   PriceTier,
+  RefundDelayCode,
   ReplayPolicy,
   RightsScope,
   SeatState,
@@ -87,7 +88,7 @@ const viewerContext: z.output<typeof ViewerContextSchema> = {
     replayExpiryWarningHours: 6,
     previewSecondsTotal: 300,
     searchExactTotalLimit: 10000,
-    creditDelayCode: 'refund_delay_business_days_3_5',
+    creditDelayCode: RefundDelayCode.BUSINESS_DAYS_3_5,
   },
   labelCatalog: {
     domain: MessageDomain.STOREFRONT,

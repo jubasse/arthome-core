@@ -121,6 +121,8 @@ export declare const STOREFRONT_RELAYED_CODES: readonly [
     typeof OrderErrorCode.LATE_ENTRY_UNACKNOWLEDGED,
     typeof OrderErrorCode.SALES_CLOSED,
     typeof OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED,
+    typeof OrderErrorCode.SEAT_NOT_ACTIVE,
+    typeof OrderErrorCode.WAITLIST_NOT_SOLD_OUT,
     typeof ChatErrorCode.HOLDERS_ONLY,
     typeof ChatErrorCode.RATE_LIMITED,
     typeof IdentityErrorCode.SIGNED_OUT_ELSEWHERE,

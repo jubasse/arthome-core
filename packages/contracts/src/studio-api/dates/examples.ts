@@ -226,7 +226,8 @@ const capacityTierOpening: CapacityTierOpening = {
   sales: {
     dateId: DATE_ID,
     capacityTotal: 250,
-    seatsAvailable: 76,
+    seatsAvailable: 26,
+    priorityPool: { seatsLeft: 50, priorityUntil: '2026-09-21T20:06:00Z' },
     priceTiers: [],
     pricesLocked: true,
     version: 13,

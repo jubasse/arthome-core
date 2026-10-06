@@ -135,6 +135,24 @@ export type GetSalesQueuePositionRoute = Route<{
   };
 }>;
 
+export type GetWaitlistRegistrationRoute = Route<{
+  method: 'get';
+  version: 1;
+  path: '/dates/{dateId}/waitlist';
+  parameters: readonly [
+    typeof DateIdParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+  ];
+  access: IdentifiedAccess<typeof viewer, false>;
+  responses: {
+    200: ItemResponse<typeof storefrontConventions, typeof WaitlistRegistrationSchema, unknown>;
+  };
+  errorCodes: {
+    404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+  };
+}>;
+
 export type JoinWaitlistRoute = Route<{
   method: 'put';
   version: 1;
@@ -152,7 +170,10 @@ export type JoinWaitlistRoute = Route<{
   errorCodes: {
     404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
     409: readonly (
-      typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
+      | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof OrderErrorCode.SALES_CLOSED
+      | typeof OrderErrorCode.WAITLIST_NOT_SOLD_OUT
     )[];
   };
 }>;

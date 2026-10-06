@@ -47,7 +47,7 @@
     },
     {
       "vocabulary": "PAYMENT_EVENT_KINDS",
-      "reason": "What a provider's webhook says happened, recorded on `stripe_event_inbox` before anything reads it (adr-payments.md §7.2) and consumed by the worker that applies it to an order. It is a fact the domain reacts to, never a value any surface polls or displays."
+      "reason": "What a provider's webhook says happened to an intent, a refund or a dispute, recorded on `stripe_event_inbox` before anything reads it (adr-payments.md §7.2) and consumed by the worker that applies it: `refund_succeeded` settles a refund, moving a cancelled seat to `refunded`, and `dispute_opened` moves the order to `disputed`. It is a fact the domain reacts to, never a value any surface polls or displays: a surface reads `Order.state` and `TicketCard.state`."
     },
     {
       "vocabulary": "SEAT_HOLD_STATES",

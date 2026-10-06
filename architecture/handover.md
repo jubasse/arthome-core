@@ -21,6 +21,7 @@ to one document is six conflicts, and six agents committing into one repository 
 | [`handover/backend-domain.md`](handover/backend-domain.md) | rules that live where you would not look; **the one misdeclared block among the 114 exempt ones** |
 | [`handover/conventions.md`](handover/conventions.md) | how to build the repository map (D-061); **where §5.3.1 does *not* substitute** for the D-055 detector |
 | [`handover/skeptic.md`](handover/skeptic.md) | findings closed by answers it would reopen; **the two detectors that work with nobody else in the room** |
+| [`handover/ticketing-t4t5-core.md`](handover/ticketing-t4t5-core.md) | **`seatsAvailable` leaves the priority pool out**; one provider key per refund; a seat is `cancelled` before `refunded`; a credited seat's null refund reason |
 
 **Three of the six correct something already committed**, which is the reason they were worth the
 cost. `studio-mobile` contradicts the one section written before them; `storefront-mobile` shows

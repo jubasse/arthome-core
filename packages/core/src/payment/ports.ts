@@ -20,13 +20,18 @@ export const IntentStatus = {
   DECLINED: 'declined',
 } as const;
 
-/** What a provider's webhook says happened to an intent, recorded before anything reads it. */
+/**
+ * What a provider's webhook says happened to a payment, recorded before anything reads it. A failed
+ * refund is not mapped by adr-payments.md §8, so it stays `unhandled`.
+ */
 export const PAYMENT_EVENT_KINDS = [
   'intent_succeeded',
   'intent_requires_action',
   'intent_processing',
   'intent_failed',
   'intent_cancelled',
+  'refund_succeeded',
+  'dispute_opened',
   'unhandled',
 ] as const;
 export type PaymentEventKind = (typeof PAYMENT_EVENT_KINDS)[number];
@@ -36,6 +41,8 @@ export const PaymentEventKind = {
   INTENT_PROCESSING: 'intent_processing',
   INTENT_FAILED: 'intent_failed',
   INTENT_CANCELLED: 'intent_cancelled',
+  REFUND_SUCCEEDED: 'refund_succeeded',
+  DISPUTE_OPENED: 'dispute_opened',
   UNHANDLED: 'unhandled',
 } as const;
 
@@ -56,7 +63,9 @@ export interface PaymentIntent {
 export interface RefundRequest {
   readonly intentRef: string;
   readonly amount: Money;
-  readonly idempotencyKey: string; // `refund:{orderId}` (adr-ticketing.md §8)
+  readonly idempotencyKey: string; // `refundIdempotencyKey`, or the key the refund row already holds
+  /** adr-payments.md §9: the commission goes back with the money. */
+  readonly refundApplicationFee: boolean;
 }
 export interface PaymentEvent {
   readonly eventId: string;
@@ -65,6 +74,24 @@ export interface PaymentEvent {
   readonly orderId: string | null;
   readonly occurredAt: Instant;
   readonly declineCode: string | null;
+  /** Null on an intent event. */
+  readonly refundRef: string | null;
+  /** Everything refunded on the payment so far, not this refund alone; null on an intent event. */
+  readonly amountRefunded: Money | null;
+}
+
+/**
+ * The provider's idempotency key for one refund row, so two partial refunds of one order never share
+ * one. Stored as text on the row that owes the call: a row already owed under `refund:{orderId}`
+ * keeps its key. Not a BullMQ job id, which refuses `:`.
+ */
+export function refundIdempotencyKey(refundId: string): string {
+  return `refund:${refundId}`;
+}
+
+/** The provider's idempotency key for cancelling an order's intent; not a BullMQ job id either. */
+export function intentCancelIdempotencyKey(orderId: string): string {
+  return `cancel:${orderId}`;
 }
 
 /**

@@ -466,7 +466,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 466 exported names.
+Declarations: `dist/index.d.ts` — 498 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -497,6 +497,8 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `CHAT_RATE_WINDOW_SECONDS` (const) — `CHAT_RATE_WINDOW_SECONDS = 60` — The chat's rate window, in a declared unit.
 - `CLAIM_LEASE_MINUTES` (const) — `CLAIM_LEASE_MINUTES = 3` — The claim lease.
 - `COMMISSION_RATE_BPS` (const) — `COMMISSION_RATE_BPS: BasisPoints` — 'commissionRate: 0.12' from 'catalogue.json', in basis points.
+- `CREDIT_ORIGINS` (const) — `CREDIT_ORIGINS: readonly ["interrupted_date", "goodwill"]` — Why a credit was issued, in the order of the proto's 'CreditOrigin'.
+- `CREDIT_STATES` (const) — `CREDIT_STATES: readonly ["issued", "partially_used", "used", "expired"]` — data-model.md §3.7.
 - `CREDIT_VALIDITY_MONTHS` (const) — `CREDIT_VALIDITY_MONTHS = 12` — How long a credit note stays valid.
 - `CREW_ROLES` (const) — `CREW_ROLES: readonly ["director", "video", "sound", "moderation"]` — The post held on one date, not the role held in the channel: confusing the two would turn revoking a stand-in into exclusion from the chann…
 - `CREW_UNASSIGNED_ALERT_HOURS` (const) — `CREW_UNASSIGNED_ALERT_HOURS = 24` — Crew post unassigned at D-1.
@@ -508,6 +510,8 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `ChatErrorCode` (type+const)
 - `ChatMode` (type+const) — `type ChatMode = (typeof CHAT_MODES)[number]; ChatMode: { readonly OPEN: "open"; readonly EMOJI: "emoji"; readonly READ_ONLY: "read_only"; readonly OFF: "off"; }`
 - `Clock` (interface)
+- `CreditOrigin` (type+const) — `type CreditOrigin = (typeof CREDIT_ORIGINS)[number]; CreditOrigin: { readonly INTERRUPTED_DATE: "interrupted_date"; readonly GOODWILL: "goodwill"; }`
+- `CreditState` (type+const)
 - `CrewRole` (type+const)
 - `CriteriaMigration` (type) — What becomes of a saved search after a grammar change.
 - `DATE_OUTCOMES` (const) — `DATE_OUTCOMES: readonly ["postponed", "cancelled", "interrupted"]` — The outcome — a fact about the performance, never rewritten, and it takes precedence over the other two axes.
@@ -612,7 +616,7 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `NavigationEntry` (type+const)
 - `NoErrorParams` (type) — `type NoErrorParams = Readonly<Record<string, never>>;` — The params of a code that carries none: no key at all, rather than a loose record.
 - `NotificationChannel` (type+const)
-- `ORDER_ERROR_CODES` (const) — The viewer's commerce refusals: a purchase, a seat, a means of payment.
+- `ORDER_ERROR_CODES` (const) — The commerce refusals: a purchase, a seat, a refund, a means of payment.
 - `ORDER_KINDS` (const) — `ORDER_KINDS: readonly ["seat", "merch", "subscription"]` — Distinct orders, never a mixed one (D-011).
 - `ORDER_STATES` (const) — `ORDER_STATES: readonly ["pending", "awaiting_action", "processing", "paid", "failed", "refunded", "partially_refunded", "disputed"]` — adr-payments.md §8's order states; a transition applies only forward (§7.3).
 - `Ok` (interface)
@@ -628,7 +632,7 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `PAIRING_CODE_NORMALISATION` (const) — `PAIRING_CODE_NORMALISATION: Readonly<Record<string, string>>` — The normalisation table, exhaustive over the mappable excluded glyphs.
 - `PAIRING_CONFUSABLE_CLASSES` (const) — `PAIRING_CONFUSABLE_CLASSES: readonly (readonly string[])[]` — The CONFUSABLE CLASSES this channel recognises, as data so the invariant is computed.
 - `PAIRING_ERROR_CODES` (const) — `PAIRING_ERROR_CODES: readonly ["pairing.slow_down", "pairing.identity_mismatch", "pairing.intent_not_engageable", "pairing.execution_engaged"]` — Device pairing, where the same code is polled repeatedly.
-- `PAYMENT_EVENT_KINDS` (const) — `PAYMENT_EVENT_KINDS: readonly ["intent_succeeded", "intent_requires_action", "intent_processing", "intent_failed", "intent_cancelled", "unhandled"]` — What a provider's webhook says happened to an intent, recorded before anything reads it.
+- `PAYMENT_EVENT_KINDS` (const) — What a provider's webhook says happened to a payment, recorded before anything reads it.
 - `PAYMENT_WEBHOOK_TOLERANCE_SECONDS` (const) — `PAYMENT_WEBHOOK_TOLERANCE_SECONDS = 300` — adr-payments.md §7.1: a webhook signed further in the past than this is rejected.
 - `PAYOUT_DELAY_DAYS` (const) — `PAYOUT_DELAY_DAYS = 14` — 'payoutDelayDays: 14'.
 - `PAYOUT_ERROR_CODES` (const) — `PAYOUT_ERROR_CODES: readonly ["payout.reconciliation_discrepancy_unexplained", "payout.bank_change_request_expired"]` — Payout refusals: a period does not close over an unexplained discrepancy, and a bank change request past its deadline can no longer be coun…
@@ -670,6 +674,8 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `PublicationTransitionCommand` (interface)
 - `QUIET_HOURS_END` (const) — `QUIET_HOURS_END = 9`
 - `QUIET_HOURS_START` (const) — `QUIET_HOURS_START = 23` — Quiet hours, 23:00 -> 09:00, in the sleeper's own offset and never the server's.
+- `REFUND_DELAY_CODES` (const) — `REFUND_DELAY_CODES: readonly ["refund_delay_business_days_3_5"]` — How long a refund takes to arrive, as a code a surface explains, never the sentence it stands for.
+- `REFUND_METHODS` (const) — `REFUND_METHODS: readonly ["original_payment_method", "account_credit"]`
 - `REFUND_REASONS` (const) — `REFUND_REASONS: readonly ["viewer_request", "date_cancelled", "account_deletion", "goodwill", "duplicate", "dispute", "hold_expired_capacity_lost"]` — Why money went back to a viewer: domain facts, not refusals (D-037, D-039), in the order of the proto's 'RefundReason'.
 - `REMINDER_LEAD_MINUTES` (const) — `REMINDER_LEAD_MINUTES = 30` — Reminder before a live show for which I hold a seat.
 - `REPLAY_EXPIRY_WARNING_HOURS` (const) — `REPLAY_EXPIRY_WARNING_HOURS = 6` — End of a replay's availability.
@@ -678,6 +684,8 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `RUN_STATES` (const) — `RUN_STATES: readonly ["idle", "rehearsal", "on_air", "interrupted", "ended"]` — The technical axis, and nothing else.
 - `RaisableErrorCode` (type) — `type RaisableErrorCode = ErrorCode | DomainGuardCode;` — Every code a 'DomainError' can carry: the published codes and the domain's internal guards.
 - `RateLimit` (interface) — The BFFs' caps on the authentication doors ('adr-auth.md' §6.2), owned here so the storefront and the studio cap alike.
+- `RefundDelayCode` (type+const) — `type RefundDelayCode = (typeof REFUND_DELAY_CODES)[number]; RefundDelayCode: { readonly BUSINESS_DAYS_3_5: "refund_delay_business_days_3_5"; }`
+- `RefundMethod` (type+const)
 - `RefundReason` (type+const)
 - `RefundRequest` (interface)
 - `Rendition` (interface) — One image at a size that is actually displayed.
@@ -689,6 +697,7 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `SCARCITY_THRESHOLD_BPS` (const) — `SCARCITY_THRESHOLD_BPS = 8500` — "Almost full" — and the THRESHOLD is a domain rule, not an interface literal.
 - `SCHEMA_ISSUE_RULES` (const) — `SCHEMA_ISSUE_RULES: readonly ["too_small", "too_big", "invalid_type", "invalid_format", "invalid_value", "unrecognized_key", "custom"]` — The rule an 'api.schema_invalid' issue broke, so a form can say what is wrong with a field without a sentence on the wire.
 - `SEASON_START_MONTH` (const) — `SEASON_START_MONTH = 9` — The changeover month, in human numbering: 9 = September.
+- `SEAT_CANCEL_REASONS` (const) — `SEAT_CANCEL_REASONS: readonly ["viewer_request", "date_cancelled", "account_deletion"]` — Why a seat was cancelled, in the order of the proto's 'SeatCancelReason'.
 - `SEAT_CODE_ALPHABET` (const) — `SEAT_CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"` — The alphabet: Crockford base 32 — the ten digits and the letters except 'I', 'L', 'O' and 'U', the last of those to avoid spelling a rude w…
 - `SEAT_CODE_BODY_LENGTH` (const) — `SEAT_CODE_BODY_LENGTH = 6`
 - `SEAT_HOLD_ORIGINS` (const) — `SEAT_HOLD_ORIGINS: readonly ["checkout", "pairing"]` — data-model.md §3.2: the intent whose expiry the hold's is.
@@ -705,6 +714,7 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `SchemaIssueRule` (type+const)
 - `SearchCriteria` (interface)
 - `SeatAvailability` (type) — The capacity state, as a DISCRIMINATED UNION.
+- `SeatCancelReason` (type+const)
 - `SeatHold` (interface)
 - `SeatHoldOrigin` (type+const) — `type SeatHoldOrigin = (typeof SEAT_HOLD_ORIGINS)[number]; SeatHoldOrigin: { readonly CHECKOUT: "checkout"; readonly PAIRING: "pairing"; }`
 - `SeatHoldState` (type+const)
@@ -743,12 +753,14 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `VenueClock` (interface) — A venue's time zone, served alongside the UTC instant it qualifies.
 - `VenueId` (type) — `type VenueId = Brand<'VenueId'>;`
 - `Vocabulary` (type) — `type Vocabulary<T extends string> = readonly T[];` — A closed vocabulary: the list that has authority.
+- `WAITLIST_ENTRY_STATES` (const) — `WAITLIST_ENTRY_STATES: readonly ["waiting", "notified", "converted", "left", "lapsed", "closed"]` — data-model.md §3.9.
 - `WAITLIST_NOTIFIED_ACCOUNTS_MAX` (const) — `WAITLIST_NOTIFIED_ACCOUNTS_MAX = 500` — One 'waitlist.notified' names at most this many accounts; a tier opening writes as many as it needs.
 - `WAITLIST_PRIORITY_HOURS` (const) — `WAITLIST_PRIORITY_HOURS = 2` — The priority window granted to the waiting list when a tier opens.
 - `WATCH_DENIAL_REASONS` (const) — The denial reasons — one code per different screen.
 - `WATCH_FALLBACK_ACTIONS` (const) — `WATCH_FALLBACK_ACTIONS: readonly ["buy_seat", "join_waitlist", "subscribe", "see_replay_policy", "see_other_dates", "release_a_screen", "none"]` — The action that gets out of the dead end — an empty state with no way out is banned (principle no.
 - `WATCH_FALLBACK_FOR` (const) — `WATCH_FALLBACK_FOR: Readonly<Record<WatchDenialReason, readonly WatchFallbackAction[]>>` — Which actions may answer which refusal — the coupling, as data.
 - `WATCH_SCOPES` (const) — `WATCH_SCOPES: readonly ["full", "preview", "none"]` — How much of the date the verdict opens.
+- `WaitlistEntryState` (type+const)
 - `WallClock` (interface) — The wall-clock components of an instant in a given offset.
 - `WatchDenialReason` (type+const)
 - `WatchFallbackAction` (type+const)
@@ -765,10 +777,13 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `assertKnownFlag` (function) — `function assertKnownFlag(flag: string, knownFlags: readonly string[]): void;`
 - `assertOutcomeDeclarable` (function) — `function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;` — Refuses a declaration that does not fit the date, naming what it met: a final outcome already declared, a date not public yet (deleted rath…
 - `assertPricesShareCurrency` (function) — `function assertPricesShareCurrency(tiers: readonly TierPrice[]): void;` — A date sells in one currency, its billing market's (D-016).
+- `assertRefundWithinRemaining` (function) — `function assertRefundWithinRemaining(requested: Money, remaining: Money): void;`
+- `assertSeatCancellable` (function) — `function assertSeatCancellable(seat: { readonly state: SeatState; readonly cancelDeadline: Instant | null; }, now: Instant): void;` — A seat with no deadline is cancellable; one at or past its deadline is not.
 - `assertTechnicalProvisionCovers` (function) — `function assertTechnicalProvisionCovers(capacityTotal: number, provisionedCapacity: number | null, startsAt: Instant | null): void;` — Refuses a capacity beyond the threshold that no recorded provision covers.
 - `assertTechnicalProvisionRecordable` (function) — `function assertTechnicalProvisionRecordable(capacityTotal: number, provisionedCapacity: number, startsAt: Instant | null, now: Instant): void;` — Refuses to record a provision from 'provisionRevisableUntil' on, or one below the capacity already open (D-088).
 - `assertTierWidens` (function) — `function assertTierWidens(currentCapacity: number, nextCapacity: number): void;` — Capacity tiers: they WIDEN, never shrink after going on sale.
 - `assertTransitionAllowed` (function) — `function assertTransitionAllowed(from: PublicationState, to: PublicationState, canDecide: boolean): PublicationTransition;`
+- `assertWaitlistJoinable` (function) — Closed sales come first, by time or by the date's outcome: past them a seat left on sale cannot be bought, so 'waitlist.not_sold_out' would…
 - `assignableRolesOf` (function) — `function assignableRolesOf(heldRoles: readonly MemberRole[]): readonly MemberRole[];` — The roles a person may assign, given those they hold — the union, never a rank.
 - `audienceOf` (function) — `function audienceOf(service: string): string;` — 'transport.md' §5.2: a token minted for one service is refused by every other.
 - `availabilityOf` (function) — `function availabilityOf(gauge: Gauge): SeatAvailability;`
@@ -791,6 +806,7 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `concurrentStreamsAllowedFor` (function) — `function concurrentStreamsAllowedFor(planOpenings: readonly PlanOpening[]): number;` — The concurrent-screen ceiling, derived from the plan.
 - `contains` (function) — `function contains(window: Window, instant: Instant): boolean;`
 - `creditAmountFor` (function) — `function creditAmountFor(paidAmount: Money): Money;`
+- `creditExpiresAt` (function) — `function creditExpiresAt(issuedAt: Instant): Instant;`
 - `criteriaSignature` (function) — `function criteriaSignature(criteria: SearchCriteria): string;` — The signature that answers "already saved" — canonical, not a hash: hashing would need a platform API, which this package forbids itself, a…
 - `dayShift` (function) — `function dayShift(instant: Instant, venue: VenueClock, viewerUtcOffsetMinutes: number): -1 | 0 | 1;` — The DAY shift between the two clocks: -1, 0 or +1.
 - `decideWatch` (function) — `function decideWatch(input: WatchInput): WatchVerdict;` — The watch verdict.
@@ -826,6 +842,7 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `hasLanguageBarrier` (function) — `function hasLanguageBarrier(profile: LanguageProfile): boolean;` — Is there a language barrier?
 - `hasReplayPolicy` (function) — `function hasReplayPolicy(timing: DateTiming): boolean;` — Does the date promise a replay at all, whatever the window?
 - `holdFor` (function) — `function holdFor(quantity: number, intentExpiresAt: Instant): SeatHold;` — Places a hold whose expiry IS the intent's.
+- `intentCancelIdempotencyKey` (function) — `function intentCancelIdempotencyKey(orderId: string): string;` — The provider's idempotency key for cancelling an order's intent; not a BullMQ job id either.
 - `irreversiblePromiseBlocking` (function) — `function irreversiblePromiseBlocking(from: PublicationState, to: PublicationState): PublicationPromise | null;` — The promise blocking this transition, or 'null' when it is merely unknown — two different refusals, two different messages.
 - `isAfter` (function) — `function isAfter(left: Instant, right: Instant): boolean;`
 - `isAvailableIn` (function) — `function isAvailableIn(rights: TerritoryRights, viewerCountry: string): boolean;` — Can the viewer watch from this country?
@@ -844,6 +861,7 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `isOrderReference` (function) — `function isOrderReference(value: string): boolean;`
 - `isPairingCode` (function) — `function isPairingCode(value: string): boolean;`
 - `isPairingCodeAlphabetMember` (function) — `function isPairingCodeAlphabetMember(character: string): boolean;`
+- `isPriorityWindowOpen` (function) — `function isPriorityWindowOpen(priorityUntil: Instant | null, now: Instant): boolean;` — Closed with no window, and at 'priorityUntil' itself.
 - `isReplaySoldSeparately` (function) — `function isReplaySoldSeparately(timing: DateTiming): boolean;` — Is the replay paid for separately?
 - `isReplayWindowOpen` (function) — `function isReplayWindowOpen(timing: DateTiming, now: Instant): boolean;` — Is the replay STILL online?
 - `isRoomOpen` (function) — `function isRoomOpen(timing: DateTiming, now: Instant): boolean;` — Is the room open?
@@ -878,6 +896,7 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `orderRankOf` (function) — `function orderRankOf(state: PublicationState): number;`
 - `orderReference` (function) — `function orderReference(year: number, sequence: number): string;` — 'Order.reference', the one support reads out over the phone: 'ATH-2026-00042'.
 - `orderStateMovesForward` (function) — `function orderStateMovesForward(from: OrderState, to: OrderState): boolean;`
+- `outcomeEndsWaitlist` (function) — `function outcomeEndsWaitlist(outcome: DateOutcome): boolean;` — D-096: a postponement leaves the entries waiting.
 - `overlaps` (function) — `function overlaps(left: Window, right: Window): boolean;` — Do two windows overlap?
 - `parseLocale` (function) — `function parseLocale(raw: string): Locale;`
 - `parseTolerant` (function) — `function parseTolerant<T extends string>(vocabulary: Vocabulary<T>, raw: string): Tolerant<T>;` — Reads a value against its vocabulary without ever failing.
@@ -888,14 +907,21 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `pickRendition` (function) — `function pickRendition(renditions: readonly Rendition[], targetWidthPx: number): Rendition | null;` — The rendition closest to the requested width, never below it when a larger one exists: too small is blurry and final, too large only costs …
 - `plusHours` (function) — `function plusHours(instant: Instant, hours: number): Instant;`
 - `plusMinutes` (function) — `function plusMinutes(instant: Instant, minutes: number): Instant;`
+- `plusMonths` (function) — `function plusMonths(instant: Instant, months: number): Instant;` — Calendar months in UTC, the time of day kept.
 - `plusSeconds` (function) — `function plusSeconds(instant: Instant, seconds: number): Instant;`
 - `previewSecondsLeft` (function) — `function previewSecondsLeft(secondsUsed: number): number;`
 - `priceOfTier` (function) — `function priceOfTier(tiers: readonly TierPrice[], tier: PriceTier): Money | null;`
+- `priorityUntilOf` (function) — `function priorityUntilOf(openedAt: Instant): Instant;`
 - `progressOf` (function) — `function progressOf(timing: DateTiming, now: Instant): number;` — A live show's progress, clamped to '[0, 1]'.
 - `provisionRevisableUntil` (function) — `function provisionRevisableUntil(startsAt: Instant): Instant;`
 - `publicDisplayStateOf` (function) — `function publicDisplayStateOf(input: DisplayStateInput): DisplayStateResult;` — What a public surface shows.
 - `publicationReadiness` (function) — `function publicationReadiness(satisfied: readonly PublicationChecklistItem[]): PublicationReadiness;`
 - `quoteSeats` (function)
+- `refundCancelsSeat` (function) — `function refundCancelsSeat(reason: RefundReason): boolean;` — D-095: a 'goodwill', 'duplicate' or 'dispute' refund gives money back and leaves the seat active.
+- `refundDelayCodeOf` (function) — `function refundDelayCodeOf(method: RefundMethod): RefundDelayCode | null;` — Null for a credit, which is on the account at once.
+- `refundIdempotencyKey` (function) — `function refundIdempotencyKey(refundId: string): string;` — The provider's idempotency key for one refund row, so two partial refunds of one order never share one.
+- `refundReasonOnDate` (function) — `function refundReasonOnDate(outcome: DateOutcome | null, reason: RefundReason): RefundReason;` — D-097: a refund decided while its date is cancelled carries 'date_cancelled', a late payment's included.
+- `refundableRemaining` (function) — `function refundableRemaining(paid: Money, refunded: Money): Money;` — 'refunded' counts every refund decided on the order, settled or not.
 - `remainderAfterRate` (function) — `function remainderAfterRate(value: Money, rate: BasisPoints): Money;` — What remains after applying a rate — exactly 'x - applyRate(x, r)'.
 - `reminderInstantFor` (function) — `function reminderInstantFor(startsAt: Instant): Instant;`
 - `reminderStillValid` (function) — `function reminderStillValid(scheduledFor: Instant, currentStartsAt: Instant | null): boolean;` — Whether a scheduled reminder still matches the date it was placed for.
@@ -914,9 +940,13 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `seasonBounds` (function) — `function seasonBounds(instant: Instant, utcOffsetMinutes: number): Window;` — The season CONTAINING this instant, expressed in the given offset.
 - `seasonLabel` (function) — `function seasonLabel(instant: Instant, utcOffsetMinutes: number): string;` — A season's label, as a CODE: "2026-2027".
 - `seatCancelDeadline` (function) — `function seatCancelDeadline(startsAt: Instant): Instant;` — A seat's cancellation deadline, served as an instant (data-model.md §3.3), never a sentence.
+- `seatCancelReasonOf` (function) — `function seatCancelReasonOf(reason: RefundReason): SeatCancelReason | null;` — Null for a refund that cancels no seat.
 - `seatCode` (function) — `function seatCode(body: string): string;` — Composes a code from a body already drawn by the service, which owns the cryptographic randomness: a source here would make this package de…
 - `seatSalesEndAt` (function) — `function seatSalesEndAt(startsAt: Instant): Instant;`
-- `seatsAvailable` (function) — `function seatsAvailable(gauge: Gauge): number;` — The seats ACTUALLY available: net of holds in progress.
+- `seatSharesOf` (function) — `function seatSharesOf(total: Money, quantity: number): readonly Money[];` — An amount split over an order's seats, in seat-id order: each gets the floor of 'total / quantity' and the first 'total mod quantity' one m…
+- `seatStateMayMove` (function) — `function seatStateMayMove(from: SeatState, to: SeatState): boolean;` — A seat is 'cancelled' when its cancellation is decided, and 'refunded' once the provider confirms the money went back ('refund_succeeded'),…
+- `seatsAvailable` (function) — `function seatsAvailable(gauge: Gauge): number;` — The PUBLIC count: net of holds in progress and of the priority pool, which only an account notified into the window buys from.
+- `seatsAvailableTo` (function) — `function seatsAvailableTo(gauge: Gauge, account: { readonly inPriorityPool: boolean; }): number;` — What one account may buy: the public count, and the pool too for an account notified into it.
 - `serviceFeeFor` (function) — `function serviceFeeFor(schedule: ServiceFeeSchedule, unitPrice: Money, quantity: number): Money;`
 - `shouldCollapseToQueue` (function) — `function shouldCollapseToQueue(messagesInWindow: number): boolean;` — Past the threshold, the console stops showing the chat message by message.
 - `shouldDeliverNow` (function) — `function shouldDeliverNow(instant: Instant, viewerUtcOffsetMinutes: number, isHeldSeatLiveStart: boolean): DeliveryDecision;` — Whether to deliver now — the quiet-hours exception covers a held seat's live start only.
@@ -930,6 +960,8 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `tvPairingIntentExpiry` (function) — `function tvPairingIntentExpiry(openedAt: Instant): Instant;` — The intent duration for a TV pairing — five minutes, not fifteen.
 - `vatLineFor` (function) — Extracts a VAT line from a tax-inclusive amount.
 - `venueClock` (function) — `function venueClock(timeZone: string, utcOffsetMinutes: number): VenueClock;` — Validates SHAPE, never existence: the IANA database is not bundled.
+- `waitlistEntryMayMove` (function) — `function waitlistEntryMayMove(from: WaitlistEntryState, to: WaitlistEntryState): boolean;`
+- `waitlistStateOnJoin` (function) — `function waitlistStateOnJoin(windowOpen: boolean): WaitlistEntryState;` — An account that registers while a window is open is notified into it at once.
 - `wallClockAt` (function) — `function wallClockAt(instant: Instant, utcOffsetMinutes: number): WallClock;`
 - `windowOf` (function) — `function windowOf(start: Instant, end: Instant): Window;`
 - `worldwideRights` (function) — `function worldwideRights(): TerritoryRights;`

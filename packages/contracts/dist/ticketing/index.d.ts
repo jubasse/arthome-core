@@ -36,7 +36,7 @@ export declare const TicketCardSchema: z.ZodObject<{
     date: typeof DateCardSchema;
     refund: z.ZodOptional<z.ZodNullable<z.ZodObject<{
         amount: z.ZodOptional<typeof MoneyOut>;
-        delayCode: z.ZodOptional<z.ZodString>;
+        delayCode: z.ZodOptional<VocabularyOutNullable>;
         method: z.ZodOptional<VocabularyOut>;
         refundReasonCode: z.ZodOptional<VocabularyOutNullable>;
     }, z.core.$loose>>>;
@@ -137,6 +137,7 @@ export declare const SeatQuoteSchema: z.ZodObject<{
     }, z.core.$loose>>;
     total: typeof MoneyOut;
     validUntil: z.ZodOptional<z.ZodString>;
+    priorityUntil: z.ZodOptional<z.ZodString>;
     lateEntry: z.ZodOptional<z.ZodNullable<z.ZodObject<{
         startedAt: z.ZodString;
         minutesElapsed: z.ZodNumber;
