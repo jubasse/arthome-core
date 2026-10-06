@@ -9,7 +9,7 @@
 
 import { z } from 'zod';
 
-import { ApiErrorCode, SURFACES, Surface } from '@arthome/core';
+import { ApiErrorCode, SURFACES, Surface, UNRESOLVED_COUNTRY } from '@arthome/core';
 import type { ErrorCode, InternalTokenIssuer } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import {
@@ -127,9 +127,8 @@ export const ViewerCountryParameter: HeaderParameter<
   name: 'x-arthome-viewer-country',
   in: 'header',
   required: true,
-  description:
-    "The viewer's country, ISO 3166-1 alpha-2, set by the BFF from the edge on every call that\ndecides a watch verdict. It is resolved at every opening, never projected\n(`adr-stream-entitlement.md` §5): it changes between two reads.\n",
-  schema: CountryCodeSchema.meta({ examples: ['FR'] }),
+  description: `The viewer's country, ISO 3166-1 alpha-2, set by the BFF from the edge on every call that\ndecides a watch verdict, or \`${UNRESOLVED_COUNTRY}\` when the edge resolves none. It is resolved at every\nopening, never projected (\`adr-stream-entitlement.md\` §5): it changes between two reads.\n\nA date restricted by country refuses \`${UNRESOLVED_COUNTRY}\` (\`watch.out_of_territory\`), failing closed for\nthe rights holder; a date with no restriction ignores the header (\`isAvailableIn\`).\n`,
+  schema: CountryCodeSchema.meta({ examples: ['FR', UNRESOLVED_COUNTRY] }),
 };
 
 /** `transport.md` §5.5: a versioned record carries its `version` inside `data`, never at the root. */

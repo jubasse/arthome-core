@@ -1688,13 +1688,17 @@ components:
       required: true
       description: |
         The viewer's country, ISO 3166-1 alpha-2, set by the BFF from the edge on every call that
-        decides a watch verdict. It is resolved at every opening, never projected
-        (`adr-stream-entitlement.md` §5): it changes between two reads.
+        decides a watch verdict, or `ZZ` when the edge resolves none. It is resolved at every
+        opening, never projected (`adr-stream-entitlement.md` §5): it changes between two reads.
+
+        A date restricted by country refuses `ZZ` (`watch.out_of_territory`), failing closed for
+        the rights holder; a date with no restriction ignores the header (`isAvailableIn`).
       schema:
         type: string
         pattern: ^[A-Z]{2}$
         examples:
         - FR
+        - ZZ
     Surface:
       name: X-Arthome-Surface
       in: header

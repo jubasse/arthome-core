@@ -502,7 +502,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 498 exported names.
+Declarations: `dist/index.d.ts` — 499 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -782,6 +782,7 @@ Declarations: `dist/index.d.ts` — 498 exported names.
 - `TerritoryRights` (interface)
 - `TierPrice` (interface)
 - `Tolerant` (type) — `type Tolerant<T extends string> = KnownMember<T> | UnknownMember;`
+- `UNRESOLVED_COUNTRY` (const) — `UNRESOLVED_COUNTRY = "ZZ"` — The country a viewer is served under when the edge resolves none: ISO 3166-1's user-assigned 'ZZ'.
 - `UPSTREAMS` (const) — `UPSTREAMS: readonly [...typeof SERVICES, 'realtime']` — Everything a BFF operation may declare as its upstream: the seven services, plus what is depended on without being one.
 - `UnknownMember` (interface)
 - `Upstream` (type+const)

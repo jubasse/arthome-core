@@ -500,7 +500,9 @@ is the first; catalog and ticketing move to it later.
   `api.upstream_timeout`; its envelope is `ServiceErrorEnvelopeSchema`. `serviceConventions`: `data`
   under `ServiceEnvelopeMetaSchema` (`servedAt`, and `validUntil` when a value is perishable), a
   page's `items` and `page` at the root, `RelayedIdempotencyKeyParameter` on a write.
-  `ViewerCountryParameter` on every call that decides a watch verdict. The `service` identity adds
+  `ViewerCountryParameter` on every call that decides a watch verdict: an ISO 3166-1 alpha-2 code,
+  or `UNRESOLVED_COUNTRY` (`ZZ`) when the edge resolves none, which a date restricted by country
+  refuses (failing closed for the rights holder) and a worldwide date ignores. The `service` identity adds
   `x-arthome-deadline` and `traceparent` to every route, and `ActorSurfaceParameter` to every write,
   so the event a write emits names the surface its person wrote from.
 - **A versioned record carries its `version` inside `data`** (`transport.md` §5.5), as `RunConsole`

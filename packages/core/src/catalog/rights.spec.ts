@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { blackoutReasonOf, isAvailableIn, restrictedRights, worldwideRights } from './rights.js';
+import {
+  UNRESOLVED_COUNTRY,
+  blackoutReasonOf,
+  isAvailableIn,
+  restrictedRights,
+  worldwideRights,
+} from './rights.js';
 import { BlackoutReason, RightsScope } from '../vocabulary/catalog.js';
 
 /**
@@ -22,6 +28,14 @@ describe('territorial rights', () => {
     expect(isAvailableIn(rights, 'CH')).toBe(false);
     expect(isAvailableIn(rights, 'FR')).toBe(true);
     expect(isAvailableIn(rights, 'CA')).toBe(true);
+  });
+
+  it('lets an unresolved country watch a worldwide date and no restricted one', () => {
+    const restricted = restrictedRights(['BE'], BlackoutReason.BROADCASTER);
+
+    expect(isAvailableIn(worldwideRights(), UNRESOLVED_COUNTRY)).toBe(true);
+    expect(isAvailableIn(restricted, UNRESOLVED_COUNTRY)).toBe(false);
+    expect(blackoutReasonOf(restricted, UNRESOLVED_COUNTRY)).toBe(BlackoutReason.BROADCASTER);
   });
 
   it('compares regardless of the case of the country served', () => {

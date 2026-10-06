@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { ApiErrorCode, InternalTokenIssuer } from '@arthome/core';
+import { ApiErrorCode, InternalTokenIssuer, UNRESOLVED_COUNTRY } from '@arthome/core';
 
 import { routeBuilder } from './builder.js';
 import { DERIVED_ERROR_CODES } from './errors.js';
@@ -9,6 +9,7 @@ import { defineApi, errorCodesOf } from './index.js';
 import {
   ActorSurfaceParameter,
   ServicePrincipalSchema,
+  ViewerCountryParameter,
   callerService,
   service,
   serviceConventions,
@@ -82,6 +83,17 @@ describe('the service error model', () => {
 
     expect(openConsole.parameters).toContain(ActorSurfaceParameter);
     expect(readConsole.parameters).not.toContain(ActorSurfaceParameter);
+  });
+});
+
+describe("the viewer's country", () => {
+  it('is an ISO 3166-1 alpha-2 code, or the unresolved one', () => {
+    const { schema } = ViewerCountryParameter;
+
+    expect(schema.safeParse('FR').success).toBe(true);
+    expect(schema.safeParse(UNRESOLVED_COUNTRY).success).toBe(true);
+    expect(schema.safeParse('fr').success).toBe(false);
+    expect(schema.safeParse('').success).toBe(false);
   });
 });
 
