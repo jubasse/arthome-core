@@ -25,7 +25,12 @@
 
 import { z } from 'zod';
 
-import { CHAT_MODES, INCIDENT_KINDS, WatchScope } from '@arthome/core';
+import {
+  CHAT_MODES,
+  INCIDENT_KINDS,
+  PLAYBACK_RENEWAL_INTERVAL_SECONDS,
+  WatchScope,
+} from '@arthome/core';
 import {
   InstantOut,
   int64,
@@ -34,10 +39,11 @@ import {
   uuidOut,
   vocabularyOut,
   vocabularyOutLocal,
-  vocabularyOutLocalNullable,
+  vocabularyOutNullable,
 } from '@arthome/core/schema';
 
 import { ChapterSchema, DateCardSchema } from '../catalog/index.js';
+import { accessorOf, type AccessorOf } from '../http/index.js';
 import { sensitive } from '../http/marks.js';
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
 
@@ -66,15 +72,35 @@ export const IncidentSchema: z.ZodNullable<
   );
 
 const TICKET_SCOPES: readonly [string, ...string[]] = [WatchScope.FULL, WatchScope.PREVIEW];
-const QUALITY_CAPS = ['sd', 'hd', 'fhd', 'uhd'] as const;
-const PROTOCOLS = ['hls', 'dash'] as const;
-const DRM_SYSTEMS = ['fairplay', 'widevine', 'playready'] as const;
-const EDGE_RENEWAL_MODES = ['signed_cookie', 'query_token'] as const;
+
+// The media capabilities: transport, not domain, so they live in this contract rather than in core,
+// and a new member appears because a device appeared. Exported so the opening's request and the
+// ticket read one declaration.
+
+/** The ceiling a device's hardware security level allows. */
+export const QUALITY_CAPS = ['sd', 'hd', 'fhd', 'uhd'] as const;
+export type QualityCap = (typeof QUALITY_CAPS)[number];
+export const QualityCap: AccessorOf<typeof QUALITY_CAPS> = accessorOf(QUALITY_CAPS);
+
+export const PLAYBACK_PROTOCOLS = ['hls', 'dash'] as const;
+export type PlaybackProtocol = (typeof PLAYBACK_PROTOCOLS)[number];
+export const PlaybackProtocol: AccessorOf<typeof PLAYBACK_PROTOCOLS> =
+  accessorOf(PLAYBACK_PROTOCOLS);
+
+/** Declared by a device opening playback, and chosen by the server for it. */
+export const DRM_SYSTEMS = ['fairplay', 'widevine', 'playready'] as const;
+export type DrmSystem = (typeof DRM_SYSTEMS)[number];
+export const DrmSystem: AccessorOf<typeof DRM_SYSTEMS> = accessorOf(DRM_SYSTEMS);
+
+/** How the edge's signature is renewed on this device (`adr-stream-entitlement.md` §3.2). */
+export const EDGE_RENEWAL_MODES = ['signed_cookie', 'query_token'] as const;
+export type EdgeRenewalMode = (typeof EDGE_RENEWAL_MODES)[number];
+export const EdgeRenewalMode: AccessorOf<typeof EDGE_RENEWAL_MODES> =
+  accessorOf(EDGE_RENEWAL_MODES);
+
 const AUDIO_TRACK_KINDS = ['main', 'audio_description'] as const;
 const SUBTITLE_TRACK_KINDS = ['subtitles', 'captions', 'surtitles'] as const;
 
-const MEDIA_CAPABILITY_REASON =
-  'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.';
 const LOCAL_ENDPOINT_REASON =
   'A vocabulary local to this contract. The domain neither produces nor consumes these values \u2014 they describe what this endpoint offers, and a new member is an endpoint change.';
 
@@ -132,10 +158,10 @@ export const PlaybackRenewalSchema: z.ZodObject<
     renewAfterSec: int64().meta({ format: undefined }),
     leaseExpiresAt: InstantOut,
     signature: playbackSignature().optional(),
-    qualityCap: vocabularyOutLocal(QUALITY_CAPS, MEDIA_CAPABILITY_REASON).optional(),
+    qualityCap: vocabularyOut(QUALITY_CAPS, 'QUALITY_CAPS').optional(),
   })
   .describe(
-    '**Partial** renewal: nothing that would force a stream reload. The refusal carries one of the\nfour distinct codes — a generic code would produce a false one three times out of four.\n',
+    '**Partial** renewal: nothing that would force a stream reload. A player renews every\n`PLAYBACK_RENEWAL_INTERVAL_SECONDS` for a token of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and a lease of\n`PLAYBACK_LEASE_SECONDS` (`@arthome/core`). A refusal carries its own code, one per screen: a\ngeneric code would produce a false one.\n',
   );
 
 export const PlaybackTicketSchema: z.ZodObject<
@@ -206,7 +232,7 @@ export const PlaybackTicketSchema: z.ZodObject<
       .boolean()
       .optional()
       .describe(
-        "True when this opening **took over this device's existing lease** instead of opening a second\none. This is what stops a household being blocked by its own ghost screens — and it is\ndecisive for a `pass` subscriber, whose ceiling is **one** screen: without takeover,\nreopening the app after an OS kill locks them out of their own phone for the ninety seconds\nof the lease.\n",
+        "True when this opening **took over this device's existing lease** instead of opening a second\none. This is what stops a household being blocked by its own ghost screens — and it is\ndecisive for a `pass` subscriber, whose ceiling is **one** screen: without takeover,\nreopening the app after an OS kill locks them out of their own phone for the lease's lifetime\n(`PLAYBACK_LEASE_SECONDS`).\n",
       ),
     dateId: uuidOut(),
     scope: vocabularyOut(TICKET_SCOPES, 'WATCH_SCOPES')
@@ -215,16 +241,16 @@ export const PlaybackTicketSchema: z.ZodObject<
           '`none` is a verdict, not a ticket: a ticket exists only where playback was allowed, so a scope of `none` here would be a token for watching nothing.',
       })
       .describe(
-        '**A strict narrowing of `WATCH_SCOPES`, and the missing member is the rule.** `none` is a\nverdict, not a ticket: a ticket exists only where playback was allowed, so a scope of\n`none` here would be a token for watching nothing. `WatchVerdict.scope` carries all three\nbecause a verdict can say no; this one cannot.\n\n`preview` for a non-holder. Its token expires at `min(now + 120 s, now + secondsLeft)`:\n**reloading the page extends nothing**, and a reinstalled app resets no counter — the budget\nis **server-side**, per **account**.\n',
+        '**A strict narrowing of `WATCH_SCOPES`, and the missing member is the rule.** `none` is a\nverdict, not a ticket: a ticket exists only where playback was allowed, so a scope of\n`none` here would be a token for watching nothing. `WatchVerdict.scope` carries all three\nbecause a verdict can say no; this one cannot.\n\n`preview` for a non-holder, on air only (D-110). While the budget is spent its token expires at\nthe earlier of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and the seconds left (`previewTokenExpiresAt`):\n**reloading the page extends nothing**, and a reinstalled app resets no counter — the budget\nis **server-side**, per **account**.\n',
       ),
     previewSecondsLeft: int64().meta({ format: undefined }).nullable().optional(),
-    protocol: vocabularyOutLocal(PROTOCOLS, MEDIA_CAPABILITY_REASON),
-    drmSystem: vocabularyOutLocalNullable(DRM_SYSTEMS, MEDIA_CAPABILITY_REASON)
+    protocol: vocabularyOut(PLAYBACK_PROTOCOLS, 'PLAYBACK_PROTOCOLS'),
+    drmSystem: vocabularyOutNullable(DRM_SYSTEMS, 'DRM_SYSTEMS')
       .optional()
       .describe(
         '**Chosen by the server for this device.** The fleet imposes HLS + FairPlay on tvOS and\nDASH + Widevine elsewhere, PlayReady on certain models: **a client that guesses gets it\nwrong**, and it gets it wrong on the devices we cannot test.\n',
       ),
-    qualityCap: vocabularyOutLocal(QUALITY_CAPS, MEDIA_CAPABILITY_REASON).describe(
+    qualityCap: vocabularyOut(QUALITY_CAPS, 'QUALITY_CAPS').describe(
       'The ceiling the device\'s **hardware** security level allows. An entry-level HDMI stick offers\nonly software Widevine: the server **degrades cleanly** rather than refusing, and the surface\n**knows** it has been capped — so it does not offer "4K" in its quality panel.\n',
     ),
     manifestUrl: z
@@ -236,20 +262,20 @@ export const PlaybackTicketSchema: z.ZodObject<
     signature: playbackSignature().describe(
       'The signature covers a **path prefix**: signing the manifest and leaving the segments open is signing nothing.',
     ),
-    edgeRenewalMode: vocabularyOutLocal(EDGE_RENEWAL_MODES, MEDIA_CAPABILITY_REASON).describe(
+    edgeRenewalMode: vocabularyOut(EDGE_RENEWAL_MODES, 'EDGE_RENEWAL_MODES').describe(
       "**Declared, never guessed**: the two mechanisms are not equally available. `signed_cookie` for\na browser — a same-origin call resets the cookie, zero URL change, zero interruption.\n`query_token` for native players, which reapply the current token through their request\nfilter. `AVPlayer` on tvOS does not share the WebView's cookies: it is\n`AVAssetResourceLoaderDelegate`, and that is **the point to validate on a real device before\npromising anything**.\n",
     ),
     expiresAt: InstantOut.describe(
-      "**120 s.** The window during which one watches a stream one is no longer entitled to is the\n**renewal** interval, not the token's lifetime.\n",
+      '**`PLAYBACK_TOKEN_LIFETIME_SECONDS`** (D-020). The client learns it is no longer entitled\nwithin the renewal interval, but the edge may keep serving it until the token in hand expires.\n',
     ),
     renewAfterSec: int64()
       .meta({ format: undefined })
-      .meta({ examples: [45] })
+      .meta({ examples: [PLAYBACK_RENEWAL_INTERVAL_SECONDS] })
       .describe(
-        '**45 s**, under the 60 s ceiling the TV requires: it is the renewal that carries the concurrent-screen limit.',
+        '**`PLAYBACK_RENEWAL_INTERVAL_SECONDS`**, under the ceiling the TV requires: it is the renewal that carries the concurrent-screen limit.',
       ),
     leaseExpiresAt: InstantOut.describe(
-      '**90 s.** It is the **lease** that carries the concurrent-screen limit, not a release command:\na television gets unplugged, a set-top box loses power, the OS kills a mobile app without\nwarning. `releasePlayback` speeds it up, **nothing depends on it**.\n',
+      '**`PLAYBACK_LEASE_SECONDS`.** It is the **lease** that carries the concurrent-screen limit, not a release command:\na television gets unplugged, a set-top box loses power, the OS kills a mobile app without\nwarning. `releasePlayback` speeds it up, **nothing depends on it**.\n',
     ),
     resumePoint: z
       .looseObject({
@@ -257,7 +283,10 @@ export const PlaybackTicketSchema: z.ZodObject<
         writtenAt: InstantOut.optional(),
       })
       .nullable()
-      .optional(),
+      .optional()
+      .describe(
+        "**A replay's only.** A live gives no control of playback and records no position (D-111),\nso a live's ticket carries none.\n",
+      ),
     liveEdgeSec: int64().meta({ format: undefined }).nullable().optional(),
     chapters: z.array(ChapterSchema).optional(),
     audioTracks: z

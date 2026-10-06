@@ -5,7 +5,7 @@ import type { ModuleDocs } from '../../openapi/docs.js';
 export const incidentsDocs: ModuleDocs = {
   resolveIncident: {
     description:
-      'The player **lifts the veil** without asking for a new playback token: otherwise the resume\nwould be paid for with a stream reload, on media that was never cut.\n',
+      'The player **lifts the veil** without asking for a new playback token: otherwise the resume\nwould be paid for with a stream reload, on media that was never cut.\n\n**A hold screen raised by hand waits for this call** (D-124). The automatic one (cause\n`venue_feed_lost`, triggered `auto`) lifts itself when the feed returns\n(`holdScreenLiftsOnFeedReturn`).\n',
     upstream: [Service.STREAMING],
   },
   escalateIncidentToProduction: {

@@ -99,25 +99,27 @@ export const datesDocs: ModuleDocs = {
   },
   runTechnicalCheck: {
     description:
-      'Its success **unlocks publication**: `technical_check_passed` is one of the seven checklist\nitems, and it comes from here. `catalog` **projects** it, it does not ask for it.\n`idle → on_air` is refused as long as the check has never passed.\n',
+      "Its success **unlocks publication**: `technical_check_passed` is one of the seven checklist\nitems, and it comes from here. `catalog` **projects** it, it does not ask for it.\n`idle → on_air` is refused as long as the check has never passed.\n\n**What it proves** (D-114): a feed received on the date's key, in a codec the chain carries,\nabove a bitrate floor, the channel's recommended bitrate or, until a channel serves one,\n`TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT`. `failures` is the closed vocabulary\n`TECHNICAL_CHECK_FAILURES`, in its order: `no_feed` comes alone, since nothing else was measured.\n",
     upstream: [Service.STREAMING],
   },
   rehearseRun: {
     description:
-      'The run goes from `idle` to `rehearsal`: the feed is checked, nothing is sold against it.',
+      'The run goes from `idle` to `rehearsal`: the feed is checked, nothing is sold against it. A move\nthe run cannot make (`RUN_TRANSITIONS`) is refused `run.transition_forbidden`, naming both ends.\n',
     upstream: [Service.STREAMING],
   },
   goOnAir: {
     description:
-      '**The "go on air" command goes to `streaming`, not to `catalog`**: only `streaming` knows\nwhether the feed is arriving. Publication **learns** of it afterwards, by event — two\ntransitions out of eight are caused that way, which leaves `Publication` the aggregate of a\nsingle context.\n\n`idle → on_air` is **refused** if the technical check has never passed.\n',
+      '**The "go on air" command goes to `streaming`, not to `catalog`**: only `streaming` knows\nwhether the feed is arriving. Publication **learns** of it afterwards, by event — two\ntransitions out of eight are caused that way, which leaves `Publication` the aggregate of a\nsingle context.\n\n`idle → on_air` and `rehearsal → on_air` are **refused** `date.technical_check_required` if the\ntechnical check has never passed. Resuming after an incident (`interrupted → on_air`) needs\nnone. `publication.transition_forbidden` comes when the date\'s publication cannot move to `live` from\nits current state.\n',
     upstream: [Service.STREAMING],
   },
   endRun: {
-    description: 'The run goes to `ended`. It is final for this date: a new run is a new date.',
+    description:
+      'The run goes to `ended`. **It is final** for this date (D-115): a new run is a new date, and any\nlater move is refused `run.transition_forbidden`.\n\n**A run left on air ends by itself** `RUN_AUTO_END_MINUTES` after the scheduled end once no\npublisher has been connected (D-123, `runAutoEndsAt`); `streaming.run.ended.v1` then names the\nsystem as `ended_by`.\n',
     upstream: [Service.STREAMING],
   },
   resetRun: {
-    description: 'The run goes back to `idle`, before the date starts: the console is emptied.',
+    description:
+      'The run goes back to `idle` from `rehearsal`, before the date starts: the console is emptied.\nFrom any other state it is refused `run.transition_forbidden`.\n',
     upstream: [Service.STREAMING],
   },
   setQualityProfile: {

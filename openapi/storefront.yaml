@@ -8583,6 +8583,18 @@ paths:
 
         **`Cache-Control: no-store`.** A right read back from disk is a false right.
 
+        **Before on air.** From the room opening, a holder (or an `all_lives` subscriber) is allowed, and
+        the player shows its **waiting screen** with no media until the run is on air (D-109); a late
+        start keeps the room open. A non-holder gets `watch.no_seat` with the seat action: **there is no
+        preview before on air** (D-110).
+
+        **The takeover** (D-117). An opening is never refused for the screen ceiling while the account
+        holds a lease to take over: it takes over the **least recently renewed** one, and that session's
+        next renewal is refused `watch.concurrent_limit_reached`.
+
+        **`kind: replay` is refused `watch.no_replay`** until the replay slice brings the replay's own
+        verdict (`adr-replay.md` §10). A live that ended is `watch.live_ended`.
+
         **Refused.** Each watch denial code produces a different screen (`watch.replay_expired` is a
         `410`, the others a `403`). On `watch.concurrent_limit_reached`, `params.activeSessions` carries the **list
         of active sessions** so the surface can offer to release one: a bare refusal would leave the
@@ -8650,8 +8662,7 @@ paths:
                         - fairplay
                         - widevine
                         - playready
-                        x-arthome-vocabulary-source: none
-                        x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+                        x-arthome-vocabulary-source: DRM_SYSTEMS
                     hardwareSecureDecode:
                       type: boolean
                     maxHeightPx:
@@ -8805,19 +8816,22 @@ paths:
       operationId: renewPlaybackTicket
       summary: Renews the token and extends the lease, without restarting playback.
       description: |
-        **Every 45 s**, for a 120 s token and a 90 s lease. It is the renewal that carries the
-        concurrent-screen limit: **the window during which someone watches a stream they are no
-        longer entitled to is exactly the renewal interval.**
+        **Every `PLAYBACK_RENEWAL_INTERVAL_SECONDS`**, for a token of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and a
+        lease of `PLAYBACK_LEASE_SECONDS` (`@arthome/core`). It is the renewal that carries the
+        concurrent-screen limit, and it re-runs `decideWatch`: **the client learns within the renewal
+        interval** that it is no longer entitled, while **the edge may keep serving it for up to the
+        token's lifetime** (D-020).
 
         The response contains **nothing that would force a manifest reload**: the path is stable,
         only the signature changes.
 
-        **Four distinct refusal codes**, because the surface displays four different messages. A
-        generic code would produce a false one three times out of four.
+        **A distinct refusal code per screen**: a generic code would produce a false one.
 
-        **Refused (`403`).** `watch.seat_expired` · `watch.concurrent_limit_reached` · `identity.signed_out_elsewhere` ·
-        `watch.preview_exhausted` · `watch.date_interrupted`. `identity.signed_out_elsewhere` is what the television
-        signed out from the web sees — **not a network error**. **Real window: up to 120 s** — see
+        **Refused (`403`).** `watch.seat_expired` · `watch.concurrent_limit_reached` (the session another
+        device's opening took over, D-117) · `identity.signed_out_elsewhere` · `watch.preview_exhausted` ·
+        `watch.date_interrupted` · `watch.live_ended`, and any other watch code, `watch.date_cancelled` on
+        air included. `identity.signed_out_elsewhere` is what the television signed out from the web
+        sees — **not a network error**. **Real window: up to `PLAYBACK_TOKEN_LIFETIME_SECONDS`** — see
         `revokeDevice`.
       x-arthome-maturity: provisional
       x-arthome-upstream:
@@ -8960,7 +8974,7 @@ paths:
       summary: Releases a playback session — speeds things up, guarantees nothing.
       description: |
         **Nothing depends on it.** A television is unplugged, a set-top box cuts out, the operating
-        system kills a mobile application without warning: it is the **lease** that expires (90 s),
+        system kills a mobile application without warning: it is the **lease** that expires (`PLAYBACK_LEASE_SECONDS`),
         never this call that closes. A session that only closed on a client event would leave a ghost
         screen, and the viewer would be refused their own second playback.
 
@@ -9023,6 +9037,10 @@ paths:
         `releasePlayback` — a television can be cut off at any moment.
 
         **Last writer wins, and the ordering comes from the server.**
+
+        **No position is recorded during a live** (D-111): a live gives no control of playback, so no
+        resume point comes from it. A write then is answered with the stored point, unchanged, so an old
+        client stays harmless.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -11728,8 +11746,8 @@ components:
             and the accessor is SCREAMING_SNAKE, so nothing compares a literal.
 
             **`watch.not_published` is the eleventh**, and it was missing here for the same reason
-            `displayState` was missing three members: `decideWatch` returns it for a `draft`, `reserve`
-            or `technical` date, and the non-public states keep falling out of contracts because no
+            `displayState` was missing three members: `decideWatch` returns it for a `draft` or `reserve`
+            date, and the non-public states keep falling out of contracts because no
             public screen shows them.
           x-arthome-vocabulary:
           - watch.no_seat
@@ -11767,7 +11785,8 @@ components:
             meaning — "not denied" — would attach itself to whichever the writer had in mind.
 
             **And an ALLOWED verdict carries a real action.** A viewer watching on `scope: preview`
-            gets `buy_seat` beside it, before D-089's cutoff; past it, `see_other_dates`. A surface reading `null` as "no action" would be right for
+            gets the seat action beside it (`buy_seat`, `join_waitlist`, or `none` once on the waiting
+            list), before D-089's cutoff; past it, `see_other_dates`. A surface reading `null` as "no action" would be right for
             `denialReasonCode`, where null genuinely means *not denied*, and would silently drop the
             preview-to-purchase step — the one path that turns a free viewer into a paying one. The
             two fields look alike and must not be read alike.
@@ -11795,8 +11814,8 @@ components:
             crossed this boundary three times in a day because two people were each answering the
             other's last message instead of the code. The test that ends that, and the one this
             contract now defers to: **does a function return it?** `decideWatch` does not — the free
-            preview is expressed by an **allowed** verdict carrying `scope: preview` on both the live
-            and the replay path, with `buy_seat` beside it before D-089's cutoff, `see_other_dates` past it. A preview a viewer can still watch is not
+            preview is expressed by an **allowed** verdict carrying `scope: preview` on air, with the seat
+            action beside it before D-089's cutoff, `see_other_dates` past it. A preview a viewer can still watch is not
             a way out of a refusal, because there is no refusal.
 
             What the member was compensating for is the finding worth keeping: `WatchVerdict` had no
@@ -13772,8 +13791,8 @@ components:
             True when this opening **took over this device's existing lease** instead of opening a second
             one. This is what stops a household being blocked by its own ghost screens — and it is
             decisive for a `pass` subscriber, whose ceiling is **one** screen: without takeover,
-            reopening the app after an OS kill locks them out of their own phone for the ninety seconds
-            of the lease.
+            reopening the app after an OS kill locks them out of their own phone for the lease's lifetime
+            (`PLAYBACK_LEASE_SECONDS`).
           type: boolean
         dateId:
           type: string
@@ -13791,7 +13810,8 @@ components:
             `none` here would be a token for watching nothing. `WatchVerdict.scope` carries all three
             because a verdict can say no; this one cannot.
 
-            `preview` for a non-holder. Its token expires at `min(now + 120 s, now + secondsLeft)`:
+            `preview` for a non-holder, on air only (D-110). While the budget is spent its token expires at
+            the earlier of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and the seconds left (`previewTokenExpiresAt`):
             **reloading the page extends nothing**, and a reinstalled app resets no counter — the budget
             is **server-side**, per **account**.
         previewSecondsLeft:
@@ -13803,8 +13823,7 @@ components:
           x-arthome-vocabulary:
           - hls
           - dash
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+          x-arthome-vocabulary-source: PLAYBACK_PROTOCOLS
         drmSystem:
           description: |
             **Chosen by the server for this device.** The fleet imposes HLS + FairPlay on tvOS and
@@ -13814,8 +13833,7 @@ components:
           - fairplay
           - widevine
           - playready
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+          x-arthome-vocabulary-source: DRM_SYSTEMS
           type:
           - string
           - 'null'
@@ -13826,8 +13844,7 @@ components:
           - hd
           - fhd
           - uhd
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+          x-arthome-vocabulary-source: QUALITY_CAPS
           description: |
             The ceiling the device's **hardware** security level allows. An entry-level HDMI stick offers
             only software Widevine: the server **degrades cleanly** rather than refusing, and the surface
@@ -13859,8 +13876,7 @@ components:
           x-arthome-vocabulary:
           - signed_cookie
           - query_token
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+          x-arthome-vocabulary-source: EDGE_RENEWAL_MODES
           description: |
             **Declared, never guessed**: the two mechanisms are not equally available. `signed_cookie` for
             a browser — a same-origin call resets the cookie, zero URL change, zero interruption.
@@ -13872,21 +13888,24 @@ components:
           type: string
           format: date-time
           description: |
-            **120 s.** The window during which one watches a stream one is no longer entitled to is the
-            **renewal** interval, not the token's lifetime.
+            **`PLAYBACK_TOKEN_LIFETIME_SECONDS`** (D-020). The client learns it is no longer entitled
+            within the renewal interval, but the edge may keep serving it until the token in hand expires.
         renewAfterSec:
           type: integer
           examples:
           - 45
-          description: '**45 s**, under the 60 s ceiling the TV requires: it is the renewal that carries the concurrent-screen limit.'
+          description: '**`PLAYBACK_RENEWAL_INTERVAL_SECONDS`**, under the ceiling the TV requires: it is the renewal that carries the concurrent-screen limit.'
         leaseExpiresAt:
           type: string
           format: date-time
           description: |
-            **90 s.** It is the **lease** that carries the concurrent-screen limit, not a release command:
+            **`PLAYBACK_LEASE_SECONDS`.** It is the **lease** that carries the concurrent-screen limit, not a release command:
             a television gets unplugged, a set-top box loses power, the OS kills a mobile app without
             warning. `releasePlayback` speeds it up, **nothing depends on it**.
         resumePoint:
+          description: |
+            **A replay's only.** A live gives no control of playback and records no position (D-111),
+            so a live's ticket carries none.
           anyOf:
           - type: object
             properties:
@@ -14008,16 +14027,17 @@ components:
           - hd
           - fhd
           - uhd
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+          x-arthome-vocabulary-source: QUALITY_CAPS
       required:
       - expiresAt
       - renewAfterSec
       - leaseExpiresAt
       additionalProperties: {}
       description: |
-        **Partial** renewal: nothing that would force a stream reload. The refusal carries one of the
-        four distinct codes — a generic code would produce a false one three times out of four.
+        **Partial** renewal: nothing that would force a stream reload. A player renews every
+        `PLAYBACK_RENEWAL_INTERVAL_SECONDS` for a token of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and a lease of
+        `PLAYBACK_LEASE_SECONDS` (`@arthome/core`). A refusal carries its own code, one per screen: a
+        generic code would produce a false one.
     ActivePlaybackSession:
       type: object
       properties:

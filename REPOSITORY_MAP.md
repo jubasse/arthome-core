@@ -382,12 +382,20 @@ Declarations: `dist/storefront-api/docs.d.ts` — 2 exported names.
 
 #### @arthome/contracts/streaming
 
-Declarations: `dist/streaming/index.d.ts` — 4 exported names.
+Declarations: `dist/streaming/index.d.ts` — 12 exported names.
 
 - `ActivePlaybackSessionSchema` (const)
+- `DRM_SYSTEMS` (const) — `DRM_SYSTEMS: readonly ["fairplay", "widevine", "playready"]` — Declared by a device opening playback, and chosen by the server for it.
+- `DrmSystem` (type+const) — `type DrmSystem = (typeof DRM_SYSTEMS)[number]; DrmSystem: AccessorOf<typeof DRM_SYSTEMS>`
+- `EDGE_RENEWAL_MODES` (const) — `EDGE_RENEWAL_MODES: readonly ["signed_cookie", "query_token"]` — How the edge's signature is renewed on this device ('adr-stream-entitlement.md' §3.2).
+- `EdgeRenewalMode` (type+const) — `type EdgeRenewalMode = (typeof EDGE_RENEWAL_MODES)[number]; EdgeRenewalMode: AccessorOf<typeof EDGE_RENEWAL_MODES>`
 - `IncidentSchema` (const)
+- `PLAYBACK_PROTOCOLS` (const) — `PLAYBACK_PROTOCOLS: readonly ["hls", "dash"]`
+- `PlaybackProtocol` (type+const) — `type PlaybackProtocol = (typeof PLAYBACK_PROTOCOLS)[number]; PlaybackProtocol: AccessorOf<typeof PLAYBACK_PROTOCOLS>`
 - `PlaybackRenewalSchema` (const)
 - `PlaybackTicketSchema` (const)
+- `QUALITY_CAPS` (const) — `QUALITY_CAPS: readonly ["sd", "hd", "fhd", "uhd"]` — The ceiling a device's hardware security level allows.
+- `QualityCap` (type+const) — `type QualityCap = (typeof QUALITY_CAPS)[number]; QualityCap: AccessorOf<typeof QUALITY_CAPS>`
 
 #### @arthome/contracts/streaming-service-api
 

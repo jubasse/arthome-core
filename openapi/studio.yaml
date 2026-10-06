@@ -6178,6 +6178,11 @@ paths:
         Its success **unlocks publication**: `technical_check_passed` is one of the seven checklist
         items, and it comes from here. `catalog` **projects** it, it does not ask for it.
         `idle → on_air` is refused as long as the check has never passed.
+
+        **What it proves** (D-114): a feed received on the date's key, in a codec the chain carries,
+        above a bitrate floor, the channel's recommended bitrate or, until a channel serves one,
+        `TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT`. `failures` is the closed vocabulary
+        `TECHNICAL_CHECK_FAILURES`, in its order: `no_feed` comes alone, since nothing else was measured.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6280,7 +6285,9 @@ paths:
     post:
       operationId: rehearseRun
       summary: Starts the rehearsal.
-      description: 'The run goes from `idle` to `rehearsal`: the feed is checked, nothing is sold against it.'
+      description: |
+        The run goes from `idle` to `rehearsal`: the feed is checked, nothing is sold against it. A move
+        the run cannot make (`RUN_TRANSITIONS`) is refused `run.transition_forbidden`, naming both ends.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6429,7 +6436,10 @@ paths:
         transitions out of eight are caused that way, which leaves `Publication` the aggregate of a
         single context.
 
-        `idle → on_air` is **refused** if the technical check has never passed.
+        `idle → on_air` and `rehearsal → on_air` are **refused** `date.technical_check_required` if the
+        technical check has never passed. Resuming after an incident (`interrupted → on_air`) needs
+        none. `publication.transition_forbidden` comes when the date's publication cannot move to `live` from
+        its current state.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6578,7 +6588,13 @@ paths:
     post:
       operationId: endRun
       summary: Ends the broadcast.
-      description: 'The run goes to `ended`. It is final for this date: a new run is a new date.'
+      description: |
+        The run goes to `ended`. **It is final** for this date (D-115): a new run is a new date, and any
+        later move is refused `run.transition_forbidden`.
+
+        **A run left on air ends by itself** `RUN_AUTO_END_MINUTES` after the scheduled end once no
+        publisher has been connected (D-123, `runAutoEndsAt`); `streaming.run.ended.v1` then names the
+        system as `ended_by`.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6721,7 +6737,9 @@ paths:
     post:
       operationId: resetRun
       summary: Returns the run to idle.
-      description: 'The run goes back to `idle`, before the date starts: the console is emptied.'
+      description: |
+        The run goes back to `idle` from `rehearsal`, before the date starts: the console is emptied.
+        From any other state it is refused `run.transition_forbidden`.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -7580,6 +7598,10 @@ paths:
       description: |
         The player **lifts the veil** without asking for a new playback token: otherwise the resume
         would be paid for with a stream reload, on media that was never cut.
+
+        **A hold screen raised by hand waits for this call** (D-124). The automatic one (cause
+        `venue_feed_lost`, triggered `auto`) lifts itself when the feed returns
+        (`holdScreenLiftsOnFeedReturn`).
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
