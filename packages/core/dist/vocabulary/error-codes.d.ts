@@ -163,7 +163,7 @@ export declare const PayoutErrorCode: {
     readonly BANK_CHANGE_REQUEST_EXPIRED: "payout.bank_change_request_expired";
 };
 /**
- * The viewer's commerce refusals: a purchase, a seat, a means of payment. `failureCode` narrows
+ * The commerce refusals: a purchase, a seat, a refund, a means of payment. `failureCode` narrows
  * it to the four a purchase command can refuse with.
  */
 export declare const ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.quote_expired", "order.sold_out", "order.tier_unavailable", "order.payment_declined", "order.price_stale", "order.plan_unavailable", "order.contribution_out_of_range", "order.checkout_line_unavailable", "order.sales_queue_admission_required", "order.late_entry_unacknowledged", "order.sales_closed", "seat.cancel_deadline_passed", "payment_method.in_use", "waitlist.not_sold_out", "seat.not_active", "refund.amount_exceeds_remaining"];

@@ -47,7 +47,8 @@ export function seatsAvailableTo(
   gauge: Gauge,
   account: { readonly inPriorityPool: boolean },
 ): number {
-  return seatsAvailable(gauge) + (account.inPriorityPool ? gauge.priorityPoolSeats : 0);
+  const poolLeftOut = account.inPriorityPool ? 0 : gauge.priorityPoolSeats;
+  return Math.max(0, gauge.capacityTotal - gauge.seatsSold - gauge.seatsHeld - poolLeftOut);
 }
 
 export function availabilityOf(gauge: Gauge): SeatAvailability {

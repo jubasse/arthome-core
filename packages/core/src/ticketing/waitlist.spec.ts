@@ -38,6 +38,18 @@ describe('the priority pool', () => {
     expect(seatsAvailableTo(gauge, { inPriorityPool: true })).toBe(46);
   });
 
+  it('never offers a notified account more than the seats left when the counts overlap', () => {
+    const overlapping: Gauge = {
+      capacityTotal: 250,
+      seatsSold: 210,
+      seatsHeld: 4,
+      waitlistCount: 12,
+      priorityPoolSeats: 46,
+    };
+    expect(seatsAvailableTo(overlapping, { inPriorityPool: true })).toBe(36);
+    expect(seatsAvailableTo(overlapping, { inPriorityPool: false })).toBe(0);
+  });
+
   it('the window closes at priorityUntil', () => {
     const priorityUntil = priorityUntilOf('2026-09-21T18:06:00.000Z');
     expect(WAITLIST_PRIORITY_HOURS).toBe(2);

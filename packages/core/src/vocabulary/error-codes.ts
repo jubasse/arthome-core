@@ -301,7 +301,7 @@ export const PayoutErrorCode = {
 } as const;
 
 /**
- * The viewer's commerce refusals: a purchase, a seat, a means of payment. `failureCode` narrows
+ * The commerce refusals: a purchase, a seat, a refund, a means of payment. `failureCode` narrows
  * it to the four a purchase command can refuse with.
  */
 export const ORDER_ERROR_CODES = [
@@ -326,6 +326,7 @@ export const ORDER_ERROR_CODES = [
   // A seat quoted or bought past the end of seat sales, thirty minutes after the start (D-089):
   //   ended, not sold out, which is the waiting list's cue. Params: `salesEndAt`.
   'order.sales_closed',
+  // Cancelling a seat at or after its deadline. Params: `cancelDeadline`, the instant.
   'seat.cancel_deadline_passed',
   'payment_method.in_use',
   // Joining a waiting list while public seats remain: the viewer buys instead.

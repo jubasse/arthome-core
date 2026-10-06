@@ -616,7 +616,7 @@ Declarations: `dist/index.d.ts` — 498 exported names.
 - `NavigationEntry` (type+const)
 - `NoErrorParams` (type) — `type NoErrorParams = Readonly<Record<string, never>>;` — The params of a code that carries none: no key at all, rather than a loose record.
 - `NotificationChannel` (type+const)
-- `ORDER_ERROR_CODES` (const) — The viewer's commerce refusals: a purchase, a seat, a means of payment.
+- `ORDER_ERROR_CODES` (const) — The commerce refusals: a purchase, a seat, a refund, a means of payment.
 - `ORDER_KINDS` (const) — `ORDER_KINDS: readonly ["seat", "merch", "subscription"]` — Distinct orders, never a mixed one (D-011).
 - `ORDER_STATES` (const) — `ORDER_STATES: readonly ["pending", "awaiting_action", "processing", "paid", "failed", "refunded", "partially_refunded", "disputed"]` — adr-payments.md §8's order states; a transition applies only forward (§7.3).
 - `Ok` (interface)

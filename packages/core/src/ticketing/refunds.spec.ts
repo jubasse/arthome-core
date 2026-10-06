@@ -56,6 +56,10 @@ describe('amounts', () => {
     expect(refundableRemaining(eur(4800), eur(4800))).toEqual(eur(0));
   });
 
+  it('never reports a negative amount left, even past an over-refund', () => {
+    expect(refundableRemaining(eur(4800), eur(5000))).toEqual(eur(0));
+  });
+
   it('refuses a refund above what is left, with the amount left', () => {
     expect(() => {
       assertRefundWithinRemaining(eur(3600), eur(3600));
