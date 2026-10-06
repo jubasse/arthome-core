@@ -694,7 +694,7 @@ axis and only the studio sees the check (D-072).
 
 
 `catalog.date.outcome_declared.v1` is published once, by the channel, from the studio
-(`decideOutcome`, reserved to `artist ∨ production`). Four contexts consume it, and each produces
+(`decideOutcome`, reserved to `artist ∨ production`). Each context that consumes it produces
 **its** consequence, without talking to the others:
 
 | Consequence | Context | Detail |
@@ -703,6 +703,7 @@ axis and only the studio sees the check (D-072).
 | payout withholding | `payouts` | `held` while an outcome is open; `refunded` if cancelled |
 | public copy | `catalog` | the outcome replaces the state on **every card**, not only on the sheet |
 | priority display | `catalog` | the date rises in "My tickets" and in the studio inbox |
+| the right to watch | `streaming` | `watch.date_cancelled`, or `watch.date_interrupted` for an interruption (step 2 below) |
 
 **What a viewer whose screen was open during the transition sees.** That is the chief's exact
 question, and it has a precise answer, in three steps:
@@ -713,7 +714,7 @@ question, and it has a precise answer, in three steps:
    written in. The veil states the outcome and what it means for the seat.
 2. **The playback token is not revoked in the same act.** For `postponed` and `cancelled`, the
    broadcast is over anyway or has not started. For `interrupted`, playback **stops at the next
-   renewal refusal** (≤ 45 s) with the `date.interrupted` code, not by an abrupt cut: a feed cut with
+   renewal refusal** (≤ 45 s) with the `watch.date_interrupted` code, not by an abrupt cut: a feed cut with
    no explanation is exactly what principle no. 6 forbids. The edge, for its part, may keep serving
    until the token in hand expires (120 s) — it is the client that stops, not the CDN.
 3. **The financial consequence comes afterwards, and it is visible elsewhere.** The viewer does not

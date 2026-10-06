@@ -374,6 +374,8 @@ export const DOMAIN_ERROR_CODES = [
   'publication.promise_unacknowledged',
   'publication.transition_forbidden',
   'publication.transition_irreversible',
+  // A move off `RUN_TRANSITIONS`, named by its two ends (`assertRunTransition`).
+  'run.transition_forbidden',
   'search.unknown_flag',
   'seat_code.malformed',
   // A conditional command sent against a version that has moved: publication, prices and run
@@ -394,6 +396,7 @@ export const DomainErrorCode = {
   PUBLICATION_PROMISE_UNACKNOWLEDGED: 'publication.promise_unacknowledged',
   PUBLICATION_TRANSITION_FORBIDDEN: 'publication.transition_forbidden',
   PUBLICATION_TRANSITION_IRREVERSIBLE: 'publication.transition_irreversible',
+  RUN_TRANSITION_FORBIDDEN: 'run.transition_forbidden',
   SEARCH_UNKNOWN_FLAG: 'search.unknown_flag',
   SEAT_CODE_MALFORMED: 'seat_code.malformed',
   STATE_CONFLICT: 'state.conflict',

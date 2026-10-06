@@ -6178,6 +6178,11 @@ paths:
         Its success **unlocks publication**: `technical_check_passed` is one of the seven checklist
         items, and it comes from here. `catalog` **projects** it, it does not ask for it.
         `idle → on_air` is refused as long as the check has never passed.
+
+        **What it proves** (D-114): a feed received on the date's key, in a codec the chain carries,
+        above a bitrate floor, the channel's recommended bitrate or, until a channel serves one,
+        `TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT` (`technicalCheckFloorKbps`). `failures` is the closed vocabulary
+        `TECHNICAL_CHECK_FAILURES`, in its order: `no_feed` comes alone, since nothing else was measured.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6217,6 +6222,11 @@ paths:
                           type: array
                           items:
                             type: string
+                            x-arthome-vocabulary:
+                            - no_feed
+                            - codec_not_carried
+                            - bitrate_below_floor
+                            x-arthome-vocabulary-source: TECHNICAL_CHECK_FAILURES
                         sample:
                           $ref: '#/components/schemas/HealthSample'
                       additionalProperties: {}
@@ -6275,7 +6285,9 @@ paths:
     post:
       operationId: rehearseRun
       summary: Starts the rehearsal.
-      description: 'The run goes from `idle` to `rehearsal`: the feed is checked, nothing is sold against it.'
+      description: |
+        The run goes from `idle` to `rehearsal`: the feed is checked, nothing is sold against it. A move
+        the run cannot make (`RUN_TRANSITIONS`) is refused `run.transition_forbidden`, naming both ends.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6380,7 +6392,28 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -6403,7 +6436,10 @@ paths:
         transitions out of eight are caused that way, which leaves `Publication` the aggregate of a
         single context.
 
-        `idle → on_air` is **refused** if the technical check has never passed.
+        `idle → on_air` and `rehearsal → on_air` are **refused** `date.technical_check_required` if the
+        technical check has never passed. Resuming after an incident (`interrupted → on_air`) needs
+        none. `publication.transition_forbidden` comes when the date's publication cannot move to `live` from
+        its current state.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6521,6 +6557,8 @@ paths:
                 - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
                 - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
                 - $ref: '#/components/schemas/DateTechnicalCheckRequiredError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+                - $ref: '#/components/schemas/PublicationTransitionForbiddenError'
               examples:
                 state.conflict:
                   $ref: '#/components/examples/StateConflictError'
@@ -6530,6 +6568,10 @@ paths:
                   $ref: '#/components/examples/ApiIdempotencyInFlightError'
                 date.technical_check_required:
                   $ref: '#/components/examples/DateTechnicalCheckRequiredError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
+                publication.transition_forbidden:
+                  $ref: '#/components/examples/PublicationTransitionForbiddenError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -6546,7 +6588,13 @@ paths:
     post:
       operationId: endRun
       summary: Ends the broadcast.
-      description: 'The run goes to `ended`. It is final for this date: a new run is a new date.'
+      description: |
+        The run goes to `ended`. **It is final** for this date (D-115): a new run is a new date, and any
+        later move is refused `run.transition_forbidden`.
+
+        **A run left on air ends by itself** `RUN_AUTO_END_MINUTES` after the scheduled end once no
+        publisher has been connected (D-123, `runAutoEndsAt`); `streaming.run.ended.v1` then names the
+        system as `ended_by`.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6651,7 +6699,28 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -6668,7 +6737,9 @@ paths:
     post:
       operationId: resetRun
       summary: Returns the run to idle.
-      description: 'The run goes back to `idle`, before the date starts: the console is emptied.'
+      description: |
+        The run goes back to `idle` from `rehearsal`, before the date starts: the console is emptied.
+        From any other state it is refused `run.transition_forbidden`.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6773,7 +6844,28 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -7506,6 +7598,10 @@ paths:
       description: |
         The player **lifts the veil** without asking for a new playback token: otherwise the resume
         would be paid for with a stream reload, on media that was never cut.
+
+        **A hold screen raised by hand waits for this call** (D-124). The automatic one (cause
+        `venue_feed_lost`, triggered `auto`) lifts itself when the feed returns
+        (`holdScreenLiftsOnFeedReturn`).
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -12035,6 +12131,7 @@ components:
           - publication.promise_unacknowledged
           - publication.transition_forbidden
           - publication.transition_irreversible
+          - run.transition_forbidden
           - search.unknown_flag
           - seat_code.malformed
           - state.conflict
@@ -12049,6 +12146,9 @@ components:
           - watch.concurrent_limit_reached
           - watch.date_cancelled
           - watch.not_published
+          - watch.seat_expired
+          - watch.date_interrupted
+          - watch.live_ended
           x-arthome-vocabulary-source: ERROR_CODES
           examples:
           - publication.checklist_incomplete
@@ -14206,8 +14306,7 @@ components:
             x-arthome-vocabulary:
             - manual
             - auto
-            x-arthome-vocabulary-source: none
-            x-arthome-vocabulary-reason: A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.
+            x-arthome-vocabulary-source: INCIDENT_TRIGGERS
             description: |
               The **automatic** holding screen produces an incident **of the same kind** as a manual
               trigger — that is the right answer to the "the stage manager is unreachable" case. The log
@@ -16950,6 +17049,60 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    RunTransitionForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: run.transition_forbidden
+            params:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              required:
+              - from
+              - to
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     DateTechnicalCheckRequiredError:
       type: object
       properties:
@@ -16962,6 +17115,60 @@ components:
             params:
               type: object
               properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    PublicationTransitionForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: publication.transition_forbidden
+            params:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              required:
+              - from
+              - to
               additionalProperties: {}
             traceId:
               type: string
@@ -17868,6 +18075,16 @@ components:
             promise: prices_engaged
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
+    PublicationTransitionForbiddenError:
+      value:
+        error:
+          code: publication.transition_forbidden
+          nature: refused
+          params:
+            from: draft
+            to: live
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     PublicationTransitionIrreversibleError:
       value:
         error:
@@ -17887,6 +18104,16 @@ components:
           params:
             remainingMinor: 1200
             currencyCode: EUR
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    RunTransitionForbiddenError:
+      value:
+        error:
+          code: run.transition_forbidden
+          nature: refused
+          params:
+            from: idle
+            to: ended
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     SeatNotActiveError:

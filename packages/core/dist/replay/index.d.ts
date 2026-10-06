@@ -6,6 +6,7 @@
  */
 import { type DateTiming } from '../catalog/date-state.js';
 import type { Instant } from '../kernel/clock.js';
+import { DateOutcome } from '../vocabulary/catalog.js';
 import { WatchDenialReason } from '../vocabulary/entitlement.js';
 /**
  * The replay hours remaining — a DECREASING value.
@@ -22,4 +23,8 @@ export declare function hasReplayPolicy(timing: DateTiming): boolean;
 export declare function isReplaySoldSeparately(timing: DateTiming): boolean;
 /** The full diagnosis, in one pass. `null` is availability, so nothing needs a second call. */
 export declare function replayUnavailabilityReason(timing: DateTiming, now: Instant): WatchDenialReason | null;
+/** When the replay's online window closes: from the live's real end, never the scheduled one (D-113, `adr-replay.md` §4). */
+export declare function replayClosesAt(liveEndedAt: Instant, windowHours: number): Instant;
+/** Does this outcome take the replay away, so its recording is deleted (D-092)? */
+export declare function outcomeWithdrawsReplay(outcome: DateOutcome | null): boolean;
 //# sourceMappingURL=index.d.ts.map

@@ -48,6 +48,7 @@
   "packages/core/src/replay": "The replay promise, its window and what remains of it.",
   "packages/core/src/schema": "The boundary schemas (`@arthome/core/schema`); the only part of the package that imports zod.",
   "packages/core/src/search": "Normalising search criteria and their signature.",
+  "packages/core/src/streaming": "Playback timings and the preview's spending; the run's moves, its technical check and its automatic end.",
   "packages/core/src/taxonomy": "The taxonomy: types, editorial rank and resolving a term.",
   "packages/core/src/ticketing": "The viewer's commerce: capacity, holds, prices and seat code.",
   "packages/core/src/time": "ISO instants, windows, two clocks and seasons.",

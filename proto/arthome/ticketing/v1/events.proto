@@ -425,6 +425,10 @@ message SubscriptionChanged {
   uint32 concurrent_streams_allowed = 6;
   google.protobuf.Timestamp current_period_end = 7;
   google.protobuf.Timestamp occurred_at = 8;
+  // The end of the last PAID period, absent when none was paid: what
+  // `planOpeningsOf` reads (D-125). Not `current_period_end`, which a renewal
+  // moves forward before it is paid.
+  google.protobuf.Timestamp paid_through = 9;
 }
 
 // Opening a tier notifies the whole waiting list in the same act, with a

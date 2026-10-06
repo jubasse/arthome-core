@@ -118,12 +118,17 @@ message RunEnded {
   string channel_id = 2;
   google.protobuf.Timestamp ended_at = 3;
   uint32 duration_sec = 4;
-  uint32 peak_viewers = 5;
-  google.protobuf.Timestamp peak_at = 6;
-  uint32 avg_viewers = 7;
+  // Absent, never zero, when no viewer count was measured: a zero reads as
+  // "nobody watched", as for ViewerCountSampled.
+  optional uint32 peak_viewers = 5;
+  optional google.protobuf.Timestamp peak_at = 6;
+  optional uint32 avg_viewers = 7;
   // The payout due date (14 days) runs from THE END OF THE LIVE SHOW, not from
   // the payment: so `payouts` consumes this event.
   google.protobuf.Timestamp occurred_at = 8;
+  // The run desk's operator, or SURFACE_SYSTEM when a run left on air ended by
+  // itself (D-115, D-123).
+  arthome.common.v1.Actor ended_by = 9;
 }
 
 message RunStateChanged {

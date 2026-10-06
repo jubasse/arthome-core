@@ -64,6 +64,14 @@
     {
       "vocabulary": "SEAT_HOLD_ORIGINS",
       "reason": "Which intent a `SeatHold`'s expiry belongs to — a direct checkout or a TV pairing (data-model.md §3.2) — kept to size the hold's duration (`HOLD_MINUTES_CHECKOUT` versus `HOLD_MINUTES_TV_PAIRING`). Internal sizing, never served: neither purchase path tells a surface which one it took."
+    },
+    {
+      "vocabulary": "PLAYBACK_SESSION_STATES",
+      "reason": "A playback lease's own bookkeeping in `streaming` (data-model.md §5.4): whether a session is live, released, timed out or revoked. A surface never reads a lease's state: it reads a refusal (`watch.concurrent_limit_reached` with its active sessions, `identity.signed_out_elsewhere`) or a ticket, which the lease's transitions cause but do not mirror."
+    },
+    {
+      "vocabulary": "REPLAY_ASSET_STATES",
+      "reason": "A recorded replay file's life in `streaming`, from the recording to its deletion. A surface reads the replay's own state and window from `catalog`, never the file's: a file being processed or deleted is the service's bookkeeping, and the replay's availability is what a viewer is told."
     }
   ]
 }

@@ -228,10 +228,10 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 |---|---|---|
 | `catalog.date.drafted.v1` | `date_id`, `channel_id`, `show_id`, `venue_id` | `ticketing` (open `DateSales`), `streaming` (prepare the run) |
 | `catalog.date.scheduled.v1` | + `starts_at`, `venue_timezone`, `venue_city`, `venue_country`, `runtime_min`, `replay_policy`, `replay_window_hours`, `rights`, `canonical_url`, `show_slug`, `slug` | `ticketing`, `streaming`, `chat`, `notifications`, `identity` (guards) |
-| **`catalog.publication.state_changed.v1`** | `date_id`, `from_state`, `to_state`, `version`, `irreversible`, `changed_by` | **studio realtime** (room `channel:{id}`), journal. **It was missing**: without it, `draft→reserve`, `scheduled↔technical` and `ended→replay-online` produced nothing, and a second operator's screen lied indefinitely |
+| **`catalog.publication.state_changed.v1`** | `date_id`, `from_state`, `to_state`, `version`, `irreversible`, `changed_by` | **studio realtime** (room `channel:{id}`), journal, `streaming` (the right to watch). **It was missing**: without it, `draft→reserve`, `scheduled↔technical` and `ended→replay-online` produced nothing, and a second operator's screen lied indefinitely |
 | `catalog.publication.engaged.v1` | `date_id`, `engaged[]` (`prices`, `replay`, `chat_mode`) | **`ticketing`** locks the prices · **`chat`** locks the policy |
 | `catalog.date.rescheduled.v1` | `date_id`, `new_starts_at`, `previous_starts_at`, `new_slug`, `new_canonical_url` | `ticketing` (seats follow), `notifications` (**reminders follow**), `streaming` |
-| `catalog.date.outcome_declared.v1` | `date_id`, `outcome`, `declared_by`, `declared_at`, `message` + `content_language` | **four consequences**: `ticketing` (refunds or credits), `payouts` (withholds), `catalog` (public copy), `notifications` (warns) |
+| `catalog.date.outcome_declared.v1` | `date_id`, `outcome`, `declared_by`, `declared_at`, `message` + `content_language` | `ticketing` (refunds or credits), `payouts` (withholds), `catalog` (public copy), `notifications` (warns), `streaming` (the right to watch: `watch.date_cancelled`, `watch.date_interrupted`) |
 | `catalog.date.replay_policy_set.v1` | `date_id`, `policy`, `window_hours` | `streaming` (asset expiry), `ticketing` (putting it on sale) |
 | `catalog.date.rights_changed.v1` | `date_id`, `scope`, `territories[]`, `reason_code` | `streaming` (the right to watch) |
 | `catalog.show.published.v1` / `.updated.v1` | `show_id`, `slug` (published), taxonomy, languages, `title` and `synopsis` per language | `ticketing` (shop), index |
@@ -250,7 +250,7 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 | `ticketing.order.paid.v1` | `order_id`, `kind` (`seat`\|`merch`\|`subscription`), `channel_id`, `date_id?`, `account_id`, `gross_ttc`, `vat[]`, `service_fee`, `discount`, `credit_applied`, `payment_intent_ref`, `paid_at`, `buyer_tax_location` (with its evidence) | **`payouts`** (this is the raw material of the right to a payout) |
 | `ticketing.order.refunded.v1` | `order_id`, `channel_id`, `amount` (this refund's, not a total), `refund_ref`, `reason` (the seat's cancellation, if any), `refund_reason` (why the money went back: `REFUND_REASONS`, `hold_expired_capacity_lost` included, D-082). **One per refund**, so several for an order refunded in parts | `payouts`, `notifications` |
 | `ticketing.credit.issued.v1` | `credit_id`, `account_id`, `channel_id`, `amount`, `origin`, `origin_date_id`, `expires_at` | `payouts` (a credit note is a liability), `notifications` |
-| `ticketing.subscription.changed.v1` | `account_id`, `plan`, `state`, `opens[]`, `seat_discount_bps`, `concurrent_streams_allowed` (`streaming` enforces it), `current_period_end` | **`streaming`** (the right to watch), `catalog` (displayed price) |
+| `ticketing.subscription.changed.v1` | `account_id`, `plan`, `state`, `opens[]`, `seat_discount_bps`, `concurrent_streams_allowed` (`streaming` enforces it), `current_period_end`, `paid_through` (the end of the last paid period, which D-125 reads) | **`streaming`** (the right to watch), `catalog` (displayed price) |
 | `ticketing.waitlist.notified.v1` | `date_id`, `account_ids[]`, `priority_until`. **Chunked**: one tier opening notifies the whole list (D-083) in as many messages as it needs, each naming at most `WAITLIST_NOTIFIED_ACCOUNTS_MAX` (500) accounts | `notifications` |
 
 ### 4.4 `streaming`
@@ -259,7 +259,7 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 |---|---|---|
 | `streaming.run.technical_check_passed.v1` | `date_id`, `passed_at`, `protocol` | **`catalog`** (checklist → unlocks publication) |
 | `streaming.run.started.v1` | `date_id`, `started_at`, `protocol`, `monitor_path` | **`catalog`** (`technical → live`), `chat` (opens the chat), `notifications` ("followed artist live") |
-| `streaming.run.ended.v1` | `date_id`, `ended_at`, `peak_viewers`, `avg_viewers`, `duration_sec` | **`catalog`** (`live → ended`), `chat` (closes), **`payouts`** (the 14-day due date runs from here), `identity` (`runs_called`) |
+| `streaming.run.ended.v1` | `date_id`, `ended_at`, `ended_by` (`SURFACE_SYSTEM` when the run ended by itself, D-123), `peak_viewers?`, `peak_at?`, `avg_viewers?` (absent when unmeasured, never zero), `duration_sec` | **`catalog`** (`live → ended`), `chat` (closes), **`payouts`** (the 14-day due date runs from here), `identity` (`runs_called`) |
 | `streaming.run.state_changed.v1` | `date_id`, `state`, `cause?` | `catalog` (public card) |
 | `streaming.incident.raised.v1` / `.resolved.v1` | `date_id`, `kind`, `cause`, `message`, `content_language`, `triggered_by` (`manual`\|`auto`) | `catalog`, `notifications` (routed to the run desk) |
 | `streaming.replay.asset_ready.v1` | `date_id`, `duration_sec`, `available_from`, `expires_at` | **`catalog`** (the card can say "replay"), `ticketing` (putting it on sale), `notifications` ("expires in 6 h") |

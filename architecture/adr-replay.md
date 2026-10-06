@@ -220,6 +220,19 @@ In the contracts:
 - `OrderKind` gains a replay kind, and the storefront gains a unit-purchase operation.
 - The three events of §9, and `WatchFallbackAction.buy_replay` on the wire.
 
+**Already done, with the streaming core (2026-10-06):**
+- `decideWatch` keeps the live only: its replay branch is gone, and so is `WatchInput.replayOnSale`.
+  A live that ended (run `ended`, or a display of `replay` or `ended`) is denied
+  `WatchDenialReason.LIVE_ENDED`, whose way out is `see_replay_policy`, or `see_other_dates` when the
+  policy is `none`, until `decideReplayAccess` gives the replay's own. Until then no verdict allows a
+  replay, and `openPlayback` answers `kind: replay` with `watch.no_replay`.
+- Past D-089's cutoff the seat action is `see_other_dates`, on every refusal that offers one.
+- `replay/` has `replayClosesAt(liveEndedAt, windowHours)` and `outcomeWithdrawsReplay` (true for
+  `cancelled` and `interrupted`, D-092). `replayEndsAt` stays until `DisplayState.REPLAY` leaves the
+  date's display state.
+- `REPLAY_EXPIRED`, `NO_REPLAY`, `REPLAY_NOT_ON_SALE` and `SUBSCRIPTION_REQUIRED` keep their
+  `WATCH_FALLBACK_FOR` rows, for the replay's verdict; `decideWatch` returns none of them.
+
 ## 11. What the product owner settled, and what stays open
 
 | Question | Answer | Recorded |

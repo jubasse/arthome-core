@@ -7,8 +7,8 @@
 
 import { replayEndsAt, type DateTiming } from '../catalog/date-state.js';
 import type { Instant } from '../kernel/clock.js';
-import { minutesBetween } from '../time/instant.js';
-import { ReplayPolicy } from '../vocabulary/catalog.js';
+import { minutesBetween, plusHours } from '../time/instant.js';
+import { DateOutcome, ReplayPolicy } from '../vocabulary/catalog.js';
 import { WatchDenialReason } from '../vocabulary/entitlement.js';
 
 /**
@@ -47,4 +47,20 @@ export function replayUnavailabilityReason(
   if (!hasReplayPolicy(timing)) return WatchDenialReason.NO_REPLAY;
   if (!isReplayWindowOpen(timing, now)) return WatchDenialReason.REPLAY_EXPIRED;
   return null;
+}
+
+/** When the replay's online window closes: from the live's real end, never the scheduled one (D-113, `adr-replay.md` §4). */
+export function replayClosesAt(liveEndedAt: Instant, windowHours: number): Instant {
+  return plusHours(liveEndedAt, windowHours);
+}
+
+const WITHDRAWS_REPLAY: Readonly<Record<DateOutcome, boolean>> = {
+  [DateOutcome.POSTPONED]: false,
+  [DateOutcome.CANCELLED]: true,
+  [DateOutcome.INTERRUPTED]: true,
+};
+
+/** Does this outcome take the replay away, so its recording is deleted (D-092)? */
+export function outcomeWithdrawsReplay(outcome: DateOutcome | null): boolean {
+  return outcome !== null && WITHDRAWS_REPLAY[outcome];
 }

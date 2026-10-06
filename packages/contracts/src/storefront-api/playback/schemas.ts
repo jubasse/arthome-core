@@ -5,15 +5,12 @@ import type { VocabularyIn } from '@arthome/core/schema';
 import { uuidIn, uuidOut, vocabularyIn } from '@arthome/core/schema';
 
 import type { PathParameter } from '../../http/index.js';
-import { localVocabulary } from '../../http/index.js';
+import { DRM_SYSTEMS } from '../../streaming/index.js';
 
 const OPEN_PLAYBACK_KIND: readonly [typeof DisplayState.LIVE, typeof DisplayState.REPLAY] = [
   DisplayState.LIVE,
   DisplayState.REPLAY,
 ];
-const DRM_SYSTEMS = ['fairplay', 'widevine', 'playready'] as const;
-const MEDIA_CAPABILITY_REASON =
-  'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.';
 
 export const PlaybackSessionIdParameter: PathParameter<'sessionId', z.ZodString> = {
   name: 'sessionId',
@@ -54,7 +51,9 @@ export const OpenPlaybackBodySchema: z.ZodObject<
   profileId: uuidOut().nullable().optional(),
   capabilities: z
     .object({
-      drmSystems: z.array(localVocabulary(DRM_SYSTEMS, MEDIA_CAPABILITY_REASON)).optional(),
+      drmSystems: z
+        .array(vocabularyIn(DRM_SYSTEMS).meta({ 'x-arthome-vocabulary-source': 'DRM_SYSTEMS' }))
+        .optional(),
       hardwareSecureDecode: z.boolean().optional(),
       maxHeightPx: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
     })

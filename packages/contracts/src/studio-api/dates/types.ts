@@ -611,6 +611,7 @@ export type RehearseRunRoute = Route<{
     409: readonly (
       | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
       | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof DomainErrorCode.RUN_TRANSITION_FORBIDDEN
       | typeof DomainErrorCode.STATE_CONFLICT
     )[];
   };
@@ -639,6 +640,8 @@ export type GoOnAirRoute = Route<{
       | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
       | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
       | typeof CatalogErrorCode.TECHNICAL_CHECK_REQUIRED
+      | typeof DomainErrorCode.PUBLICATION_TRANSITION_FORBIDDEN
+      | typeof DomainErrorCode.RUN_TRANSITION_FORBIDDEN
       | typeof DomainErrorCode.STATE_CONFLICT
     )[];
   };
@@ -666,6 +669,7 @@ export type EndRunRoute = Route<{
     409: readonly (
       | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
       | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof DomainErrorCode.RUN_TRANSITION_FORBIDDEN
       | typeof DomainErrorCode.STATE_CONFLICT
     )[];
   };
@@ -693,6 +697,7 @@ export type ResetRunRoute = Route<{
     409: readonly (
       | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
       | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof DomainErrorCode.RUN_TRANSITION_FORBIDDEN
       | typeof DomainErrorCode.STATE_CONFLICT
     )[];
   };

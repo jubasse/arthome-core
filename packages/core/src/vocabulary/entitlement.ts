@@ -27,6 +27,9 @@ export const WATCH_DENIAL_REASONS = [
   'watch.concurrent_limit_reached',
   'watch.date_cancelled',
   'watch.not_published',
+  'watch.seat_expired',
+  'watch.date_interrupted',
+  'watch.live_ended',
 ] as const;
 export type WatchDenialReason = (typeof WATCH_DENIAL_REASONS)[number];
 
@@ -42,6 +45,9 @@ export const WatchDenialReason = {
   CONCURRENT_LIMIT_REACHED: 'watch.concurrent_limit_reached',
   DATE_CANCELLED: 'watch.date_cancelled',
   NOT_PUBLISHED: 'watch.not_published',
+  SEAT_EXPIRED: 'watch.seat_expired',
+  DATE_INTERRUPTED: 'watch.date_interrupted',
+  LIVE_ENDED: 'watch.live_ended',
 } as const;
 
 /** How much of the date the verdict opens. */

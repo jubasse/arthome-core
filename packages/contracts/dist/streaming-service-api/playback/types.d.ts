@@ -23,7 +23,7 @@ export type OpenPlaybackRoute = Route<{
         200: ItemResponse<typeof serviceConventions, typeof PlaybackTicketSchema, unknown>;
     };
     errorCodes: {
-        403: readonly (typeof WatchDenialReason.CONCURRENT_LIMIT_REACHED | typeof WatchDenialReason.DATE_CANCELLED | typeof WatchDenialReason.NO_REPLAY | typeof WatchDenialReason.NO_SEAT | typeof WatchDenialReason.NOT_PUBLISHED | typeof WatchDenialReason.OUT_OF_TERRITORY | typeof WatchDenialReason.PREVIEW_EXHAUSTED | typeof WatchDenialReason.REPLAY_NOT_ON_SALE | typeof WatchDenialReason.ROOM_NOT_OPEN | typeof WatchDenialReason.SUBSCRIPTION_REQUIRED)[];
+        403: readonly (typeof WatchDenialReason.CONCURRENT_LIMIT_REACHED | typeof WatchDenialReason.DATE_CANCELLED | typeof WatchDenialReason.DATE_INTERRUPTED | typeof WatchDenialReason.LIVE_ENDED | typeof WatchDenialReason.NO_REPLAY | typeof WatchDenialReason.NO_SEAT | typeof WatchDenialReason.NOT_PUBLISHED | typeof WatchDenialReason.OUT_OF_TERRITORY | typeof WatchDenialReason.PREVIEW_EXHAUSTED | typeof WatchDenialReason.REPLAY_NOT_ON_SALE | typeof WatchDenialReason.ROOM_NOT_OPEN | typeof WatchDenialReason.SEAT_EXPIRED | typeof WatchDenialReason.SUBSCRIPTION_REQUIRED)[];
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
         410: readonly (typeof WatchDenialReason.REPLAY_EXPIRED)[];
     };
@@ -44,8 +44,9 @@ export type RenewPlaybackTicketRoute = Route<{
         200: ItemResponse<typeof serviceConventions, typeof PlaybackRenewalSchema, unknown>;
     };
     errorCodes: {
-        403: readonly (typeof IdentityErrorCode.SIGNED_OUT_ELSEWHERE | typeof WatchDenialReason.CONCURRENT_LIMIT_REACHED | typeof WatchDenialReason.PREVIEW_EXHAUSTED)[];
+        403: readonly (typeof IdentityErrorCode.SIGNED_OUT_ELSEWHERE | typeof WatchDenialReason.CONCURRENT_LIMIT_REACHED | typeof WatchDenialReason.DATE_CANCELLED | typeof WatchDenialReason.DATE_INTERRUPTED | typeof WatchDenialReason.LIVE_ENDED | typeof WatchDenialReason.NO_REPLAY | typeof WatchDenialReason.NO_SEAT | typeof WatchDenialReason.NOT_PUBLISHED | typeof WatchDenialReason.OUT_OF_TERRITORY | typeof WatchDenialReason.PREVIEW_EXHAUSTED | typeof WatchDenialReason.REPLAY_NOT_ON_SALE | typeof WatchDenialReason.ROOM_NOT_OPEN | typeof WatchDenialReason.SEAT_EXPIRED | typeof WatchDenialReason.SUBSCRIPTION_REQUIRED)[];
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+        410: readonly (typeof WatchDenialReason.REPLAY_EXPIRED)[];
     };
 }>;
 export type ReleasePlaybackRoute = Route<{

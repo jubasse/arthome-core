@@ -15,6 +15,7 @@ import {
   PUBLICATION_PROMISES,
   RUN_STATES,
   PublicationState,
+  TECHNICAL_CHECK_FAILURES,
   REPLAY_POLICIES,
   RIGHTS_SCOPES,
 } from '@arthome/core';
@@ -483,7 +484,7 @@ export const TechnicalCheckSchema: z.ZodObject<
 > = z.looseObject({
   passed: z.boolean().optional(),
   passedAt: InstantOut.nullable().optional(),
-  failures: z.array(z.string()).optional(),
+  failures: z.array(vocabularyOut(TECHNICAL_CHECK_FAILURES)).optional(),
   sample: HealthSampleSchema.optional(),
 });
 

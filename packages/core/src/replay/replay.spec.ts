@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { isReplayWindowOpen, replayHoursLeft, replayUnavailabilityReason } from './index.js';
+import {
+  isReplayWindowOpen,
+  outcomeWithdrawsReplay,
+  replayClosesAt,
+  replayHoursLeft,
+  replayUnavailabilityReason,
+} from './index.js';
 import type { DateTiming } from '../catalog/date-state.js';
-import { ReplayPolicy } from '../vocabulary/catalog.js';
+import { DateOutcome, ReplayPolicy } from '../vocabulary/catalog.js';
 import { WatchDenialReason } from '../vocabulary/entitlement.js';
 
 const timing: DateTiming = {
@@ -61,5 +67,18 @@ describe('the two replay refusals', () => {
 
   it('returns null when available — the absence of a reason IS availability', () => {
     expect(replayUnavailabilityReason(timing, '2026-09-22T10:00:00.000Z')).toBeNull();
+  });
+});
+
+describe('the replay asset (D-092, D-113)', () => {
+  it("closes the window from the live's real end, an overrun included", () => {
+    expect(replayClosesAt('2026-09-21T21:40:00.000Z', 48)).toBe('2026-09-23T21:40:00.000Z');
+  });
+
+  it('withdraws the replay of a cancelled or interrupted date, not of a postponed one', () => {
+    expect(outcomeWithdrawsReplay(DateOutcome.CANCELLED)).toBe(true);
+    expect(outcomeWithdrawsReplay(DateOutcome.INTERRUPTED)).toBe(true);
+    expect(outcomeWithdrawsReplay(DateOutcome.POSTPONED)).toBe(false);
+    expect(outcomeWithdrawsReplay(null)).toBe(false);
   });
 });
