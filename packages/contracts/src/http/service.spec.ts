@@ -7,6 +7,7 @@ import { routeBuilder } from './builder.js';
 import { DERIVED_ERROR_CODES } from './errors.js';
 import { defineApi, errorCodesOf } from './index.js';
 import {
+  ActorSurfaceParameter,
   ServicePrincipalSchema,
   callerService,
   service,
@@ -67,7 +68,20 @@ describe('the service error model', () => {
     expect(openConsole.parameters?.map((parameter) => parameter.name)).toEqual([
       'x-arthome-deadline',
       'traceparent',
+      'x-arthome-actor-surface',
     ]);
+  });
+
+  it("takes the actor's surface on a write, and not on a read", () => {
+    const readConsole = runDesk.defineRoute({
+      method: 'get',
+      path: '/consoles',
+      operationId: 'readConsole',
+      responses: { 204: { description: 'Read.' } },
+    });
+
+    expect(openConsole.parameters).toContain(ActorSurfaceParameter);
+    expect(readConsole.parameters).not.toContain(ActorSurfaceParameter);
   });
 });
 

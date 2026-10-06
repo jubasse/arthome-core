@@ -1,7 +1,7 @@
 /** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
-import type { z } from 'zod';
 import type { ApiErrorCode, CatalogErrorCode, DomainErrorCode } from '@arthome/core';
-import type { HeaderParameter, IdentifiedAccess, ItemResponse, JsonRequestBody, Route, service, serviceConventions } from '../../http/index.js';
+import type { IdentifiedAccess, ItemResponse, JsonRequestBody, Route, service, serviceConventions } from '../../http/index.js';
+import type { ActorSurfaceParameter, DeadlineParameter, RelayedIdempotencyKeyParameter, RelayedTraceparentParameter } from '../../http/service.js';
 import type { RaiseIncidentBodySchema, RunTransitionBodySchema, TechnicalCheckSchema } from '../../studio-api/dates/schemas.js';
 import type { RunConsoleSchema, StudioIncidentSchema } from '../../studio-stage/index.js';
 import type { DateIdParameter } from '../components.js';
@@ -11,8 +11,8 @@ export type GetRunConsoleRoute = Route<{
     path: '/dates/{dateId}/run';
     parameters: readonly [
         typeof DateIdParameter,
-        HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-        HeaderParameter<'traceparent', z.ZodString>
+        typeof DeadlineParameter,
+        typeof RelayedTraceparentParameter
     ];
     access: IdentifiedAccess<typeof service, false>;
     responses: {
@@ -29,9 +29,10 @@ export type RunTechnicalCheckRoute = Route<{
     path: '/dates/{dateId}/run/technical-check';
     parameters: readonly [
         typeof DateIdParameter,
-        HeaderParameter<'Idempotency-Key', z.ZodString, true>,
-        HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-        HeaderParameter<'traceparent', z.ZodString>
+        typeof RelayedIdempotencyKeyParameter,
+        typeof DeadlineParameter,
+        typeof RelayedTraceparentParameter,
+        typeof ActorSurfaceParameter
     ];
     access: IdentifiedAccess<typeof service, false>;
     responses: {
@@ -49,9 +50,10 @@ export type RehearseRunRoute = Route<{
     path: '/dates/{dateId}/run/rehearse';
     parameters: readonly [
         typeof DateIdParameter,
-        HeaderParameter<'Idempotency-Key', z.ZodString, true>,
-        HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-        HeaderParameter<'traceparent', z.ZodString>
+        typeof RelayedIdempotencyKeyParameter,
+        typeof DeadlineParameter,
+        typeof RelayedTraceparentParameter,
+        typeof ActorSurfaceParameter
     ];
     requestBody: JsonRequestBody<typeof RunTransitionBodySchema, true>;
     access: IdentifiedAccess<typeof service, false>;
@@ -70,9 +72,10 @@ export type GoOnAirRoute = Route<{
     path: '/dates/{dateId}/run/go-on-air';
     parameters: readonly [
         typeof DateIdParameter,
-        HeaderParameter<'Idempotency-Key', z.ZodString, true>,
-        HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-        HeaderParameter<'traceparent', z.ZodString>
+        typeof RelayedIdempotencyKeyParameter,
+        typeof DeadlineParameter,
+        typeof RelayedTraceparentParameter,
+        typeof ActorSurfaceParameter
     ];
     requestBody: JsonRequestBody<typeof RunTransitionBodySchema, true>;
     access: IdentifiedAccess<typeof service, false>;
@@ -91,9 +94,10 @@ export type EndRunRoute = Route<{
     path: '/dates/{dateId}/run/end';
     parameters: readonly [
         typeof DateIdParameter,
-        HeaderParameter<'Idempotency-Key', z.ZodString, true>,
-        HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-        HeaderParameter<'traceparent', z.ZodString>
+        typeof RelayedIdempotencyKeyParameter,
+        typeof DeadlineParameter,
+        typeof RelayedTraceparentParameter,
+        typeof ActorSurfaceParameter
     ];
     requestBody: JsonRequestBody<typeof RunTransitionBodySchema, true>;
     access: IdentifiedAccess<typeof service, false>;
@@ -112,9 +116,10 @@ export type ResetRunRoute = Route<{
     path: '/dates/{dateId}/run/reset';
     parameters: readonly [
         typeof DateIdParameter,
-        HeaderParameter<'Idempotency-Key', z.ZodString, true>,
-        HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-        HeaderParameter<'traceparent', z.ZodString>
+        typeof RelayedIdempotencyKeyParameter,
+        typeof DeadlineParameter,
+        typeof RelayedTraceparentParameter,
+        typeof ActorSurfaceParameter
     ];
     requestBody: JsonRequestBody<typeof RunTransitionBodySchema, true>;
     access: IdentifiedAccess<typeof service, false>;
@@ -133,9 +138,10 @@ export type RaiseIncidentRoute = Route<{
     path: '/dates/{dateId}/incidents';
     parameters: readonly [
         typeof DateIdParameter,
-        HeaderParameter<'Idempotency-Key', z.ZodString, true>,
-        HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-        HeaderParameter<'traceparent', z.ZodString>
+        typeof RelayedIdempotencyKeyParameter,
+        typeof DeadlineParameter,
+        typeof RelayedTraceparentParameter,
+        typeof ActorSurfaceParameter
     ];
     requestBody: JsonRequestBody<typeof RaiseIncidentBodySchema, true>;
     access: IdentifiedAccess<typeof service, false>;

@@ -29,8 +29,9 @@ info:
     ## What every call carries
 
     `x-arthome-deadline`, past which the service writes nothing and answers `504`
-    `api.deadline_exceeded`; the surface's `Idempotency-Key`, relayed as is, on a write that takes
-    one; `x-arthome-viewer-country` on every call that decides a watch verdict.
+    `api.deadline_exceeded`; `x-arthome-actor-surface` on every write, the place the event it emits
+    names; the surface's `Idempotency-Key`, relayed as is, on a write that takes one;
+    `x-arthome-viewer-country` on every call that decides a watch verdict.
 
     ## Errors
 
@@ -165,6 +166,7 @@ paths:
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Deadline'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
       responses:
         '200':
           description: The check's result, and the pre-flight checklist.
@@ -323,6 +325,7 @@ paths:
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Deadline'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
       requestBody:
         required: true
         content:
@@ -448,6 +451,7 @@ paths:
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Deadline'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
       requestBody:
         required: true
         content:
@@ -573,6 +577,7 @@ paths:
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Deadline'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
       requestBody:
         required: true
         content:
@@ -692,6 +697,7 @@ paths:
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Deadline'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
       requestBody:
         required: true
         content:
@@ -823,6 +829,7 @@ paths:
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Deadline'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
       requestBody:
         required: true
         content:
@@ -965,6 +972,7 @@ paths:
       - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Deadline'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
       responses:
         '200':
           description: Incident resolved.
@@ -1068,6 +1076,7 @@ paths:
       - $ref: '#/components/parameters/ViewerCountry'
       - $ref: '#/components/parameters/Deadline'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
       requestBody:
         required: true
         content:
@@ -1283,6 +1292,7 @@ paths:
       - $ref: '#/components/parameters/ViewerCountry'
       - $ref: '#/components/parameters/Deadline'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
       responses:
         '200':
           description: Token renewed.
@@ -1375,6 +1385,7 @@ paths:
       - $ref: '#/components/parameters/PlaybackSessionId'
       - $ref: '#/components/parameters/Deadline'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
       responses:
         '204':
           description: Done.
@@ -1427,6 +1438,7 @@ paths:
       - $ref: '#/components/parameters/DateId'
       - $ref: '#/components/parameters/Deadline'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
       requestBody:
         required: true
         content:
@@ -1526,6 +1538,7 @@ paths:
       parameters:
       - $ref: '#/components/parameters/Deadline'
       - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
       requestBody:
         required: true
         content:
@@ -1627,6 +1640,25 @@ components:
         write time. A malformed one is never refused: a broken trace is an observability fault.
       schema:
         type: string
+    ActorSurface:
+      name: x-arthome-actor-surface
+      in: header
+      required: true
+      description: |
+        The surface the person wrote from, relayed by the BFF on every write (`transport.md` §5.2): the
+        event the write emits names its actor's place (`common.proto` `Actor.surface`).
+      schema:
+        type: string
+        enum:
+        - storefront_web
+        - storefront_mobile
+        - storefront_tv
+        - studio_web
+        - studio_mobile
+        - system
+        x-arthome-vocabulary-source: SURFACES
+        examples:
+        - studio_web
     IdempotencyKey:
       name: Idempotency-Key
       in: header

@@ -18,6 +18,7 @@ import { ViewerProgressSchema } from './viewer-progress/schemas.js';
 import { ChapterSchema } from '../catalog/index.js';
 import type { Api } from '../http/index.js';
 import {
+  ActorSurfaceParameter,
   DeadlineParameter,
   IDEMPOTENCY_REPLAYED_HEADER,
   RelayedIdempotencyKeyParameter,
@@ -79,6 +80,7 @@ export const streamingServiceApi: Api<{
     parameters: {
       Deadline: DeadlineParameter,
       Traceparent: RelayedTraceparentParameter,
+      ActorSurface: ActorSurfaceParameter,
       IdempotencyKey: RelayedIdempotencyKeyParameter,
       ViewerCountry: ViewerCountryParameter,
       Surface: SurfaceParameter,

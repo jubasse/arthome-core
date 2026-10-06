@@ -3,14 +3,15 @@
  * between services, the internal token the BFF mints, which names the calling BFF and the end user,
  * verified by the service's guard; the error model and the envelope a service answers; the
  * conventions its resources follow; the rule naming the BFFs a route serves. A route that requires
- * the identity is internal, takes the deadline and the trace context on every call, and answers
- * `504 api.deadline_exceeded` when the instant is already past.
+ * the identity is internal, takes the deadline and the trace context on every call and the actor's
+ * surface on every write, and answers `504 api.deadline_exceeded` when the instant is already past.
  */
 
 import { z } from 'zod';
 
-import { ApiErrorCode } from '@arthome/core';
+import { ApiErrorCode, SURFACES, Surface } from '@arthome/core';
 import type { ErrorCode, InternalTokenIssuer } from '@arthome/core';
+import type { VocabularyIn } from '@arthome/core/schema';
 import {
   CountryCodeSchema,
   ERROR_PARAMS,
@@ -19,6 +20,7 @@ import {
   errorParamsSchemaOf,
   int64,
   uuidIn,
+  vocabularyIn,
 } from '@arthome/core/schema';
 
 import { identity, requirement } from './access.js';
@@ -68,16 +70,33 @@ export const ServicePrincipalSchema: z.ZodObject<
   deviceId: z.string().optional(),
 });
 
+export const ActorSurfaceParameter: HeaderParameter<
+  'x-arthome-actor-surface',
+  VocabularyIn<typeof SURFACES>,
+  true
+> = {
+  name: 'x-arthome-actor-surface',
+  in: 'header',
+  required: true,
+  description:
+    "The surface the person wrote from, relayed by the BFF on every write (`transport.md` §5.2): the\nevent the write emits names its actor's place (`common.proto` `Actor.surface`).\n",
+  schema: vocabularyIn(SURFACES).meta({
+    'x-arthome-vocabulary-source': 'SURFACES',
+    examples: [Surface.STUDIO_WEB],
+  }),
+};
+
 export const service: Identity<
   'service',
   typeof ServicePrincipalSchema,
   never,
   readonly [typeof DeadlineParameter, typeof RelayedTraceparentParameter],
-  readonly []
+  readonly [typeof ActorSurfaceParameter]
 > = identity('service', {
   schemes: { read: [{ internalToken: [] }], write: [{ internalToken: [] }] },
   principal: ServicePrincipalSchema,
   parameters: [DeadlineParameter, RelayedTraceparentParameter],
+  writeParameters: [ActorSurfaceParameter],
   internal: true,
 });
 

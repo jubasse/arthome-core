@@ -1,17 +1,20 @@
 /** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
 
-import type { z } from 'zod';
-
 import type { ApiErrorCode, DomainErrorCode } from '@arthome/core';
 
 import type {
-  HeaderParameter,
   IdentifiedAccess,
   ItemResponse,
   Route,
   service,
   serviceConventions,
 } from '../../http/index.js';
+import type {
+  ActorSurfaceParameter,
+  DeadlineParameter,
+  RelayedIdempotencyKeyParameter,
+  RelayedTraceparentParameter,
+} from '../../http/service.js';
 import type {
   IncidentIdParameter,
   IncidentResolutionSchema,
@@ -23,9 +26,10 @@ export type ResolveIncidentRoute = Route<{
   path: '/incidents/{incidentId}/resolve';
   parameters: readonly [
     typeof IncidentIdParameter,
-    HeaderParameter<'Idempotency-Key', z.ZodString, true>,
-    HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-    HeaderParameter<'traceparent', z.ZodString>,
+    typeof RelayedIdempotencyKeyParameter,
+    typeof DeadlineParameter,
+    typeof RelayedTraceparentParameter,
+    typeof ActorSurfaceParameter,
   ];
   access: IdentifiedAccess<typeof service, false>;
   responses: {

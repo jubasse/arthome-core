@@ -1,11 +1,8 @@
 /** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
 
-import type { z } from 'zod';
-
 import type { ApiErrorCode } from '@arthome/core';
 
 import type {
-  HeaderParameter,
   IdentifiedAccess,
   ItemResponse,
   JsonRequestBody,
@@ -13,6 +10,11 @@ import type {
   service,
   serviceConventions,
 } from '../../http/index.js';
+import type {
+  ActorSurfaceParameter,
+  DeadlineParameter,
+  RelayedTraceparentParameter,
+} from '../../http/service.js';
 import type {
   PlaybackPositionSchema,
   RecordPlaybackPositionBodySchema,
@@ -25,8 +27,9 @@ export type RecordPlaybackPositionRoute = Route<{
   path: '/me/progress/{dateId}';
   parameters: readonly [
     typeof DateIdParameter,
-    HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-    HeaderParameter<'traceparent', z.ZodString>,
+    typeof DeadlineParameter,
+    typeof RelayedTraceparentParameter,
+    typeof ActorSurfaceParameter,
   ];
   requestBody: JsonRequestBody<typeof RecordPlaybackPositionBodySchema, true>;
   access: IdentifiedAccess<typeof service, false>;

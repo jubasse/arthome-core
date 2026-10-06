@@ -689,7 +689,8 @@ Found on review: what the declaration must also carry so that nothing else is wr
   versioned record carries its `version` inside `data`, never at the root. Streaming starts on the
   rule. Catalog's and ticketing's services answer a root `version` today, their legacy envelope, and
   change when they migrate to this model, in their own PRD.
-- **What every call carries**: `x-arthome-deadline` and `traceparent`, from the identity; the
+- **What every call carries**: `x-arthome-deadline` and `traceparent`, from the identity, and on
+  every write `x-arthome-actor-surface` (§5.2), so an event names its actor's place; the
   surface's `Idempotency-Key`, relayed as is, on a write; `x-arthome-viewer-country` where a watch
   verdict is decided.
 

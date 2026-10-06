@@ -3,12 +3,13 @@
  * between services, the internal token the BFF mints, which names the calling BFF and the end user,
  * verified by the service's guard; the error model and the envelope a service answers; the
  * conventions its resources follow; the rule naming the BFFs a route serves. A route that requires
- * the identity is internal, takes the deadline and the trace context on every call, and answers
- * `504 api.deadline_exceeded` when the instant is already past.
+ * the identity is internal, takes the deadline and the trace context on every call and the actor's
+ * surface on every write, and answers `504 api.deadline_exceeded` when the instant is already past.
  */
 import { z } from 'zod';
-import { ApiErrorCode } from '@arthome/core';
+import { ApiErrorCode, SURFACES } from '@arthome/core';
 import type { ErrorCode, InternalTokenIssuer } from '@arthome/core';
+import type { VocabularyIn } from '@arthome/core/schema';
 import { ErrorSchema } from '@arthome/core/schema';
 import type { Identity, Requirement } from './access.js';
 import type { CodedResponse, ErrorBody, ErrorModel } from './errors.js';
@@ -28,7 +29,8 @@ export declare const ServicePrincipalSchema: z.ZodObject<{
     profileId: z.ZodOptional<z.ZodString>;
     deviceId: z.ZodOptional<z.ZodString>;
 }, z.core.$strip>;
-export declare const service: Identity<'service', typeof ServicePrincipalSchema, never, readonly [typeof DeadlineParameter, typeof RelayedTraceparentParameter], readonly []>;
+export declare const ActorSurfaceParameter: HeaderParameter<'x-arthome-actor-surface', VocabularyIn<typeof SURFACES>, true>;
+export declare const service: Identity<'service', typeof ServicePrincipalSchema, never, readonly [typeof DeadlineParameter, typeof RelayedTraceparentParameter], readonly [typeof ActorSurfaceParameter]>;
 /** The BFFs a route serves, by the token's issuer: any other caller is refused `403 api.forbidden`. */
 export declare function callerService<const Issuers extends readonly [InternalTokenIssuer, ...InternalTokenIssuer[]]>(...issuers: Issuers): Requirement<'callerService', {
     readonly issuers: Issuers;

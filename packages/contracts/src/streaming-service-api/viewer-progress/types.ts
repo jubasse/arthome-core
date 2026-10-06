@@ -1,12 +1,9 @@
 /** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
 
-import type { z } from 'zod';
-
 import type { ApiErrorCode } from '@arthome/core';
 
 import type { ViewerProgressBatchBodySchema, ViewerProgressSchema } from './schemas.js';
 import type {
-  HeaderParameter,
   IdentifiedAccess,
   JsonRequestBody,
   Route,
@@ -14,14 +11,20 @@ import type {
   service,
   serviceConventions,
 } from '../../http/index.js';
+import type {
+  ActorSurfaceParameter,
+  DeadlineParameter,
+  RelayedTraceparentParameter,
+} from '../../http/service.js';
 
 export type GetViewerProgressBatchRoute = Route<{
   method: 'post';
   version: 1;
   path: '/viewer-progress/batch';
   parameters: readonly [
-    HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-    HeaderParameter<'traceparent', z.ZodString>,
+    typeof DeadlineParameter,
+    typeof RelayedTraceparentParameter,
+    typeof ActorSurfaceParameter,
   ];
   requestBody: JsonRequestBody<typeof ViewerProgressBatchBodySchema, true>;
   access: IdentifiedAccess<typeof service, false>;

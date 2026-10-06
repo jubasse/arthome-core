@@ -80,7 +80,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 203 exported names.
+Declarations: `dist/http/index.d.ts` — 204 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
@@ -88,6 +88,7 @@ Declarations: `dist/http/index.d.ts` — 203 exported names.
 - `Acknowledged` (const) — `Acknowledged: z.ZodOptional<z.ZodObject<{ accepted: z.ZodOptional<z.ZodBoolean>; }, z.core.$loose>>` — The data of an action that answers only that it was done.
 - `ActionOptions` (type)
 - `ActionRoute` (type)
+- `ActorSurfaceParameter` (const) — `ActorSurfaceParameter: HeaderParameter<'x-arthome-actor-surface', VocabularyIn<typeof SURFACES>, true>`
 - `Api` (type) — `type Api<Routes extends Readonly<Record<string, Route>> = Readonly<Record<string, Route>>> = ApiDefinition<Routes>;`
 - `ApiComponents` (interface)
 - `ApiDefinition` (interface) — A whole document: its top-level keys as the document writes them, 'routes' in place of 'paths'.
@@ -272,7 +273,7 @@ Declarations: `dist/http/index.d.ts` — 203 exported names.
 - `searchText` (function) — `function searchText(options?: SearchTextOptions): QueryParameter<'q', z.ZodString>;` — The free-text 'q', searched server-side.
 - `sensitive` (function) — `function sensitive<S extends z.ZodType>(schema: S): S;` — A password, a token, a stream key: 'format: password' in the document, redacted from logs, never cached.
 - `sensitivePathsOf` (function) — `function sensitivePathsOf(schema: z.ZodType): readonly string[];` — The dotted paths of the sensitive fields: 'reauthToken', 'data.streamKey', 'items[].secret'.
-- `service` (const) — `service: Identity<'service', typeof ServicePrincipalSchema, never, readonly [typeof DeadlineParameter, typeof RelayedTraceparentParameter], readonly []>`
+- `service` (const)
 - `serviceConventions` (const) — The envelope services answer: 'data' under the meta, a page's 'items' and 'page' at the root.
 - `serviceErrors` (const) — `serviceErrors: ErrorModel<ErrorCode>` — What a service answers whatever it declares.
 - `sortDirectionSchema` (function) — `function sortDirectionSchema(): z.ZodDefault<z.ZodEnum<{ readonly [K in SortDirection]: K; }>>;` — The 'sortDir' schema: ascending unless asked otherwise.

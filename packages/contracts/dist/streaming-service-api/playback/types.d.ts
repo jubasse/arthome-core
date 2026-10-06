@@ -1,7 +1,7 @@
 /** Written by tools/contract-types.mjs from ./routes.ts. Never edited. */
-import type { z } from 'zod';
 import type { ApiErrorCode, IdentityErrorCode, WatchDenialReason } from '@arthome/core';
-import type { HeaderParameter, IdentifiedAccess, ItemResponse, JsonRequestBody, Response, Route, ViewerCountryParameter, service, serviceConventions } from '../../http/index.js';
+import type { IdentifiedAccess, ItemResponse, JsonRequestBody, Response, Route, ViewerCountryParameter, service, serviceConventions } from '../../http/index.js';
+import type { ActorSurfaceParameter, DeadlineParameter, RelayedTraceparentParameter } from '../../http/service.js';
 import type { SurfaceParameter } from '../../storefront-api/components.js';
 import type { OpenPlaybackBodySchema, PlaybackSessionIdParameter } from '../../storefront-api/playback/schemas.js';
 import type { PlaybackRenewalSchema, PlaybackTicketSchema } from '../../streaming/index.js';
@@ -14,8 +14,9 @@ export type OpenPlaybackRoute = Route<{
         typeof DateIdParameter,
         typeof SurfaceParameter,
         typeof ViewerCountryParameter,
-        HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-        HeaderParameter<'traceparent', z.ZodString>
+        typeof DeadlineParameter,
+        typeof RelayedTraceparentParameter,
+        typeof ActorSurfaceParameter
     ];
     requestBody: JsonRequestBody<typeof OpenPlaybackBodySchema, true>;
     access: IdentifiedAccess<typeof service, false>;
@@ -35,8 +36,9 @@ export type RenewPlaybackTicketRoute = Route<{
     parameters: readonly [
         typeof PlaybackSessionIdParameter,
         typeof ViewerCountryParameter,
-        HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-        HeaderParameter<'traceparent', z.ZodString>
+        typeof DeadlineParameter,
+        typeof RelayedTraceparentParameter,
+        typeof ActorSurfaceParameter
     ];
     access: IdentifiedAccess<typeof service, false>;
     responses: {
@@ -53,8 +55,9 @@ export type ReleasePlaybackRoute = Route<{
     path: '/playback/sessions/{sessionId}/release';
     parameters: readonly [
         typeof PlaybackSessionIdParameter,
-        HeaderParameter<'x-arthome-deadline', z.ZodString, true>,
-        HeaderParameter<'traceparent', z.ZodString>
+        typeof DeadlineParameter,
+        typeof RelayedTraceparentParameter,
+        typeof ActorSurfaceParameter
     ];
     access: IdentifiedAccess<typeof service, false>;
     responses: {
