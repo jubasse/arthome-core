@@ -24,7 +24,7 @@ here, and a skill for one of them would be the wrong instrument.
 | `pnpm run verify` | everything below, in order. Green before you commit, and the pre-commit hook enforces it |
 | `pnpm run verify:offline` | the subset needing no install. Does **not** run `format:check`, `lint`, `typecheck` or `test` |
 | `pnpm -r run build` | every package. There is no root `build` script — `pnpm run build` fails |
-| `pnpm run generate:openapi` | writes `openapi/storefront.yaml` and `openapi/studio.yaml` from the route declarations. Run it after any change to `packages/contracts` that reaches a document, and commit both |
+| `pnpm run generate:openapi` | writes `openapi/storefront.yaml`, `openapi/studio.yaml` and one `openapi/<service>-service.yaml` per service api (`packages/contracts/src/<service>-service-api/`, D-121) from the route declarations. Run it after any change to `packages/contracts` that reaches a document, and commit every document it rewrites |
 | `node tools/pack-release.mjs v<version> <dir>` | packs the three packages as a release would; `v<version>-rc.<n>` stamps the tarballs as a release candidate and leaves the checkout untouched; the release workflow runs the same command (README, "Releasing"). CI runs `verify` on every pull request to `develop` or `main` |
 | `pnpm run fix` | Prettier, then ESLint `--fix`, then Prettier again |
 | `pnpm run generate:contract-types` | writes the `types.ts` of every module folder (`<api>/<module>/`) from its `routes.ts`, and the explicit types of its `schemas.ts`. Run it after any change to a module folder, and commit what it writes |
@@ -45,8 +45,8 @@ read-only design content) · `check-core-entry` (nothing
 reachable from the `.` entry point imports zod or a Node API) · `check-contract-docs` (no
 subpath a surface imports reaches a docs or examples module of the contracts, and the maturity
 regimes match `transport.md` §5.11) · `check-decisions-index`
-(`DECISIONS-INDEX.md` matches what regenerating from `DECISIONS.md` produces) · `check-openapi` (both documents
-conform) · `check-openapi-generated` (each committed document is byte for byte what the route declarations generate, D-120) · `check-contract-types` (each module folder's `types.ts` and `schemas.ts` annotations are what the tool writes) · `check-vocabulary` (the documents, the architecture prose and `@arthome/core` agree
+(`DECISIONS-INDEX.md` matches what regenerating from `DECISIONS.md` produces) · `check-openapi` (every document
+conforms) · `check-openapi-generated` (each committed document is byte for byte what the route declarations generate, D-120) · `check-contract-types` (each module folder's `types.ts` and `schemas.ts` annotations are what the tool writes) · `check-vocabulary` (the documents, the architecture prose and `@arthome/core` agree
 member for member) · `check-map` (`REPOSITORY_MAP.md` matches the installed
 declarations) · `check-prettier-conflict` (no ESLint rule fights Prettier).
 
@@ -72,8 +72,8 @@ two agents in one afternoon.
 change shows up in `dist` too. That is expected; commit it.
 
 **`@arthome/contracts` is the source, `openapi/` is generated from it (D-120).** Edit the route
-declaration or the zod schema, then `pnpm run generate:openapi`, and commit the source and both
-documents. Editing a document by hand makes `check-openapi-generated` red, correctly.
+declaration or the zod schema, then `pnpm run generate:openapi`, and commit the source and the
+documents it rewrites. Editing a document by hand makes `check-openapi-generated` red, correctly.
 
 **Proving a comment-only change is comment-only: run each touched file through the TypeScript
 parser with `removeComments` and compare to `HEAD`.** A hand-rolled token scanner is not enough — five

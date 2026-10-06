@@ -334,7 +334,7 @@ Declarations: `dist/money/index.d.ts` — 4 exported names.
 
 #### @arthome/contracts/openapi
 
-Declarations: `dist/openapi/index.d.ts` — 17 exported names.
+Declarations: `dist/openapi/index.d.ts` — 18 exported names.
 
 - `ApiDocs` (interface)
 - `ApiDocsDefinition` (interface)
@@ -353,6 +353,7 @@ Declarations: `dist/openapi/index.d.ts` — 17 exported names.
 - `documentationOf` (function) — `function documentationOf(route: RouteDefinition, doc: OperationDoc | undefined): OperationDocumentation;` — The prose and doc-only 'x-arthome-*' of 'route', from what its module registered: the registry is the only source, and a route carrying its…
 - `maturityOf` (function) — `function maturityOf(upstream: readonly Upstream[]): Maturity | undefined;` — The regime of the operation's owning service, the first service in its upstream: a BFF keeps its own shape stable over a provisional servic…
 - `openApiDocumentOf` (function) — `function openApiDocumentOf(api: Api, docs?: ApiDocs): OpenApiDocument;`
+- `operationDocsOf` (function) — `function operationDocsOf(docs: ApiDocs, operationIds: readonly string[]): ModuleDocs;` — The docs 'docs' registered for 'operationIds', for an api that serves the same operations.
 
 #### @arthome/contracts/pagination
 
@@ -385,6 +386,19 @@ Declarations: `dist/streaming/index.d.ts` — 4 exported names.
 - `IncidentSchema` (const)
 - `PlaybackRenewalSchema` (const)
 - `PlaybackTicketSchema` (const)
+
+#### @arthome/contracts/streaming-service-api
+
+Declarations: `dist/streaming-service-api/index.d.ts` — 1 exported names.
+
+- `streamingServiceApi` (const)
+
+#### @arthome/contracts/streaming-service-api/docs
+
+Declarations: `dist/streaming-service-api/docs.d.ts` — 2 exported names.
+
+- `streamingServiceDocs` (const) — `streamingServiceDocs: ApiDocs` — The streaming service document's introduction, and the docs and examples its modules register.
+- `streamingServiceDocsOf` (const) — `streamingServiceDocsOf: (route: RouteDefinition) => OperationDocumentation` — Each streaming service operation's prose and doc-only metadata, by route: for the service's own docs.
 
 #### @arthome/contracts/studio-access
 
@@ -1076,6 +1090,7 @@ each directory is covered and each entry has a directory, not that the sentence 
 - `packages/contracts/src/pagination/` — Cursor pagination primitives (subpath @arthome/contracts/pagination).
 - `packages/contracts/src/storefront-api/` — Every operation of the storefront contract, declared as TypeScript: the source of openapi/storefront.yaml.
 - `packages/contracts/src/streaming/` — Watching: the entitlement verdict, the playback ticket and its renewal, and what interrupts a run.
+- `packages/contracts/src/streaming-service-api/` — Every internal operation of the streaming service, which only the BFFs call: the source of openapi/streaming-service.yaml.
 - `packages/contracts/src/studio-access/` — Who may operate, and with what: the actor, their effective rights, and the bootstrap a studio surface is handed on sign-in. Separate from `identity` because the two products' session shapes genuinely differ — a viewer receives a ViewerContext, a control room receives a StudioBootstrap.
 - `packages/contracts/src/studio-api/` — Every operation of the studio contract, declared as TypeScript: the source of openapi/studio.yaml.
 - `packages/contracts/src/studio-desk/` — Moderation, the audience, the inbox and the journal — the duty desk.

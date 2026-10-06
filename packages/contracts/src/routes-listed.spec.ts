@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Api, Route } from './http/index.js';
 import { storefrontApi } from './storefront-api/index.js';
+import { streamingServiceApi } from './streaming-service-api/index.js';
 import { studioApi } from './studio-api/index.js';
 
 type Module = Readonly<Record<string, unknown>>;
@@ -72,6 +73,23 @@ const APIS: readonly (readonly [string, Api, readonly Module[]])[] = [
       import.meta.glob<Module>(['./studio-api/*/*.ts', '!./studio-api/contract-types-fixture/**'], {
         eager: true,
       }),
+    ),
+  ],
+  [
+    'streaming-service-api',
+    streamingServiceApi,
+    modulesOf(
+      import.meta.glob<Module>(
+        [
+          './streaming-service-api/*/routes.ts',
+          '!./streaming-service-api/contract-types-fixture/**',
+        ],
+        { eager: true },
+      ),
+      import.meta.glob<Module>(
+        ['./streaming-service-api/*/*.ts', '!./streaming-service-api/contract-types-fixture/**'],
+        { eager: true },
+      ),
     ),
   ],
 ];

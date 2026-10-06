@@ -132,6 +132,17 @@ export function apiDocs(definition: ApiDocsDefinition): ApiDocs {
   return { ...document, operations, examples: new ExampleRegistry(examples) };
 }
 
+/** The docs `docs` registered for `operationIds`, for an api that serves the same operations. */
+export function operationDocsOf(docs: ApiDocs, operationIds: readonly string[]): ModuleDocs {
+  return Object.fromEntries(
+    operationIds.map((operationId) => {
+      const doc = docs.operations[operationId];
+      if (doc === undefined) throw new Error(`apiDocs: "${operationId}" is not documented.`);
+      return [operationId, doc];
+    }),
+  );
+}
+
 /** The extensions only a module's `docs.ts` writes of an operation, never its route; so is its prose. */
 const DOC_ONLY_EXTENSIONS: readonly `x-${string}`[] = [
   'x-arthome-maturity',

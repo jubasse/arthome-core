@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""arthome-generate-openapi -- openapi/storefront.yaml and openapi/studio.yaml, from the route declarations.
+"""arthome-generate-openapi -- the OpenAPI documents, from the route declarations.
 
-The two documents are GENERATED (D-120): every operation is declared in TypeScript in
-`@arthome/contracts/storefront-api` and `/studio-api`, and `@arthome/contracts/openapi` turns
-each api, with its docs module (`docs.ts` beside its `index.ts`), into its document. This tool is the YAML writer on top of that emission and the gate
-that holds the committed files to it.
+The documents are GENERATED (D-120, D-121): every operation is declared in TypeScript in
+`@arthome/contracts/storefront-api` and `/studio-api`, and every internal one in a service api
+(`<service>-service-api`, one document each), and `@arthome/contracts/openapi` turns each api, with
+its docs module (`docs.ts` beside its `index.ts`), into its document. This tool is the YAML writer
+on top of that emission and the gate that holds the committed files to it.
 
-    python3 tools/generate-openapi.py            write both documents
+    python3 tools/generate-openapi.py            write every document
     python3 tools/generate-openapi.py --check    fail when a committed document differs from what the
                                                  declarations generate (the whole document: paths,
                                                  components, top-level keys, byte for byte)
@@ -25,7 +26,15 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-DOCUMENTS = ("storefront", "studio")
+SOURCES = ROOT / "packages" / "contracts" / "src"
+SURFACES = ("storefront", "studio")
+
+
+def documents():
+    """The surfaces' documents, then one per service api, `streaming-service` for `streaming-service-api`."""
+    services = sorted(path.name[: -len("-api")] for path in SOURCES.glob("*-service-api") if path.is_dir())
+    return SURFACES + tuple(services)
+
 HEADER = (
     "# Generated from packages/contracts/src/{product}-api by tools/generate-openapi.py (D-120).\n"
     "# Edit the declarations, run `pnpm run generate:openapi`, commit both. Never edit this file.\n\n"
@@ -96,7 +105,7 @@ def main(argv):
     if not build():
         return 1
     failed = 0
-    for product in DOCUMENTS:
+    for product in documents():
         text = generated(product)
         if text is None:
             return 1

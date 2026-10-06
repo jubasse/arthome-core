@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { Upstream } from '@arthome/core';
 
 import type { ModuleDocs, ModuleExamples } from './docs.js';
-import { ExampleRegistry, apiDocs, maturityOf } from './docs.js';
+import { ExampleRegistry, apiDocs, maturityOf, operationDocsOf } from './docs.js';
 import { openApiDocumentOf } from './index.js';
 import { defineApi, defineRoute } from '../http/index.js';
 import { storefrontV1 } from '../storefront-api/components.js';
@@ -57,6 +57,13 @@ describe('apiDocs', () => {
 
     expect(registry.entriesOf([Item])).toEqual([[Item, [{ name: 'a' }]]]);
     expect(() => registry.entriesOf([z.object({})])).toThrow('has none');
+  });
+
+  it('hands another api the docs of the operations it asks for, and refuses one undocumented', () => {
+    const docs = apiDocs({ modules: [{ getDate: { description: 'One.' } }] });
+
+    expect(operationDocsOf(docs, ['getDate'])).toEqual({ getDate: { description: 'One.' } });
+    expect(() => operationDocsOf(docs, ['getSeat'])).toThrow('"getSeat" is not documented');
   });
 });
 
