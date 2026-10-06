@@ -163,6 +163,16 @@ describe('decideWatch — the truth table', () => {
     );
   });
 
+  it('a date under technical check is read on the time axis, never opened at any hour (D-072)', () => {
+    const technical = { holdsSeat: true, publicationState: PublicationState.TECHNICAL };
+    expect(decideWatch(room({ ...technical, now: '2026-09-21T12:00:00.000Z' })).reason).toBe(
+      WatchDenialReason.ROOM_NOT_OPEN,
+    );
+    expect(decideWatch(room({ ...technical, now: '2026-09-21T22:00:00.000Z' })).reason).toBe(
+      WatchDenialReason.LIVE_ENDED,
+    );
+  });
+
   it('a non-holder in the room gets the buy action, never a preview (D-110)', () => {
     const verdict = decideWatch(room({ previewSecondsLeft: 300 }));
     expect(verdict.allowed).toBe(false);
@@ -233,6 +243,13 @@ describe('decideWatch — the truth table', () => {
     expect(decideWatch(base(postponed)).fallback).toBe(WatchFallbackAction.BUY_SEAT);
   });
 
+  it('a seat held or an all_lives plan outranks a lost seat', () => {
+    for (const opens of [{ holdsSeat: true }, { planOpenings: [PlanOpening.ALL_LIVES] }]) {
+      expect(decideWatch(base({ ...opens, seatExpired: true })).scope).toBe(WatchScope.FULL);
+      expect(decideWatch(room({ ...opens, seatExpired: true })).scope).toBe(WatchScope.FULL);
+    }
+  });
+
   it('a lost seat refuses watch.seat_expired, never a preview', () => {
     const onAir = decideWatch(
       base({ seatExpired: true, previewSecondsLeft: 300, now: stillSelling }),
@@ -241,6 +258,56 @@ describe('decideWatch — the truth table', () => {
     expect(onAir.scope).toBe(WatchScope.NONE);
     expect(onAir.fallback).toBe(WatchFallbackAction.BUY_SEAT);
     expect(decideWatch(room({ seatExpired: true })).reason).toBe(WatchDenialReason.SEAT_EXPIRED);
+  });
+});
+
+/**
+ * PROTECTED INVARIANT
+ *   Where two refusals apply, the more definitive one is said: each adjacent pair of the order,
+ *   once.
+ */
+describe('decideWatch — two refusals at once', () => {
+  it('territory before a cancelled date', () => {
+    const verdict = decideWatch(
+      base({
+        holdsSeat: true,
+        outcome: DateOutcome.CANCELLED,
+        viewerCountry: 'BE',
+        rights: restrictedRights(['BE'], BlackoutReason.BROADCASTER),
+      }),
+    );
+    expect(verdict.reason).toBe(WatchDenialReason.OUT_OF_TERRITORY);
+  });
+
+  it('an interrupted date before a date not published', () => {
+    const verdict = decideWatch(
+      base({ outcome: DateOutcome.INTERRUPTED, publicationState: PublicationState.DRAFT }),
+    );
+    expect(verdict.reason).toBe(WatchDenialReason.DATE_INTERRUPTED);
+  });
+
+  it('a date not published before the live over', () => {
+    const verdict = decideWatch(
+      base({
+        holdsSeat: true,
+        publicationState: PublicationState.DRAFT,
+        runState: null,
+        now: '2026-09-21T22:00:00.000Z',
+      }),
+    );
+    expect(verdict.reason).toBe(WatchDenialReason.NOT_PUBLISHED);
+  });
+
+  it('the live over before the room not open', () => {
+    const verdict = decideWatch(
+      base({
+        holdsSeat: true,
+        outcome: DateOutcome.POSTPONED,
+        timing: { ...timing, startsAt: '2026-09-28T19:00:00.000Z' },
+        runState: RunState.ENDED,
+      }),
+    );
+    expect(verdict.reason).toBe(WatchDenialReason.LIVE_ENDED);
   });
 });
 
@@ -323,6 +390,21 @@ describe('the seat action', () => {
     expect(
       actionFor(seatStandingOf({ ...facts, publicSeatsAvailable: 2, onWaitlist: false })),
     ).toBe(WatchFallbackAction.BUY_SEAT);
+  });
+
+  it('an allowed preview carries the same seat action beside it', () => {
+    const previewWith = (seatStanding: SeatStanding | null) =>
+      decideWatch(base({ previewSecondsLeft: 300, now: stillSelling, seatStanding }));
+    for (const [standing, action] of [
+      [onPublicSale, WatchFallbackAction.BUY_SEAT],
+      [onTheList, WatchFallbackAction.NONE],
+      [soldOutStranger, WatchFallbackAction.JOIN_WAITLIST],
+      [null, WatchFallbackAction.JOIN_WAITLIST],
+    ] as const) {
+      const verdict = previewWith(standing);
+      expect(verdict.scope).toBe(WatchScope.PREVIEW);
+      expect(verdict.fallback).toBe(action);
+    }
   });
 });
 
