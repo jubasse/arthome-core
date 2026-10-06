@@ -259,7 +259,7 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 |---|---|---|
 | `streaming.run.technical_check_passed.v1` | `date_id`, `passed_at`, `protocol` | **`catalog`** (checklist → unlocks publication) |
 | `streaming.run.started.v1` | `date_id`, `started_at`, `protocol`, `monitor_path` | **`catalog`** (`technical → live`), `chat` (opens the chat), `notifications` ("followed artist live") |
-| `streaming.run.ended.v1` | `date_id`, `ended_at`, `peak_viewers`, `avg_viewers`, `duration_sec` | **`catalog`** (`live → ended`), `chat` (closes), **`payouts`** (the 14-day due date runs from here), `identity` (`runs_called`) |
+| `streaming.run.ended.v1` | `date_id`, `ended_at`, `ended_by` (`SURFACE_SYSTEM` when the run ended by itself, D-123), `peak_viewers?`, `peak_at?`, `avg_viewers?` (absent when unmeasured, never zero), `duration_sec` | **`catalog`** (`live → ended`), `chat` (closes), **`payouts`** (the 14-day due date runs from here), `identity` (`runs_called`) |
 | `streaming.run.state_changed.v1` | `date_id`, `state`, `cause?` | `catalog` (public card) |
 | `streaming.incident.raised.v1` / `.resolved.v1` | `date_id`, `kind`, `cause`, `message`, `content_language`, `triggered_by` (`manual`\|`auto`) | `catalog`, `notifications` (routed to the run desk) |
 | `streaming.replay.asset_ready.v1` | `date_id`, `duration_sec`, `available_from`, `expires_at` | **`catalog`** (the card can say "replay"), `ticketing` (putting it on sale), `notifications` ("expires in 6 h") |
