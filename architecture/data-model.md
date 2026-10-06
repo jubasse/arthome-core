@@ -719,6 +719,7 @@ served (`converted`); an account registering while a window is open is notified 
 `lapsed`: it has left the list, and registers again to be told next time. `left` is an entry its
 account withdrew. A new registration reuses the row: `left`, `lapsed` and `converted` move back to
 `waiting`, or to `notified` inside an open window (`waitlistEntryMayMove`, `waitlistStateOnJoin`).
+A second tier opening inside a window notifies a `notified` entry again, `notified` to `notified`.
 
 **`closed` is an entry its date ended** (D-096): a cancellation or an interruption closes every
 `waiting` or `notified` entry and the priority pool, and nobody is told beyond the date's card.

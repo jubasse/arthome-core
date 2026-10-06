@@ -17,7 +17,10 @@ export function isPriorityWindowOpen(priorityUntil: Instant | null, now: Instant
   return priorityUntil !== null && isBefore(now, priorityUntil);
 }
 
-/** `left`, `lapsed` and `converted` move back when the account registers again, on the same row. */
+/**
+ * `left`, `lapsed` and `converted` move back when the account registers again, on the same row. A
+ * second tier opening inside a window notifies a `notified` entry again.
+ */
 const WAITLIST_ENTRY_MOVES: Readonly<Record<WaitlistEntryState, readonly WaitlistEntryState[]>> = {
   [WaitlistEntryState.WAITING]: [
     WaitlistEntryState.NOTIFIED,
@@ -26,6 +29,7 @@ const WAITLIST_ENTRY_MOVES: Readonly<Record<WaitlistEntryState, readonly Waitlis
     WaitlistEntryState.CLOSED,
   ],
   [WaitlistEntryState.NOTIFIED]: [
+    WaitlistEntryState.NOTIFIED,
     WaitlistEntryState.CONVERTED,
     WaitlistEntryState.LAPSED,
     WaitlistEntryState.LEFT,

@@ -114,6 +114,7 @@ describe("a waiting-list entry's moves", () => {
       `${WAITING}>${CONVERTED}`,
       `${WAITING}>${LEFT}`,
       `${WAITING}>${CLOSED}`,
+      `${NOTIFIED}>${NOTIFIED}`,
       `${NOTIFIED}>${CONVERTED}`,
       `${NOTIFIED}>${LEFT}`,
       `${NOTIFIED}>${LAPSED}`,
@@ -125,6 +126,16 @@ describe("a waiting-list entry's moves", () => {
       `${LAPSED}>${WAITING}`,
       `${LAPSED}>${NOTIFIED}`,
     ]);
+  });
+
+  it('a second tier opening inside a window notifies a notified entry again', () => {
+    expect(waitlistEntryMayMove(WaitlistEntryState.NOTIFIED, WaitlistEntryState.NOTIFIED)).toBe(
+      true,
+    );
+    expect(waitlistEntryMayMove(WaitlistEntryState.WAITING, WaitlistEntryState.WAITING)).toBe(
+      false,
+    );
+    expect(waitlistEntryMayMove(WaitlistEntryState.CLOSED, WaitlistEntryState.CLOSED)).toBe(false);
   });
 
   it('a cancellation and an interruption end the list, a postponement does not (D-096)', () => {
