@@ -1,8 +1,14 @@
 import { z } from 'zod';
 
-import { PRICE_TIERS } from '@arthome/core';
-import type { VocabularyIn } from '@arthome/core/schema';
-import { int64, MoneyOut, uuidOut, vocabularyIn } from '@arthome/core/schema';
+import { PRICE_TIERS, WAITLIST_ENTRY_STATES } from '@arthome/core';
+import type { VocabularyIn, VocabularyOutNullable } from '@arthome/core/schema';
+import {
+  int64,
+  MoneyOut,
+  uuidOut,
+  vocabularyIn,
+  vocabularyOutNullable,
+} from '@arthome/core/schema';
 
 import { DateCardSchema, PriceTierSchema } from '../../catalog/index.js';
 import type { QueryParameter } from '../../http/index.js';
@@ -57,6 +63,7 @@ export const QuoteSeatBodySchema: z.ZodObject<
 export const WaitlistRegistrationSchema: z.ZodObject<
   {
     joined: z.ZodBoolean;
+    state: z.ZodOptional<VocabularyOutNullable>;
     rankDisclosed: z.ZodBoolean;
     rank: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     priorityWindowHours: z.ZodOptional<z.ZodInt>;
@@ -65,6 +72,11 @@ export const WaitlistRegistrationSchema: z.ZodObject<
   z.core.$loose
 > = z.looseObject({
   joined: z.boolean(),
+  state: vocabularyOutNullable(WAITLIST_ENTRY_STATES)
+    .optional()
+    .describe(
+      "The caller's entry. `null` when the account never registered; `joined` is true for `waiting`\nor `notified` only.\n",
+    ),
   rankDisclosed: z.boolean(),
   rank: z.int().meta({ minimum: undefined, maximum: undefined }).nullable().optional(),
   priorityWindowHours: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),

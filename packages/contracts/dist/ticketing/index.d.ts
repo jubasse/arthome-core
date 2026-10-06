@@ -36,7 +36,7 @@ export declare const TicketCardSchema: z.ZodObject<{
     date: typeof DateCardSchema;
     refund: z.ZodOptional<z.ZodNullable<z.ZodObject<{
         amount: z.ZodOptional<typeof MoneyOut>;
-        delayCode: z.ZodOptional<z.ZodString>;
+        delayCode: z.ZodOptional<VocabularyOut>;
         method: z.ZodOptional<VocabularyOut>;
         refundReasonCode: z.ZodOptional<VocabularyOutNullable>;
     }, z.core.$loose>>>;

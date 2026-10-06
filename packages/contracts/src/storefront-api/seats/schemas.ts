@@ -1,14 +1,16 @@
 import { z } from 'zod';
 
+import { SeatCancelReason } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
-import { uuidIn } from '@arthome/core/schema';
+import { uuidIn, vocabularyIn } from '@arthome/core/schema';
 
 import { DateCardSchema } from '../../catalog/index.js';
 import type { PathParameter } from '../../http/index.js';
-import { localVocabulary } from '../../http/index.js';
 import { TicketCardSchema } from '../../ticketing/index.js';
 
-const CANCEL_SEAT_CANCEL_REASON_CODE = ['viewer_request'] as const;
+const VIEWER_SEAT_CANCEL_REASONS: readonly [typeof SeatCancelReason.VIEWER_REQUEST] = [
+  SeatCancelReason.VIEWER_REQUEST,
+];
 
 export const SeatIdParameter: PathParameter<'seatId', z.ZodString> = {
   name: 'seatId',
@@ -18,16 +20,14 @@ export const SeatIdParameter: PathParameter<'seatId', z.ZodString> = {
 };
 
 export const CancelSeatBodySchema: z.ZodObject<
-  { cancelReasonCode: z.ZodOptional<VocabularyIn<typeof CANCEL_SEAT_CANCEL_REASON_CODE>> },
+  { cancelReasonCode: z.ZodOptional<VocabularyIn<typeof VIEWER_SEAT_CANCEL_REASONS>> },
   z.core.$strip
 > = z.object({
-  cancelReasonCode: localVocabulary(
-    CANCEL_SEAT_CANCEL_REASON_CODE,
-    'A single-member enum: it records the actor on an audit line, and this path has exactly one actor. Flagged in the description as a question, not settled as a vocabulary.',
-  )
+  cancelReasonCode: vocabularyIn(VIEWER_SEAT_CANCEL_REASONS)
     .meta({
-      description:
-        '**One member, and that is a question rather than a vocabulary.** A field whose\nenum has a single value carries no information: every request that reaches this\npath says the same thing. It is here because the audit line must record *who*\nasked — and a viewer cancelling their own seat is the only actor this path has.\n\n**What would make it a vocabulary is a second actor**, and there is one in the\ndomain already: the studio cancels seats too, through `refundSeat`, with its own\nfour-member `refundReasonCode`. If those two paths ever merge, this field becomes\nthe merged reason and the single member becomes the first of several. Until then\nit is a placeholder that is honest about being one.\n',
+      'x-arthome-vocabulary-source': 'SEAT_CANCEL_REASONS',
+      'x-arthome-vocabulary-narrowing':
+        'The one a viewer gives. The others are raised by the system: a cancelled date and a deleted account.',
     })
     .optional(),
 });

@@ -1,4 +1,4 @@
-/** The viewer's commerce: capacity, holds, prices, seat code. */
+/** The viewer's commerce: capacity, holds, prices, refunds, the waiting list, seat code. */
 
 export type { Gauge, LateEntry, SeatAvailability, SeatHold } from './seats.js';
 export {
@@ -31,8 +31,30 @@ export {
   seatCancelDeadline,
   seatSalesEndAt,
   seatsAvailable,
+  seatsAvailableTo,
   tvPairingIntentExpiry,
 } from './seats.js';
+
+export {
+  assertRefundWithinRemaining,
+  assertSeatCancellable,
+  refundCancelsSeat,
+  refundDelayCodeOf,
+  refundReasonOnDate,
+  refundableRemaining,
+  seatCancelReasonOf,
+  seatSharesOf,
+  seatStateMayMove,
+} from './refunds.js';
+
+export {
+  assertWaitlistJoinable,
+  isPriorityWindowOpen,
+  outcomeEndsWaitlist,
+  priorityUntilOf,
+  waitlistEntryMayMove,
+  waitlistStateOnJoin,
+} from './waitlist.js';
 
 export {
   isOrderReference,

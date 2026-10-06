@@ -7058,19 +7058,8 @@ paths:
                   type: string
                   enum:
                   - viewer_request
-                  x-arthome-vocabulary-source: none
-                  x-arthome-vocabulary-reason: 'A single-member enum: it records the actor on an audit line, and this path has exactly one actor. Flagged in the description as a question, not settled as a vocabulary.'
-                  description: |
-                    **One member, and that is a question rather than a vocabulary.** A field whose
-                    enum has a single value carries no information: every request that reaches this
-                    path says the same thing. It is here because the audit line must record *who*
-                    asked — and a viewer cancelling their own seat is the only actor this path has.
-
-                    **What would make it a vocabulary is a second actor**, and there is one in the
-                    domain already: the studio cancels seats too, through `refundSeat`, with its own
-                    four-member `refundReasonCode`. If those two paths ever merge, this field becomes
-                    the merged reason and the single member becomes the first of several. Until then
-                    it is a placeholder that is honest about being one.
+                  x-arthome-vocabulary-source: SEAT_CANCEL_REASONS
+                  x-arthome-vocabulary-narrowing: 'The one a viewer gives. The others are raised by the system: a cancelled date and a deleted account.'
             example:
               cancelReasonCode: viewer_request
       responses:
@@ -7102,7 +7091,7 @@ paths:
                     dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                     seatCode: ATH-7QK2-4M
                     tier: full
-                    state: refunded
+                    state: cancelled
                     date:
                       id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                       showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
@@ -7241,6 +7230,21 @@ paths:
                       properties:
                         joined:
                           type: boolean
+                        state:
+                          description: |
+                            The caller's entry. `null` when the account never registered; `joined` is true for `waiting`
+                            or `notified` only.
+                          x-arthome-vocabulary:
+                          - waiting
+                          - notified
+                          - converted
+                          - left
+                          - lapsed
+                          - closed
+                          x-arthome-vocabulary-source: WAITLIST_ENTRY_STATES
+                          type:
+                          - string
+                          - 'null'
                         rankDisclosed:
                           type: boolean
                         rank:
@@ -11111,6 +11115,9 @@ components:
             The refund delay is a **code**, never the sentence "3 to 5 business days" — which is a
             policy, hence translatable, hence i18n.
           type: string
+          x-arthome-vocabulary:
+          - refund_delay_business_days_3_5
+          x-arthome-vocabulary-source: REFUND_DELAY_CODES
           examples:
           - refund_delay_business_days_3_5
       required:
@@ -12795,6 +12802,9 @@ components:
           description: |
             What the viewer gets back, and **where**. The amount and a **delay code** — never the
             sentence "3 to 5 business days", which is a policy.
+
+            A **credited** seat serves `state: credited`, `method: account_credit` and
+            `refundReasonCode: null`: the cause is the date's interruption, which the card's `date` carries.
           anyOf:
           - type: object
             properties:
@@ -12803,6 +12813,9 @@ components:
                 $ref: '#/components/schemas/Money'
               delayCode:
                 type: string
+                x-arthome-vocabulary:
+                - refund_delay_business_days_3_5
+                x-arthome-vocabulary-source: REFUND_DELAY_CODES
                 examples:
                 - refund_delay_business_days_3_5
               method:
@@ -12810,8 +12823,7 @@ components:
                 x-arthome-vocabulary:
                 - original_payment_method
                 - account_credit
-                x-arthome-vocabulary-source: none
-                x-arthome-vocabulary-reason: Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends.
+                x-arthome-vocabulary-source: REFUND_METHODS
               refundReasonCode:
                 description: 'Why the seat was refunded: `date_cancelled` when its date was cancelled.'
                 x-arthome-vocabulary:
@@ -14351,8 +14363,15 @@ components:
                 x-arthome-vocabulary:
                 - interrupted_date
                 - goodwill
-                x-arthome-vocabulary-source: none
-                x-arthome-vocabulary-reason: A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.
+                x-arthome-vocabulary-source: CREDIT_ORIGINS
+              stateCode:
+                type: string
+                x-arthome-vocabulary:
+                - issued
+                - partially_used
+                - used
+                - expired
+                x-arthome-vocabulary-source: CREDIT_STATES
               expiresAt:
                 type: string
                 format: date-time

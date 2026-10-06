@@ -170,6 +170,7 @@ export declare const AccountScreenSchema: z.ZodObject<{
         channelId: z.ZodOptional<z.ZodString>;
         amount: z.ZodOptional<typeof MoneyOut>;
         originCode: z.ZodOptional<VocabularyOut>;
+        stateCode: z.ZodOptional<VocabularyOut>;
         expiresAt: z.ZodOptional<z.ZodString>;
     }, z.core.$loose>>>;
     paymentMethods: z.ZodOptional<z.ZodArray<z.ZodObject<{

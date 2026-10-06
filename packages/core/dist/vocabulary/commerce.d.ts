@@ -124,6 +124,60 @@ export declare const RefundReason: {
     readonly HOLD_EXPIRED_CAPACITY_LOST: "hold_expired_capacity_lost";
 };
 /**
+ * Why a seat was cancelled, in the order of the proto's `SeatCancelReason`. Its `PAYMENT_FAILED` is
+ * never produced: a seat exists only once its order is paid (D-077). Of the refund reasons, only
+ * these three cancel a seat (D-095).
+ */
+export declare const SEAT_CANCEL_REASONS: readonly ["viewer_request", "date_cancelled", "account_deletion"];
+export type SeatCancelReason = (typeof SEAT_CANCEL_REASONS)[number];
+export declare const SeatCancelReason: {
+    readonly VIEWER_REQUEST: "viewer_request";
+    readonly DATE_CANCELLED: "date_cancelled";
+    readonly ACCOUNT_DELETION: "account_deletion";
+};
+export declare const REFUND_METHODS: readonly ["original_payment_method", "account_credit"];
+export type RefundMethod = (typeof REFUND_METHODS)[number];
+export declare const RefundMethod: {
+    readonly ORIGINAL_PAYMENT_METHOD: "original_payment_method";
+    readonly ACCOUNT_CREDIT: "account_credit";
+};
+/** How long a refund takes to arrive, as a code a surface explains, never the sentence it stands for. */
+export declare const REFUND_DELAY_CODES: readonly ["refund_delay_business_days_3_5"];
+export type RefundDelayCode = (typeof REFUND_DELAY_CODES)[number];
+export declare const RefundDelayCode: {
+    readonly BUSINESS_DAYS_3_5: "refund_delay_business_days_3_5";
+};
+/** data-model.md §3.7. */
+export declare const CREDIT_STATES: readonly ["issued", "partially_used", "used", "expired"];
+export type CreditState = (typeof CREDIT_STATES)[number];
+export declare const CreditState: {
+    readonly ISSUED: "issued";
+    readonly PARTIALLY_USED: "partially_used";
+    readonly USED: "used";
+    readonly EXPIRED: "expired";
+};
+/** Why a credit was issued, in the order of the proto's `CreditOrigin`. */
+export declare const CREDIT_ORIGINS: readonly ["interrupted_date", "goodwill"];
+export type CreditOrigin = (typeof CREDIT_ORIGINS)[number];
+export declare const CreditOrigin: {
+    readonly INTERRUPTED_DATE: "interrupted_date";
+    readonly GOODWILL: "goodwill";
+};
+/**
+ * data-model.md §3.9. `lapsed`: notified, did not buy in the window, and may register again.
+ * `closed`: ended with its date's cancellation or interruption (D-096), and takes no registration.
+ */
+export declare const WAITLIST_ENTRY_STATES: readonly ["waiting", "notified", "converted", "left", "lapsed", "closed"];
+export type WaitlistEntryState = (typeof WAITLIST_ENTRY_STATES)[number];
+export declare const WaitlistEntryState: {
+    readonly WAITING: "waiting";
+    readonly NOTIFIED: "notified";
+    readonly CONVERTED: "converted";
+    readonly LEFT: "left";
+    readonly LAPSED: "lapsed";
+    readonly CLOSED: "closed";
+};
+/**
  * Where a payout stands: `held` while an outcome is open, `refunded` if the date
  * is cancelled, `suspended` while a bank-details change waits for its
  * counter-signature. `shared/` has authority: 12% commission, 14-day delay,

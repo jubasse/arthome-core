@@ -26,6 +26,8 @@
 import { z } from 'zod';
 
 import {
+  CREDIT_ORIGINS,
+  CREDIT_STATES,
   DEVICE_KINDS,
   Locale,
   OrderErrorCode,
@@ -448,7 +450,6 @@ const PAIRING_STATES = [
   'cancelled',
   'approved_with_failure',
 ] as const;
-const CREDIT_ORIGINS = ['interrupted_date', 'goodwill'] as const;
 const DELETION_STATES = ['requested', 'anonymised'] as const;
 const PURCHASE_FAILURE_CODES: readonly [string, ...string[]] = [
   OrderErrorCode.SOLD_OUT,
@@ -527,6 +528,7 @@ export const AccountScreenSchema: z.ZodObject<
             channelId: z.ZodOptional<z.ZodString>;
             amount: z.ZodOptional<typeof MoneyOut>;
             originCode: z.ZodOptional<VocabularyOut>;
+            stateCode: z.ZodOptional<VocabularyOut>;
             expiresAt: z.ZodOptional<z.ZodString>;
           },
           z.core.$loose
@@ -597,10 +599,8 @@ export const AccountScreenSchema: z.ZodObject<
           id: uuidOut().optional(),
           channelId: uuidOut().optional(),
           amount: MoneyOut.meta({ 'x-arthome-tax-basis': 'inherited' }).optional(),
-          originCode: vocabularyOutLocal(
-            CREDIT_ORIGINS,
-            'A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.',
-          ).optional(),
+          originCode: vocabularyOut(CREDIT_ORIGINS).optional(),
+          stateCode: vocabularyOut(CREDIT_STATES).optional(),
           expiresAt: InstantOut.optional(),
         }),
       )
