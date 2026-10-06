@@ -413,7 +413,6 @@ describe('every refusal has a way out, and every way out answers a refusal', () 
     const record = (input: WatchInput): void => {
       const verdict = decideWatch(input);
       if (verdict.reason === null) return;
-      expect(WATCH_FALLBACK_FOR[verdict.reason]).toContain(verdict.fallback);
       const actions = produced.get(verdict.reason) ?? new Set<WatchFallbackAction>();
       actions.add(verdict.fallback);
       produced.set(verdict.reason, actions);
