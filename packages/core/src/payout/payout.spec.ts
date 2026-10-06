@@ -330,7 +330,7 @@ describe("a payout's state", () => {
 });
 
 describe("a credit's validity", () => {
-  it('a credit expires twelve calendar months later, clamped at a month end', () => {
+  it("a credit expires twelve calendar months later, clamped at a month's end", () => {
     expect(CREDIT_VALIDITY_MONTHS).toBe(12);
     expect(creditExpiresAt('2026-10-06T09:30:00.000Z')).toBe('2027-10-06T09:30:00.000Z');
     expect(creditExpiresAt('2028-02-29T21:00:00.000Z')).toBe('2029-02-28T21:00:00.000Z');
