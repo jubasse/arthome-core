@@ -1930,10 +1930,6 @@ components:
             format: date-time
           - type: 'null'
           format: date-time
-        version:
-          description: The aggregate's version after a conditional command, as services answer it today.
-          type: integer
-          format: int64
       required:
       - servedAt
       additionalProperties: {}

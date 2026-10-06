@@ -37,14 +37,21 @@ stands for counts: the studio's `409` stands for `state.conflict`, so `resolveIn
 `iss`, `sub`, `pro` and `did`. A handler reads who calls there, never from a body: a body
 `profileId` or `deviceId` other than the principal's is refused `403 api.forbidden`.
 
-## 5. The docs and examples are borrowed, not copied
+## 5. No `version` at the envelope's root
+
+Catalog's and ticketing's services answer a conditional command's `version` at the envelope's root
+(the platform's `SuccessEnvelope`). A service api does not: `ServiceEnvelopeMetaSchema` is
+`{ servedAt, validUntil? }`, and a versioned record carries its `version` inside `data`
+(`transport.md` §5.5). Moving catalog or ticketing to the model moves that field too.
+
+## 6. The docs and examples are borrowed, not copied
 
 `operationDocsOf(studioDocs, [...])` and `studioDocs.examples.entriesOf([...])` hand the service the
 public operation's prose and examples. Only what no surface sees gets its own `docs.ts` entry and
 example. A batched read is a `POST` without a key: its docs need an `idempotencyExemption`, or
 `check-openapi` R11 fails.
 
-## 6. What check-openapi wants of a service document
+## 7. What check-openapi wants of a service document
 
 The component names are not free: `IdempotencyKey` (R11), `Traceparent` (R12), `EnvelopeMeta`
 (R15), `ErrorEnvelope` and `Error` (R10). The `service` identity adds `traceparent` to every route

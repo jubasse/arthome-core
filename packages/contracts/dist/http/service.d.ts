@@ -35,10 +35,10 @@ export declare function callerService<const Issuers extends readonly [InternalTo
 }, typeof ApiErrorCode.FORBIDDEN>;
 export declare const RelayedIdempotencyKeyParameter: HeaderParameter<'Idempotency-Key', z.ZodString, true>;
 export declare const ViewerCountryParameter: HeaderParameter<'x-arthome-viewer-country', z.ZodString, true>;
+/** `transport.md` §5.5: a versioned record carries its `version` inside `data`, never at the root. */
 export declare const ServiceEnvelopeMetaSchema: z.ZodObject<{
     servedAt: z.ZodString;
     validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    version: z.ZodOptional<z.ZodNumber>;
 }, z.core.$loose>;
 export declare const ServiceErrorEnvelopeSchema: z.ZodObject<{
     error: typeof ErrorSchema;

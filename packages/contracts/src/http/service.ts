@@ -113,19 +113,13 @@ export const ViewerCountryParameter: HeaderParameter<
   schema: CountryCodeSchema.meta({ examples: ['FR'] }),
 };
 
+/** `transport.md` §5.5: a versioned record carries its `version` inside `data`, never at the root. */
 export const ServiceEnvelopeMetaSchema: z.ZodObject<
-  {
-    servedAt: z.ZodString;
-    validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    version: z.ZodOptional<z.ZodNumber>;
-  },
+  { servedAt: z.ZodString; validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>> },
   z.core.$loose
 > = z.looseObject({
   servedAt: InstantOut.meta({ format: 'date-time' }),
   validUntil: InstantOut.nullable().meta({ format: 'date-time' }).optional(),
-  version: int64()
-    .optional()
-    .describe("The aggregate's version after a conditional command, as services answer it today."),
 });
 
 export const ServiceErrorEnvelopeSchema: z.ZodObject<

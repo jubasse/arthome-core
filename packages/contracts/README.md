@@ -497,9 +497,12 @@ is the first; catalog and ticketing move to it later.
 - **The model, in `./http`.** `serviceErrors`: every code allowed (a BFF narrows what it relays, a
   service does not), no `upstreams`, so no route answers a BFF's `502`, `503` or
   `api.upstream_timeout`; its envelope is `ServiceErrorEnvelopeSchema`. `serviceConventions`: `data`
-  under `ServiceEnvelopeMetaSchema` (`servedAt`, `validUntil`, the version after a conditional
-  command), a page's `items` and `page` at the root, `RelayedIdempotencyKeyParameter` on a write.
+  under `ServiceEnvelopeMetaSchema` (`servedAt`, and `validUntil` when a value is perishable), a
+  page's `items` and `page` at the root, `RelayedIdempotencyKeyParameter` on a write.
   `ViewerCountryParameter` on every call that decides a watch verdict.
+- **A versioned record carries its `version` inside `data`** (`transport.md` §5.5), as `RunConsole`
+  does, never at the envelope's root. Catalog's and ticketing's services still answer it at the root,
+  their legacy envelope; it moves when they migrate to this model, in their own PRD.
 - **Who calls.** Every route declares `callerService(...issuers)`, the BFFs it serves, a rule the
   server maps to a guard that refuses any other `403 api.forbidden`. The principal
   (`ServicePrincipalSchema`) is the token's: the BFF, the account, the profile and the device. A body

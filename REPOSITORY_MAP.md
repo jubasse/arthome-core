@@ -208,7 +208,7 @@ Declarations: `dist/http/index.d.ts` — 203 exported names.
 - `ServiceBadRequestResponse` (const) — `ServiceBadRequestResponse: JsonResponse<typeof SchemaInvalidEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.SCHEMA_INVALID>`
 - `ServiceConflictResponse` (const) — `ServiceConflictResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED>`
 - `ServiceDeadlineExceededResponse` (const) — `ServiceDeadlineExceededResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.DEADLINE_EXCEEDED>`
-- `ServiceEnvelopeMetaSchema` (const)
+- `ServiceEnvelopeMetaSchema` (const) — `ServiceEnvelopeMetaSchema: z.ZodObject<{ servedAt: z.ZodString; validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>; }, z.core.$loose>` — 'transport.md' §5.5: a versioned record carries its 'version' inside 'data', never at the root.
 - `ServiceErrorEnvelopeSchema` (const) — `ServiceErrorEnvelopeSchema: z.ZodObject<{ error: typeof ErrorSchema; servedAt: z.ZodString; }, z.core.$loose>`
 - `ServiceForbiddenResponse` (const) — `ServiceForbiddenResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.FORBIDDEN>`
 - `ServiceInternalErrorResponse` (const) — `ServiceInternalErrorResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.INTERNAL>`

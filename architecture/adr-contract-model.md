@@ -685,6 +685,10 @@ Found on review: what the declaration must also carry so that nothing else is wr
 - **The error model** documents what a service answers whatever the route: `400`, `401`, `403`, `404`,
   the idempotency `409`, `413`, `415`, `500` and `504 api.deadline_exceeded`. Every code is allowed,
   since a BFF narrows what it relays; no BFF code is derived, since a service calls no service.
+- **The envelope is §5.5's**: `servedAt`, `validUntil` when a value is perishable, and `data`; a
+  versioned record carries its `version` inside `data`, never at the root. Streaming starts on the
+  rule. Catalog's and ticketing's services answer a root `version` today, their legacy envelope, and
+  change when they migrate to this model, in their own PRD.
 - **What every call carries**: `x-arthome-deadline` and `traceparent`, from the identity; the
   surface's `Idempotency-Key`, relayed as is, on a write; `x-arthome-viewer-country` where a watch
   verdict is decided.
