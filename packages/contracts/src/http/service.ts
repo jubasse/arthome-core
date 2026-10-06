@@ -3,7 +3,7 @@
  * between services, the internal token the BFF mints, which names the calling BFF and the end user,
  * verified by the service's guard; the error model and the envelope a service answers; the
  * conventions its resources follow; the rule naming the BFFs a route serves. A route that requires
- * the identity is internal, takes the deadline header on every call, and answers
+ * the identity is internal, takes the deadline and the trace context on every call, and answers
  * `504 api.deadline_exceeded` when the instant is already past.
  */
 
