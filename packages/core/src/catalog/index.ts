@@ -16,7 +16,13 @@ export type { DateBeforeOutcome, OutcomeDeclaration } from './outcome.js';
 export { assertOutcomeDeclarable } from './outcome.js';
 
 export type { TerritoryRights } from './rights.js';
-export { blackoutReasonOf, isAvailableIn, restrictedRights, worldwideRights } from './rights.js';
+export {
+  UNRESOLVED_COUNTRY,
+  blackoutReasonOf,
+  isAvailableIn,
+  restrictedRights,
+  worldwideRights,
+} from './rights.js';
 
 export type { LanguageProfile } from './language.js';
 export { hasLanguageBarrier, isLanguageNeutral, isUnderstandable } from './language.js';

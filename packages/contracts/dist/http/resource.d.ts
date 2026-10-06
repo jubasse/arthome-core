@@ -93,12 +93,15 @@ export type EnvelopeOf<K> = K extends {
 export type ItemResponse<K, S extends z.ZodType, Relations = unknown> = JsonResponse<z.ZodType<EnvelopeOf<K> & {
     readonly data: z.output<S> & Relations;
 }>>;
+/** The answer of a batched read: the api's envelope and the records under `data`, keyed by id. */
+export type TableResponse<K, S extends z.ZodType> = JsonResponse<z.ZodType<EnvelopeOf<K> & {
+    readonly data: Readonly<Record<string, z.output<S>>>;
+}>>;
 /** The answer of a list: the api's envelope, the records under `items` and the page (`transport.md` §5.5). */
 export type PageResponse<K, S extends z.ZodType> = JsonResponse<z.ZodType<EnvelopeOf<K> & {
     readonly items: readonly z.output<S>[];
     readonly page: unknown;
 }>>;
-type Envelope<C extends ResourceContext> = EnvelopeOf<Conv<C>>;
 type Schema<T> = z.ZodType<T>;
 type ItemOf<D> = D extends {
     readonly item: infer S extends z.ZodType;
@@ -285,18 +288,22 @@ export type DeleteRoute<C extends ResourceContext, D> = Member<C, D, 'delete', I
 }>;
 export type ActionRoute<C extends ResourceContext, Scope extends 'item' | 'collection', Name extends string, D> = Member<C, D, ActionMethod<D>, Scope extends 'item' ? `${ItemPath<C>}/${Name}` : `${CollectionPath<C>}/${Name}`, readonly [
     ...(Scope extends 'item' ? ItemParameters<C> : C['parents']),
-    ...(ActionMethod<D> extends 'get' ? readonly [] : Added<C, 'writeParameters'>)
-], ActionSuccess<C, D>, ActionMethod<D> extends 'get' ? Record<never, never> : {
+    ...(Keyed<D> extends true ? Added<C, 'writeParameters'> : readonly [])
+], ActionSuccess<C, D>, Keyed<D> extends true ? {
     readonly 409: IdempotencyCodes;
-}, BodyPart<D>>;
+} : Record<never, never>, BodyPart<D>>;
+/** Whether an action takes the idempotency key: a write unless it says `idempotent: false`. */
+type Keyed<D> = D extends {
+    readonly idempotent: infer K extends boolean;
+} ? K : ActionMethod<D> extends 'get' ? false : true;
 export type SubresourceReplaceRoute<C extends ResourceContext, Name extends string, D> = Member<C, D, 'put', `${ItemPath<C>}/${Name}`, readonly [...ItemParameters<C>, ...Added<C, 'writeParameters'>], ResponseOf<C, ItemSchema<D>, 200>, NotFoundFor<C> & {
     readonly 409: ConflictFor<C>;
 }, Sent<VersionedBody<C, BodyOf<D>>>>;
 export type BatchRoute<C extends ResourceContext, D> = Member<C, D, 'post', `/${C['name']}/batch`, C['parents'], {
-    readonly 200: JsonResponse<Schema<Envelope<C> & {
-        readonly data: Readonly<Record<string, z.output<ItemOf<D>>>>;
-    }>>;
-}, Record<never, never>, Sent<Schema<{
+    readonly 200: TableResponse<Conv<C>, ItemOf<D>>;
+}, Record<never, never>, Sent<D extends {
+    readonly body: infer B extends z.ZodType;
+} ? B : Schema<{
     readonly ids: readonly (C['id'] extends PathParameterOf ? z.output<C['id']['schema']> : string)[];
 }>>>;
 type ActionMethod<D> = D extends {
@@ -480,11 +487,19 @@ export interface Resource<C extends ResourceContext> {
     delete<const D extends Docs<C, {
         readonly response?: z.ZodType;
     }>>(docs?: D): DeleteRoute<C, D>;
-    /** `POST /{name}/batch`: many records by id in one read, answered as a table keyed by id. */
+    /**
+     * `POST /{name}/batch`: many records by id in one read, answered as a table keyed by id. The body
+     * is `{ ids }`, at most `max`, or the `body` given when the read takes more than its ids.
+     */
     batch<const D extends Docs<C, {
         readonly item: z.ZodType;
+    } & ({
         readonly max?: number;
-    }>>(docs: D): BatchRoute<C, D>;
+        readonly body?: never;
+    } | {
+        readonly body: z.ZodObject;
+        readonly max?: never;
+    })>>(docs: D): BatchRoute<C, D>;
     /** A collection nested under one record of this one. */
     resource<const Name extends string, const Id extends PathParameterOf, const Owner extends 'caller' | undefined = undefined>(name: Name, options: Omit<ResourceOptions<Id, readonly [], Owner>, 'parents'>): Resource<ChildContext<C, Name, Id, Owner>>;
     resource<const Name extends string, const Id extends PathParameterOf, const Owner extends 'caller' | undefined, R>(name: Name, options: Omit<ResourceOptions<Id, readonly [], Owner>, 'parents'>, closure: (resource: Resource<ChildContext<C, Name, Id, Owner>>) => R): R;

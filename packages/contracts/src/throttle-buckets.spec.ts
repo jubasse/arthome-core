@@ -4,6 +4,7 @@ import { AuthRateLimit } from '@arthome/core';
 
 import type { Api } from './http/index.js';
 import { storefrontApi } from './storefront-api/index.js';
+import { streamingServiceApi } from './streaming-service-api/index.js';
 import { studioApi } from './studio-api/index.js';
 
 const BUCKETS_WITHOUT_A_CORE_LIMIT: readonly string[] = [
@@ -26,6 +27,7 @@ const bucketsOf = (api: Api): string[] =>
 describe.each([
   ['storefront', storefrontApi],
   ['studio', studioApi],
+  ['streaming service', streamingServiceApi],
 ] as const)('throttle buckets, %s', (_name, api: Api) => {
   it('is a key of the core limits or a bucket the core has no limit for yet', () => {
     const known = [...Object.keys(AuthRateLimit), ...BUCKETS_WITHOUT_A_CORE_LIMIT];

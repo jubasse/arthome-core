@@ -80,7 +80,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 183 exported names.
+Declarations: `dist/http/index.d.ts` — 205 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
@@ -88,10 +88,13 @@ Declarations: `dist/http/index.d.ts` — 183 exported names.
 - `Acknowledged` (const) — `Acknowledged: z.ZodOptional<z.ZodObject<{ accepted: z.ZodOptional<z.ZodBoolean>; }, z.core.$loose>>` — The data of an action that answers only that it was done.
 - `ActionOptions` (type)
 - `ActionRoute` (type)
+- `ActorSurfaceParameter` (const) — `ActorSurfaceParameter: HeaderParameter<'x-arthome-actor-surface', VocabularyIn<typeof SURFACES>, true>`
 - `Api` (type) — `type Api<Routes extends Readonly<Record<string, Route>> = Readonly<Record<string, Route>>> = ApiDefinition<Routes>;`
 - `ApiComponents` (interface)
 - `ApiDefinition` (interface) — A whole document: its top-level keys as the document writes them, 'routes' in place of 'paths'.
 - `BATCH_BODY_LIMIT` (const) — `BATCH_BODY_LIMIT = 2097152` — 2 MiB: the ceiling of a batched read.
+- `BATCH_BUDGET_MS` (const) — `BATCH_BUDGET_MS = 150` — The latency budget of a batched read, in milliseconds ('transport.md' §5.9).
+- `BATCH_MAX_IDS` (const) — `BATCH_MAX_IDS = 200` — The ids a batched read takes at most ('transport.md' §5.6).
 - `BatchRoute` (type)
 - `BuiltRoute` (type) — The route a builder makes: its own parameters, then the builder's headers; its responses over the builder's errors.
 - `BuiltRouteDefinition` (type) — What a builder's 'defineRoute' takes: a route without its version and its security, which the builder holds and derives.
@@ -169,6 +172,8 @@ Declarations: `dist/http/index.d.ts` — 183 exported names.
 - `RESTRICTED_KEY` (const) — `RESTRICTED_KEY = "x-arthome-restricted"`
 - `ReauthProof` (const) — `ReauthProof: z.ZodObject<{ reauthToken: z.ZodString; }, z.core.$strip>` — The proof 'recentAuth({ intent })' reads: the body of a route that requires it extends this.
 - `RecentAuth` (type) — The 'recentAuth' rule of a surface, typed by its re-authentication intents.
+- `RelayedIdempotencyKeyParameter` (const) — `RelayedIdempotencyKeyParameter: HeaderParameter<'Idempotency-Key', z.ZodString, true>`
+- `RelayedTraceparentParameter` (const) — `RelayedTraceparentParameter: HeaderParameter<'traceparent', z.ZodString>`
 - `ReplaceRoute` (type)
 - `RequestBody` (interface)
 - `Requirement` (interface) — A rule beyond identity: a name the server maps to a guard, its parameters, and the codes it can answer.
@@ -201,12 +206,25 @@ Declarations: `dist/http/index.d.ts` — 183 exported names.
 - `Scope` (interface) — A path prefix and the path parameters it declares: what 'path()' accumulates.
 - `SearchTextOptions` (interface)
 - `SecurityRequirement` (type) — `type SecurityRequirement = Readonly<Record<string, readonly string[]>>;` — The schemes that satisfy a route, by name: '{}' is a call with no credential at all.
-- `ServicePrincipalSchema` (const) — `ServicePrincipalSchema: z.ZodObject<{ callingService: z.ZodString; userId: z.ZodNullable<z.ZodString>; }, z.core.$strip>`
+- `ServiceBadRequestResponse` (const) — `ServiceBadRequestResponse: JsonResponse<typeof SchemaInvalidEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.SCHEMA_INVALID>`
+- `ServiceConflictResponse` (const) — `ServiceConflictResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED>`
+- `ServiceDeadlineExceededResponse` (const) — `ServiceDeadlineExceededResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.DEADLINE_EXCEEDED>`
+- `ServiceEnvelopeMetaSchema` (const) — `ServiceEnvelopeMetaSchema: z.ZodObject<{ servedAt: z.ZodString; validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>; }, z.core.$loose>` — 'transport.md' §5.5: a versioned record carries its 'version' inside 'data', never at the root.
+- `ServiceErrorCode` (type) — Every code but the three a BFF answers of its own: a service calls no service (critical rule 1).
+- `ServiceErrorEnvelopeSchema` (const) — `ServiceErrorEnvelopeSchema: z.ZodObject<{ error: typeof ErrorSchema; servedAt: z.ZodString; }, z.core.$loose>`
+- `ServiceForbiddenResponse` (const) — `ServiceForbiddenResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.FORBIDDEN>`
+- `ServiceInternalErrorResponse` (const) — `ServiceInternalErrorResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.INTERNAL>`
+- `ServiceNotFoundResponse` (const) — `ServiceNotFoundResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.NOT_FOUND>`
+- `ServicePayloadTooLargeResponse` (const) — `ServicePayloadTooLargeResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.PAYLOAD_TOO_LARGE>`
+- `ServicePrincipalSchema` (const) — Who calls, from the verified token: the BFF ('iss'), the account ('sub'), and the profile and the device ('pro', 'did') when the token name…
+- `ServiceUnauthorizedResponse` (const) — `ServiceUnauthorizedResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UNAUTHENTICATED>`
+- `ServiceUnsupportedMediaTypeResponse` (const) — `ServiceUnsupportedMediaTypeResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UNSUPPORTED_MEDIA_TYPE>`
 - `SingleOptions` (interface)
 - `SortDirection` (type) — `type SortDirection = (typeof SORT_DIRECTIONS)[number];`
 - `SortKey` (type) — `type SortKey = string | { readonly key: string; readonly right: string; };` — A sort key, and the right a caller needs to order by it when the field is restricted.
 - `Strict` (type) — A declared shape without the index signatures its loose objects carry, so a handler returning an undeclared field is a compile error.
 - `SubresourceReplaceRoute` (type)
+- `TableResponse` (type) — `type TableResponse<K, S extends z.ZodType> = JsonResponse<z.ZodType<EnvelopeOf<K> & { readonly data: Readonly<Record<string, z.output<S>>>; }>>;` — The answer of a batched read: the api's envelope and the records under 'data', keyed by id.
 - `TaggedBrand` (interface) — Type-only: marks a union as tagged on 'Tag', so the client's view of it can add the unknown variant.
 - `TaggedSchema` (type) — `type TaggedSchema<Tag extends string, V extends Variants> = z.ZodType<Union<Tag, V>>;` — What 'tagged' returns: the explicit type of an exported union, under 'isolatedDeclarations'.
 - `TolerantParse` (type)
@@ -215,12 +233,14 @@ Declarations: `dist/http/index.d.ts` — 183 exported names.
 - `UpsertRoute` (type)
 - `VARY_HEADER` (const) — `VARY_HEADER: Header`
 - `VersionedPath` (type) — `type VersionedPath<R extends Pick<RouteShape, 'version' | 'path'>> = '/v${R['version']}${R['path']}';`
+- `ViewerCountryParameter` (const) — `ViewerCountryParameter: HeaderParameter<'x-arthome-viewer-country', z.ZodString, true>`
 - `accepted` (function) — '202': the work is accepted, not done.
 - `accessorOf` (function) — `function accessorOf<const T extends readonly string[]>(members: T): AccessorOf<T>;` — The accessor built from the list rather than written beside it: the list stays the one declaration, which is what 'check-enums' reads.
 - `bodySchemaOf` (function) — `function bodySchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteBody<R>, unknown> | undefined;` — The JSON body's schema, or 'undefined' for a route that takes none.
 - `cache` (function) — `function cache(freshness: Freshness, options?: CacheOptions): CachePolicy;` — 'cache(Freshness.FIVE_MINUTES)': the family of 'transport.md' §5.9, with its directive.
 - `cacheControlHeaderOf` (function) — `function cacheControlHeaderOf(policy: CachePolicy, callers: readonly [CallerKind, ...CallerKind[]]): Header;` — The 'Cache-Control' a 200 declares: the one value of 'cacheControlOf', or one per kind of caller where they differ.
 - `cacheControlOf` (function) — `function cacheControlOf(policy: CachePolicy, caller: CallerKind): string;` — The 'Cache-Control' value of a policy for one caller, as the BFF writes it.
+- `callerService` (function) — The BFFs a route serves, by the token's issuer: any other caller is refused '403 api.forbidden'.
 - `changesSince` (function) — `function changesSince(): { readonly kind: 'changesSince'; };` — The token a change feed takes: '410' when it is too old.
 - `codedEnvelopesIn` (function) — `function codedEnvelopesIn(schema: z.ZodType): readonly (readonly [string, z.ZodType])[];` — The coded envelopes 'schema' is, itself or as the members of a union, each with its code.
 - `collect` (function) — `function collect<const Trees extends readonly RouteTree[]>(...trees: Trees): Collected<Trees>;`
@@ -254,7 +274,9 @@ Declarations: `dist/http/index.d.ts` — 183 exported names.
 - `searchText` (function) — `function searchText(options?: SearchTextOptions): QueryParameter<'q', z.ZodString>;` — The free-text 'q', searched server-side.
 - `sensitive` (function) — `function sensitive<S extends z.ZodType>(schema: S): S;` — A password, a token, a stream key: 'format: password' in the document, redacted from logs, never cached.
 - `sensitivePathsOf` (function) — `function sensitivePathsOf(schema: z.ZodType): readonly string[];` — The dotted paths of the sensitive fields: 'reauthToken', 'data.streamKey', 'items[].secret'.
-- `service` (const) — `service: Identity<'service', typeof ServicePrincipalSchema, never, readonly [typeof DeadlineParameter], readonly []>`
+- `service` (const)
+- `serviceConventions` (const) — The envelope services answer: 'data' under the meta, a page's 'items' and 'page' at the root.
+- `serviceErrors` (const) — `serviceErrors: ErrorModel<ServiceErrorCode>` — What a service answers whatever it declares.
 - `sortDirectionSchema` (function) — `function sortDirectionSchema(): z.ZodDefault<z.ZodEnum<{ readonly [K in SortDirection]: K; }>>;` — The 'sortDir' schema: ascending unless asked otherwise.
 - `sortKeyName` (function) — `function sortKeyName(key: SortKey): string;`
 - `statusOf` (function) — `function statusOf<C extends ErrorCode>(code: C): ErrorStatusMap[C];`
@@ -314,7 +336,7 @@ Declarations: `dist/money/index.d.ts` — 4 exported names.
 
 #### @arthome/contracts/openapi
 
-Declarations: `dist/openapi/index.d.ts` — 17 exported names.
+Declarations: `dist/openapi/index.d.ts` — 18 exported names.
 
 - `ApiDocs` (interface)
 - `ApiDocsDefinition` (interface)
@@ -333,6 +355,7 @@ Declarations: `dist/openapi/index.d.ts` — 17 exported names.
 - `documentationOf` (function) — `function documentationOf(route: RouteDefinition, doc: OperationDoc | undefined): OperationDocumentation;` — The prose and doc-only 'x-arthome-*' of 'route', from what its module registered: the registry is the only source, and a route carrying its…
 - `maturityOf` (function) — `function maturityOf(upstream: readonly Upstream[]): Maturity | undefined;` — The regime of the operation's owning service, the first service in its upstream: a BFF keeps its own shape stable over a provisional servic…
 - `openApiDocumentOf` (function) — `function openApiDocumentOf(api: Api, docs?: ApiDocs): OpenApiDocument;`
+- `operationDocsOf` (function) — `function operationDocsOf(docs: ApiDocs, operationIds: readonly string[], added?: Readonly<Record<string, string>>): ModuleDocs;` — The docs 'docs' registered for 'operationIds', for an api that serves the same operations.
 
 #### @arthome/contracts/pagination
 
@@ -365,6 +388,19 @@ Declarations: `dist/streaming/index.d.ts` — 4 exported names.
 - `IncidentSchema` (const)
 - `PlaybackRenewalSchema` (const)
 - `PlaybackTicketSchema` (const)
+
+#### @arthome/contracts/streaming-service-api
+
+Declarations: `dist/streaming-service-api/index.d.ts` — 1 exported names.
+
+- `streamingServiceApi` (const)
+
+#### @arthome/contracts/streaming-service-api/docs
+
+Declarations: `dist/streaming-service-api/docs.d.ts` — 2 exported names.
+
+- `streamingServiceDocs` (const) — `streamingServiceDocs: ApiDocs` — The streaming service document's introduction, and the docs and examples its modules register.
+- `streamingServiceDocsOf` (const) — `streamingServiceDocsOf: (route: RouteDefinition) => OperationDocumentation` — Each streaming service operation's prose and doc-only metadata, by route: for the service's own docs.
 
 #### @arthome/contracts/studio-access
 
@@ -466,7 +502,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 498 exported names.
+Declarations: `dist/index.d.ts` — 499 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -746,6 +782,7 @@ Declarations: `dist/index.d.ts` — 498 exported names.
 - `TerritoryRights` (interface)
 - `TierPrice` (interface)
 - `Tolerant` (type) — `type Tolerant<T extends string> = KnownMember<T> | UnknownMember;`
+- `UNRESOLVED_COUNTRY` (const) — `UNRESOLVED_COUNTRY = "ZZ"` — The country a viewer is served under when the edge resolves none: ISO 3166-1's user-assigned 'ZZ'.
 - `UPSTREAMS` (const) — `UPSTREAMS: readonly [...typeof SERVICES, 'realtime']` — Everything a BFF operation may declare as its upstream: the seven services, plus what is depended on without being one.
 - `UnknownMember` (interface)
 - `Upstream` (type+const)
@@ -1056,6 +1093,7 @@ each directory is covered and each entry has a directory, not that the sentence 
 - `packages/contracts/src/pagination/` — Cursor pagination primitives (subpath @arthome/contracts/pagination).
 - `packages/contracts/src/storefront-api/` — Every operation of the storefront contract, declared as TypeScript: the source of openapi/storefront.yaml.
 - `packages/contracts/src/streaming/` — Watching: the entitlement verdict, the playback ticket and its renewal, and what interrupts a run.
+- `packages/contracts/src/streaming-service-api/` — Every internal operation of the streaming service, which only the BFFs call: the source of openapi/streaming-service.yaml.
 - `packages/contracts/src/studio-access/` — Who may operate, and with what: the actor, their effective rights, and the bootstrap a studio surface is handed on sign-in. Separate from `identity` because the two products' session shapes genuinely differ — a viewer receives a ViewerContext, a control room receives a StudioBootstrap.
 - `packages/contracts/src/studio-api/` — Every operation of the studio contract, declared as TypeScript: the source of openapi/studio.yaml.
 - `packages/contracts/src/studio-desk/` — Moderation, the audience, the inbox and the journal — the duty desk.

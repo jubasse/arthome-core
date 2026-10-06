@@ -371,7 +371,12 @@ function schemasJob(file) {
 /** The types file: one alias per exported route, and the routes' annotations pointing at them. */
 function typesJob(file) {
   const sf = program.getSourceFile(file);
-  const dictionary = dictionaryOf(sf, [file, ...sibling(file), ...apiComponents(file)]);
+  const dictionary = dictionaryOf(sf, [
+    file,
+    ...sibling(file),
+    ...apiComponents(file),
+    ...serviceModel(file),
+  ]);
   const base = basename(file, '.ts');
   const typesBase = base === 'routes' ? 'types' : `${base}.types`;
   const typesFile = resolve(dirname(file), `${typesBase}.ts`);
@@ -491,6 +496,12 @@ const apiComponents = (file) =>
   [resolve(dirname(dirname(file)), 'components.ts')].filter(
     (f) => basename(file) === 'routes.ts' && existsSync(f),
   );
+
+/** A service api's routes take the `service` identity's parameters, which no module file imports. */
+const serviceModel = (file) =>
+  basename(dirname(dirname(file))).endsWith('-service-api')
+    ? [resolve(SOURCES, 'http/service.ts')]
+    : [];
 
 const sibling = (file) => {
   const dir = dirname(file);

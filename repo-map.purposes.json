@@ -20,6 +20,7 @@
   "packages/contracts/src/pagination": "Cursor pagination primitives (subpath @arthome/contracts/pagination).",
   "packages/contracts/src/streaming": "Watching: the entitlement verdict, the playback ticket and its renewal, and what interrupts a run.",
   "packages/contracts/src/storefront-api": "Every operation of the storefront contract, declared as TypeScript: the source of openapi/storefront.yaml.",
+  "packages/contracts/src/streaming-service-api": "Every internal operation of the streaming service, which only the BFFs call: the source of openapi/streaming-service.yaml.",
   "packages/contracts/src/studio-api": "Every operation of the studio contract, declared as TypeScript: the source of openapi/studio.yaml.",
   "packages/contracts/src/studio-access": "Who may operate, and with what: the actor, their effective rights, and the bootstrap a studio surface is handed on sign-in. Separate from `identity` because the two products' session shapes genuinely differ — a viewer receives a ViewerContext, a control room receives a StudioBootstrap.",
   "packages/contracts/src/studio-desk": "Moderation, the audience, the inbox and the journal — the duty desk.",

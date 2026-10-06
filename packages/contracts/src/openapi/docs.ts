@@ -86,6 +86,15 @@ export class ExampleRegistry {
   public firstOf(schema: z.ZodType): unknown {
     return this.registry.get(schema)?.examples[0];
   }
+
+  /** The entries of `schemas`, for an api that serves operations this one registered the examples of. */
+  public entriesOf(schemas: readonly z.ZodType[]): ModuleExamples {
+    return schemas.map((schema) => {
+      const examples = this.registry.get(schema)?.examples;
+      if (examples === undefined) throw new Error('examples: a schema asked for has none.');
+      return [schema, examples];
+    });
+  }
 }
 
 type DocumentObject = Readonly<Record<string, unknown>>;
@@ -121,6 +130,28 @@ export function apiDocs(definition: ApiDocsDefinition): ApiDocs {
     }
   }
   return { ...document, operations, examples: new ExampleRegistry(examples) };
+}
+
+/**
+ * The docs `docs` registered for `operationIds`, for an api that serves the same operations.
+ *
+ * @param added a paragraph per operation, for what is true on the serving api's side alone.
+ */
+export function operationDocsOf(
+  docs: ApiDocs,
+  operationIds: readonly string[],
+  added: Readonly<Record<string, string>> = {},
+): ModuleDocs {
+  return Object.fromEntries(
+    operationIds.map((operationId) => {
+      const doc = docs.operations[operationId];
+      if (doc === undefined) throw new Error(`apiDocs: "${operationId}" is not documented.`);
+      const paragraph = added[operationId];
+      if (paragraph === undefined) return [operationId, doc];
+      const description = [doc.description?.trimEnd(), paragraph].filter(Boolean).join('\n\n');
+      return [operationId, { ...doc, description }];
+    }),
+  );
 }
 
 /** The extensions only a module's `docs.ts` writes of an operation, never its route; so is its prose. */

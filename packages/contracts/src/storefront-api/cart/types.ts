@@ -35,20 +35,11 @@ export type QuoteCartRoute = Route<{
   method: 'post';
   version: 1;
   path: '/cart/quote';
-  parameters: readonly [
-    typeof IdempotencyKeyParameter,
-    typeof SurfaceParameter,
-    typeof TraceparentParameter,
-  ];
+  parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
   requestBody: JsonRequestBody<typeof QuoteCartBodySchema, true>;
   access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: ItemResponse<typeof storefrontConventions, typeof CartQuoteSchema, unknown>;
-  };
-  errorCodes: {
-    409: readonly (
-      typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
-    )[];
   };
 }>;
 
