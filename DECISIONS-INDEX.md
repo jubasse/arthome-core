@@ -4,7 +4,7 @@
 > EDIT. `pnpm run check:decisions-index` fails when this file differs from what regenerating
 > would produce. Open `DECISIONS.md` at the id for the reason behind a row.
 
-124 decisions.
+127 decisions.
 
 | Decision | Title | Documents cited |
 |---|---|---|
@@ -132,3 +132,6 @@
 | D-120 | Contract routes are declared in TypeScript, and the OpenAPI documents are generated | none |
 | D-121 | Every microservice declares its API in the contracts, and documents it with @nestjs/swagger | none |
 | D-122 | The contract model's second pass: what a route declares, and what is derived from it | `architecture/adr-contract-model.md` |
+| D-123 | A run left on air ends by itself 15 minutes after its scheduled end | none |
+| D-124 | An automatic hold screen lifts itself when the feed returns | none |
+| D-125 | A cancelled subscription opens what it opened until the end of the paid period | none |
