@@ -663,6 +663,32 @@ Found on review: what the declaration must also carry so that nothing else is wr
 - **The route is marked internal**, so the central OpenAPI lists it, and no surface document can
   include it.
 
+**Service APIs, as built** (streaming's first; `packages/contracts/README.md`, "A service API"):
+
+- **One api per service**, `<service>-service-api`, with its own document,
+  `openapi/<service>-service.yaml`, generated and gated like the BFFs'. Separate apis, because a
+  service route and the BFF route it serves share a path and an operation id: in one `defineApi` they
+  would collide. The central document of every service needs a prefix per service, and comes with the
+  second service api.
+- **One operation, two servers.** A service route that serves a public operation keeps its operation
+  id, path, body, answer and refusal codes; the BFF relays one shape, and its typed client calls
+  `streamingServiceApi.routes.goOnAir` as the surface calls `studioApi.routes.goOnAir`. Schemas, docs
+  and examples are read from the public operation's module, never copied, and a spec holds each
+  service route's codes to a superset of its public operation's. Only what no surface sees (the
+  progress batch) is declared by the service alone.
+- **The caller rule.** Every route names the BFFs it serves, `callerService(...issuers)`, a rule like
+  `roles` (§4.3): the server maps it to a guard that refuses any other issuer `403 api.forbidden`. A
+  viewer's playback refuses the studio BFF (D-118). No service route is public or optional.
+- **The principal** is the internal token's, and only the token's (critical rule 4): the calling BFF,
+  the account, and the profile and the device when the BFF's session names them. A body `profileId`
+  or `deviceId` other than the principal's is refused `403 api.forbidden`.
+- **The error model** documents what a service answers whatever the route: `400`, `401`, `403`, `404`,
+  the idempotency `409`, `413`, `415`, `500` and `504 api.deadline_exceeded`. Every code is allowed,
+  since a BFF narrows what it relays; no BFF code is derived, since a service calls no service.
+- **What every call carries**: `x-arthome-deadline` and `traceparent`, from the identity; the
+  surface's `Idempotency-Key`, relayed as is, on a write; `x-arthome-viewer-country` where a watch
+  verdict is decided.
+
 ### 9.2 The batched read (§5.6)
 
 `batch({ ids, max: 200, response })` declares a `POST /{res}/batch`:

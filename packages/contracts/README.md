@@ -65,6 +65,8 @@ So: **one subpath per bounded context**, added as each lands and never before.
 | `./storefront-api` | `storefrontApi`: every operation of the storefront contract, declared once, and the source of `openapi/storefront.yaml` |
 | `./studio-api` | `studioApi`: the same for the studio, and the source of `openapi/studio.yaml` |
 | `./storefront-api/docs`, `./studio-api/docs` | **server only, never imported by a surface**: each api's introduction (`info`, `servers`, security schemes), its modules' docs and examples, and `storefrontDocsOf(route)` / `studioDocsOf(route)`, an operation's prose and doc-only `x-arthome-*`, for a server's own docs (Swagger). `check:contract-docs` proves no surface subpath reaches them |
+| `./streaming-service-api` | `streamingServiceApi`: streaming's internal operations, which only the BFFs call (D-121), and the source of `openapi/streaming-service.yaml` ("A service API" below) |
+| `./streaming-service-api/docs` | its introduction, docs and examples, and `streamingServiceDocsOf(route)`: server only, like the BFFs' |
 
 **Fourteen subpaths of schemas, 106 schemas, and together with `@arthome/core` they are all 111 schemas of both
 contracts.** The documents are generated from them (next section), and `pnpm run check:openapi-generated`
@@ -72,19 +74,20 @@ is part of `pnpm run verify`.
 
 ## Adding or changing an operation
 
-Every operation of both contracts is declared once, in `src/storefront-api/` or `src/studio-api/`:
+Every operation of both contracts is declared once, in `src/storefront-api/` or `src/studio-api/`, and
+every internal operation of a service in its `src/<service>-service-api/` ("A service API" below):
 a module folder per URL block (`studio-api/dates/`, "Writing a module" below), the shared
 parameters, headers and responses in `components.ts`, the api itself and its component names in
 `index.ts`, and the document's introduction (`info`, `servers`, `tags`, the security schemes) in
 `docs.ts`, which also gathers what each module documents (below).
-`openapi/storefront.yaml` and `openapi/studio.yaml` are **generated** from those declarations (D-120),
-and committed for readers and tools.
+`openapi/storefront.yaml`, `openapi/studio.yaml` and each `openapi/<service>-service.yaml` are
+**generated** from those declarations (D-120, D-121), and committed for readers and tools.
 
 1. Edit the route in its module's `routes.ts`, through the block's builder, built from the schemas
    of the subpaths above; its prose goes in the module's `docs.ts`. A new operation is also listed
    under `routes` in the api's `index.ts`.
-2. Regenerate: `pnpm run generate:openapi`. It builds the packages, then writes both documents.
-3. Commit the declaration **and** both documents. `pnpm run check:openapi-generated`, which `verify`
+2. Regenerate: `pnpm run generate:openapi`. It builds the packages, then writes every document.
+3. Commit the declaration **and** the documents it rewrote. `pnpm run check:openapi-generated`, which `verify`
    runs, fails when a committed document is not byte for byte what the declarations generate, paths,
    components and top-level keys included.
 
@@ -189,7 +192,8 @@ studioV1.identity(operator).requires(roles(MemberRole.PRODUCTION).on('channelId'
   the path parameter it reads), `recentAuth({ intent })` (the proof is the body field
   `reauthToken`, a token minted for that intent alone: the surface binds its intents once with
   `recentAuthOver`, so a route that names none, or one outside them, does not compile),
-  `throttle('auth')`, or `requirement(name, { params, errors })`. The contract holds no server code:
+  `throttle('auth')`, `callerService(...issuers)` on a service route, or
+  `requirement(name, { params, errors })`. The contract holds no server code:
   the server maps each name to a guard, and a name with no guard fails at boot. The rules are
   documented as `x-arthome-requires`.
 - **A write may be exempt from the CSRF token**: `identity(viewer, { csrfExempt: 'reason' })` gives
@@ -249,7 +253,7 @@ for what exists once in its context (`/me/preferences`, a date's `run`), with no
 | `upsert` | `PUT` on an id the client chose | `upsertX` |
 | `action(name, ...)` | `/{res}/{id}/{name}` (`/{name}/{action}` on a single), `POST` unless said | `{name}X` |
 | `collectionAction(name, ...)` | `/{res}/{name}` | `{name}Xs` |
-| `batch({ item })` | `POST /{res}/batch`: many by id, a table keyed by id | `batchXs` |
+| `batch({ item })` | `POST /{res}/batch`: many by id (`BATCH_MAX_IDS`), a table keyed by id, no key, the 2 MiB ceiling and `BATCH_BUDGET_MS`; `body` states it when the read takes more than its ids | `batchXs` |
 | `subresource(name).replace()` | `PUT /{res}/{id}/{name}` | `replaceX{Name}` |
 
 - **`owner: 'caller'`**: only the caller writes this data, so there is no `expectedVersion` and no
@@ -354,8 +358,10 @@ compile errors that name the operation. Measured on the 32 routes under a date, 
   `strippingBodiesOf(route)` gives the schema of each success response with every loose object turned
   into one that strips what it does not declare, for the platform's serializer. A schema annotated
   only as `z.ZodObject<z.ZodRawShape, ...>` has no known fields: the handler's type is then `{}`.
-- **The `service` identity** (`./http`, the internal token: the calling service and the end user) marks
-  its routes internal, takes `x-arthome-deadline` on every call and answers `504 api.deadline_exceeded`.
+- **The `service` identity** (`./http`, the internal token: the calling BFF, the account, and the
+  profile and the device when the token names them) marks its routes internal, takes
+  `x-arthome-deadline` and `traceparent` on every call and answers `504 api.deadline_exceeded`. A
+  service api is built on it ("A service API" below).
 - **How a consumer reads the error codes.** `route.errorCodes[status]` (or
   `errorCodesOf(route, status)`) lists the codes a status stands for, including the shared standard
   responses; a status the route wrote whole has none listed. Its type names the codes the route
@@ -474,6 +480,56 @@ export const rehearseRun: RehearseRunRoute = runDate.single('run').action('rehea
   errors: [CatalogErrorCode.TECHNICAL_CHECK_REQUIRED, DomainErrorCode.STATE_CONFLICT],
 });
 ```
+
+### A service API
+
+A microservice declares its internal API here too (D-121), with the builder and under core's
+`service` identity, and binds it with `@Endpoint` as the BFFs bind theirs. `streaming-service-api/`
+is the first; catalog and ticketing move to it later.
+
+- **One folder per service**, `src/<service>-service-api/`. The `-api` suffix is what
+  `generate:contract-types` reads, and `generate:openapi` writes one `openapi/<service>-service.yaml`
+  per `*-service-api` folder it finds. Its `components.ts` holds
+  `<service>ServiceV1 = routeBuilder(serviceErrors).version(1).conventions(serviceConventions)` and
+  the api's parameters; then modules, `index.ts` and `docs.ts` as for a surface, and the subpaths
+  `./<service>-service-api` and `./<service>-service-api/docs`. A separate api per service, so a path
+  it shares with a BFF never collides in one `defineApi`.
+- **The model, in `./http`.** `serviceErrors`: every code allowed (a BFF narrows what it relays, a
+  service does not), no `upstreams`, so no route answers a BFF's `502`, `503` or
+  `api.upstream_timeout`; its envelope is `ServiceErrorEnvelopeSchema`. `serviceConventions`: `data`
+  under `ServiceEnvelopeMetaSchema` (`servedAt`, `validUntil`, the version after a conditional
+  command), a page's `items` and `page` at the root, `RelayedIdempotencyKeyParameter` on a write.
+  `ViewerCountryParameter` on every call that decides a watch verdict.
+- **Who calls.** Every route declares `callerService(...issuers)`, the BFFs it serves, a rule the
+  server maps to a guard that refuses any other `403 api.forbidden`. The principal
+  (`ServicePrincipalSchema`) is the token's: the BFF, the account, the profile and the device. A body
+  `profileId` or `deviceId` other than the principal's is refused `403 api.forbidden`. No route is
+  `.public()` or `.optionalAuth()`.
+- **One operation, two servers.** A service route that serves a public operation keeps its operation
+  id, path, body, answer and refusal codes, so the BFF relays one shape. It takes the public module's
+  schemas, its docs (`operationDocsOf(storefrontDocs, [...])`) and its examples
+  (`storefrontDocs.examples.entriesOf([...])`), never a copy; only what no surface sees is declared in
+  the service's own module. Its spec holds each route's codes to a superset of its public
+  operation's, read from the public route.
+
+```ts
+const run = streamingServiceV1
+  .identity(service)
+  .requires(callerService(InternalTokenIssuer.STUDIO_BFF))
+  .errors([ApiErrorCode.FORBIDDEN, ApiErrorCode.NOT_FOUND])
+  .tags(StreamingServiceTag.RUN)
+  .resource('dates', { id: DateIdParameter })
+  .single('run');
+
+export const getRunConsole: GetRunConsoleRoute = run.find({
+  operationId: 'getRunConsole',
+  summary: 'The state of the run, for the run desk.',
+  item: RunConsoleSchema,
+  answer: 'The console.',
+});
+```
+
+The central document of every service comes with the second service api.
 
 ### Versions
 
