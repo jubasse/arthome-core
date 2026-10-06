@@ -244,6 +244,58 @@ describe('decideWatch — the truth table', () => {
   });
 });
 
+describe('the screen ceiling, checked last', () => {
+  const atTheCeiling = { concurrentStreamsOpen: 1, concurrentStreamsAllowed: 1 };
+
+  it('refuses only what would otherwise be allowed', () => {
+    for (const input of [
+      base({ ...atTheCeiling, holdsSeat: true }),
+      base({ ...atTheCeiling, previewSecondsLeft: 300, now: stillSelling }),
+      room({ ...atTheCeiling, planOpenings: [PlanOpening.ALL_LIVES] }),
+    ]) {
+      const verdict = decideWatch(input);
+      expect(verdict.reason).toBe(WatchDenialReason.CONCURRENT_LIMIT_REACHED);
+      expect(verdict.fallback).toBe(WatchFallbackAction.RELEASE_A_SCREEN);
+    }
+  });
+
+  it('a session taken over as the live ends is told the live ended (D-117)', () => {
+    const verdict = decideWatch(
+      base({
+        ...atTheCeiling,
+        holdsSeat: true,
+        runState: RunState.ENDED,
+        now: '2026-09-21T21:05:00.000Z',
+      }),
+    );
+    expect(verdict.reason).toBe(WatchDenialReason.LIVE_ENDED);
+  });
+
+  it('leaves every other refusal its own reason', () => {
+    const cases: readonly (readonly [WatchInput, WatchDenialReason])[] = [
+      [
+        base({
+          ...atTheCeiling,
+          holdsSeat: true,
+          publicationState: PublicationState.DRAFT,
+          runState: null,
+        }),
+        WatchDenialReason.NOT_PUBLISHED,
+      ],
+      [
+        room({ ...atTheCeiling, holdsSeat: true, now: '2026-09-21T12:00:00.000Z' }),
+        WatchDenialReason.ROOM_NOT_OPEN,
+      ],
+      [base({ ...atTheCeiling, seatExpired: true }), WatchDenialReason.SEAT_EXPIRED],
+      [room(atTheCeiling), WatchDenialReason.NO_SEAT],
+      [base({ ...atTheCeiling, previewSecondsLeft: 0 }), WatchDenialReason.PREVIEW_EXHAUSTED],
+    ];
+    for (const [input, reason] of cases) {
+      expect(decideWatch(input).reason).toBe(reason);
+    }
+  });
+});
+
 describe('the seat action', () => {
   it('a notified account in its window is offered buy_seat, an account on the list none, a sold-out stranger join_waitlist, an unknown standing join_waitlist', () => {
     const facts = {

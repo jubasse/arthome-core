@@ -100,7 +100,11 @@ export interface WatchVerdict {
 /**
  * The watch verdict on a live. The order of the refusals is a decision: most definitive first, so
  * the message shown is the most useful one — telling someone with no seat "out of territory" is
- * truer than "no seat", since buying a seat would not unblock them (`storefront-web` Q19).
+ * truer than "no seat", since buying a seat would not unblock them (`storefront-web` Q19):
+ * territory, a cancelled or interrupted date, a date not published, the live over, the room not
+ * open, then in the room or on air a lost seat, no seat, a spent preview. The screen ceiling comes
+ * last and refuses only what would otherwise be allowed: releasing a screen unblocks nothing else,
+ * so a session taken over as the live ends is told the live ended.
  */
 export declare function decideWatch(input: WatchInput): WatchVerdict;
 /**

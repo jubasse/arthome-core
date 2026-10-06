@@ -196,7 +196,11 @@ function allowed(
 /**
  * The watch verdict on a live. The order of the refusals is a decision: most definitive first, so
  * the message shown is the most useful one — telling someone with no seat "out of territory" is
- * truer than "no seat", since buying a seat would not unblock them (`storefront-web` Q19).
+ * truer than "no seat", since buying a seat would not unblock them (`storefront-web` Q19):
+ * territory, a cancelled or interrupted date, a date not published, the live over, the room not
+ * open, then in the room or on air a lost seat, no seat, a spent preview. The screen ceiling comes
+ * last and refuses only what would otherwise be allowed: releasing a screen unblocks nothing else,
+ * so a session taken over as the live ends is told the live ended.
  */
 export function decideWatch(input: WatchInput): WatchVerdict {
   const horizon = shortHorizon(input.now);
@@ -235,27 +239,9 @@ export function decideWatch(input: WatchInput): WatchVerdict {
     timing: input.timing,
     now: input.now,
   });
-
-  if (display.state === DisplayState.DRAFT || display.state === DisplayState.RESERVE) {
-    return denied(WatchDenialReason.NOT_PUBLISHED, WatchFallbackAction.NONE, preview, horizon);
-  }
-  if (input.concurrentStreamsOpen >= input.concurrentStreamsAllowed) {
-    return denied(
-      WatchDenialReason.CONCURRENT_LIMIT_REACHED,
-      WatchFallbackAction.RELEASE_A_SCREEN,
-      preview,
-      horizon,
-    );
-  }
-
   const validUntil = earliest(horizon, display.validUntil ?? horizon);
-
-  if (
-    input.runState === RunState.ENDED ||
-    display.state === DisplayState.REPLAY ||
-    display.state === DisplayState.ENDED
-  ) {
-    return denied(
+  const liveEnded = (): WatchVerdict =>
+    denied(
       WatchDenialReason.LIVE_ENDED,
       input.timing.replayPolicy === ReplayPolicy.NONE
         ? WatchFallbackAction.SEE_OTHER_DATES
@@ -263,18 +249,56 @@ export function decideWatch(input: WatchInput): WatchVerdict {
       preview,
       validUntil,
     );
-  }
-  if (display.state === DisplayState.SCHEDULED || display.state === DisplayState.POSTPONED) {
-    return denied(
-      WatchDenialReason.ROOM_NOT_OPEN,
-      input.holdsSeat ? WatchFallbackAction.NONE : seatAction(input),
-      preview,
-      validUntil,
-    );
-  }
 
-  const opensTheLive = input.holdsSeat || input.planOpenings.includes(PlanOpening.ALL_LIVES);
-  if (opensTheLive) {
+  // Exhaustive, so a new display state does not compile until it is given a verdict.
+  switch (display.state) {
+    // `technical` is never served by publicDisplayStateOf: refused rather than reached by elimination.
+    case DisplayState.DRAFT:
+    case DisplayState.RESERVE:
+    case DisplayState.TECHNICAL:
+      return denied(WatchDenialReason.NOT_PUBLISHED, WatchFallbackAction.NONE, preview, validUntil);
+    case DisplayState.CANCELLED:
+      return denied(
+        WatchDenialReason.DATE_CANCELLED,
+        WatchFallbackAction.SEE_OTHER_DATES,
+        preview,
+        validUntil,
+      );
+    case DisplayState.INTERRUPTED:
+      return denied(
+        WatchDenialReason.DATE_INTERRUPTED,
+        WatchFallbackAction.SEE_OTHER_DATES,
+        preview,
+        validUntil,
+      );
+    case DisplayState.REPLAY:
+    case DisplayState.ENDED:
+      return liveEnded();
+    case DisplayState.SCHEDULED:
+    case DisplayState.POSTPONED:
+      if (input.runState === RunState.ENDED) return liveEnded();
+      return denied(
+        WatchDenialReason.ROOM_NOT_OPEN,
+        input.holdsSeat ? WatchFallbackAction.NONE : seatAction(input),
+        preview,
+        validUntil,
+      );
+    case DisplayState.ROOM_OPEN:
+    case DisplayState.LIVE:
+      return withinTheCeiling(
+        input,
+        inTheRoomOrOnAir(input, display.state === DisplayState.LIVE, preview, validUntil),
+      );
+  }
+}
+
+function inTheRoomOrOnAir(
+  input: WatchInput,
+  onAir: boolean,
+  preview: number,
+  validUntil: Instant,
+): WatchVerdict {
+  if (input.holdsSeat || input.planOpenings.includes(PlanOpening.ALL_LIVES)) {
     // In the room before on air, the player shows its waiting screen (D-109).
     return allowed(WatchScope.FULL, WatchFallbackAction.NONE, preview, validUntil);
   }
@@ -282,13 +306,25 @@ export function decideWatch(input: WatchInput): WatchVerdict {
     return denied(WatchDenialReason.SEAT_EXPIRED, seatAction(input), preview, validUntil);
   }
   // D-110: no preview before on air; a late start keeps the room open.
-  if (display.state !== DisplayState.LIVE) {
+  if (!onAir) {
     return denied(WatchDenialReason.NO_SEAT, seatAction(input), preview, validUntil);
   }
   if (preview > 0) {
     return allowed(WatchScope.PREVIEW, seatAction(input), preview, validUntil);
   }
   return denied(WatchDenialReason.PREVIEW_EXHAUSTED, seatAction(input), preview, validUntil);
+}
+
+function withinTheCeiling(input: WatchInput, verdict: WatchVerdict): WatchVerdict {
+  if (!verdict.allowed || input.concurrentStreamsOpen < input.concurrentStreamsAllowed) {
+    return verdict;
+  }
+  return denied(
+    WatchDenialReason.CONCURRENT_LIMIT_REACHED,
+    WatchFallbackAction.RELEASE_A_SCREEN,
+    verdict.previewSecondsLeft,
+    verdict.validUntil,
+  );
 }
 
 // Offering `buy_seat` on a sold-out date is a button that leads nowhere, the dead end principle

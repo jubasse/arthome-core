@@ -12,6 +12,10 @@ second device while a lease is there to take over, which is the lockout the take
 prevent. At a renewal, pass the other leases as they are: that is how the taken-over session's next
 renewal is refused `watch.concurrent_limit_reached`, with `activeSessions`.
 
+`decideWatch` checks the ceiling last, and refuses with it only a verdict that would otherwise be
+allowed: a session taken over as the live ends is told `watch.live_ended`, since releasing a screen
+would unblock nothing.
+
 The ceiling is `concurrentStreamsAllowedFor(planOpenings, activeSeatsOnDate)`: the seats held on the
 date count (D-108), not only the plan.
 
