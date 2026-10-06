@@ -16,7 +16,7 @@ import {
   type WatchInput,
 } from './index.js';
 import type { DateTiming } from '../catalog/date-state.js';
-import { restrictedRights, worldwideRights } from '../catalog/rights.js';
+import { UNRESOLVED_COUNTRY, restrictedRights, worldwideRights } from '../catalog/rights.js';
 import {
   BlackoutReason,
   DateOutcome,
@@ -103,6 +103,16 @@ describe('decideWatch — the truth table', () => {
     expect(verdict.allowed).toBe(false);
     expect(verdict.reason).toBe(WatchDenialReason.OUT_OF_TERRITORY);
     expect(verdict.fallback).toBe(WatchFallbackAction.SEE_OTHER_DATES);
+  });
+
+  it('refuses an unresolved country on a restricted date, never on a worldwide one', () => {
+    const unresolved = { holdsSeat: true, viewerCountry: UNRESOLVED_COUNTRY };
+    const restricted = decideWatch(
+      base({ ...unresolved, rights: restrictedRights(['BE'], BlackoutReason.FESTIVAL) }),
+    );
+    expect(restricted.reason).toBe(WatchDenialReason.OUT_OF_TERRITORY);
+    expect(restricted.fallback).toBe(WatchFallbackAction.SEE_OTHER_DATES);
+    expect(decideWatch(base(unresolved)).allowed).toBe(true);
   });
 
   it('opens the live show to a held seat — principle no. 3', () => {
