@@ -673,8 +673,9 @@ Found on review: what the declaration must also carry so that nothing else is wr
 - **One operation, two servers.** A service route that serves a public operation keeps its operation
   id, path, body, answer and refusal codes; the BFF relays one shape, and its typed client calls
   `streamingServiceApi.routes.goOnAir` as the surface calls `studioApi.routes.goOnAir`. Schemas, docs
-  and examples are read from the public operation's module, never copied, and a spec holds each
-  service route's codes to a superset of its public operation's. Only what no surface sees (the
+  and examples are read from the public operation's module, never copied, and a spec over every
+  service api holds each route's codes to a superset of its public operation's, less the codes the
+  BFF answers of its own (its identity's, its rules', its upstreams'). Only what no surface sees (the
   progress batch) is declared by the service alone.
 - **The caller rule.** Every route names the BFFs it serves, `callerService(...issuers)`, a rule like
   `roles` (§4.3): the server maps it to a guard that refuses any other issuer `403 api.forbidden`. A

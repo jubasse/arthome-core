@@ -21,15 +21,21 @@ says so. Then, by hand:
 ## 2. Every route names its callers
 
 `callerService(InternalTokenIssuer.X)` on every route, set on the block's builder. A route without
-it lets either BFF in. The streaming spec holds its own api to it; a new api needs the same spec.
+it lets either BFF in, and neither the builder nor the platform's boot notices. `service-apis.spec.ts`
+finds every `*-service-api` and holds each route to it (internal, on `service`, a caller rule that
+includes its public operation's BFF, never public or optional), so a new api needs no spec of its
+own for that, only the folder name of §1.
 
 ## 3. The codes are the public operation's, and the spec reads them
 
-A service route that serves a public operation keeps its codes, as a superset. The spec compares
-each code that is not a transport one (`API_ERROR_CODES`), and each status the service model
-documents, against the public route at run time. So a code added to the BFF's operation fails the
-service's spec until the service route declares it too. A code the public api's standard response
-stands for counts: the studio's `409` stands for `state.conflict`, so `resolveIncident` declares it.
+A service route that serves a public operation keeps its codes, as a superset, and its paging.
+`service-apis.spec.ts` compares them against the public route at run time, so a code added to the
+BFF's operation fails until the service route declares it too. It leaves out only what the BFF answers
+of its own: its identity's codes (the CSRF `403`, `api.rights_version_stale`), its rules' (the rate
+limit, a re-authentication), and the transport codes its shared responses stand for where the
+service model's do not (`502`, `503`, `api.upstream_timeout`, a list's `410`). Every other code
+counts: the studio's `409` stands for `state.conflict`, so `resolveIncident` declares it, and a
+catalog list's `api.sort_key_forbidden` or `api.period_filter_required` is the service's to declare.
 
 ## 4. The principal carries the profile and the device
 

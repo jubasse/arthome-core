@@ -514,8 +514,9 @@ is the first; catalog and ticketing move to it later.
   id, path, body, answer and refusal codes, so the BFF relays one shape. It takes the public module's
   schemas, its docs (`operationDocsOf(storefrontDocs, [...])`) and its examples
   (`storefrontDocs.examples.entriesOf([...])`), never a copy; only what no surface sees is declared in
-  the service's own module. Its spec holds each route's codes to a superset of its public
-  operation's, read from the public route.
+  the service's own module. `service-apis.spec.ts` finds every `*-service-api` and holds each route
+  to the model: internal, a caller rule, never public, and its public operation's paging and codes
+  (a superset, read from the public route, less what the BFF answers of its own).
 
 ```ts
 const run = streamingServiceV1
