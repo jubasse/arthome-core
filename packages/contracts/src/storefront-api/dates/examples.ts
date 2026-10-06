@@ -128,6 +128,13 @@ const waitlistRegistration: WaitlistRegistration = {
   priorityUntil: null,
 };
 
+const waitlistRegistrationNone: WaitlistRegistration = {
+  joined: false,
+  state: null,
+  rankDisclosed: false,
+  priorityUntil: null,
+};
+
 const waitlistRegistrationNotified: WaitlistRegistration = {
   joined: true,
   state: WaitlistEntryState.NOTIFIED,
@@ -166,7 +173,10 @@ export const datesExamples: ModuleExamples = [
   [QuoteSeatBodySchema, [quoteSeatBody]],
   [SeatQuoteSchema, [seatQuote, seatQuoteFromPriorityPool]],
   [SalesQueuePositionSchema, [salesQueuePosition, salesQueueAdmission]],
-  [WaitlistRegistrationSchema, [waitlistRegistration, waitlistRegistrationNotified]],
+  [
+    WaitlistRegistrationSchema,
+    [waitlistRegistration, waitlistRegistrationNotified, waitlistRegistrationNone],
+  ],
   [WaitlistDepartureSchema, [waitlistDeparture]],
   [ChatMessageSchema, [chatMessage]],
   [SendChatMessageBodySchema, [sendChatMessageBody]],

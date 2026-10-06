@@ -43,8 +43,8 @@ this refund's amount; `order.refunded`'s `amount` is this refund's.
 
 ## 4. A credited seat serves a null refund reason
 
-A credited seat's card serves `state: credited`, `method: account_credit`, no `delayCode`
-(`refundDelayCodeOf(account_credit)` is null) and `refundReasonCode: null`. **Not
+A credited seat's card serves `state: credited`, `method: account_credit`, `delayCode: null`
+(`refundDelayCodeOf(account_credit)`) and `refundReasonCode: null`. **Not
 `date_cancelled`, and no new `REFUND_REASONS` member**: the cause is the date's interruption, which
 the card's `date` already carries, and a credit is not a refund to the payment method.
 

@@ -7041,6 +7041,9 @@ paths:
 
         **The seat returns to public sale at once** (D-093), first come first served: the waiting list is
         not notified and gets no priority.
+
+        **On a cancelled date** the deadline does not apply, the refund carries `date_cancelled` (D-097),
+        and the seat does not return to sale.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -12963,7 +12966,7 @@ components:
             What the viewer gets back, and **where**. The amount and a **delay code** — never the
             sentence "3 to 5 business days", which is a policy.
 
-            A **credited** seat serves `state: credited`, `method: account_credit` and
+            A **credited** seat serves `state: credited`, `method: account_credit`, `delayCode: null` and
             `refundReasonCode: null`: the cause is the date's interruption, which the card's `date` carries.
           anyOf:
           - type: object
@@ -12972,12 +12975,15 @@ components:
                 x-arthome-tax-basis: inherited
                 $ref: '#/components/schemas/Money'
               delayCode:
-                type: string
+                description: '`null` for a credit, which is on the account at once (`refundDelayCodeOf`).'
                 x-arthome-vocabulary:
                 - refund_delay_business_days_3_5
                 x-arthome-vocabulary-source: REFUND_DELAY_CODES
                 examples:
                 - refund_delay_business_days_3_5
+                type:
+                - string
+                - 'null'
               method:
                 type: string
                 x-arthome-vocabulary:

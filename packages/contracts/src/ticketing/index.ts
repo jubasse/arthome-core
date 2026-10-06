@@ -70,7 +70,7 @@ export const TicketCardSchema: z.ZodObject<
         z.ZodObject<
           {
             amount: z.ZodOptional<typeof MoneyOut>;
-            delayCode: z.ZodOptional<VocabularyOut>;
+            delayCode: z.ZodOptional<VocabularyOutNullable>;
             method: z.ZodOptional<VocabularyOut>;
             refundReasonCode: z.ZodOptional<VocabularyOutNullable>;
           },
@@ -101,9 +101,10 @@ export const TicketCardSchema: z.ZodObject<
   refund: z
     .looseObject({
       amount: MoneyOut.meta({ 'x-arthome-tax-basis': 'inherited' }).optional(),
-      delayCode: vocabularyOut(REFUND_DELAY_CODES)
+      delayCode: vocabularyOutNullable(REFUND_DELAY_CODES)
         .meta({ examples: [RefundDelayCode.BUSINESS_DAYS_3_5] })
-        .optional(),
+        .optional()
+        .describe('`null` for a credit, which is on the account at once (`refundDelayCodeOf`).'),
       method: vocabularyOut(REFUND_METHODS).optional(),
       refundReasonCode: vocabularyOutNullable(REFUND_REASONS)
         .optional()
@@ -112,7 +113,7 @@ export const TicketCardSchema: z.ZodObject<
     .nullable()
     .optional()
     .describe(
-      'What the viewer gets back, and **where**. The amount and a **delay code** — never the\nsentence "3 to 5 business days", which is a policy.\n\nA **credited** seat serves `state: credited`, `method: account_credit` and\n`refundReasonCode: null`: the cause is the date\'s interruption, which the card\'s `date` carries.\n',
+      'What the viewer gets back, and **where**. The amount and a **delay code** — never the\nsentence "3 to 5 business days", which is a policy.\n\nA **credited** seat serves `state: credited`, `method: account_credit`, `delayCode: null` and\n`refundReasonCode: null`: the cause is the date\'s interruption, which the card\'s `date` carries.\n',
     ),
 });
 
