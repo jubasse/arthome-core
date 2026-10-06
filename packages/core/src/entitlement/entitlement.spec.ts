@@ -178,9 +178,9 @@ describe('decideWatch — the truth table', () => {
     expect(decideWatch(room({ ...technical, now: '2026-09-21T12:00:00.000Z' })).reason).toBe(
       WatchDenialReason.ROOM_NOT_OPEN,
     );
-    expect(decideWatch(room({ ...technical, now: '2026-09-21T22:00:00.000Z' })).reason).toBe(
-      WatchDenialReason.LIVE_ENDED,
-    );
+    expect(
+      decideWatch(room({ ...technical, runState: null, now: '2026-09-21T22:00:00.000Z' })).reason,
+    ).toBe(WatchDenialReason.LIVE_ENDED);
   });
 
   it('a non-holder in the room gets the buy action, never a preview (D-110)', () => {
@@ -206,6 +206,22 @@ describe('decideWatch — the truth table', () => {
     expect(stranger.fallback).toBe(WatchFallbackAction.BUY_SEAT);
     expect(decideWatch(room({ ...lateStart, now: pastCutoff })).fallback).toBe(
       WatchFallbackAction.SEE_OTHER_DATES,
+    );
+  });
+
+  it('a show starting 70 minutes late keeps its room past the scheduled end, never live_ended (D-109)', () => {
+    const late = {
+      publicationState: PublicationState.LIVE,
+      timing: { ...timing, runtimeMin: 60 },
+      now: '2026-09-21T20:05:00.000Z',
+    };
+    const holder = decideWatch(room({ ...late, holdsSeat: true }));
+    expect(holder.allowed).toBe(true);
+    expect(holder.scope).toBe(WatchScope.FULL);
+    expect(decideWatch(room(late)).reason).toBe(WatchDenialReason.NO_SEAT);
+    // On air at last, the preview opens.
+    expect(decideWatch(base({ ...late, now: '2026-09-21T20:10:00.000Z' })).scope).toBe(
+      WatchScope.PREVIEW,
     );
   });
 

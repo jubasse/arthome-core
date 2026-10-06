@@ -7,6 +7,7 @@ import {
   publicDisplayStateOf,
   type DateTiming,
 } from './date-state.js';
+import { plusMinutes } from '../time/instant.js';
 import {
   DateOutcome,
   DisplayState,
@@ -307,19 +308,48 @@ describe('displayStateOf — the run moves the card', () => {
       now,
     });
 
-  it('a known idle run past the start shows room_open until the scheduled end (D-109)', () => {
+  it('a known idle run past the start keeps the room open until the run moves (D-109)', () => {
     for (const runState of [RunState.IDLE, RunState.REHEARSAL]) {
-      expect(at(runState, '2026-09-21T18:45:00.000Z')).toEqual({
-        state: DisplayState.ROOM_OPEN,
-        validUntil: '2026-09-21T21:00:00.000Z',
-      });
-      expect(at(runState, '2026-09-21T19:20:00.000Z')).toEqual({
-        state: DisplayState.ROOM_OPEN,
-        validUntil: '2026-09-21T21:00:00.000Z',
-      });
+      for (const now of [
+        '2026-09-21T18:45:00.000Z',
+        '2026-09-21T19:20:00.000Z',
+        '2026-09-21T21:30:00.000Z',
+        '2026-09-25T00:00:00.000Z',
+      ]) {
+        expect(at(runState, now)).toEqual({ state: DisplayState.ROOM_OPEN, validUntil: null });
+      }
     }
-    // Past the scheduled end, the time axis as before: the replay window, here.
-    expect(at(RunState.IDLE, '2026-09-21T21:30:00.000Z').state).toBe(DisplayState.REPLAY);
+  });
+
+  it('a show starting 70 minutes late, past its scheduled end, is in its room, then live (D-109)', () => {
+    const hourLong: DateTiming = { ...timing, runtimeMin: 60 };
+    const lateBy = (minutes: number) => plusMinutes(hourLong.startsAt, minutes);
+    const of = (runState: RunState, now: string) =>
+      displayStateOf({
+        publicationState: PublicationState.LIVE,
+        runState,
+        outcome: null,
+        timing: hourLong,
+        now,
+      });
+
+    // Past the scheduled end (+60), the run still idle: the room, never the replay.
+    expect(of(RunState.IDLE, lateBy(65))).toEqual({
+      state: DisplayState.ROOM_OPEN,
+      validUntil: null,
+    });
+    expect(of(RunState.ON_AIR, lateBy(70))).toEqual({ state: DisplayState.LIVE, validUntil: null });
+    expect(of(RunState.ENDED, lateBy(140)).state).toBe(DisplayState.ENDED);
+    // An outcome still outranks the waiting room.
+    expect(
+      displayStateOf({
+        publicationState: PublicationState.LIVE,
+        runState: RunState.IDLE,
+        outcome: DateOutcome.CANCELLED,
+        timing: hourLong,
+        now: lateBy(65),
+      }).state,
+    ).toBe(DisplayState.CANCELLED);
   });
 
   it('a run on air serves no expiry, an overrun included', () => {

@@ -446,7 +446,7 @@ export const DateCardSchema: z.ZodObject<
         "The **only** state value the cards display, and nobody recomposes it. Produced by\n`publicDisplayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`. The\nhierarchy, written once: `outcome` outranks `run.state`, which outranks `publication.state`.\n\n**One vocabulary, eleven members, and the narrowing is said here rather than written as a\nsecond list.** A storefront never receives `draft`, `reserve` or `technical` — not by\nfiltering, but **by construction**: a date reaches a public surface only once it is\npublished, and a published date under technical check is shown on the time axis. Declaring only the eight would be a second authored list for a field the\ndomain already defines, and two independently authored lists for one field is how E4\nstarted. A surface that wants to know what it can actually receive reads this sentence;\nthe vocabulary stays the domain's.\n",
       ),
     displayStateValidUntil: InstantOut.nullable().describe(
-      'The instant the displayed state stops being true, the one `publicDisplayStateOf` returns.\n**`null` when only an event can change it**: an outcome, or a date fully over. Never an\ninvented instant: a surface that re-runs the rule at a made-up time shows a false state.\n',
+      'The instant the displayed state stops being true, the one `publicDisplayStateOf` returns.\n**`null` when only an event can change it**: an outcome, the run going on air or ending\n(a known run in its room or on air, D-109, D-115), or a date fully over. Never an\ninvented instant: a surface that re-runs the rule at a made-up time shows a false state.\n',
     ),
     outcome: vocabularyOutNullable(DATE_OUTCOMES)
       .optional()

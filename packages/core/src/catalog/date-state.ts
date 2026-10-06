@@ -133,12 +133,13 @@ export function displayStateOf(input: DisplayStateInput): DisplayStateResult {
     return { state: DisplayState.SCHEDULED, validUntil: opensAt };
   }
 
-  const finishesAt = endsAt(timing);
-  // D-109: a known run turns the card `live` on air, not at `startsAt`, so a late start keeps the
-  // room open. An unknown run (`null`) keeps the clock.
-  if (runState !== null && isBefore(now, finishesAt)) {
-    return { state: DisplayState.ROOM_OPEN, validUntil: finishesAt };
+  // D-109: a known run that has not gone on air keeps the room open, past `startsAt` and past the
+  // scheduled end alike: only the run going on air or an outcome changes it. An unknown run
+  // (`null`) keeps the clock.
+  if (runState !== null) {
+    return { state: DisplayState.ROOM_OPEN, validUntil: null };
   }
+  const finishesAt = endsAt(timing);
   if (isBefore(now, timing.startsAt)) {
     return { state: DisplayState.ROOM_OPEN, validUntil: timing.startsAt };
   }

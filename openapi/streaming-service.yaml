@@ -2965,7 +2965,8 @@ components:
               - type: 'null'
               description: |
                 The instant the displayed state stops being true, the one `publicDisplayStateOf` returns.
-                **`null` when only an event can change it**: an outcome, or a date fully over. Never an
+                **`null` when only an event can change it**: an outcome, the run going on air or ending
+                (a known run in its room or on air, D-109, D-115), or a date fully over. Never an
                 invented instant: a surface that re-runs the rule at a made-up time shows a false state.
             outcome:
               description: |

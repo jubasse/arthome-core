@@ -22,9 +22,12 @@ date count (D-108), not only the plan.
 ## 2. A null run keeps the clock
 
 `displayStateOf` with `runState: null` turns `live` at `startsAt` and stays there until `endsAt`, as
-before. With a known run it does not: `idle` or `rehearsal` shows `room_open` until the scheduled end
-(a late start), `on_air` and `interrupted` show `live` with no `validUntil` (an overrun included), and
-`ended` shows `ended`.
+before. With a known run it does not:
+- `idle` or `rehearsal` shows `room_open` from the room opening, with no `validUntil`, past `startsAt`
+  and past the scheduled end alike (D-109: the waiting screen holds until the run goes on air or an
+  outcome is declared, so a late show never reads as a `replay` or `watch.live_ended`);
+- `on_air` and `interrupted` show `live` with no `validUntil` (an overrun included);
+- `ended` shows `ended`.
 
 - `streaming` always has its run: never pass null there.
 - The catalog card passes null until PC1 feeds it the run. Passing `idle` from a projection that does
