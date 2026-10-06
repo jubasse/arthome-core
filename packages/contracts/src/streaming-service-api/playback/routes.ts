@@ -3,7 +3,6 @@ import {
   IdentityErrorCode,
   InternalTokenIssuer,
   WATCH_DENIAL_REASONS,
-  WatchDenialReason,
 } from '@arthome/core';
 
 import type { OpenPlaybackRoute, ReleasePlaybackRoute, RenewPlaybackTicketRoute } from './types.js';
@@ -50,12 +49,7 @@ export const renewPlaybackTicket: RenewPlaybackTicketRoute = sessions.action('re
   idempotent: false,
   cache: cache(Freshness.NEVER),
   answer: 'Token renewed.',
-  errors: [
-    ApiErrorCode.NOT_FOUND,
-    IdentityErrorCode.SIGNED_OUT_ELSEWHERE,
-    WatchDenialReason.CONCURRENT_LIMIT_REACHED,
-    WatchDenialReason.PREVIEW_EXHAUSTED,
-  ],
+  errors: [ApiErrorCode.NOT_FOUND, IdentityErrorCode.SIGNED_OUT_ELSEWHERE, ...WATCH_DENIAL_REASONS],
 });
 
 export const releasePlayback: ReleasePlaybackRoute = sessions.action('release', {

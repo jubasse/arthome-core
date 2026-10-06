@@ -54,7 +54,7 @@ export const rehearseRun: RehearseRunRoute = run.action('rehearse', {
   body: RunTransitionBodySchema,
   response: RunConsoleSchema,
   answer: 'The console up to date.',
-  errors: [DomainErrorCode.STATE_CONFLICT],
+  errors: [DomainErrorCode.STATE_CONFLICT, DomainErrorCode.RUN_TRANSITION_FORBIDDEN],
 });
 
 export const goOnAir: GoOnAirRoute = run.action('go-on-air', {
@@ -66,6 +66,7 @@ export const goOnAir: GoOnAirRoute = run.action('go-on-air', {
   errors: [
     CatalogErrorCode.TECHNICAL_CHECK_REQUIRED,
     DomainErrorCode.STATE_CONFLICT,
+    DomainErrorCode.RUN_TRANSITION_FORBIDDEN,
     DomainErrorCode.PUBLICATION_TRANSITION_FORBIDDEN,
   ],
 });
@@ -76,7 +77,7 @@ export const endRun: EndRunRoute = run.action('end', {
   body: RunTransitionBodySchema,
   response: RunConsoleSchema,
   answer: 'The console up to date.',
-  errors: [DomainErrorCode.STATE_CONFLICT],
+  errors: [DomainErrorCode.STATE_CONFLICT, DomainErrorCode.RUN_TRANSITION_FORBIDDEN],
 });
 
 export const resetRun: ResetRunRoute = run.action('reset', {
@@ -85,7 +86,7 @@ export const resetRun: ResetRunRoute = run.action('reset', {
   body: RunTransitionBodySchema,
   response: RunConsoleSchema,
   answer: 'The console up to date.',
-  errors: [DomainErrorCode.STATE_CONFLICT],
+  errors: [DomainErrorCode.STATE_CONFLICT, DomainErrorCode.RUN_TRANSITION_FORBIDDEN],
 });
 
 export const raiseIncident: RaiseIncidentRoute = runDate

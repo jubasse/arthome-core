@@ -510,7 +510,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 534 exported names.
+Declarations: `dist/index.d.ts` — 535 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
