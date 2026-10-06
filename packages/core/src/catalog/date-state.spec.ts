@@ -158,10 +158,10 @@ describe('displayStateOf — the validity of what is served', () => {
     expect(result.validUntil).toBe('2026-09-21T18:30:00.000Z');
   });
 
-  it('expires at curtain-up when the room is open', () => {
+  it('expires at curtain-up when the room is open on the clock of an unknown run', () => {
     const result = displayStateOf({
       publicationState: PublicationState.SCHEDULED,
-      runState: RunState.IDLE,
+      runState: null,
       outcome: null,
       timing,
       now: '2026-09-21T18:45:00.000Z',
@@ -288,5 +288,80 @@ describe('the time derivations the surface re-evaluates itself', () => {
     expect(progressOf(timing, '2026-09-21T18:00:00.000Z')).toBe(0);
     expect(progressOf(timing, '2026-09-21T20:00:00.000Z')).toBe(0.5);
     expect(progressOf(timing, '2026-09-22T00:00:00.000Z')).toBe(1);
+  });
+});
+
+/**
+ * PROTECTED INVARIANT
+ *   A known run moves the card, the clock does not (D-109, D-115): `live` on the real on-air
+ *   switch, held through an overrun, and `ended` once the run ends. Only an unknown run, as the
+ *   catalog card passes until it consumes the run, keeps the clock.
+ */
+describe('displayStateOf — the run moves the card', () => {
+  const at = (runState: RunState | null, now: string) =>
+    displayStateOf({
+      publicationState: PublicationState.LIVE,
+      runState,
+      outcome: null,
+      timing,
+      now,
+    });
+
+  it('a known idle run past the start shows room_open until the scheduled end (D-109)', () => {
+    for (const runState of [RunState.IDLE, RunState.REHEARSAL]) {
+      expect(at(runState, '2026-09-21T18:45:00.000Z')).toEqual({
+        state: DisplayState.ROOM_OPEN,
+        validUntil: '2026-09-21T21:00:00.000Z',
+      });
+      expect(at(runState, '2026-09-21T19:20:00.000Z')).toEqual({
+        state: DisplayState.ROOM_OPEN,
+        validUntil: '2026-09-21T21:00:00.000Z',
+      });
+    }
+    // Past the scheduled end, the time axis as before: the replay window, here.
+    expect(at(RunState.IDLE, '2026-09-21T21:30:00.000Z').state).toBe(DisplayState.REPLAY);
+  });
+
+  it('a run on air serves no expiry, an overrun included', () => {
+    for (const runState of [RunState.ON_AIR, RunState.INTERRUPTED]) {
+      expect(at(runState, '2026-09-21T19:20:00.000Z')).toEqual({
+        state: DisplayState.LIVE,
+        validUntil: null,
+      });
+      expect(at(runState, '2026-09-21T21:40:00.000Z')).toEqual({
+        state: DisplayState.LIVE,
+        validUntil: null,
+      });
+    }
+  });
+
+  it('an ended run shows ended', () => {
+    expect(at(RunState.ENDED, '2026-09-21T20:50:00.000Z')).toEqual({
+      state: DisplayState.ENDED,
+      validUntil: null,
+    });
+  });
+
+  it('an unknown run keeps the clock', () => {
+    expect(at(null, '2026-09-21T18:45:00.000Z')).toEqual({
+      state: DisplayState.ROOM_OPEN,
+      validUntil: '2026-09-21T19:00:00.000Z',
+    });
+    expect(at(null, '2026-09-21T19:20:00.000Z')).toEqual({
+      state: DisplayState.LIVE,
+      validUntil: '2026-09-21T21:00:00.000Z',
+    });
+  });
+
+  it('publicDisplayStateOf inherits it on a date under technical check', () => {
+    expect(
+      publicDisplayStateOf({
+        publicationState: PublicationState.TECHNICAL,
+        runState: RunState.IDLE,
+        outcome: null,
+        timing,
+        now: '2026-09-21T19:20:00.000Z',
+      }).state,
+    ).toBe(DisplayState.ROOM_OPEN);
   });
 });

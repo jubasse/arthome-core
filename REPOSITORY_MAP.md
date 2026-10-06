@@ -502,7 +502,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 528 exported names.
+Declarations: `dist/index.d.ts` — 533 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -769,6 +769,8 @@ Declarations: `dist/index.d.ts` — 528 exported names.
 - `SeatHoldOrigin` (type+const) — `type SeatHoldOrigin = (typeof SEAT_HOLD_ORIGINS)[number]; SeatHoldOrigin: { readonly CHECKOUT: "checkout"; readonly PAIRING: "pairing"; }`
 - `SeatHoldState` (type+const)
 - `SeatId` (type) — `type SeatId = Brand<'SeatId'>;`
+- `SeatStanding` (interface) — What a viewer can do to get a seat on this date, which decides the seat action.
+- `SeatStandingFacts` (interface) — Ticketing's facts as numbers and an instant, so the standing needs none of its names.
 - `SeatState` (type+const)
 - `Service` (type+const)
 - `ServiceFeeSchedule` (interface) — Service fees: PER SEAT, and the schedule is SERVED.
@@ -778,6 +780,7 @@ Declarations: `dist/index.d.ts` — 528 exported names.
 - `SignInSlowdown` (const) — `SignInSlowdown: { readonly FREE_FAILURES: 5; readonly FIRST_DELAY_MS: 250; readonly MAX_DELAY_MS: 4000; readonly WINDOW_SECONDS: 900; }` — Failed sign-ins to one email, from anywhere, delay its next attempt rather than refuse it: a growing pause, bounded, which never locks the …
 - `StateChangeOrigin` (type+const)
 - `StorefrontSurface` (type) — `type StorefrontSurface = typeof Surface.STOREFRONT_WEB | typeof Surface.STOREFRONT_MOBILE | typeof Surface.STOREFRONT_TV;` — The three surfaces that call the storefront BFF; the studio's two call the other.
+- `SubscriptionOpenings` (interface) — A subscription as 'ticketing' records it: its state, what its plan opens, its paid period.
 - `SubscriptionState` (type+const)
 - `Surface` (type+const)
 - `SystemClock` (class) — The production clock.
@@ -819,7 +822,7 @@ Declarations: `dist/index.d.ts` — 528 exported names.
 - `WallClock` (interface) — The wall-clock components of an instant in a given offset.
 - `WatchDenialReason` (type+const)
 - `WatchFallbackAction` (type+const)
-- `WatchInput` (interface) — The FIVE inputs, named.
+- `WatchInput` (interface) — The inputs, named.
 - `WatchScope` (type+const) — `type WatchScope = (typeof WATCH_SCOPES)[number]; WatchScope: { readonly FULL: "full"; readonly PREVIEW: "preview"; readonly NONE: "none"; }`
 - `WatchVerdict` (interface)
 - `Window` (interface) — A half-open window: '[start, end)'.
@@ -859,13 +862,13 @@ Declarations: `dist/index.d.ts` — 528 exported names.
 - `claimExpiryFrom` (function) — `function claimExpiryFrom(claimedAt: Instant): Instant;`
 - `clocksDiffer` (function) — `function clocksDiffer(venue: VenueClock, viewerUtcOffsetMinutes: number): boolean;` — Do the two clocks differ for this instant?
 - `compare` (function) — `function compare(left: Money, right: Money): number;`
-- `concurrentStreamsAllowedFor` (function) — `function concurrentStreamsAllowedFor(planOpenings: readonly PlanOpening[]): number;` — The concurrent-screen ceiling, derived from the plan.
+- `concurrentStreamsAllowedFor` (function) — `function concurrentStreamsAllowedFor(planOpenings: readonly PlanOpening[], activeSeatsOnDate: number): number;` — The concurrent-screen ceiling on a date: the active seats held on it, or the plan's ceiling if higher (D-108).
 - `contains` (function) — `function contains(window: Window, instant: Instant): boolean;`
 - `creditAmountFor` (function) — `function creditAmountFor(paidAmount: Money): Money;`
 - `creditExpiresAt` (function) — `function creditExpiresAt(issuedAt: Instant): Instant;`
 - `criteriaSignature` (function) — `function criteriaSignature(criteria: SearchCriteria): string;` — The signature that answers "already saved" — canonical, not a hash: hashing would need a platform API, which this package forbids itself, a…
 - `dayShift` (function) — `function dayShift(instant: Instant, venue: VenueClock, viewerUtcOffsetMinutes: number): -1 | 0 | 1;` — The DAY shift between the two clocks: -1, 0 or +1.
-- `decideWatch` (function) — `function decideWatch(input: WatchInput): WatchVerdict;` — The watch verdict.
+- `decideWatch` (function) — `function decideWatch(input: WatchInput): WatchVerdict;` — The watch verdict on a live.
 - `disciplinesInEditorialOrder` (function) — `function disciplinesInEditorialOrder(taxonomy: Taxonomy): readonly Discipline[];` — The disciplines in the declared EDITORIAL RANK, from the most popular to the most specialised, families mixed.
 - `disciplinesOfFamily` (function) — `function disciplinesOfFamily(taxonomy: Taxonomy, familyId: string): readonly Discipline[];` — A universe's disciplines, in editorial rank.
 - `displayStateOf` (function) — `function displayStateOf(input: DisplayStateInput): DisplayStateResult;`
@@ -964,6 +967,7 @@ Declarations: `dist/index.d.ts` — 528 exported names.
 - `payoutStateFor` (function) — `function payoutStateFor(outcome: DateOutcome | null, alreadyPaid: boolean, bankChangePending: boolean): PayoutState;` — A payout's state.
 - `pickLanguage` (function) — `function pickLanguage(value: Bilingual, locale: Locale): string;`
 - `pickRendition` (function) — `function pickRendition(renditions: readonly Rendition[], targetWidthPx: number): Rendition | null;` — The rendition closest to the requested width, never below it when a larger one exists: too small is blurry and final, too large only costs …
+- `planOpeningsOf` (function) — `function planOpeningsOf(subscription: SubscriptionOpenings, now: Instant): readonly PlanOpening[];` — What a subscription opens now.
 - `playbackLeaseExpiresAt` (function) — `function playbackLeaseExpiresAt(now: Instant): Instant;`
 - `playbackTokenExpiresAt` (function) — `function playbackTokenExpiresAt(now: Instant): Instant;`
 - `plusHours` (function) — `function plusHours(instant: Instant, hours: number): Instant;`
@@ -1009,6 +1013,7 @@ Declarations: `dist/index.d.ts` — 528 exported names.
 - `seatCode` (function) — `function seatCode(body: string): string;` — Composes a code from a body already drawn by the service, which owns the cryptographic randomness: a source here would make this package de…
 - `seatSalesEndAt` (function) — `function seatSalesEndAt(startsAt: Instant): Instant;`
 - `seatSharesOf` (function) — `function seatSharesOf(total: Money, quantity: number): readonly Money[];` — An amount split over an order's seats, in seat-id order: each gets the floor of 'total / quantity' and the first 'total mod quantity' one m…
+- `seatStandingOf` (function) — `function seatStandingOf(facts: SeatStandingFacts): SeatStanding;`
 - `seatStateMayMove` (function) — `function seatStateMayMove(from: SeatState, to: SeatState): boolean;` — A seat is 'cancelled' when its cancellation is decided, and 'refunded' once the provider confirms the money went back ('refund_succeeded'),…
 - `seatsAvailable` (function) — `function seatsAvailable(gauge: Gauge): number;` — The PUBLIC count: net of holds in progress and of the priority pool, which only an account notified into the window buys from.
 - `seatsAvailableTo` (function) — `function seatsAvailableTo(gauge: Gauge, account: { readonly inPriorityPool: boolean; }): number;` — What one account may buy: the public count, and the pool too for an account notified into it.

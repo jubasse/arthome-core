@@ -9,7 +9,10 @@ import {
   WatchScope,
   concurrentStreamsAllowedFor,
   decideWatch,
+  planOpeningsOf,
   previewSecondsLeft,
+  seatStandingOf,
+  type SeatStanding,
   type WatchInput,
 } from './index.js';
 import type { DateTiming } from '../catalog/date-state.js';
@@ -21,7 +24,7 @@ import {
   ReplayPolicy,
   RunState,
 } from '../vocabulary/catalog.js';
-import { PlanOpening } from '../vocabulary/commerce.js';
+import { PlanOpening, SubscriptionState } from '../vocabulary/commerce.js';
 
 const timing: DateTiming = {
   startsAt: '2026-09-21T19:00:00.000Z',
@@ -31,8 +34,25 @@ const timing: DateTiming = {
   replayWindowHours: 48,
 };
 
+const onPublicSale: SeatStanding = {
+  onPublicSale: true,
+  priorityPoolOpen: false,
+  onWaitlist: false,
+};
+const soldOutStranger: SeatStanding = {
+  onPublicSale: false,
+  priorityPoolOpen: false,
+  onWaitlist: false,
+};
+const onTheList: SeatStanding = { onPublicSale: false, priorityPoolOpen: false, onWaitlist: true };
+
+const inTheRoom = '2026-09-21T18:45:00.000Z';
+const stillSelling = '2026-09-21T19:15:00.000Z';
+const pastCutoff = '2026-09-21T19:30:00.000Z';
+
 const base = (over: Partial<WatchInput> = {}): WatchInput => ({
   holdsSeat: false,
+  seatExpired: false,
   planOpenings: [],
   concurrentStreamsOpen: 0,
   concurrentStreamsAllowed: 1,
@@ -43,16 +63,23 @@ const base = (over: Partial<WatchInput> = {}): WatchInput => ({
   publicationState: PublicationState.LIVE,
   runState: RunState.ON_AIR,
   outcome: null,
-  replayOnSale: false,
-  waitlistOpen: false,
-  now: '2026-09-21T19:30:00.000Z',
+  seatStanding: onPublicSale,
+  now: pastCutoff,
   ...over,
 });
 
+const room = (over: Partial<WatchInput> = {}): WatchInput =>
+  base({
+    publicationState: PublicationState.SCHEDULED,
+    runState: RunState.IDLE,
+    now: inTheRoom,
+    ...over,
+  });
+
 /**
  * PROTECTED INVARIANT
- *   One verdict, five inputs, and THE SAME refusal vocabulary on both sides —
- *   at display time as at player-open time.
+ *   One verdict, the same refusal vocabulary on both sides — at display time as at
+ *   player-open time.
  *
  * WHY THIS TEST EXISTS
  *   `isWatchable` assumed the client holds the complete list of the account's
@@ -81,19 +108,19 @@ describe('decideWatch — the truth table', () => {
   it('opens the live show to a held seat — principle no. 3', () => {
     const verdict = decideWatch(base({ holdsSeat: true }));
     expect(verdict.allowed).toBe(true);
-    expect(verdict.scope).toBe('full');
+    expect(verdict.scope).toBe(WatchScope.FULL);
   });
 
-  it('opens a bounded PREVIEW to someone with no seat', () => {
-    const verdict = decideWatch(base({ previewSecondsLeft: 252, now: '2026-09-21T19:15:00.000Z' }));
+  it('opens a bounded PREVIEW to someone with no seat, on air', () => {
+    const verdict = decideWatch(base({ previewSecondsLeft: 252, now: stillSelling }));
     expect(verdict.allowed).toBe(true);
-    expect(verdict.scope).toBe('preview');
+    expect(verdict.scope).toBe(WatchScope.PREVIEW);
     expect(verdict.previewSecondsLeft).toBe(252);
     expect(verdict.fallback).toBe(WatchFallbackAction.BUY_SEAT);
   });
 
   it('refuses when the preview is exhausted, with the way out', () => {
-    const verdict = decideWatch(base({ previewSecondsLeft: 0, now: '2026-09-21T19:15:00.000Z' }));
+    const verdict = decideWatch(base({ previewSecondsLeft: 0, now: stillSelling }));
     expect(verdict.reason).toBe(WatchDenialReason.PREVIEW_EXHAUSTED);
     expect(verdict.fallback).toBe(WatchFallbackAction.BUY_SEAT);
   });
@@ -107,14 +134,7 @@ describe('decideWatch — the truth table', () => {
   });
 
   it('refuses before the room opens, even with a seat', () => {
-    const verdict = decideWatch(
-      base({
-        holdsSeat: true,
-        runState: RunState.IDLE,
-        publicationState: PublicationState.SCHEDULED,
-        now: '2026-09-21T12:00:00.000Z',
-      }),
-    );
+    const verdict = decideWatch(room({ holdsSeat: true, now: '2026-09-21T12:00:00.000Z' }));
     expect(verdict.reason).toBe(WatchDenialReason.ROOM_NOT_OPEN);
     // They already have their seat: do not offer to sell them one.
     expect(verdict.fallback).toBe(WatchFallbackAction.NONE);
@@ -126,80 +146,131 @@ describe('decideWatch — the truth table', () => {
   });
 
   it('shows nothing of what is not published', () => {
+    for (const publicationState of [PublicationState.DRAFT, PublicationState.RESERVE]) {
+      const verdict = decideWatch(base({ holdsSeat: true, publicationState, runState: null }));
+      expect(verdict.reason).toBe(WatchDenialReason.NOT_PUBLISHED);
+    }
+  });
+
+  it('a holder watches a date under technical check in its room (D-072)', () => {
     const verdict = decideWatch(
-      base({ holdsSeat: true, publicationState: PublicationState.DRAFT, runState: null }),
+      room({ holdsSeat: true, publicationState: PublicationState.TECHNICAL }),
     );
-    expect(verdict.reason).toBe(WatchDenialReason.NOT_PUBLISHED);
+    expect(verdict.allowed).toBe(true);
+    expect(verdict.scope).toBe(WatchScope.FULL);
+    expect(decideWatch(room({ publicationState: PublicationState.TECHNICAL })).reason).toBe(
+      WatchDenialReason.NO_SEAT,
+    );
+  });
+
+  it('a non-holder in the room gets the buy action, never a preview (D-110)', () => {
+    const verdict = decideWatch(room({ previewSecondsLeft: 300 }));
+    expect(verdict.allowed).toBe(false);
+    expect(verdict.scope).toBe(WatchScope.NONE);
+    expect(verdict.reason).toBe(WatchDenialReason.NO_SEAT);
+    expect(verdict.fallback).toBe(WatchFallbackAction.BUY_SEAT);
+    // An `all_lives` plan opens the room as a seat does: the player shows its waiting screen.
+    expect(decideWatch(room({ planOpenings: [PlanOpening.ALL_LIVES] })).scope).toBe(
+      WatchScope.FULL,
+    );
+  });
+
+  it('a late start keeps the room open for a holder and refuses a preview', () => {
+    const lateStart = { publicationState: PublicationState.LIVE, now: stillSelling };
+    const holder = decideWatch(room({ ...lateStart, holdsSeat: true }));
+    expect(holder.allowed).toBe(true);
+    expect(holder.scope).toBe(WatchScope.FULL);
+
+    const stranger = decideWatch(room({ ...lateStart, previewSecondsLeft: 300 }));
+    expect(stranger.reason).toBe(WatchDenialReason.NO_SEAT);
+    expect(stranger.fallback).toBe(WatchFallbackAction.BUY_SEAT);
+    expect(decideWatch(room({ ...lateStart, now: pastCutoff })).fallback).toBe(
+      WatchFallbackAction.SEE_OTHER_DATES,
+    );
+  });
+
+  it('an interrupted date refuses watch.date_interrupted', () => {
+    const verdict = decideWatch(base({ holdsSeat: true, outcome: DateOutcome.INTERRUPTED }));
+    expect(verdict.reason).toBe(WatchDenialReason.DATE_INTERRUPTED);
+    expect(verdict.fallback).toBe(WatchFallbackAction.SEE_OTHER_DATES);
+  });
+
+  it('a live that ended refuses watch.live_ended, pointing at the replay policy or at other dates', () => {
+    const ended = { holdsSeat: true, runState: RunState.ENDED, now: '2026-09-21T21:05:00.000Z' };
+    const withReplay = decideWatch(base(ended));
+    expect(withReplay.reason).toBe(WatchDenialReason.LIVE_ENDED);
+    expect(withReplay.fallback).toBe(WatchFallbackAction.SEE_REPLAY_POLICY);
+
+    const timingNone: DateTiming = { ...timing, replayPolicy: ReplayPolicy.NONE };
+    const noReplay = decideWatch(base({ ...ended, timing: timingNone }));
+    expect(noReplay.reason).toBe(WatchDenialReason.LIVE_ENDED);
+    expect(noReplay.fallback).toBe(WatchFallbackAction.SEE_OTHER_DATES);
+
+    // On the clock of an unknown run too: in the replay window, and past it.
+    for (const now of ['2026-09-22T10:00:00.000Z', '2026-09-25T00:00:00.000Z']) {
+      const verdict = decideWatch(
+        base({
+          holdsSeat: true,
+          publicationState: PublicationState.REPLAY_ONLINE,
+          runState: null,
+          now,
+        }),
+      );
+      expect(verdict.reason).toBe(WatchDenialReason.LIVE_ENDED);
+    }
+  });
+
+  it('a postponed date before its new room refuses watch.room_not_open', () => {
+    const postponed = {
+      outcome: DateOutcome.POSTPONED,
+      timing: { ...timing, startsAt: '2026-09-28T19:00:00.000Z' },
+      runState: RunState.IDLE,
+      now: inTheRoom,
+    };
+    const holder = decideWatch(base({ ...postponed, holdsSeat: true }));
+    expect(holder.reason).toBe(WatchDenialReason.ROOM_NOT_OPEN);
+    expect(holder.fallback).toBe(WatchFallbackAction.NONE);
+    expect(decideWatch(base(postponed)).fallback).toBe(WatchFallbackAction.BUY_SEAT);
+  });
+
+  it('a lost seat refuses watch.seat_expired, never a preview', () => {
+    const onAir = decideWatch(
+      base({ seatExpired: true, previewSecondsLeft: 300, now: stillSelling }),
+    );
+    expect(onAir.reason).toBe(WatchDenialReason.SEAT_EXPIRED);
+    expect(onAir.scope).toBe(WatchScope.NONE);
+    expect(onAir.fallback).toBe(WatchFallbackAction.BUY_SEAT);
+    expect(decideWatch(room({ seatExpired: true })).reason).toBe(WatchDenialReason.SEAT_EXPIRED);
   });
 });
 
-/**
- * PROTECTED INVARIANT
- *   The four replay policies produce FOUR distinct refusals.
- *
- * WHY
- *   `storefront-tv` lists them separately: "no replay for this date" and
- *   "replay expired" are two screens, "subscription required" is a third. A
- *   generic code would produce a wrong one.
- */
-describe('decideWatch — the four replay policies', () => {
-  const replayNow = '2026-09-22T10:00:00.000Z';
-  const replay = (over: Partial<WatchInput> = {}): WatchInput =>
-    base({
-      publicationState: PublicationState.REPLAY_ONLINE,
-      runState: null,
-      now: replayNow,
-      ...over,
-    });
-
-  it('INCLUDED: a held seat opens the replay', () => {
-    expect(decideWatch(replay({ holdsSeat: true })).allowed).toBe(true);
-    expect(decideWatch(replay({ holdsSeat: false })).reason).toBe(WatchDenialReason.NO_SEAT);
-  });
-
-  it('SUBSCRIPTION: the plan opens it, otherwise we offer to subscribe', () => {
-    const timingSub: DateTiming = { ...timing, replayPolicy: ReplayPolicy.SUBSCRIPTION };
-    expect(
-      decideWatch(replay({ timing: timingSub, planOpenings: [PlanOpening.REPLAYS] })).allowed,
-    ).toBe(true);
-    // The way out is to subscribe, whether or not preview budget remains. A
-    // `watch_preview` action was proposed for the budget-remaining case and
-    // withdrawn: a viewer who can still watch a preview is not REFUSED, the
-    // verdict allows them, so it answered no reason. What it was compensating
-    // for was a missing FIELD — `WatchVerdict.scope`, which now carries
-    // preview-ness instead of three storefronts inferring it from
-    // `previewSecondsLeft > 0`.
-    const refused = decideWatch(replay({ timing: timingSub, planOpenings: [] }));
-    expect(refused.reason).toBe(WatchDenialReason.SUBSCRIPTION_REQUIRED);
-    expect(refused.fallback).toBe(WatchFallbackAction.SUBSCRIBE);
-    expect(refused.scope).toBe(WatchScope.NONE);
-  });
-
-  it('UNIT: tells "not bought" apart from "not on sale"', () => {
-    const timingUnit: DateTiming = { ...timing, replayPolicy: ReplayPolicy.UNIT };
-    expect(decideWatch(replay({ timing: timingUnit, replayOnSale: true })).reason).toBe(
-      WatchDenialReason.NO_SEAT,
-    );
-    expect(decideWatch(replay({ timing: timingUnit, replayOnSale: false })).reason).toBe(
-      WatchDenialReason.REPLAY_NOT_ON_SALE,
-    );
-  });
-
-  it('NONE: no replay, and that is not "expired"', () => {
-    const timingNone: DateTiming = {
-      ...timing,
-      replayPolicy: ReplayPolicy.NONE,
-      replayWindowHours: 0,
+describe('the seat action', () => {
+  it('a notified account in its window is offered buy_seat, an account on the list none, a sold-out stranger join_waitlist, an unknown standing join_waitlist', () => {
+    const facts = {
+      publicSeatsAvailable: 0,
+      priorityPoolSeats: 3,
+      notifiedUntil: '2026-09-21T19:20:00.000Z',
+      onWaitlist: true,
+      now: stillSelling,
     };
-    const verdict = decideWatch(
-      replay({ timing: timingNone, holdsSeat: true, now: '2026-09-21T23:00:00.000Z' }),
-    );
-    expect(verdict.reason).toBe(WatchDenialReason.NO_REPLAY);
-  });
+    const actionFor = (seatStanding: SeatStanding | null) =>
+      decideWatch(base({ previewSecondsLeft: 0, now: stillSelling, seatStanding })).fallback;
 
-  it('tells "expired" apart from "none" once the window has passed', () => {
-    const verdict = decideWatch(replay({ holdsSeat: true, now: '2026-09-25T00:00:00.000Z' }));
-    expect(verdict.reason).toBe(WatchDenialReason.REPLAY_EXPIRED);
+    expect(actionFor(seatStandingOf(facts))).toBe(WatchFallbackAction.BUY_SEAT);
+    expect(actionFor(seatStandingOf({ ...facts, now: '2026-09-21T19:20:00.000Z' }))).toBe(
+      WatchFallbackAction.NONE,
+    );
+    expect(actionFor(seatStandingOf({ ...facts, priorityPoolSeats: 0 }))).toBe(
+      WatchFallbackAction.NONE,
+    );
+    expect(actionFor(seatStandingOf({ ...facts, notifiedUntil: null }))).toBe(
+      WatchFallbackAction.NONE,
+    );
+    expect(actionFor(soldOutStranger)).toBe(WatchFallbackAction.JOIN_WAITLIST);
+    expect(actionFor(null)).toBe(WatchFallbackAction.JOIN_WAITLIST);
+    expect(
+      actionFor(seatStandingOf({ ...facts, publicSeatsAvailable: 2, onWaitlist: false })),
+    ).toBe(WatchFallbackAction.BUY_SEAT);
   });
 });
 
@@ -215,7 +286,7 @@ describe('decideWatch — the four replay policies', () => {
 describe("a verdict's validity", () => {
   it('never exceeds sixty seconds', () => {
     const verdict = decideWatch(base({ holdsSeat: true }));
-    const delta = Date.parse(verdict.validUntil) - Date.parse('2026-09-21T19:30:00.000Z');
+    const delta = Date.parse(verdict.validUntil) - Date.parse(pastCutoff);
     expect(delta).toBeLessThanOrEqual(60_000);
     expect(delta).toBeGreaterThan(0);
   });
@@ -223,14 +294,7 @@ describe("a verdict's validity", () => {
   it('shortens when a state switch arrives sooner', () => {
     // Twenty seconds before the room opens: the entitlement's validity cannot
     // run past that switch.
-    const verdict = decideWatch(
-      base({
-        holdsSeat: true,
-        runState: RunState.IDLE,
-        publicationState: PublicationState.SCHEDULED,
-        now: '2026-09-21T18:29:40.000Z',
-      }),
-    );
+    const verdict = decideWatch(room({ holdsSeat: true, now: '2026-09-21T18:29:40.000Z' }));
     expect(verdict.validUntil).toBe('2026-09-21T18:30:00.000Z');
   });
 });
@@ -241,9 +305,6 @@ describe("a verdict's validity", () => {
  *   end (principle no. 8): the seat sale is over, not the availability.
  */
 describe('decideWatch past the seat-sales cutoff (D-089)', () => {
-  const stillSelling = '2026-09-21T19:15:00.000Z';
-  const pastCutoff = '2026-09-21T19:30:00.000Z';
-
   it('still offers to buy a seat before the cutoff', () => {
     const verdict = decideWatch(base({ previewSecondsLeft: 0, now: stillSelling }));
     expect(verdict.fallback).toBe(WatchFallbackAction.BUY_SEAT);
@@ -255,9 +316,9 @@ describe('decideWatch past the seat-sales cutoff (D-089)', () => {
     expect(verdict.fallback).toBe(WatchFallbackAction.SEE_OTHER_DATES);
   });
 
-  it('sends to other dates past the cutoff even with a waiting list open', () => {
+  it('sends to other dates past the cutoff even when sold out', () => {
     const verdict = decideWatch(
-      base({ previewSecondsLeft: 0, waitlistOpen: true, now: pastCutoff }),
+      base({ previewSecondsLeft: 0, seatStanding: soldOutStranger, now: pastCutoff }),
     );
     expect(verdict.fallback).toBe(WatchFallbackAction.SEE_OTHER_DATES);
   });
@@ -265,7 +326,7 @@ describe('decideWatch past the seat-sales cutoff (D-089)', () => {
   it('closes the preview itself past the cutoff, not only the exhausted case', () => {
     const verdict = decideWatch(base({ previewSecondsLeft: 252, now: pastCutoff }));
     expect(verdict.allowed).toBe(true);
-    expect(verdict.scope).toBe('preview');
+    expect(verdict.scope).toBe(WatchScope.PREVIEW);
     expect(verdict.fallback).toBe(WatchFallbackAction.SEE_OTHER_DATES);
   });
 
@@ -276,11 +337,31 @@ describe('decideWatch past the seat-sales cutoff (D-089)', () => {
   });
 });
 
-describe('the two constants derived from the plan', () => {
-  it('gives two screens to `multi-screen`, one otherwise', () => {
-    expect(concurrentStreamsAllowedFor([PlanOpening.MULTI_SCREEN])).toBe(2);
-    expect(concurrentStreamsAllowedFor([PlanOpening.REPLAYS])).toBe(1);
-    expect(concurrentStreamsAllowedFor([])).toBe(1);
+describe('the ceiling and the openings', () => {
+  it("the ceiling is the seats held or the plan's, the larger (D-108)", () => {
+    expect(concurrentStreamsAllowedFor([], 0)).toBe(1);
+    expect(concurrentStreamsAllowedFor([PlanOpening.REPLAYS], 1)).toBe(1);
+    expect(concurrentStreamsAllowedFor([PlanOpening.MULTI_SCREEN], 0)).toBe(2);
+    expect(concurrentStreamsAllowedFor([PlanOpening.MULTI_SCREEN], 1)).toBe(2);
+    expect(concurrentStreamsAllowedFor([], 3)).toBe(3);
+    expect(concurrentStreamsAllowedFor([PlanOpening.MULTI_SCREEN], 3)).toBe(3);
+  });
+
+  it('a cancelled subscription opens until its paid period ends, a past_due one keeps its openings (D-125)', () => {
+    const opens = [PlanOpening.ALL_LIVES, PlanOpening.MULTI_SCREEN];
+    const currentPeriodEnd = '2026-10-01T00:00:00.000Z';
+    const before = '2026-09-30T23:59:59.000Z';
+    const after = '2026-10-01T00:00:00.000Z';
+    for (const state of [
+      SubscriptionState.ACTIVE,
+      SubscriptionState.TRIALING,
+      SubscriptionState.PAST_DUE,
+    ]) {
+      expect(planOpeningsOf({ state, opens, currentPeriodEnd }, after)).toEqual(opens);
+    }
+    const cancelled = { state: SubscriptionState.CANCELLED, opens, currentPeriodEnd };
+    expect(planOpeningsOf(cancelled, before)).toEqual(opens);
+    expect(planOpeningsOf(cancelled, after)).toEqual([]);
   });
 
   it('clamps the preview budget at zero, never below', () => {
@@ -320,54 +401,68 @@ describe('every refusal has a way out, and every way out answers a refusal', () 
     }
   });
 
-  it('never returns an action the pairing does not allow for that reason', () => {
-    // The table is not documentation: decideWatch is held to it.
-    const cases: readonly WatchInput[] = [
-      base({ viewerCountry: 'BE', rights: restrictedRights(['BE'], BlackoutReason.CO_PRODUCTION) }),
-      base({ holdsSeat: true, outcome: DateOutcome.CANCELLED }),
-      base({ holdsSeat: true, publicationState: PublicationState.DRAFT, runState: null }),
-      base({ holdsSeat: true, concurrentStreamsOpen: 1, concurrentStreamsAllowed: 1 }),
-      base({ previewSecondsLeft: 0 }),
-      base({ previewSecondsLeft: 0, waitlistOpen: true }),
-      base({
-        runState: RunState.IDLE,
-        publicationState: PublicationState.SCHEDULED,
-        now: '2026-09-21T12:00:00.000Z',
-      }),
+  it("the fallback table is the function's exact range", () => {
+    // The replay's verdict returns these four (adr-replay.md §10); decideWatch returns every other.
+    const replayVerdictReasons: readonly WatchDenialReason[] = [
+      WatchDenialReason.SUBSCRIPTION_REQUIRED,
+      WatchDenialReason.NO_REPLAY,
+      WatchDenialReason.REPLAY_EXPIRED,
+      WatchDenialReason.REPLAY_NOT_ON_SALE,
     ];
-    for (const input of cases) {
+    const produced = new Map<WatchDenialReason, Set<WatchFallbackAction>>();
+    const record = (input: WatchInput): void => {
       const verdict = decideWatch(input);
-      if (verdict.allowed || verdict.reason === null) continue;
+      if (verdict.reason === null) return;
       expect(WATCH_FALLBACK_FOR[verdict.reason]).toContain(verdict.fallback);
+      const actions = produced.get(verdict.reason) ?? new Set<WatchFallbackAction>();
+      actions.add(verdict.fallback);
+      produced.set(verdict.reason, actions);
+    };
+
+    record(
+      base({ viewerCountry: 'BE', rights: restrictedRights(['BE'], BlackoutReason.FESTIVAL) }),
+    );
+    record(base({ concurrentStreamsOpen: 1, concurrentStreamsAllowed: 1 }));
+    const nows = [
+      '2026-09-21T12:00:00.000Z',
+      inTheRoom,
+      stillSelling,
+      '2026-09-21T19:45:00.000Z',
+      '2026-09-21T21:30:00.000Z',
+      '2026-09-25T00:00:00.000Z',
+    ];
+    const seats: readonly Partial<WatchInput>[] = [
+      { holdsSeat: true },
+      { seatExpired: true },
+      {},
+      { planOpenings: [PlanOpening.ALL_LIVES] },
+    ];
+    for (const now of nows)
+      for (const runState of [null, ...Object.values(RunState)])
+        for (const publicationState of Object.values(PublicationState))
+          for (const outcome of [null, ...Object.values(DateOutcome)])
+            for (const seat of seats)
+              for (const previewSecondsLeft of [0, 300])
+                for (const seatStanding of [onPublicSale, soldOutStranger, onTheList, null])
+                  for (const replayPolicy of [ReplayPolicy.INCLUDED, ReplayPolicy.NONE])
+                    record(
+                      base({
+                        now,
+                        runState,
+                        publicationState,
+                        outcome,
+                        ...seat,
+                        previewSecondsLeft,
+                        seatStanding,
+                        timing: { ...timing, replayPolicy },
+                      }),
+                    );
+
+    expect(new Set(produced.keys())).toEqual(
+      new Set(WATCH_DENIAL_REASONS.filter((reason) => !replayVerdictReasons.includes(reason))),
+    );
+    for (const [reason, actions] of produced) {
+      expect(actions).toEqual(new Set(WATCH_FALLBACK_FOR[reason]));
     }
-  });
-
-  it('offers the waiting list instead of a seat when the date is sold out', () => {
-    // Offering `buy_seat` on a sold-out date is a button that leads nowhere —
-    // which is the dead end principle no. 8 forbids, dressed as an action.
-    const stillSelling = { now: '2026-09-21T19:15:00.000Z' };
-    expect(decideWatch(base({ previewSecondsLeft: 0, ...stillSelling })).fallback).toBe(
-      WatchFallbackAction.BUY_SEAT,
-    );
-    expect(
-      decideWatch(base({ previewSecondsLeft: 0, waitlistOpen: true, ...stillSelling })).fallback,
-    ).toBe(WatchFallbackAction.JOIN_WAITLIST);
-  });
-
-  it('explains the promise rather than deflecting when there is no replay', () => {
-    // `see_other_dates` answered this once, and it answered the wrong question:
-    // the viewer is not looking for another date, they are asking why this one
-    // has no replay. The policy is the answer (`catalog` owns the promise).
-    const noReplay = decideWatch(
-      base({
-        timing: { ...timing, replayPolicy: ReplayPolicy.NONE, replayWindowHours: 0 },
-        holdsSeat: true,
-        publicationState: PublicationState.REPLAY_ONLINE,
-        runState: null,
-        now: '2026-09-21T23:00:00.000Z',
-      }),
-    );
-    expect(noReplay.reason).toBe(WatchDenialReason.NO_REPLAY);
-    expect(noReplay.fallback).toBe(WatchFallbackAction.SEE_REPLAY_POLICY);
   });
 });

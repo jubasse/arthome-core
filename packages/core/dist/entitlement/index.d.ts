@@ -14,9 +14,9 @@
 import type { DateTiming } from '../catalog/date-state.js';
 import { type TerritoryRights } from '../catalog/rights.js';
 import type { Instant } from '../kernel/clock.js';
-import { DateOutcome } from '../vocabulary/catalog.js';
-import type { PublicationState, RunState } from '../vocabulary/catalog.js';
-import { PlanOpening } from '../vocabulary/commerce.js';
+import { DateOutcome, RunState } from '../vocabulary/catalog.js';
+import type { PublicationState } from '../vocabulary/catalog.js';
+import { PlanOpening, SubscriptionState } from '../vocabulary/commerce.js';
 import { WatchDenialReason, WatchFallbackAction, WatchScope } from '../vocabulary/entitlement.js';
 export { WATCH_DENIAL_REASONS, WATCH_FALLBACK_ACTIONS, WATCH_SCOPES, WatchDenialReason, WatchFallbackAction, WatchScope, } from '../vocabulary/entitlement.js';
 /**
@@ -24,22 +24,50 @@ export { WATCH_DENIAL_REASONS, WATCH_FALLBACK_ACTIONS, WATCH_SCOPES, WatchDenial
  * action that answers it and every action answers at least one reason; the spec asserts both
  * directions, and anything surviving without a partner is what to argue about.
  *
- * This table is the function's RANGE, not a menu of what a screen might offer: an action
- * belongs on a row if `decideWatch` can return it for that reason. Hence `PREVIEW_EXHAUSTED`
- * carries `join_waitlist` and not `subscribe` — subscribing is a real way out of a spent
- * preview, but the function never returns it there, and a table listing what the function
- * cannot produce stops being checkable against the function.
+ * This table is the verdicts' RANGE, not a menu of what a screen might offer: an action belongs
+ * on a row if a verdict can return it for that reason. `decideWatch` returns every reason but four:
+ * `subscription_required`, `no_replay`, `replay_expired` and `replay_not_on_sale` are the replay's
+ * verdict (`adr-replay.md` §10), and the spec holds the function to the other rows exactly. Hence
+ * `PREVIEW_EXHAUSTED` carries `join_waitlist` and not `subscribe` — subscribing is a real way out
+ * of a spent preview, but the function never returns it there, and a table listing what the
+ * function cannot produce stops being checkable against the function.
  *
  * The keys are computed, and were bare literals until the values became translation keys: the
  * day `NO_SEAT` became `watch.no_seat`, all eleven were wrong at once and `tsc` caught all
  * eleven. That is what the `Record` keyed by the union is for.
  */
 export declare const WATCH_FALLBACK_FOR: Readonly<Record<WatchDenialReason, readonly WatchFallbackAction[]>>;
-/** The FIVE inputs, named. None is guessed, none is global. */
+/** What a viewer can do to get a seat on this date, which decides the seat action. */
+export interface SeatStanding {
+    readonly onPublicSale: boolean;
+    /** Notified from the waiting list, inside the window, with pool seats left. */
+    readonly priorityPoolOpen: boolean;
+    readonly onWaitlist: boolean;
+}
+/** Ticketing's facts as numbers and an instant, so the standing needs none of its names. */
+export interface SeatStandingFacts {
+    readonly publicSeatsAvailable: number;
+    readonly priorityPoolSeats: number;
+    /** The end of the viewer's priority window, `null` when not notified. */
+    readonly notifiedUntil: Instant | null;
+    readonly onWaitlist: boolean;
+    readonly now: Instant;
+}
+export declare function seatStandingOf(facts: SeatStandingFacts): SeatStanding;
+/** The inputs, named. None is guessed, none is global. */
 export interface WatchInput {
     readonly holdsSeat: boolean;
+    /** The account held a seat on this date and holds no active one now: its own cancellation, an account deletion. */
+    readonly seatExpired: boolean;
+    /** `planOpeningsOf`'s result: what the subscription opens now, never its plan read past its state (D-125). */
     readonly planOpenings: readonly PlanOpening[];
+    /**
+     * The account's other live leases on the date. At an opening they are counted once the opening
+     * has taken over the least recently renewed one (D-117), so an opening is never refused for the
+     * ceiling while a lease remains to take over; the taken-over session's next renewal is refused.
+     */
     readonly concurrentStreamsOpen: number;
+    /** `concurrentStreamsAllowedFor` (D-108). */
     readonly concurrentStreamsAllowed: number;
     readonly previewSecondsLeft: number;
     readonly viewerCountry: string;
@@ -48,13 +76,12 @@ export interface WatchInput {
     readonly publicationState: PublicationState;
     readonly runState: RunState | null;
     readonly outcome: DateOutcome | null;
-    readonly replayOnSale: boolean;
     /**
-     * Is a waiting list open? It changes the way out of `NO_SEAT` from "buy one" to "join the
-     * list". The fact was already served on availability; the verdict could not express it, so
-     * every sold-out date offered a button that leads nowhere.
+     * `null` when unknown: `streaming`'s projection holds no sale, so its authoritative evaluation
+     * gets the generic sold-out way out. The verdict itself never depends on it; the BFF passes the
+     * real standing so a card offers the right button.
      */
-    readonly waitlistOpen: boolean;
+    readonly seatStanding: SeatStanding | null;
     readonly now: Instant;
 }
 export interface WatchVerdict {
@@ -71,17 +98,24 @@ export interface WatchVerdict {
     readonly validUntil: Instant;
 }
 /**
- * The watch verdict. The order of the refusals is a decision: most definitive first, so the
- * message shown is the most useful one — telling someone with no seat "out of territory" is
+ * The watch verdict on a live. The order of the refusals is a decision: most definitive first, so
+ * the message shown is the most useful one — telling someone with no seat "out of territory" is
  * truer than "no seat", since buying a seat would not unblock them (`storefront-web` Q19).
  */
 export declare function decideWatch(input: WatchInput): WatchVerdict;
 /**
- * The concurrent-screen ceiling, derived from the plan. `multi-screen` is an execution
- * constraint that forces a server-side count: `ticketing` publishes the ceiling, `streaming`
- * enforces it with a lease that expires.
+ * The concurrent-screen ceiling on a date: the active seats held on it, or the plan's ceiling if
+ * higher (D-108). `streaming` enforces it with a lease that expires.
  */
-export declare function concurrentStreamsAllowedFor(planOpenings: readonly PlanOpening[]): number;
+export declare function concurrentStreamsAllowedFor(planOpenings: readonly PlanOpening[], activeSeatsOnDate: number): number;
+/** A subscription as `ticketing` records it: its state, what its plan opens, its paid period. */
+export interface SubscriptionOpenings {
+    readonly state: SubscriptionState;
+    readonly opens: readonly PlanOpening[];
+    readonly currentPeriodEnd: Instant;
+}
+/** What a subscription opens now. Every caller passes this, never `opens`, to `decideWatch` and `concurrentStreamsAllowedFor`. */
+export declare function planOpeningsOf(subscription: SubscriptionOpenings, now: Instant): readonly PlanOpening[];
 /**
  * The free-preview budget, counted down by the server, per account.
  *
