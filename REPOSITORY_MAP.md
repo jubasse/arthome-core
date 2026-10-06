@@ -466,7 +466,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 466 exported names.
+Declarations: `dist/index.d.ts` — 468 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -791,6 +791,7 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `concurrentStreamsAllowedFor` (function) — `function concurrentStreamsAllowedFor(planOpenings: readonly PlanOpening[]): number;` — The concurrent-screen ceiling, derived from the plan.
 - `contains` (function) — `function contains(window: Window, instant: Instant): boolean;`
 - `creditAmountFor` (function) — `function creditAmountFor(paidAmount: Money): Money;`
+- `creditExpiresAt` (function) — `function creditExpiresAt(issuedAt: Instant): Instant;`
 - `criteriaSignature` (function) — `function criteriaSignature(criteria: SearchCriteria): string;` — The signature that answers "already saved" — canonical, not a hash: hashing would need a platform API, which this package forbids itself, a…
 - `dayShift` (function) — `function dayShift(instant: Instant, venue: VenueClock, viewerUtcOffsetMinutes: number): -1 | 0 | 1;` — The DAY shift between the two clocks: -1, 0 or +1.
 - `decideWatch` (function) — `function decideWatch(input: WatchInput): WatchVerdict;` — The watch verdict.
@@ -888,6 +889,7 @@ Declarations: `dist/index.d.ts` — 466 exported names.
 - `pickRendition` (function) — `function pickRendition(renditions: readonly Rendition[], targetWidthPx: number): Rendition | null;` — The rendition closest to the requested width, never below it when a larger one exists: too small is blurry and final, too large only costs …
 - `plusHours` (function) — `function plusHours(instant: Instant, hours: number): Instant;`
 - `plusMinutes` (function) — `function plusMinutes(instant: Instant, minutes: number): Instant;`
+- `plusMonths` (function) — `function plusMonths(instant: Instant, months: number): Instant;` — Calendar months in UTC, the time of day kept.
 - `plusSeconds` (function) — `function plusSeconds(instant: Instant, seconds: number): Instant;`
 - `previewSecondsLeft` (function) — `function previewSecondsLeft(secondsUsed: number): number;`
 - `priceOfTier` (function) — `function priceOfTier(tiers: readonly TierPrice[], tier: PriceTier): Money | null;`

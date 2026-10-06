@@ -14,7 +14,7 @@
 import type { Instant } from '../kernel/clock.js';
 import { money, subtract, sum, type Money } from '../money/money.js';
 import { applyRate, basisPoints, taxIncludedIn, type BasisPoints } from '../money/rounding.js';
-import { DAY_MS, fromEpochMs, toEpochMs } from '../time/instant.js';
+import { DAY_MS, fromEpochMs, plusMonths, toEpochMs } from '../time/instant.js';
 import type { DateOutcome } from '../vocabulary/catalog.js';
 import { DateOutcome as Outcome } from '../vocabulary/catalog.js';
 import type { TaxJurisdictionLevel, TaxSupplyKind } from '../vocabulary/commerce.js';
@@ -141,4 +141,8 @@ export const CREDIT_VALIDITY_MONTHS = 12;
 
 export function creditAmountFor(paidAmount: Money): Money {
   return money(paidAmount.amountMinor, paidAmount.currencyCode);
+}
+
+export function creditExpiresAt(issuedAt: Instant): Instant {
+  return plusMonths(issuedAt, CREDIT_VALIDITY_MONTHS);
 }
