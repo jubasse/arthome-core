@@ -50,7 +50,10 @@ replay branch around `decideWatch`.
   the generic sold-out way out. The BFF passes `seatStandingOf(...)` from ticketing's numbers, so a
   notified account sees `buy_seat`. The verdict never depends on it, only the way out.
 - **The subscription.** Pass `planOpeningsOf(subscription, now)`, never `opens` directly: a cancelled
-  subscription opens until its paid period ends, and a past_due one keeps its access (D-125).
+  subscription opens until `paidThrough`, and a past_due one keeps its access (D-125). Project
+  `paid_through`, the end of the last paid period, never `current_period_end`: a renewal moves that
+  forward before it is paid, and a final failure would then open the unpaid period. Ticketing's
+  subscription slice computes it.
 - **A lost seat** (`seatExpired`) is refused `watch.seat_expired` and never gets a preview, even with
   budget left.
 - **The run's moves.** `assertRunTransition` refuses by name. `interrupted` is reached through an

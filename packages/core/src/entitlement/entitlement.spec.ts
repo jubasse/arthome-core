@@ -349,19 +349,39 @@ describe('the ceiling and the openings', () => {
 
   it('a cancelled subscription opens until its paid period ends, a past_due one keeps its openings (D-125)', () => {
     const opens = [PlanOpening.ALL_LIVES, PlanOpening.MULTI_SCREEN];
-    const currentPeriodEnd = '2026-10-01T00:00:00.000Z';
-    const before = '2026-09-30T23:59:59.000Z';
+    const paidThrough = '2026-10-01T00:00:00.000Z';
+    const before = '2026-09-30T23:59:59.999Z';
     const after = '2026-10-01T00:00:00.000Z';
     for (const state of [
       SubscriptionState.ACTIVE,
       SubscriptionState.TRIALING,
       SubscriptionState.PAST_DUE,
     ]) {
-      expect(planOpeningsOf({ state, opens, currentPeriodEnd }, after)).toEqual(opens);
+      expect(planOpeningsOf({ state, opens, paidThrough }, after)).toEqual(opens);
     }
-    const cancelled = { state: SubscriptionState.CANCELLED, opens, currentPeriodEnd };
+    const cancelled = { state: SubscriptionState.CANCELLED, opens, paidThrough };
     expect(planOpeningsOf(cancelled, before)).toEqual(opens);
     expect(planOpeningsOf(cancelled, after)).toEqual([]);
+  });
+
+  it('a final payment failure opens nothing past what was paid, whatever period the provider opened', () => {
+    const opens = [PlanOpening.ALL_LIVES, PlanOpening.MULTI_SCREEN];
+    // The renewal opened October, never paid: past_due while retried, then cancelled.
+    const paidThrough = '2026-10-01T00:00:00.000Z';
+    const inTheUnpaidPeriod = '2026-10-12T00:00:00.000Z';
+    expect(
+      planOpeningsOf({ state: SubscriptionState.PAST_DUE, opens, paidThrough }, inTheUnpaidPeriod),
+    ).toEqual(opens);
+    expect(
+      planOpeningsOf({ state: SubscriptionState.CANCELLED, opens, paidThrough }, inTheUnpaidPeriod),
+    ).toEqual([]);
+    // Cancelled during a trial: nothing was paid.
+    expect(
+      planOpeningsOf(
+        { state: SubscriptionState.CANCELLED, opens, paidThrough: null },
+        '2026-09-15T00:00:00.000Z',
+      ),
+    ).toEqual([]);
   });
 
   it('clamps the preview budget at zero, never below', () => {

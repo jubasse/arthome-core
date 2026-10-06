@@ -788,7 +788,7 @@ Declarations: `dist/index.d.ts` — 533 exported names.
 - `SignInSlowdown` (const) — `SignInSlowdown: { readonly FREE_FAILURES: 5; readonly FIRST_DELAY_MS: 250; readonly MAX_DELAY_MS: 4000; readonly WINDOW_SECONDS: 900; }` — Failed sign-ins to one email, from anywhere, delay its next attempt rather than refuse it: a growing pause, bounded, which never locks the …
 - `StateChangeOrigin` (type+const)
 - `StorefrontSurface` (type) — `type StorefrontSurface = typeof Surface.STOREFRONT_WEB | typeof Surface.STOREFRONT_MOBILE | typeof Surface.STOREFRONT_TV;` — The three surfaces that call the storefront BFF; the studio's two call the other.
-- `SubscriptionOpenings` (interface) — A subscription as 'ticketing' records it: its state, what its plan opens, its paid period.
+- `SubscriptionOpenings` (interface) — A subscription as 'ticketing' records it: its state, what its plan opens, and how far it is paid.
 - `SubscriptionState` (type+const)
 - `Surface` (type+const)
 - `SystemClock` (class) — The production clock.

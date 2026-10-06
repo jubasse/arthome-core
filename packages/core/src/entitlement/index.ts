@@ -320,22 +320,28 @@ export function concurrentStreamsAllowedFor(
   return Math.max(planCeiling, activeSeatsOnDate);
 }
 
-/** A subscription as `ticketing` records it: its state, what its plan opens, its paid period. */
+/** A subscription as `ticketing` records it: its state, what its plan opens, and how far it is paid. */
 export interface SubscriptionOpenings {
   readonly state: SubscriptionState;
   readonly opens: readonly PlanOpening[];
-  readonly currentPeriodEnd: Instant;
+  /**
+   * The end of the last PAID period, `null` when none was paid. Never the provider's current
+   * period end: a renewal moves that forward before it is paid, so a final payment failure would
+   * open the unpaid period.
+   */
+  readonly paidThrough: Instant | null;
 }
 
-// D-125: a payment being retried keeps the access; its final failure arrives as `cancelled` with
-// the paid period behind it.
+// D-125: a payment being retried keeps the access; its final failure arrives as `cancelled`, and
+// opens nothing past what was paid.
 const OPENS_WHILE: Readonly<
-  Record<SubscriptionState, (currentPeriodEnd: Instant, now: Instant) => boolean>
+  Record<SubscriptionState, (paidThrough: Instant | null, now: Instant) => boolean>
 > = {
   [SubscriptionState.ACTIVE]: () => true,
   [SubscriptionState.TRIALING]: () => true,
   [SubscriptionState.PAST_DUE]: () => true,
-  [SubscriptionState.CANCELLED]: (currentPeriodEnd, now) => isBefore(now, currentPeriodEnd),
+  [SubscriptionState.CANCELLED]: (paidThrough, now) =>
+    paidThrough !== null && isBefore(now, paidThrough),
 };
 
 /** What a subscription opens now. Every caller passes this, never `opens`, to `decideWatch` and `concurrentStreamsAllowedFor`. */
@@ -343,9 +349,7 @@ export function planOpeningsOf(
   subscription: SubscriptionOpenings,
   now: Instant,
 ): readonly PlanOpening[] {
-  return OPENS_WHILE[subscription.state](subscription.currentPeriodEnd, now)
-    ? subscription.opens
-    : [];
+  return OPENS_WHILE[subscription.state](subscription.paidThrough, now) ? subscription.opens : [];
 }
 
 /**

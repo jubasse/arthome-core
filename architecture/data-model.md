@@ -667,7 +667,9 @@ what is a **way of buying** (the one-off seat, which is not a subscription). `mo
 
 `Subscription` **exists nowhere in `shared/`** — the mockup shows it as a literal. Shape to create:
 `plan_id`, `state` (`active | past_due | cancelled | trialing`), `started_at`,
-`current_period_end`, `payment_method_ref`, `cancel_at_period_end`, invoices.
+`current_period_end`, `paid_through` (the end of the last paid period: a renewal moves
+`current_period_end` forward before it is paid, so D-125 reads this one), `payment_method_ref`,
+`cancel_at_period_end`, invoices.
 
 **`multi_screen` is an execution constraint, not a marketing line**: "two screens at once" imposes a
 server-side count, held by `streaming` (§5.4). `ticketing` publishes the ceiling; `streaming`

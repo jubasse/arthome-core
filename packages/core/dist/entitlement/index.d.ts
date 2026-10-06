@@ -108,11 +108,16 @@ export declare function decideWatch(input: WatchInput): WatchVerdict;
  * higher (D-108). `streaming` enforces it with a lease that expires.
  */
 export declare function concurrentStreamsAllowedFor(planOpenings: readonly PlanOpening[], activeSeatsOnDate: number): number;
-/** A subscription as `ticketing` records it: its state, what its plan opens, its paid period. */
+/** A subscription as `ticketing` records it: its state, what its plan opens, and how far it is paid. */
 export interface SubscriptionOpenings {
     readonly state: SubscriptionState;
     readonly opens: readonly PlanOpening[];
-    readonly currentPeriodEnd: Instant;
+    /**
+     * The end of the last PAID period, `null` when none was paid. Never the provider's current
+     * period end: a renewal moves that forward before it is paid, so a final payment failure would
+     * open the unpaid period.
+     */
+    readonly paidThrough: Instant | null;
 }
 /** What a subscription opens now. Every caller passes this, never `opens`, to `decideWatch` and `concurrentStreamsAllowedFor`. */
 export declare function planOpeningsOf(subscription: SubscriptionOpenings, now: Instant): readonly PlanOpening[];

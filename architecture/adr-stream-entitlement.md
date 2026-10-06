@@ -358,8 +358,10 @@ permitted**, `streaming` keeps a **local projection** fed by Kafka, beside the r
 | the seat standing (on public sale, priority pool, on the list) | `ticketing`, through the BFF | not projected: `streaming` passes `seatStanding: null`, the generic sold-out way out |
 
 **What a subscription opens** (D-125): `planOpeningsOf` gives the plan's openings for `active`,
-`trialing` and `past_due` (the retries keep the access), and for `cancelled` until the end of the
-paid period; a final payment failure arrives as `cancelled` with that period behind it. Every
+`trialing` and `past_due` (the retries keep the access), and for `cancelled` until `paidThrough`, the
+end of the last paid period (`paid_through` on `ticketing.subscription.changed.v1`). Never the
+provider's current period end: a renewal moves it forward before it is paid, so a final payment
+failure, which arrives as `cancelled`, would open the unpaid period. Every
 caller passes its result to `decideWatch` and `concurrentStreamsAllowedFor`; none reads the state.
 
 This is **the only projection in the system that carries authority** — the seven others
