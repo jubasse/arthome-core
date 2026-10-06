@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { PRICE_TIERS, WAITLIST_ENTRY_STATES } from '@arthome/core';
 import type { VocabularyIn, VocabularyOutNullable } from '@arthome/core/schema';
 import {
+  InstantOut,
   int64,
   MoneyOut,
   uuidOut,
@@ -67,6 +68,8 @@ export const WaitlistRegistrationSchema: z.ZodObject<
     rankDisclosed: z.ZodBoolean;
     rank: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     priorityWindowHours: z.ZodOptional<z.ZodInt>;
+    priorityUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    priorityPoolSeats: z.ZodOptional<z.ZodInt>;
     date: z.ZodOptional<typeof DateCardSchema>;
   },
   z.core.$loose
@@ -80,6 +83,16 @@ export const WaitlistRegistrationSchema: z.ZodObject<
   rankDisclosed: z.boolean(),
   rank: z.int().meta({ minimum: undefined, maximum: undefined }).nullable().optional(),
   priorityWindowHours: z.int().meta({ minimum: undefined, maximum: undefined }).optional(),
+  priorityUntil: InstantOut.nullable()
+    .optional()
+    .describe("The end of the caller's priority window while `notified`, else `null`."),
+  priorityPoolSeats: z
+    .int()
+    .meta({ minimum: undefined, maximum: undefined })
+    .optional()
+    .describe(
+      "The pool's seats left, **served only while the caller is notified into an open window**: the\npublic count leaves them out, and the BFF adds them to build the caller's seat standing.\n",
+    ),
   date: DateCardSchema.optional(),
 });
 

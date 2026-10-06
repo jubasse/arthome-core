@@ -96,6 +96,23 @@ export type GetSalesQueuePositionRoute = Route<{
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
     };
 }>;
+export type GetWaitlistRegistrationRoute = Route<{
+    method: 'get';
+    version: 1;
+    path: '/dates/{dateId}/waitlist';
+    parameters: readonly [
+        typeof DateIdParameter,
+        typeof SurfaceParameter,
+        typeof TraceparentParameter
+    ];
+    access: IdentifiedAccess<typeof viewer, false>;
+    responses: {
+        200: ItemResponse<typeof storefrontConventions, typeof WaitlistRegistrationSchema, unknown>;
+    };
+    errorCodes: {
+        404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+    };
+}>;
 export type JoinWaitlistRoute = Route<{
     method: 'put';
     version: 1;

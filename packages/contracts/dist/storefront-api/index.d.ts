@@ -5,7 +5,7 @@ import { addCartLine, getCart, quoteCart, removeCartLine, updateCartLine } from 
 import { getCategoryScreen, listCategories } from './categories/routes.js';
 import { listChanges } from './changes/routes.js';
 import { reportChatMessage } from './chat/routes.js';
-import { enterSalesQueue, getDateDetail, getSalesQueuePosition, joinWaitlist, leaveWaitlist, listChatMessages, quoteSeat, refreshDateAvailability, sendChatMessage, sendReaction } from './dates/routes.js';
+import { enterSalesQueue, getDateDetail, getSalesQueuePosition, getWaitlistRegistration, joinWaitlist, leaveWaitlist, listChatMessages, quoteSeat, refreshDateAvailability, sendChatMessage, sendReaction } from './dates/routes.js';
 import { registerDevice } from './devices/routes.js';
 import { getHomeScreen } from './home/routes.js';
 import { getLiveScreen } from './live/routes.js';
@@ -91,6 +91,7 @@ export declare const storefrontApi: Api<{
     purchaseSeat: typeof purchaseSeat;
     getOrder: typeof getOrder;
     cancelSeat: typeof cancelSeat;
+    getWaitlistRegistration: typeof getWaitlistRegistration;
     joinWaitlist: typeof joinWaitlist;
     leaveWaitlist: typeof leaveWaitlist;
     getCart: typeof getCart;

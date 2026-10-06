@@ -465,6 +465,7 @@ export const SeatQuoteSchema: z.ZodObject<
     >;
     total: typeof MoneyOut;
     validUntil: z.ZodOptional<z.ZodString>;
+    priorityUntil: z.ZodOptional<z.ZodString>;
     lateEntry: z.ZodOptional<
       z.ZodNullable<
         z.ZodObject<
@@ -500,6 +501,9 @@ export const SeatQuoteSchema: z.ZodObject<
     ),
     total: MoneyOut.meta({ 'x-arthome-tax-basis': 'inclusive' }),
     validUntil: InstantOut.optional(),
+    priorityUntil: InstantOut.optional().describe(
+      '**Present when the caller quotes from an open priority pool** (D-083): the account was\nnotified, and the pool is its to buy from until then.\n',
+    ),
     lateEntry: z
       .looseObject({
         startedAt: InstantOut,

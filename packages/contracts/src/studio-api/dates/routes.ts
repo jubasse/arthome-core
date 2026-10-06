@@ -203,7 +203,7 @@ export const getDateTicketsPane: GetDateTicketsPaneRoute = ticketingDate
     operationId: 'getDateTicketsPane',
     summary: "A date's ticketing pane.",
     item: DateSalesPaneSchema,
-    answer: 'Jauge, paliers, tarifs, promotions, provision technique.',
+    answer: 'Capacity, tiers, prices, promotions, technical provision.',
   });
 
 export const setDatePrices: SetDatePricesRoute = ticketingDate.single('prices').replace({

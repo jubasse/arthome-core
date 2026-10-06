@@ -8,6 +8,7 @@ import {
   PriceTier,
   ReplayPolicy,
   RightsScope,
+  WaitlistEntryState,
   WatchDenialReason,
   WatchFallbackAction,
 } from '@arthome/core';
@@ -91,6 +92,13 @@ const seatQuote: z.output<typeof SeatQuoteSchema> = {
   validUntil: '2026-09-21T18:42:10.000Z',
 };
 
+const seatQuoteFromPriorityPool: z.output<typeof SeatQuoteSchema> = {
+  lines: [{ kind: 'tier', amount: { amountMinor: 2400, currencyCode: 'EUR' } }],
+  total: { amountMinor: 2400, currencyCode: 'EUR' },
+  validUntil: '2026-09-21T18:42:10.000Z',
+  priorityUntil: '2026-09-21T20:06:00Z',
+};
+
 const salesQueuePosition: z.output<typeof SalesQueuePositionSchema> = {
   dateId: DATE_ID,
   armed: true,
@@ -113,9 +121,21 @@ const salesQueueAdmission: z.output<typeof SalesQueuePositionSchema> = {
 
 const waitlistRegistration: WaitlistRegistration = {
   joined: true,
+  state: WaitlistEntryState.WAITING,
   rankDisclosed: false,
   rank: null,
   priorityWindowHours: 2,
+  priorityUntil: null,
+};
+
+const waitlistRegistrationNotified: WaitlistRegistration = {
+  joined: true,
+  state: WaitlistEntryState.NOTIFIED,
+  rankDisclosed: false,
+  rank: null,
+  priorityWindowHours: 2,
+  priorityUntil: '2026-09-21T20:06:00Z',
+  priorityPoolSeats: 46,
 };
 
 const waitlistDeparture: WaitlistDeparture = { joined: false };
@@ -144,9 +164,9 @@ export const datesExamples: ModuleExamples = [
   [DateDetailSchema, [dateDetail]],
   [DateAvailabilitySchema, [dateAvailability]],
   [QuoteSeatBodySchema, [quoteSeatBody]],
-  [SeatQuoteSchema, [seatQuote]],
+  [SeatQuoteSchema, [seatQuote, seatQuoteFromPriorityPool]],
   [SalesQueuePositionSchema, [salesQueuePosition, salesQueueAdmission]],
-  [WaitlistRegistrationSchema, [waitlistRegistration]],
+  [WaitlistRegistrationSchema, [waitlistRegistration, waitlistRegistrationNotified]],
   [WaitlistDepartureSchema, [waitlistDeparture]],
   [ChatMessageSchema, [chatMessage]],
   [SendChatMessageBodySchema, [sendChatMessageBody]],

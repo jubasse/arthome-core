@@ -60,6 +60,7 @@ import {
   enterSalesQueue,
   getDateDetail,
   getSalesQueuePosition,
+  getWaitlistRegistration,
   joinWaitlist,
   leaveWaitlist,
   listChatMessages,
@@ -268,6 +269,7 @@ export const storefrontApi: Api<{
   purchaseSeat: typeof purchaseSeat;
   getOrder: typeof getOrder;
   cancelSeat: typeof cancelSeat;
+  getWaitlistRegistration: typeof getWaitlistRegistration;
   joinWaitlist: typeof joinWaitlist;
   leaveWaitlist: typeof leaveWaitlist;
   getCart: typeof getCart;
@@ -371,6 +373,7 @@ export const storefrontApi: Api<{
     purchaseSeat,
     getOrder,
     cancelSeat,
+    getWaitlistRegistration,
     joinWaitlist,
     leaveWaitlist,
     getCart,

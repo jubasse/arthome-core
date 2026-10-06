@@ -137,6 +137,7 @@ export declare const SeatQuoteSchema: z.ZodObject<{
     }, z.core.$loose>>;
     total: typeof MoneyOut;
     validUntil: z.ZodOptional<z.ZodString>;
+    priorityUntil: z.ZodOptional<z.ZodString>;
     lateEntry: z.ZodOptional<z.ZodNullable<z.ZodObject<{
         startedAt: z.ZodString;
         minutesElapsed: z.ZodNumber;

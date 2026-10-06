@@ -17,7 +17,7 @@ export const datesDocs: ModuleDocs = {
   },
   quoteSeat: {
     description:
-      '**The four lines come from the contract**: tier, service fee, subscription discount,\npromotion. Discount and promotion **do not stack** — the one most favourable to the viewer\nwins, and the rule lives in `@arthome/core` (D-017). Otherwise it would be written three\ntimes.\n\n**Past the end of seat sales**, thirty minutes after the start (D-089), the quote is refused\nwith `409` `order.sales_closed` and `salesEndAt`, as the purchase is.\n',
+      "**The four lines come from the contract**: tier, service fee, subscription discount,\npromotion. Discount and promotion **do not stack** — the one most favourable to the viewer\nwins, and the rule lives in `@arthome/core` (D-017). Otherwise it would be written three\ntimes.\n\n**Past the end of seat sales**, thirty minutes after the start (D-089), the quote is refused\nwith `409` `order.sales_closed` and `salesEndAt`, as the purchase is.\n\n**From an open priority pool** (D-083), a notified account's quote carries `priorityUntil`: the\npool is the caller's to buy from until then.\n",
     upstream: [Service.TICKETING],
     idempotencyExemption:
       '**A read disguised as a `POST`: it is a `POST` because its criteria do not fit in a URL, not\nbecause it writes.** A quote computes, it creates nothing — so there is no effect to\ndeduplicate.\n\n**And a key would protect nothing here**, because freshness is already guaranteed elsewhere:\nthe price carries its `validUntil`, and `expectedTotal` is **mandatory** at purchase — a\nstale price is refused by `order.price_stale` at the moment that matters, not at quoting time.\n\n**Worse: it would do harm.** The regime replays the original response **verbatim**, so a\nreplayed quote would be a quote **already part-spent, or expired** — or a price that the\npro-rata promotion has since made wrong. Same reason as a token renewal: what is being asked\nfor is a fresh value.\n',
@@ -40,14 +40,19 @@ export const datesDocs: ModuleDocs = {
     maturityReason:
       'the sales queue entered the contract at provisional maturity (D-081) and is not built',
   },
+  getWaitlistRegistration: {
+    description:
+      "The caller's registration on a date's waiting list, and nobody else's: the session names the\naccount, never the path. `state` is `null` when the account never registered, and `joined` is true\nfor `waiting` or `notified` only.\n\n**While the caller is `notified` into an open window** (D-083), the answer serves `priorityUntil`\nand `priorityPoolSeats`, the pool's seats left. The public count, read from availability, leaves the\npool out, so the BFF adds them to build the caller's seat standing. Outside a window\n`priorityPoolSeats` is absent, and `priorityUntil` is `null` unless the caller is `notified`. A tier\nopened with `notifyWaitlist: false` makes no pool (D-094), and an entry its date's cancellation or\ninterruption ended is `closed` (D-096).\n\n**`no-store`**: a registration is one account's, and its window is perishable.\n",
+    upstream: [Service.TICKETING],
+  },
   joinWaitlist: {
     description:
-      '**A state assignment, not a toggle**: two submissions leave one registration. The response\n**states the rank, or states that it will not state it** — it is never silent. The priority\nwindow (2 h) is served, never hardcoded in the surface.\n',
+      "**A state assignment, not a toggle**: two submissions leave one registration, and the answer is\nthe caller's registration as `getWaitlistRegistration` serves it.\n\n**Joined only once the date is sold out**: while public seats remain it is refused with `409`\n`waitlist.not_sold_out`, and the surface offers the purchase instead. Once sales have ended, by\ntime (D-089) or because the date was cancelled or interrupted, it is refused with `409`\n`order.sales_closed` and `salesEndAt`. A postponed date keeps its list.\n\n**Everyone registered gets the same chance** (D-083): there is no rank among them, so\n`rankDisclosed` is `false`. A tier opening notifies the whole list at once, and each notified\naccount may buy from the priority pool until `priorityUntil`, first come first served; an account\nthat joins while a window is open is `notified` into it at once. One that does not buy in the\nwindow becomes `lapsed`, and joins again to be told next time. The window's length is served in\n`priorityWindowHours`, never written into the surface.\n\n**A tier opened with `notifyWaitlist: false` notifies nobody and makes no pool** (D-094). **A\ncancellation or an interruption ends the list** (D-096): every entry becomes `closed`, and nobody is\ntold beyond the date's own card.\n",
     upstream: [Service.TICKETING],
   },
   leaveWaitlist: {
     description:
-      '**A state assignment**, like joining. Replayed on an already-removed registration, it\nsucceeds — an offline queue replays, and a failure there would be a false negative.\n',
+      '**A state assignment**, like joining. Replayed on an already-removed registration, it\nsucceeds — an offline queue replays, and a failure there would be a false negative. Leaving while\n`notified` gives up the priority window.\n',
     upstream: [Service.TICKETING],
   },
   listChatMessages: {

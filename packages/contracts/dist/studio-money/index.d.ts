@@ -162,6 +162,10 @@ export declare const DateSalesPaneSchema: z.ZodObject<{
     seatsAvailable: z.ZodNumber;
     seatsSold: z.ZodOptional<z.ZodNumber>;
     waitlistCount: z.ZodOptional<z.ZodNumber>;
+    priorityPool: z.ZodOptional<z.ZodObject<{
+        seatsLeft: z.ZodNumber;
+        priorityUntil: z.ZodString;
+    }, Looseness>>;
     fillRateBps: z.ZodOptional<z.ZodNumber>;
     priceTiers: z.ZodArray<typeof PriceTierSchema>;
     promotions: z.ZodOptional<z.ZodArray<typeof PromotionSchema>>;

@@ -6292,6 +6292,9 @@ paths:
 
         **Past the end of seat sales**, thirty minutes after the start (D-089), the quote is refused
         with `409` `order.sales_closed` and `salesEndAt`, as the purchase is.
+
+        **From an open priority pool** (D-083), a notified account's quote carries `priorityUntil`: the
+        pool is the caller's to buy from until then.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -6357,7 +6360,7 @@ paths:
               quantity: 2
       responses:
         '200':
-          description: Devis.
+          description: The quote.
           content:
             application/json:
               schema:
@@ -6630,6 +6633,10 @@ paths:
         params, before any seat is held. Seats sell until thirty minutes after the start; past it,
         `409` `order.sales_closed` with `salesEndAt`, never `order.sold_out`, which is the waiting
         list's cue.
+
+        **A notified account buys from the priority pool** until `priorityUntil` (D-083), first come first
+        served, with the same request; the public reads availability without the pool. `order.sold_out`
+        answers when neither the pool, for a notified account, nor public sale has a seat for the caller.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -7023,8 +7030,17 @@ paths:
       summary: Cancels a seat before its deadline.
       description: |
         The deadline is **served as an instant** on the seat (`cancelDeadline`), never as the
-        sentence "up to 1 h before". The refusal after the deadline carries
-        `seat.cancel_deadline_passed`, with the instant as a parameter.
+        sentence "up to 1 h before". A cancellation at or after it is refused with
+        `seat.cancel_deadline_passed`, `cancelDeadline` as its parameter; a seat no longer active
+        (cancelled, refunded, credited or transferred) is refused with `seat.not_active` and its `state`.
+
+        **Cancelled at once, refunded once settled.** The answer serves the seat `cancelled`, with the
+        refund's amount, its `method` and its `delayCode`; the seat becomes `refunded` once the payment
+        provider confirms the money went back. On a disputed order the seat is cancelled and `refund` is
+        `null`: the provider holds the money (adr-payments.md §9).
+
+        **The seat returns to public sale at once** (D-093), first come first served: the waiting list is
+        not notified and gets no priority.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -7194,13 +7210,22 @@ paths:
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/waitlist:
-    put:
-      operationId: joinWaitlist
-      summary: S'inscrit en liste d'attente.
+    get:
+      operationId: getWaitlistRegistration
+      summary: Reads one's registration on a date's waiting list.
       description: |
-        **A state assignment, not a toggle**: two submissions leave one registration. The response
-        **states the rank, or states that it will not state it** — it is never silent. The priority
-        window (2 h) is served, never hardcoded in the surface.
+        The caller's registration on a date's waiting list, and nobody else's: the session names the
+        account, never the path. `state` is `null` when the account never registered, and `joined` is true
+        for `waiting` or `notified` only.
+
+        **While the caller is `notified` into an open window** (D-083), the answer serves `priorityUntil`
+        and `priorityPoolSeats`, the pool's seats left. The public count, read from availability, leaves the
+        pool out, so the BFF adds them to build the caller's seat standing. Outside a window
+        `priorityPoolSeats` is absent, and `priorityUntil` is `null` unless the caller is `notified`. A tier
+        opened with `notifyWaitlist: false` makes no pool (D-094), and an entry its date's cancellation or
+        interruption ended is `closed` (D-096).
+
+        **`no-store`**: a registration is one account's, and its window is perishable.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -7208,16 +7233,14 @@ paths:
       - commerce
       security:
       - sessionCookie: []
-        csrfToken: []
       - bearerToken: []
       parameters:
       - $ref: '#/components/parameters/DateId'
-      - $ref: '#/components/parameters/IdempotencyKey'
       - $ref: '#/components/parameters/Surface'
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
-          description: Inscrit.
+          description: The caller's registration.
           content:
             application/json:
               schema:
@@ -7253,6 +7276,17 @@ paths:
                           - type: 'null'
                         priorityWindowHours:
                           type: integer
+                        priorityUntil:
+                          description: The end of the caller's priority window while `notified`, else `null`.
+                          anyOf:
+                          - type: string
+                            format: date-time
+                          - type: 'null'
+                        priorityPoolSeats:
+                          description: |
+                            The pool's seats left, **served only while the caller is notified into an open window**: the
+                            public count leaves them out, and the BFF adds them to build the caller's seat standing.
+                          type: integer
                         date:
                           $ref: '#/components/schemas/DateCard'
                       required:
@@ -7266,9 +7300,134 @@ paths:
                 servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   joined: true
+                  state: waiting
                   rankDisclosed: false
                   rank: null
                   priorityWindowHours: 2
+                  priorityUntil: null
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+                const: no-store
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+    put:
+      operationId: joinWaitlist
+      summary: Joins a date's waiting list.
+      description: |
+        **A state assignment, not a toggle**: two submissions leave one registration, and the answer is
+        the caller's registration as `getWaitlistRegistration` serves it.
+
+        **Joined only once the date is sold out**: while public seats remain it is refused with `409`
+        `waitlist.not_sold_out`, and the surface offers the purchase instead. Once sales have ended, by
+        time (D-089) or because the date was cancelled or interrupted, it is refused with `409`
+        `order.sales_closed` and `salesEndAt`. A postponed date keeps its list.
+
+        **Everyone registered gets the same chance** (D-083): there is no rank among them, so
+        `rankDisclosed` is `false`. A tier opening notifies the whole list at once, and each notified
+        account may buy from the priority pool until `priorityUntil`, first come first served; an account
+        that joins while a window is open is `notified` into it at once. One that does not buy in the
+        window becomes `lapsed`, and joins again to be told next time. The window's length is served in
+        `priorityWindowHours`, never written into the surface.
+
+        **A tier opened with `notifyWaitlist: false` notifies nobody and makes no pool** (D-094). **A
+        cancellation or an interruption ends the list** (D-096): every entry becomes `closed`, and nobody is
+        told beyond the date's own card.
+      x-arthome-maturity: stable
+      x-arthome-upstream:
+      - ticketing
+      tags:
+      - commerce
+      security:
+      - sessionCookie: []
+        csrfToken: []
+      - bearerToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: The caller's registration.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        joined:
+                          type: boolean
+                        state:
+                          description: |
+                            The caller's entry. `null` when the account never registered; `joined` is true for `waiting`
+                            or `notified` only.
+                          x-arthome-vocabulary:
+                          - waiting
+                          - notified
+                          - converted
+                          - left
+                          - lapsed
+                          - closed
+                          x-arthome-vocabulary-source: WAITLIST_ENTRY_STATES
+                          type:
+                          - string
+                          - 'null'
+                        rankDisclosed:
+                          type: boolean
+                        rank:
+                          anyOf:
+                          - type: integer
+                          - type: 'null'
+                        priorityWindowHours:
+                          type: integer
+                        priorityUntil:
+                          description: The end of the caller's priority window while `notified`, else `null`.
+                          anyOf:
+                          - type: string
+                            format: date-time
+                          - type: 'null'
+                        priorityPoolSeats:
+                          description: |
+                            The pool's seats left, **served only while the caller is notified into an open window**: the
+                            public count leaves them out, and the BFF adds them to build the caller's seat standing.
+                          type: integer
+                        date:
+                          $ref: '#/components/schemas/DateCard'
+                      required:
+                      - joined
+                      - rankDisclosed
+                      additionalProperties: {}
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  joined: true
+                  state: waiting
+                  rankDisclosed: false
+                  rank: null
+                  priorityWindowHours: 2
+                  priorityUntil: null
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
@@ -7316,7 +7475,8 @@ paths:
       summary: Leaves the waiting list.
       description: |
         **A state assignment**, like joining. Replayed on an already-removed registration, it
-        succeeds — an offline queue replays, and a failure there would be a false negative.
+        succeeds — an offline queue replays, and a failure there would be a false negative. Leaving while
+        `notified` gives up the priority window.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -13112,6 +13272,12 @@ components:
         validUntil:
           type: string
           format: date-time
+        priorityUntil:
+          type: string
+          format: date-time
+          description: |
+            **Present when the caller quotes from an open priority pool** (D-083): the account was
+            notified, and the pool is its to buy from until then.
         lateEntry:
           description: |
             **Present once the live has started** (D-089): what the buyer has already missed, to be

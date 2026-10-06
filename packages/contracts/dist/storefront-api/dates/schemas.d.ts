@@ -24,6 +24,8 @@ export declare const WaitlistRegistrationSchema: z.ZodObject<{
     rankDisclosed: z.ZodBoolean;
     rank: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     priorityWindowHours: z.ZodOptional<z.ZodInt>;
+    priorityUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    priorityPoolSeats: z.ZodOptional<z.ZodInt>;
     date: z.ZodOptional<typeof DateCardSchema>;
 }, z.core.$loose>;
 export declare const WaitlistDepartureSchema: z.ZodOptional<z.ZodObject<{
