@@ -48,6 +48,10 @@ export declare function cacheControlHeaderOf(policy: CachePolicy, callers: reado
 export declare const DEFAULT_BODY_LIMIT = 1048576;
 /** 2 MiB: the ceiling of a batched read. */
 export declare const BATCH_BODY_LIMIT = 2097152;
+/** The ids a batched read takes at most (`transport.md` §5.6). */
+export declare const BATCH_MAX_IDS = 200;
+/** The latency budget of a batched read, in milliseconds (`transport.md` §5.9). */
+export declare const BATCH_BUDGET_MS = 150;
 /** On an answer carrying a `sensitive` field: kept out of every cache, and out of the app snapshot. */
 export declare const NO_STORE_HEADER: Header;
 export declare const VARY_HEADER: Header;

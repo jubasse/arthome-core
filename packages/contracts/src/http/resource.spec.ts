@@ -7,6 +7,8 @@ import { CatalogErrorCode } from '@arthome/core';
 import { collect } from './collect.js';
 import type { ErrorBody } from './errors.js';
 import {
+  BATCH_BUDGET_MS,
+  BATCH_MAX_IDS,
   Freshness,
   cache,
   changesSince,
@@ -294,6 +296,46 @@ describe('batch', () => {
     expect(
       route.requestBody.content['application/json'].schema.safeParse({ ids: ['a'] }).success,
     ).toBe(true);
+  });
+
+  it('answers within the batched read’s budget, and takes at most its ids', () => {
+    const route = searches.batch({ item: SavedSearch });
+    const body = route.requestBody.content['application/json'].schema;
+
+    expect(route.budgetMs).toBe(BATCH_BUDGET_MS);
+    expect(body.safeParse({ ids: Array.from({ length: BATCH_MAX_IDS }, String) }).success).toBe(
+      true,
+    );
+    expect(body.safeParse({ ids: Array.from({ length: BATCH_MAX_IDS + 1 }, String) }).success).toBe(
+      false,
+    );
+  });
+
+  it('takes the body it is given when the read carries more than its ids', () => {
+    const Body = z.object({ profileId: z.string(), searchIds: z.array(z.string()).min(1) });
+    const route = searches.batch({ item: SavedSearch, body: Body });
+
+    const body = route.requestBody.content['application/json'].schema;
+
+    expect(body).toBe(Body);
+    expectTypeOf<z.input<typeof body>>().toEqualTypeOf<z.input<typeof Body>>();
+    expect(route.bodyLimit).toBe(2_097_152);
+  });
+
+  it('shows its answer as the item’s example under the id’s example', () => {
+    const exampleId = '019928a0-7d31-7a10-b8c4-2f9e11a4c001';
+    const keyed = storefrontV1
+      .public()
+      .resource('saved-searches', {
+        id: { ...savedSearchId, schema: z.string().meta({ examples: [exampleId] }) },
+      })
+      .batch({ item: SavedSearch });
+    const shown = keyed.responses[200].content['application/json'].exampleFrom;
+
+    expect(shown?.of).toBe(SavedSearch);
+    expect(shown?.as({ name: 'n', query: 'q' })).toMatchObject({
+      data: { [exampleId]: { name: 'n', query: 'q' } },
+    });
   });
 });
 

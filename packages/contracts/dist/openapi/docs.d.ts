@@ -47,6 +47,8 @@ export declare class ExampleRegistry {
     private readonly registry;
     constructor(modules: readonly ModuleExamples[]);
     firstOf(schema: z.ZodType): unknown;
+    /** The entries of `schemas`, for an api that serves operations this one registered the examples of. */
+    entriesOf(schemas: readonly z.ZodType[]): ModuleExamples;
 }
 type DocumentObject = Readonly<Record<string, unknown>>;
 /** The parts of an api's document no consumer reads: its introduction and the names it documents. */

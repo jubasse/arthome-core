@@ -296,7 +296,9 @@ export type BatchRoute<C extends ResourceContext, D> = Member<C, D, 'post', `/${
     readonly 200: JsonResponse<Schema<Envelope<C> & {
         readonly data: Readonly<Record<string, z.output<ItemOf<D>>>>;
     }>>;
-}, Record<never, never>, Sent<Schema<{
+}, Record<never, never>, Sent<D extends {
+    readonly body: infer B extends z.ZodType;
+} ? B : Schema<{
     readonly ids: readonly (C['id'] extends PathParameterOf ? z.output<C['id']['schema']> : string)[];
 }>>>;
 type ActionMethod<D> = D extends {
@@ -480,11 +482,19 @@ export interface Resource<C extends ResourceContext> {
     delete<const D extends Docs<C, {
         readonly response?: z.ZodType;
     }>>(docs?: D): DeleteRoute<C, D>;
-    /** `POST /{name}/batch`: many records by id in one read, answered as a table keyed by id. */
+    /**
+     * `POST /{name}/batch`: many records by id in one read, answered as a table keyed by id. The body
+     * is `{ ids }`, at most `max`, or the `body` given when the read takes more than its ids.
+     */
     batch<const D extends Docs<C, {
         readonly item: z.ZodType;
+    } & ({
         readonly max?: number;
-    }>>(docs: D): BatchRoute<C, D>;
+        readonly body?: never;
+    } | {
+        readonly body: z.ZodObject;
+        readonly max?: never;
+    })>>(docs: D): BatchRoute<C, D>;
     /** A collection nested under one record of this one. */
     resource<const Name extends string, const Id extends PathParameterOf, const Owner extends 'caller' | undefined = undefined>(name: Name, options: Omit<ResourceOptions<Id, readonly [], Owner>, 'parents'>): Resource<ChildContext<C, Name, Id, Owner>>;
     resource<const Name extends string, const Id extends PathParameterOf, const Owner extends 'caller' | undefined, R>(name: Name, options: Omit<ResourceOptions<Id, readonly [], Owner>, 'parents'>, closure: (resource: Resource<ChildContext<C, Name, Id, Owner>>) => R): R;

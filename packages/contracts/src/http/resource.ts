@@ -23,7 +23,7 @@ import {
   type SortDirection,
   type SortKey,
 } from './paging.js';
-import { BATCH_BODY_LIMIT } from './policy.js';
+import { BATCH_BODY_LIMIT, BATCH_BUDGET_MS, BATCH_MAX_IDS } from './policy.js';
 import { accepted } from './responses.js';
 
 type PathParameterOf = Parameter & { readonly in: 'path' };
@@ -488,11 +488,13 @@ export type BatchRoute<C extends ResourceContext, D> = Member<
   },
   Record<never, never>,
   Sent<
-    Schema<{
-      readonly ids: readonly (C['id'] extends PathParameterOf
-        ? z.output<C['id']['schema']>
-        : string)[];
-    }>
+    D extends { readonly body: infer B extends z.ZodType }
+      ? B
+      : Schema<{
+          readonly ids: readonly (C['id'] extends PathParameterOf
+            ? z.output<C['id']['schema']>
+            : string)[];
+        }>
   >
 >;
 
@@ -728,8 +730,19 @@ export interface Resource<C extends ResourceContext> {
   ): UpsertRoute<C, D>;
   /** 204 unless `response` is given: the record that went, as it was, answered with a 200. */
   delete<const D extends Docs<C, { readonly response?: z.ZodType }>>(docs?: D): DeleteRoute<C, D>;
-  /** `POST /{name}/batch`: many records by id in one read, answered as a table keyed by id. */
-  batch<const D extends Docs<C, { readonly item: z.ZodType; readonly max?: number }>>(
+  /**
+   * `POST /{name}/batch`: many records by id in one read, answered as a table keyed by id. The body
+   * is `{ ids }`, at most `max`, or the `body` given when the read takes more than its ids.
+   */
+  batch<
+    const D extends Docs<
+      C,
+      { readonly item: z.ZodType } & (
+        | { readonly max?: number; readonly body?: never }
+        | { readonly body: z.ZodObject; readonly max?: never }
+      )
+    >,
+  >(
     docs: D,
   ): BatchRoute<C, D>;
   /** A collection nested under one record of this one. */
@@ -1280,23 +1293,36 @@ export function makeResource(
       errors: conflicts,
     });
 
+  /** The example of a table keyed by id: the item's registered example under the id's own. */
+  const shownById = (item: z.ZodType): DerivedExample | undefined => {
+    const envelope = conventions.itemExample;
+    const idExamples = id === undefined ? undefined : z.globalRegistry.get(id.schema)?.examples;
+    const idExample: unknown = Array.isArray(idExamples) ? idExamples[0] : undefined;
+    return envelope === undefined || typeof idExample !== 'string'
+      ? undefined
+      : { of: item, as: (registered) => envelope({ [idExample]: registered }) };
+  };
+
   const batch = (docs: AnyDocs) => {
     const key = id?.schema ?? z.string();
-    const max = (docs.max as number | undefined) ?? 200;
+    const max = (docs.max as number | undefined) ?? BATCH_MAX_IDS;
+    const item = docs.item as z.ZodType;
     return route({
       method: 'post',
       path: `${collectionPath}/batch`,
       derivedId: `batch${plural}`,
-      docs: { bodyLimit: BATCH_BODY_LIMIT, ...docs },
+      docs: { bodyLimit: BATCH_BODY_LIMIT, budgetMs: BATCH_BUDGET_MS, ...docs },
       parameters: [...parents],
       responses: {
         200: jsonResponse(
           'The records found, by id.',
-          conventions.item(z.record(z.string(), docs.item as z.ZodType)),
+          conventions.item(z.record(z.string(), item)),
+          undefined,
+          shownById(item),
         ),
       },
       errors: [],
-      body: z.object({ ids: z.array(key).max(max) }),
+      body: (docs.body as z.ZodObject | undefined) ?? z.object({ ids: z.array(key).max(max) }),
     });
   };
 

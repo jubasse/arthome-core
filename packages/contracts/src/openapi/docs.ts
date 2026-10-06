@@ -86,6 +86,15 @@ export class ExampleRegistry {
   public firstOf(schema: z.ZodType): unknown {
     return this.registry.get(schema)?.examples[0];
   }
+
+  /** The entries of `schemas`, for an api that serves operations this one registered the examples of. */
+  public entriesOf(schemas: readonly z.ZodType[]): ModuleExamples {
+    return schemas.map((schema) => {
+      const examples = this.registry.get(schema)?.examples;
+      if (examples === undefined) throw new Error('examples: a schema asked for has none.');
+      return [schema, examples];
+    });
+  }
 }
 
 type DocumentObject = Readonly<Record<string, unknown>>;

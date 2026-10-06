@@ -49,6 +49,15 @@ describe('apiDocs', () => {
     expect(registry.firstOf(Item.meta({ description: 'An item.' }))).toEqual({ name: 'a' });
     expect(registry.firstOf(z.object({ name: z.string() }))).toBeUndefined();
   });
+
+  it('hands another api the entries of the schemas it asks for, and refuses one with none', () => {
+    const Item = z.object({ name: z.string() });
+    const Other = z.object({ size: z.int() });
+    const registry = new ExampleRegistry([[[Item, [{ name: 'a' }]], [Other, [{ size: 1 }]]]]);
+
+    expect(registry.entriesOf([Item])).toEqual([[Item, [{ name: 'a' }]]]);
+    expect(() => registry.entriesOf([z.object({})])).toThrow('has none');
+  });
 });
 
 const Body = z.object({ name: z.string() });
