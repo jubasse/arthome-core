@@ -48,13 +48,15 @@ export function previewSecondsSpent(watched: Window, onAirIntervals: readonly Wi
   return Math.floor(insideMs / 1000);
 }
 
-/** A preview token's expiry: never past the budget left while the budget is being spent. */
-export function previewTokenExpiresAt(
-  now: Instant,
-  previewSecondsLeft: number,
-  spending: boolean,
-): Instant {
-  const tokenExpiresAt = playbackTokenExpiresAt(now);
-  if (!spending) return tokenExpiresAt;
-  return earliest(tokenExpiresAt, plusSeconds(now, Math.max(0, previewSecondsLeft)));
+/**
+ * A preview token's expiry: never past the budget left, under the incident veil too, so a veil
+ * lifting mid-token opens no on-air second the budget does not cover (`adr-stream-entitlement.md` §4).
+ */
+export function previewTokenExpiresAt(now: Instant, previewSecondsLeft: number): Instant {
+  return earliest(playbackTokenExpiresAt(now), plusSeconds(now, Math.max(0, previewSecondsLeft)));
+}
+
+/** A preview ticket's `renewAfterSec`: never past its token's expiry, so a long veil renews rather than stalls. */
+export function previewRenewAfterSeconds(previewSecondsLeft: number): number {
+  return Math.min(PLAYBACK_RENEWAL_INTERVAL_SECONDS, Math.max(0, previewSecondsLeft));
 }

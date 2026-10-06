@@ -982,9 +982,10 @@ Declarations: `dist/index.d.ts` — 533 exported names.
 - `plusMinutes` (function) — `function plusMinutes(instant: Instant, minutes: number): Instant;`
 - `plusMonths` (function) — `function plusMonths(instant: Instant, months: number): Instant;` — Calendar months in UTC, the time of day kept.
 - `plusSeconds` (function) — `function plusSeconds(instant: Instant, seconds: number): Instant;`
+- `previewRenewAfterSeconds` (function) — `function previewRenewAfterSeconds(previewSecondsLeft: number): number;` — A preview ticket's 'renewAfterSec': never past its token's expiry, so a long veil renews rather than stalls.
 - `previewSecondsLeft` (function) — `function previewSecondsLeft(secondsUsed: number): number;`
 - `previewSecondsSpent` (function) — `function previewSecondsSpent(watched: Window, onAirIntervals: readonly Window[]): number;` — The whole seconds of 'watched' that fall inside the run's 'on_air' intervals: what the preview budget is charged.
-- `previewTokenExpiresAt` (function) — `function previewTokenExpiresAt(now: Instant, previewSecondsLeft: number, spending: boolean): Instant;` — A preview token's expiry: never past the budget left while the budget is being spent.
+- `previewTokenExpiresAt` (function) — `function previewTokenExpiresAt(now: Instant, previewSecondsLeft: number): Instant;` — A preview token's expiry: never past the budget left, under the incident veil too, so a veil lifting mid-token opens no on-air second the b…
 - `priceOfTier` (function) — `function priceOfTier(tiers: readonly TierPrice[], tier: PriceTier): Money | null;`
 - `priorityUntilOf` (function) — `function priorityUntilOf(openedAt: Instant): Instant;`
 - `progressOf` (function) — `function progressOf(timing: DateTiming, now: Instant): number;` — A live show's progress, clamped to '[0, 1]'.

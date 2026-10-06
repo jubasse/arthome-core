@@ -241,7 +241,7 @@ export const PlaybackTicketSchema: z.ZodObject<
           '`none` is a verdict, not a ticket: a ticket exists only where playback was allowed, so a scope of `none` here would be a token for watching nothing.',
       })
       .describe(
-        '**A strict narrowing of `WATCH_SCOPES`, and the missing member is the rule.** `none` is a\nverdict, not a ticket: a ticket exists only where playback was allowed, so a scope of\n`none` here would be a token for watching nothing. `WatchVerdict.scope` carries all three\nbecause a verdict can say no; this one cannot.\n\n`preview` for a non-holder, on air only (D-110). While the budget is spent its token expires at\nthe earlier of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and the seconds left (`previewTokenExpiresAt`):\n**reloading the page extends nothing**, and a reinstalled app resets no counter — the budget\nis **server-side**, per **account**.\n',
+        '**A strict narrowing of `WATCH_SCOPES`, and the missing member is the rule.** `none` is a\nverdict, not a ticket: a ticket exists only where playback was allowed, so a scope of\n`none` here would be a token for watching nothing. `WatchVerdict.scope` carries all three\nbecause a verdict can say no; this one cannot.\n\n`preview` for a non-holder, from on air (D-110): under the incident veil it is granted and costs\nnothing. Its token expires at the earlier of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and the seconds\nleft, under the veil too (`previewTokenExpiresAt`), and it renews before (`previewRenewAfterSeconds`):\n**reloading the page extends nothing**, and a reinstalled app resets no counter — the budget\nis **server-side**, per **account**.\n',
       ),
     previewSecondsLeft: int64().meta({ format: undefined }).nullable().optional(),
     protocol: vocabularyOut(PLAYBACK_PROTOCOLS, 'PLAYBACK_PROTOCOLS'),
@@ -272,7 +272,7 @@ export const PlaybackTicketSchema: z.ZodObject<
       .meta({ format: undefined })
       .meta({ examples: [PLAYBACK_RENEWAL_INTERVAL_SECONDS] })
       .describe(
-        '**`PLAYBACK_RENEWAL_INTERVAL_SECONDS`**, under the ceiling the TV requires: it is the renewal that carries the concurrent-screen limit.',
+        '**`PLAYBACK_RENEWAL_INTERVAL_SECONDS`**, under the ceiling the TV requires: it is the renewal that carries the concurrent-screen limit. A preview renews sooner, before its token expires (`previewRenewAfterSeconds`).',
       ),
     leaseExpiresAt: InstantOut.describe(
       '**`PLAYBACK_LEASE_SECONDS`.** It is the **lease** that carries the concurrent-screen limit, not a release command:\na television gets unplugged, a set-top box loses power, the OS kills a mobile app without\nwarning. `releasePlayback` speeds it up, **nothing depends on it**.\n',

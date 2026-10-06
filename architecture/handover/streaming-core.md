@@ -37,8 +37,10 @@ replay branch around `decideWatch`.
 
 - Charge the budget with `previewSecondsSpent(watched, onAirIntervals)`: an `interrupted` run is the
   incident veil, and a veiled second costs nothing (D-110).
-- Issue a preview token with `previewTokenExpiresAt(now, secondsLeft, isPreviewBudgetSpending(run))`:
-  under the veil the budget does not cap it.
+- Issue a preview token with `previewTokenExpiresAt(now, secondsLeft)`, under the veil too: a veil
+  lifting mid-token would otherwise open on-air seconds the budget does not cover. Its
+  `renewAfterSec` is `previewRenewAfterSeconds(secondsLeft)`, so a long veil renews rather than
+  stalls.
 - There is no preview before on air. A non-holder in the room, a late start included, gets
   `watch.no_seat` with the seat action, and the player shows the room screen.
 
