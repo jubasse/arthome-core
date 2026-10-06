@@ -699,10 +699,15 @@ Found on review: what the declaration must also carry so that nothing else is wr
 
 ### 9.2 The batched read (§5.6)
 
-`batch({ ids, max: 200, response })` declares a `POST /{res}/batch`:
+`batch({ item, max })` declares a `POST /{res}/batch`:
 - no idempotency key, since it is a read;
-- the 2 MiB body ceiling;
-- a table keyed by id as its response.
+- the 2 MiB body ceiling (`BATCH_BODY_LIMIT`), and the batched read's latency budget, 150 ms
+  (`BATCH_BUDGET_MS`, §5.9), unless the route says otherwise;
+- a body `{ ids }` of at most `max` ids, `BATCH_MAX_IDS` (200, §5.6) by default;
+- or, with `body` in place of `max`, the body the route states, for a read that takes more than its
+  ids: streaming's `getViewerProgressBatch` takes `{ profileId, dateIds }`, as §5.6 writes it;
+- a table keyed by id as its response, its example the item's registered one under the id
+  parameter's own.
 
 The rule "never one identifier at a time" stays in `definition-of-done.md`.
 
