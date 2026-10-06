@@ -682,7 +682,9 @@ Found on review: what the declaration must also carry so that nothing else is wr
   viewer's playback refuses the studio BFF (D-118). No service route is public or optional.
 - **The principal** is the internal token's, and only the token's (critical rule 4): the calling BFF,
   the account, and the profile and the device when the BFF's session names them. A body `profileId`
-  or `deviceId` other than the principal's is refused `403 api.forbidden`.
+  or `deviceId` other than the principal's is refused `403 api.forbidden`, and the body never picks
+  the profile: a route that reads it refuses `403 api.forbidden` a token that names none, and a BFF
+  composing an overlay from it degrades that part (§5.8).
 - **The error model** documents what a service answers whatever the route: `400`, `401`, `403`, `404`,
   the idempotency `409`, `413`, `415`, `500` and `504 api.deadline_exceeded`. Every code is allowed,
   since a BFF narrows what it relays; no BFF code is derived, since a service calls no service.

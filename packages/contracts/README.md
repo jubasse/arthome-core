@@ -508,8 +508,11 @@ is the first; catalog and ticketing move to it later.
 - **Who calls.** Every route declares `callerService(...issuers)`, the BFFs it serves, a rule the
   server maps to a guard that refuses any other `403 api.forbidden`. The principal
   (`ServicePrincipalSchema`) is the token's: the BFF, the account, the profile and the device. A body
-  `profileId` or `deviceId` other than the principal's is refused `403 api.forbidden`. No route is
-  `.public()` or `.optionalAuth()`.
+  `profileId` or `deviceId` other than the principal's is refused `403 api.forbidden`. **The body
+  never picks the profile**: a route that reads it (`openPlayback`, `recordPlaybackPosition`,
+  `getViewerProgressBatch`) refuses `403 api.forbidden` a token that names none, says so in its docs
+  (`PROFILE_FROM_THE_TOKEN`), and a BFF composing an overlay from it degrades that part
+  (`transport.md` §5.8). No route is `.public()` or `.optionalAuth()`.
 - **One operation, two servers.** A service route that serves a public operation keeps its operation
   id, path, body, answer and refusal codes, so the BFF relays one shape. It takes the public module's
   schemas, its docs (`operationDocsOf(storefrontDocs, [...])`) and its examples

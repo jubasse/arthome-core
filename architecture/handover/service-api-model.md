@@ -41,7 +41,11 @@ catalog list's `api.sort_key_forbidden` or `api.period_filter_required` is the s
 
 `ServicePrincipalSchema` is `{ callingService, userId, profileId?, deviceId? }`, from the token's
 `iss`, `sub`, `pro` and `did`. A handler reads who calls there, never from a body: a body
-`profileId` or `deviceId` other than the principal's is refused `403 api.forbidden`.
+`profileId` or `deviceId` other than the principal's is refused `403 api.forbidden`. **The body
+never picks the profile**: a route that reads it refuses `403 api.forbidden` a token without `pro`,
+even when the body names one, and its docs say so (`PROFILE_FROM_THE_TOKEN`, appended through
+`operationDocsOf`). A field the token does not carry is absent from the principal, never `null`
+or `undefined`: under `exactOptionalPropertyTypes` the platform's `ServiceIdentity` omits it.
 
 ## 5. No `version` at the envelope's root
 

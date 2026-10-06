@@ -354,7 +354,7 @@ Declarations: `dist/openapi/index.d.ts` — 18 exported names.
 - `documentationOf` (function) — `function documentationOf(route: RouteDefinition, doc: OperationDoc | undefined): OperationDocumentation;` — The prose and doc-only 'x-arthome-*' of 'route', from what its module registered: the registry is the only source, and a route carrying its…
 - `maturityOf` (function) — `function maturityOf(upstream: readonly Upstream[]): Maturity | undefined;` — The regime of the operation's owning service, the first service in its upstream: a BFF keeps its own shape stable over a provisional servic…
 - `openApiDocumentOf` (function) — `function openApiDocumentOf(api: Api, docs?: ApiDocs): OpenApiDocument;`
-- `operationDocsOf` (function) — `function operationDocsOf(docs: ApiDocs, operationIds: readonly string[]): ModuleDocs;` — The docs 'docs' registered for 'operationIds', for an api that serves the same operations.
+- `operationDocsOf` (function) — `function operationDocsOf(docs: ApiDocs, operationIds: readonly string[], added?: Readonly<Record<string, string>>): ModuleDocs;` — The docs 'docs' registered for 'operationIds', for an api that serves the same operations.
 
 #### @arthome/contracts/pagination
 

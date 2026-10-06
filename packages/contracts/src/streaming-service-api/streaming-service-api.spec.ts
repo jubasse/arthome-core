@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { DomainErrorCode, InternalTokenIssuer } from '@arthome/core';
 
+import { streamingServiceDocs } from './docs.js';
 import { streamingServiceApi } from './index.js';
+import { PROFILE_FROM_THE_TOKEN } from './principal.docs.js';
 import type { Api, Route } from '../http/index.js';
 import {
   BATCH_BODY_LIMIT,
@@ -100,6 +102,20 @@ describe('what each route carries', () => {
     expect(errorCodesOf(served.goOnAir, 409)).toContain(
       DomainErrorCode.PUBLICATION_TRANSITION_FORBIDDEN,
     );
+  });
+});
+
+describe('the profile', () => {
+  it('is said to be the token’s on every route that reads it', () => {
+    const reading = ['openPlayback', 'recordPlaybackPosition', 'getViewerProgressBatch'];
+    const silent = reading.filter(
+      (operationId) =>
+        streamingServiceDocs.operations[operationId]?.description?.includes(
+          PROFILE_FROM_THE_TOKEN,
+        ) !== true,
+    );
+
+    expect(silent).toEqual([]);
   });
 });
 

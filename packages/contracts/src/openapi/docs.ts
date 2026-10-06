@@ -132,13 +132,24 @@ export function apiDocs(definition: ApiDocsDefinition): ApiDocs {
   return { ...document, operations, examples: new ExampleRegistry(examples) };
 }
 
-/** The docs `docs` registered for `operationIds`, for an api that serves the same operations. */
-export function operationDocsOf(docs: ApiDocs, operationIds: readonly string[]): ModuleDocs {
+/**
+ * The docs `docs` registered for `operationIds`, for an api that serves the same operations.
+ *
+ * @param added a paragraph per operation, for what is true on the serving api's side alone.
+ */
+export function operationDocsOf(
+  docs: ApiDocs,
+  operationIds: readonly string[],
+  added: Readonly<Record<string, string>> = {},
+): ModuleDocs {
   return Object.fromEntries(
     operationIds.map((operationId) => {
       const doc = docs.operations[operationId];
       if (doc === undefined) throw new Error(`apiDocs: "${operationId}" is not documented.`);
-      return [operationId, doc];
+      const paragraph = added[operationId];
+      if (paragraph === undefined) return [operationId, doc];
+      const description = [doc.description?.trimEnd(), paragraph].filter(Boolean).join('\n\n');
+      return [operationId, { ...doc, description }];
     }),
   );
 }

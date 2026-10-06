@@ -21,7 +21,7 @@ export declare const RelayedTraceparentParameter: HeaderParameter<'traceparent',
  * Who calls, from the verified token: the BFF (`iss`), the account (`sub`), and the profile and the
  * device (`pro`, `did`) when the token names them. A service reads the caller here and never from a
  * body or a header: a body `profileId` or `deviceId` other than the principal's is refused
- * `403 api.forbidden`.
+ * `403 api.forbidden`, and a route that reads the profile refuses a token naming none the same way.
  */
 export declare const ServicePrincipalSchema: z.ZodObject<{
     callingService: z.ZodString;

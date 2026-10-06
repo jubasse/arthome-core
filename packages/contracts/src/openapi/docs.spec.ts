@@ -63,6 +63,9 @@ describe('apiDocs', () => {
     const docs = apiDocs({ modules: [{ getDate: { description: 'One.' } }] });
 
     expect(operationDocsOf(docs, ['getDate'])).toEqual({ getDate: { description: 'One.' } });
+    expect(operationDocsOf(docs, ['getDate'], { getDate: 'Two.\n' })).toEqual({
+      getDate: { description: 'One.\n\nTwo.\n' },
+    });
     expect(() => operationDocsOf(docs, ['getSeat'])).toThrow('"getSeat" is not documented');
   });
 });

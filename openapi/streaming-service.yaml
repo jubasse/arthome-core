@@ -24,7 +24,8 @@ info:
     Every route names the BFFs it serves (`x-arthome-requires`, `callerService`): the run desk serves
     the studio BFF, playback and progress the storefront BFF (D-118). Any other caller is refused
     `403` `api.forbidden`. The caller is read from the token and nowhere else: a body's `profileId`
-    or `deviceId` other than the token's is refused `403` `api.forbidden` too.
+    or `deviceId` other than the token's is refused `403` `api.forbidden` too, and a route that reads
+    the profile refuses a token that names none the same way: the body never picks the profile.
 
     ## What every call carries
 
@@ -1051,6 +1052,9 @@ paths:
         `410`, the others a `403`). On `watch.concurrent_limit_reached`, `params.activeSessions` carries the **list
         of active sessions** so the surface can offer to release one: a bare refusal would leave the
         viewer with no way out.
+
+        **On the service, the profile is the token's** (`pro`), never the body's: a call whose token names
+        no profile is refused `403` `api.forbidden`, and so is a body `profileId` other than the token's.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -1417,6 +1421,9 @@ paths:
         `releasePlayback` — a television can be cut off at any moment.
 
         **Last writer wins, and the ordering comes from the server.**
+
+        **On the service, the profile is the token's** (`pro`), never the body's: a call whose token names
+        no profile is refused `403` `api.forbidden`, and so is a body `profileId` other than the token's.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -1517,8 +1524,11 @@ paths:
         into each card's `viewerProgress` by date id, so a screen of cards costs one call, never one per
         card. A date with no point is absent from the table.
 
-        The profile is the token's: a `profileId` other than the principal's is refused `403`
-        `api.forbidden`.
+        **On the service, the profile is the token's** (`pro`), never the body's: a call whose token names
+        no profile is refused `403` `api.forbidden`, and so is a body `profileId` other than the token's.
+
+        Refused, the storefront BFF serves the cards without the overlay (`degraded: ["viewerProgress"]`,
+        `transport.md` §5.8).
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming

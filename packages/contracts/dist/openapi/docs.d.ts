@@ -68,8 +68,12 @@ export interface ApiDocsDefinition extends DocumentDocs {
 }
 /** Gathers an api's modules, and refuses an operation documented twice. */
 export declare function apiDocs(definition: ApiDocsDefinition): ApiDocs;
-/** The docs `docs` registered for `operationIds`, for an api that serves the same operations. */
-export declare function operationDocsOf(docs: ApiDocs, operationIds: readonly string[]): ModuleDocs;
+/**
+ * The docs `docs` registered for `operationIds`, for an api that serves the same operations.
+ *
+ * @param added a paragraph per operation, for what is true on the serving api's side alone.
+ */
+export declare function operationDocsOf(docs: ApiDocs, operationIds: readonly string[], added?: Readonly<Record<string, string>>): ModuleDocs;
 /** What a document says of one operation beyond its route's runtime fields. */
 export interface OperationDocumentation {
     readonly description?: string;
