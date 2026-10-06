@@ -23,5 +23,9 @@ export const refundSeat: RefundSeatRoute = seats.action('refund', {
   body: RefundSeatBodySchema,
   response: SeatRefundSchema,
   answer: 'Refund recorded, with its effect on the payout.',
-  errors: [DomainErrorCode.STATE_CONFLICT, OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING],
+  errors: [
+    DomainErrorCode.STATE_CONFLICT,
+    OrderErrorCode.SEAT_NOT_ACTIVE,
+    OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING,
+  ],
 });

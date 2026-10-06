@@ -22,7 +22,7 @@ export type RefundSeatRoute = Route<{
     errorCodes: {
         403: readonly (typeof ApiErrorCode.FORBIDDEN)[];
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
-        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING | typeof DomainErrorCode.STATE_CONFLICT)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING | typeof OrderErrorCode.SEAT_NOT_ACTIVE | typeof DomainErrorCode.STATE_CONFLICT)[];
     };
 }>;
 //# sourceMappingURL=types.d.ts.map

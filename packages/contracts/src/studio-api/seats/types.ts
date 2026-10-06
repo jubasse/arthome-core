@@ -36,6 +36,7 @@ export type RefundSeatRoute = Route<{
       | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
       | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
       | typeof OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING
+      | typeof OrderErrorCode.SEAT_NOT_ACTIVE
       | typeof DomainErrorCode.STATE_CONFLICT
     )[];
   };
