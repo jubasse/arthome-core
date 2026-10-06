@@ -701,9 +701,9 @@ Found on review: what the declaration must also carry so that nothing else is wr
 
 `batch({ item, max })` declares a `POST /{res}/batch`:
 - no idempotency key, since it is a read;
-- the 2 MiB body ceiling (`BATCH_BODY_LIMIT`), and the batched read's latency budget, 150 ms
+- the 2 MiB body ceiling (`BATCH_BODY_LIMIT`), and the batched read's latency budget
   (`BATCH_BUDGET_MS`, §5.9), unless the route says otherwise;
-- a body `{ ids }` of at most `max` ids, `BATCH_MAX_IDS` (200, §5.6) by default;
+- a body `{ ids }` of at most `max` ids, `BATCH_MAX_IDS` (§5.6) by default;
 - or, with `body` in place of `max`, the body the route states, for a read that takes more than its
   ids: streaming's `getViewerProgressBatch` takes `{ profileId, dateIds }`, as §5.6 writes it;
 - a table keyed by id as its response, its example the item's registered one under the id

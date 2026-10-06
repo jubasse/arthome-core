@@ -14,13 +14,13 @@ import {
   callerService,
   service,
 } from '../../http/index.js';
-import { SurfaceParameter } from '../../storefront-api/components.js';
+import { DateIdParameter, SurfaceParameter } from '../../storefront-api/components.js';
 import {
   OpenPlaybackBodySchema,
   PlaybackSessionIdParameter,
 } from '../../storefront-api/playback/schemas.js';
 import { PlaybackRenewalSchema, PlaybackTicketSchema } from '../../streaming/index.js';
-import { DateIdParameter, StreamingServiceTag, streamingServiceV1 } from '../components.js';
+import { StreamingServiceTag, streamingServiceV1 } from '../components.js';
 
 const playback = streamingServiceV1
   .identity(service)
@@ -60,8 +60,8 @@ export const renewPlaybackTicket: RenewPlaybackTicketRoute = sessions.action('re
 
 export const releasePlayback: ReleasePlaybackRoute = sessions.action('release', {
   operationId: 'releasePlayback',
-  summary: 'Releases a playback session; the lease is what ends it.',
+  summary: 'Releases a playback session — speeds things up, guarantees nothing.',
   idempotent: false,
-  answer: 'Released, or already released: both succeed.',
+  answer: 'Released, or already released — both succeed.',
   errors: [ApiErrorCode.NOT_FOUND],
 });

@@ -15,11 +15,11 @@ import type {
   DeadlineParameter,
   RelayedTraceparentParameter,
 } from '../../http/service.js';
+import type { DateIdParameter } from '../../storefront-api/components.js';
 import type {
   PlaybackPositionSchema,
   RecordPlaybackPositionBodySchema,
 } from '../../storefront-api/me/schemas.js';
-import type { DateIdParameter } from '../components.js';
 
 export type RecordPlaybackPositionRoute = Route<{
   method: 'put';

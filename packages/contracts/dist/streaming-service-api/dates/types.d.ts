@@ -2,9 +2,9 @@
 import type { ApiErrorCode, CatalogErrorCode, DomainErrorCode } from '@arthome/core';
 import type { IdentifiedAccess, ItemResponse, JsonRequestBody, Route, service, serviceConventions } from '../../http/index.js';
 import type { ActorSurfaceParameter, DeadlineParameter, RelayedIdempotencyKeyParameter, RelayedTraceparentParameter } from '../../http/service.js';
+import type { DateIdParameter } from '../../storefront-api/components.js';
 import type { RaiseIncidentBodySchema, RunTransitionBodySchema, TechnicalCheckSchema } from '../../studio-api/dates/schemas.js';
 import type { RunConsoleSchema, StudioIncidentSchema } from '../../studio-stage/index.js';
-import type { DateIdParameter } from '../components.js';
 export type GetRunConsoleRoute = Route<{
     method: 'get';
     version: 1;

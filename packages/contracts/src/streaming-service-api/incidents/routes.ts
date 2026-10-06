@@ -17,7 +17,7 @@ const incidents = streamingServiceV1
 
 export const resolveIncident: ResolveIncidentRoute = incidents.action('resolve', {
   operationId: 'resolveIncident',
-  summary: 'Resolves the incident and lifts the hold screen.',
+  summary: 'Resolves the incident and lifts the veil.',
   response: IncidentResolutionSchema,
   answer: 'Incident resolved.',
   errors: [DomainErrorCode.STATE_CONFLICT],

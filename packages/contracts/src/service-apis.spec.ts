@@ -130,13 +130,14 @@ describe.each(SERVICE_APIS)('%s', (_file, api) => {
   });
 
   it.each(relaying)(
-    '$operationId keeps its public operation’s id, path, body, paging, answer and codes',
+    '$operationId keeps its public operation’s id, summary, path, body, paging, answer and codes',
     (route) => {
       const operation = publicOperationOf(route);
       if (operation === undefined) throw new Error('no public operation');
       const { route: relayed } = operation;
 
       expect(route.method).toBe(relayed.method);
+      expect(route.summary).toBe(relayed.summary);
       expect(versionedPath(route)).toBe(versionedPath(relayed));
       expect(route.requestBody?.content['application/json']?.schema).toBe(
         relayed.requestBody?.content['application/json']?.schema,
@@ -147,6 +148,7 @@ describe.each(SERVICE_APIS)('%s', (_file, api) => {
         expect(route.responses[status]?.content?.['application/json']?.exampleFrom?.of).toBe(
           relayed.responses[status]?.content?.['application/json']?.exampleFrom?.of,
         );
+        expect(route.responses[status]?.description).toBe(relayed.responses[status]?.description);
       }
 
       const isTheBffs = ownedByTheBff(operation);

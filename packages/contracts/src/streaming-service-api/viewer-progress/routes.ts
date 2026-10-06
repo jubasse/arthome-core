@@ -3,7 +3,8 @@ import { ApiErrorCode, InternalTokenIssuer } from '@arthome/core';
 import { ViewerProgressBatchBodySchema, ViewerProgressSchema } from './schemas.js';
 import type { GetViewerProgressBatchRoute } from './types.js';
 import { Freshness, cache, callerService, service } from '../../http/index.js';
-import { DateIdParameter, StreamingServiceTag, streamingServiceV1 } from '../components.js';
+import { DateIdParameter } from '../../storefront-api/components.js';
+import { StreamingServiceTag, streamingServiceV1 } from '../components.js';
 
 export const getViewerProgressBatch: GetViewerProgressBatchRoute = streamingServiceV1
   .identity(service)

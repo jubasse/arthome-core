@@ -17,13 +17,12 @@ import type {
   DeadlineParameter,
   RelayedTraceparentParameter,
 } from '../../http/service.js';
-import type { SurfaceParameter } from '../../storefront-api/components.js';
+import type { DateIdParameter, SurfaceParameter } from '../../storefront-api/components.js';
 import type {
   OpenPlaybackBodySchema,
   PlaybackSessionIdParameter,
 } from '../../storefront-api/playback/schemas.js';
 import type { PlaybackRenewalSchema, PlaybackTicketSchema } from '../../streaming/index.js';
-import type { DateIdParameter } from '../components.js';
 
 export type OpenPlaybackRoute = Route<{
   method: 'post';

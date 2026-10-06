@@ -128,6 +128,13 @@ def main(argv):
         print("\n".join(diff[:40]))
         if len(diff) > 40:
             print(f"  ... and {len(diff) - 40} more")
+    if check:
+        orphans = sorted(
+            path.name for path in (ROOT / "openapi").glob("*-service.yaml") if path.stem not in documents()
+        )
+        for name in orphans:
+            failed += 1
+            print(f"FAIL openapi/{name} has no service api left to generate it; delete it with its folder")
     if failed:
         print("\nEdit the declarations in packages/contracts, then `pnpm run generate:openapi` and commit both.")
     return 1 if failed else 0

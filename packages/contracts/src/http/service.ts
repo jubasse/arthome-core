@@ -220,11 +220,19 @@ export const ServiceDeadlineExceededResponse: JsonResponse<typeof ServiceErrorEn
   code: ApiErrorCode.DEADLINE_EXCEEDED,
 });
 
+/** Every code but the three a BFF answers of its own: a service calls no service (critical rule 1). */
+export type ServiceErrorCode = Exclude<
+  ErrorCode,
+  | typeof ApiErrorCode.UPSTREAM_UNAVAILABLE
+  | typeof ApiErrorCode.SERVICE_UNAVAILABLE
+  | typeof ApiErrorCode.UPSTREAM_TIMEOUT
+>;
+
 /**
- * What a service answers whatever it declares. Every code is allowed, since a BFF narrows what it
- * relays and a service does not; no `upstreams`, since a service calls no service (critical rule 1).
+ * What a service answers whatever it declares. A route may declare any `ServiceErrorCode`, since a
+ * BFF narrows what it relays and a service does not; no `upstreams`, so none is derived either.
  */
-export const serviceErrors: ErrorModel<ErrorCode> = defineErrorModel({
+export const serviceErrors: ErrorModel<ServiceErrorCode> = defineErrorModel({
   standard: {
     400: { response: ServiceBadRequestResponse, codes: [ApiErrorCode.SCHEMA_INVALID] },
     401: {

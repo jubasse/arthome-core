@@ -491,7 +491,8 @@ is the first; catalog and ticketing move to it later.
   `generate:contract-types` reads, and `generate:openapi` writes one `openapi/<service>-service.yaml`
   per `*-service-api` folder it finds. Its `components.ts` holds
   `<service>ServiceV1 = routeBuilder(serviceErrors).version(1).conventions(serviceConventions)` and
-  the api's parameters; then modules, `index.ts` and `docs.ts` as for a surface, and the subpaths
+  the api's tags, and a parameter a public operation already declares is imported from its api;
+  then modules, `index.ts` and `docs.ts` as for a surface, and the subpaths
   `./<service>-service-api` and `./<service>-service-api/docs`. A separate api per service, so a path
   it shares with a BFF never collides in one `defineApi`.
 - **The model, in `./http`.** `serviceErrors`: every code allowed (a BFF narrows what it relays, a

@@ -85,6 +85,19 @@ describe('the service error model', () => {
   });
 });
 
+describe('the codes a service declares', () => {
+  it('leaves out the codes a BFF answers of its own', () => {
+    runDesk.defineRoute({
+      method: 'get',
+      path: '/upstream',
+      operationId: 'readUpstream',
+      responses: { 204: { description: 'Read.' } },
+      // @ts-expect-error the BFF's code: a service calls no service
+      errors: [ApiErrorCode.UPSTREAM_UNAVAILABLE],
+    });
+  });
+});
+
 describe('callerService', () => {
   it('documents its issuers and its 403', () => {
     const api = defineApi({

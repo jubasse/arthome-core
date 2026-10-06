@@ -2,11 +2,12 @@ import { ApiErrorCode, InternalTokenIssuer } from '@arthome/core';
 
 import type { RecordPlaybackPositionRoute } from './types.js';
 import { Freshness, cache, callerService, service } from '../../http/index.js';
+import { DateIdParameter } from '../../storefront-api/components.js';
 import {
   PlaybackPositionSchema,
   RecordPlaybackPositionBodySchema,
 } from '../../storefront-api/me/schemas.js';
-import { DateIdParameter, StreamingServiceTag, streamingServiceV1 } from '../components.js';
+import { StreamingServiceTag, streamingServiceV1 } from '../components.js';
 
 const progress = streamingServiceV1
   .identity(service)

@@ -56,7 +56,7 @@ paths:
   /v1/dates/{dateId}/run:
     get:
       operationId: getRunConsole
-      summary: The state of the run, for the run desk.
+      summary: The state of the run — one call, the whole control-room screen.
       description: |
         **The return path actually open is served** (`monitorPath`): the studio must **know** it so
         as not to promise the operator a latency it does not have. The contract carries the truth, not
@@ -145,7 +145,7 @@ paths:
   /v1/dates/{dateId}/run/technical-check:
     post:
       operationId: runTechnicalCheck
-      summary: Runs the technical check.
+      summary: Starts the technical check.
       description: |
         Its success **unlocks publication**: `technical_check_passed` is one of the seven checklist
         items, and it comes from here. `catalog` **projects** it, it does not ask for it.
@@ -799,7 +799,7 @@ paths:
   /v1/dates/{dateId}/incidents:
     post:
       operationId: raiseIncident
-      summary: Declares an incident and raises the hold screen.
+      summary: Declares an incident and broadcasts the holding screen.
       description: |
         **A client-side veil, never a stream switch**: the control plane publishes the state, the
         player displays it **over an untouched video**. Instant, identical on all three storefronts,
@@ -884,7 +884,7 @@ paths:
                 text: Interruption technique. Nous reprenons dans quelques instants.
       responses:
         '201':
-          description: Incident raised.
+          description: Incident raised, broadcast in under two seconds.
           content:
             application/json:
               schema:
@@ -952,7 +952,7 @@ paths:
   /v1/incidents/{incidentId}/resolve:
     post:
       operationId: resolveIncident
-      summary: Resolves the incident and lifts the hold screen.
+      summary: Resolves the incident and lifts the veil.
       description: |
         The player **lifts the veil** without asking for a new playback token: otherwise the resume
         would be paid for with a stream reload, on media that was never cut.
@@ -1360,7 +1360,7 @@ paths:
   /v1/playback/sessions/{sessionId}/release:
     post:
       operationId: releasePlayback
-      summary: Releases a playback session; the lease is what ends it.
+      summary: Releases a playback session — speeds things up, guarantees nothing.
       description: |
         **Nothing depends on it.** A television is unplugged, a set-top box cuts out, the operating
         system kills a mobile application without warning: it is the **lease** that expires (90 s),

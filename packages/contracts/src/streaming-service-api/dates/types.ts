@@ -16,13 +16,13 @@ import type {
   RelayedIdempotencyKeyParameter,
   RelayedTraceparentParameter,
 } from '../../http/service.js';
+import type { DateIdParameter } from '../../storefront-api/components.js';
 import type {
   RaiseIncidentBodySchema,
   RunTransitionBodySchema,
   TechnicalCheckSchema,
 } from '../../studio-api/dates/schemas.js';
 import type { RunConsoleSchema, StudioIncidentSchema } from '../../studio-stage/index.js';
-import type { DateIdParameter } from '../components.js';
 
 export type GetRunConsoleRoute = Route<{
   method: 'get';

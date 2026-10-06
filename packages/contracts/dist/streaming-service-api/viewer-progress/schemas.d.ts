@@ -1,5 +1,5 @@
 import { z } from 'zod';
-/** A viewer's point on one date, as the BFF merges it into a card's `viewerProgress`. */
+/** A profile's point on one date: where it stopped, when it was written, whether it finished. */
 export declare const ViewerProgressSchema: z.ZodObject<{
     positionSec: z.ZodNonOptional<z.ZodOptional<z.ZodInt>>;
     version: z.ZodNonOptional<z.ZodOptional<z.ZodInt>>;

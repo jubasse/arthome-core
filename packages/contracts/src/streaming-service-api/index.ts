@@ -1,6 +1,5 @@
 import { ErrorSchema } from '@arthome/core/schema';
 
-import { DateIdParameter } from './components.js';
 import {
   endRun,
   getRunConsole,
@@ -38,7 +37,7 @@ import {
   ViewerCountryParameter,
   defineApi,
 } from '../http/index.js';
-import { SurfaceParameter } from '../storefront-api/components.js';
+import { DateIdParameter, SurfaceParameter } from '../storefront-api/components.js';
 import { PlaybackSessionIdParameter } from '../storefront-api/playback/schemas.js';
 import { IncidentSchema, PlaybackRenewalSchema, PlaybackTicketSchema } from '../streaming/index.js';
 import { IncidentIdParameter } from '../studio-api/incidents/schemas.js';

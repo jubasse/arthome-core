@@ -15,6 +15,7 @@ import type {
   RunTechnicalCheckRoute,
 } from './types.js';
 import { callerService, service } from '../../http/index.js';
+import { DateIdParameter } from '../../storefront-api/components.js';
 import {
   RaiseIncidentBodySchema,
   RunTransitionBodySchema,
@@ -22,7 +23,7 @@ import {
 } from '../../studio-api/dates/schemas.js';
 import { IncidentIdParameter } from '../../studio-api/incidents/schemas.js';
 import { RunConsoleSchema, StudioIncidentSchema } from '../../studio-stage/index.js';
-import { DateIdParameter, StreamingServiceTag, streamingServiceV1 } from '../components.js';
+import { StreamingServiceTag, streamingServiceV1 } from '../components.js';
 
 const runDate = streamingServiceV1
   .identity(service)
@@ -34,14 +35,14 @@ const run = runDate.single('run');
 
 export const getRunConsole: GetRunConsoleRoute = run.find({
   operationId: 'getRunConsole',
-  summary: 'The state of the run, for the run desk.',
+  summary: 'The state of the run — one call, the whole control-room screen.',
   item: RunConsoleSchema,
   answer: 'The console.',
 });
 
 export const runTechnicalCheck: RunTechnicalCheckRoute = run.action('technical-check', {
   operationId: 'runTechnicalCheck',
-  summary: 'Runs the technical check.',
+  summary: 'Starts the technical check.',
   response: TechnicalCheckSchema,
   answer: "The check's result, and the pre-flight checklist.",
   errors: [DomainErrorCode.STATE_CONFLICT],
@@ -91,9 +92,9 @@ export const raiseIncident: RaiseIncidentRoute = runDate
   .resource('incidents', { id: IncidentIdParameter })
   .create({
     operationId: 'raiseIncident',
-    summary: 'Declares an incident and raises the hold screen.',
+    summary: 'Declares an incident and broadcasts the holding screen.',
     body: RaiseIncidentBodySchema,
     item: StudioIncidentSchema,
-    answer: 'Incident raised.',
+    answer: 'Incident raised, broadcast in under two seconds.',
     errors: [DomainErrorCode.STATE_CONFLICT],
   });

@@ -56,11 +56,13 @@ export declare const ServicePayloadTooLargeResponse: JsonResponse<typeof Service
 export declare const ServiceUnsupportedMediaTypeResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UNSUPPORTED_MEDIA_TYPE>;
 export declare const ServiceInternalErrorResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.INTERNAL>;
 export declare const ServiceDeadlineExceededResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.DEADLINE_EXCEEDED>;
+/** Every code but the three a BFF answers of its own: a service calls no service (critical rule 1). */
+export type ServiceErrorCode = Exclude<ErrorCode, typeof ApiErrorCode.UPSTREAM_UNAVAILABLE | typeof ApiErrorCode.SERVICE_UNAVAILABLE | typeof ApiErrorCode.UPSTREAM_TIMEOUT>;
 /**
- * What a service answers whatever it declares. Every code is allowed, since a BFF narrows what it
- * relays and a service does not; no `upstreams`, since a service calls no service (critical rule 1).
+ * What a service answers whatever it declares. A route may declare any `ServiceErrorCode`, since a
+ * BFF narrows what it relays and a service does not; no `upstreams`, so none is derived either.
  */
-export declare const serviceErrors: ErrorModel<ErrorCode>;
+export declare const serviceErrors: ErrorModel<ServiceErrorCode>;
 /**
  * The envelope services answer: `data` under the meta, a page's `items` and `page` at the root. A
  * service list relays its public operation's page, so the page's own shape is the list's to state.

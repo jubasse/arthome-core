@@ -2,8 +2,8 @@
 import type { ApiErrorCode } from '@arthome/core';
 import type { IdentifiedAccess, ItemResponse, JsonRequestBody, Route, service, serviceConventions } from '../../http/index.js';
 import type { ActorSurfaceParameter, DeadlineParameter, RelayedTraceparentParameter } from '../../http/service.js';
+import type { DateIdParameter } from '../../storefront-api/components.js';
 import type { PlaybackPositionSchema, RecordPlaybackPositionBodySchema } from '../../storefront-api/me/schemas.js';
-import type { DateIdParameter } from '../components.js';
 export type RecordPlaybackPositionRoute = Route<{
     method: 'put';
     version: 1;

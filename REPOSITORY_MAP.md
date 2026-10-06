@@ -80,7 +80,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 204 exported names.
+Declarations: `dist/http/index.d.ts` — 205 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
@@ -210,6 +210,7 @@ Declarations: `dist/http/index.d.ts` — 204 exported names.
 - `ServiceConflictResponse` (const) — `ServiceConflictResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED>`
 - `ServiceDeadlineExceededResponse` (const) — `ServiceDeadlineExceededResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.DEADLINE_EXCEEDED>`
 - `ServiceEnvelopeMetaSchema` (const) — `ServiceEnvelopeMetaSchema: z.ZodObject<{ servedAt: z.ZodString; validUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>; }, z.core.$loose>` — 'transport.md' §5.5: a versioned record carries its 'version' inside 'data', never at the root.
+- `ServiceErrorCode` (type) — Every code but the three a BFF answers of its own: a service calls no service (critical rule 1).
 - `ServiceErrorEnvelopeSchema` (const) — `ServiceErrorEnvelopeSchema: z.ZodObject<{ error: typeof ErrorSchema; servedAt: z.ZodString; }, z.core.$loose>`
 - `ServiceForbiddenResponse` (const) — `ServiceForbiddenResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.FORBIDDEN>`
 - `ServiceInternalErrorResponse` (const) — `ServiceInternalErrorResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.INTERNAL>`
@@ -275,7 +276,7 @@ Declarations: `dist/http/index.d.ts` — 204 exported names.
 - `sensitivePathsOf` (function) — `function sensitivePathsOf(schema: z.ZodType): readonly string[];` — The dotted paths of the sensitive fields: 'reauthToken', 'data.streamKey', 'items[].secret'.
 - `service` (const)
 - `serviceConventions` (const) — The envelope services answer: 'data' under the meta, a page's 'items' and 'page' at the root.
-- `serviceErrors` (const) — `serviceErrors: ErrorModel<ErrorCode>` — What a service answers whatever it declares.
+- `serviceErrors` (const) — `serviceErrors: ErrorModel<ServiceErrorCode>` — What a service answers whatever it declares.
 - `sortDirectionSchema` (function) — `function sortDirectionSchema(): z.ZodDefault<z.ZodEnum<{ readonly [K in SortDirection]: K; }>>;` — The 'sortDir' schema: ascending unless asked otherwise.
 - `sortKeyName` (function) — `function sortKeyName(key: SortKey): string;`
 - `statusOf` (function) — `function statusOf<C extends ErrorCode>(code: C): ErrorStatusMap[C];`

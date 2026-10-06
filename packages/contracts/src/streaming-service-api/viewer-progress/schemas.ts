@@ -5,7 +5,7 @@ import { InstantOut, uuidIn } from '@arthome/core/schema';
 import { BATCH_MAX_IDS } from '../../http/index.js';
 import { PlaybackPositionSchema } from '../../storefront-api/me/schemas.js';
 
-/** A viewer's point on one date, as the BFF merges it into a card's `viewerProgress`. */
+/** A profile's point on one date: where it stopped, when it was written, whether it finished. */
 export const ViewerProgressSchema: z.ZodObject<
   {
     positionSec: z.ZodNonOptional<z.ZodOptional<z.ZodInt>>;

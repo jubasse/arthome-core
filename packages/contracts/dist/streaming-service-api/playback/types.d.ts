@@ -2,10 +2,9 @@
 import type { ApiErrorCode, IdentityErrorCode, WatchDenialReason } from '@arthome/core';
 import type { IdentifiedAccess, ItemResponse, JsonRequestBody, Response, Route, ViewerCountryParameter, service, serviceConventions } from '../../http/index.js';
 import type { ActorSurfaceParameter, DeadlineParameter, RelayedTraceparentParameter } from '../../http/service.js';
-import type { SurfaceParameter } from '../../storefront-api/components.js';
+import type { DateIdParameter, SurfaceParameter } from '../../storefront-api/components.js';
 import type { OpenPlaybackBodySchema, PlaybackSessionIdParameter } from '../../storefront-api/playback/schemas.js';
 import type { PlaybackRenewalSchema, PlaybackTicketSchema } from '../../streaming/index.js';
-import type { DateIdParameter } from '../components.js';
 export type OpenPlaybackRoute = Route<{
     method: 'post';
     version: 1;
