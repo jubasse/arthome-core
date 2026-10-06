@@ -1,6 +1,6 @@
 {
   "name": "@arthome/tooling",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Shared base configuration for the seven Arthome repositories: ESLint, Prettier, TypeScript, Vitest, and the local gates.",
   "license": "UNLICENSED",
   "private": false,
