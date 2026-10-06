@@ -90,6 +90,9 @@ export interface ErrorStatusMap {
     readonly [OrderErrorCode.SALES_CLOSED]: 409;
     readonly [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: 409;
     readonly [OrderErrorCode.PAYMENT_METHOD_IN_USE]: 409;
+    readonly [OrderErrorCode.WAITLIST_NOT_SOLD_OUT]: 409;
+    readonly [OrderErrorCode.SEAT_NOT_ACTIVE]: 409;
+    readonly [OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING]: 409;
     readonly [DomainErrorCode.CAPACITY_TIER_MUST_WIDEN]: 409;
     readonly [DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES]: 500;
     readonly [DomainErrorCode.HOLD_QUANTITY_INVALID]: 400;

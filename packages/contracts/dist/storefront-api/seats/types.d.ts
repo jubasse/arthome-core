@@ -20,7 +20,7 @@ export type CancelSeatRoute = Route<{
     };
     errorCodes: {
         404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
-        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED)[];
+        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED | typeof OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED | typeof OrderErrorCode.SEAT_NOT_ACTIVE)[];
     };
 }>;
 //# sourceMappingURL=types.d.ts.map

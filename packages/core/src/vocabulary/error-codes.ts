@@ -328,6 +328,13 @@ export const ORDER_ERROR_CODES = [
   'order.sales_closed',
   'seat.cancel_deadline_passed',
   'payment_method.in_use',
+  // Joining a waiting list while public seats remain: the viewer buys instead.
+  'waitlist.not_sold_out',
+  // Cancelling a seat no longer active. Params: `state`, the seat's.
+  'seat.not_active',
+  // A studio refund above what is left to refund on the order, every decided refund counted, settled
+  //   or not. Params: `remainingMinor`, `currencyCode`.
+  'refund.amount_exceeds_remaining',
 ] as const;
 export type OrderErrorCode = (typeof ORDER_ERROR_CODES)[number];
 
@@ -346,6 +353,9 @@ export const OrderErrorCode = {
   SALES_CLOSED: 'order.sales_closed',
   SEAT_CANCEL_DEADLINE_PASSED: 'seat.cancel_deadline_passed',
   PAYMENT_METHOD_IN_USE: 'payment_method.in_use',
+  WAITLIST_NOT_SOLD_OUT: 'waitlist.not_sold_out',
+  SEAT_NOT_ACTIVE: 'seat.not_active',
+  REFUND_AMOUNT_EXCEEDS_REMAINING: 'refund.amount_exceeds_remaining',
 } as const;
 
 /**

@@ -114,7 +114,11 @@ export const joinWaitlist: JoinWaitlistRoute = waitlist.upsert({
   summary: "S'inscrit en liste d'attente.",
   item: WaitlistRegistrationSchema,
   answer: 'Inscrit.',
-  errors: [ApiErrorCode.NOT_FOUND],
+  errors: [
+    ApiErrorCode.NOT_FOUND,
+    OrderErrorCode.WAITLIST_NOT_SOLD_OUT,
+    OrderErrorCode.SALES_CLOSED,
+  ],
 });
 
 export const leaveWaitlist: LeaveWaitlistRoute = waitlist.delete({

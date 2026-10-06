@@ -152,7 +152,10 @@ export type JoinWaitlistRoute = Route<{
   errorCodes: {
     404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
     409: readonly (
-      typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
+      | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof OrderErrorCode.SALES_CLOSED
+      | typeof OrderErrorCode.WAITLIST_NOT_SOLD_OUT
     )[];
   };
 }>;

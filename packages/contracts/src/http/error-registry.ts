@@ -28,6 +28,7 @@ import {
   ReplayPolicy,
   RunState,
   SchemaIssueRule,
+  SeatState,
   Service,
   StateChangeOrigin,
   TECHNICAL_PROVISION_THRESHOLD,
@@ -131,6 +132,9 @@ export interface ErrorStatusMap {
   readonly [OrderErrorCode.SALES_CLOSED]: 409;
   readonly [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: 409;
   readonly [OrderErrorCode.PAYMENT_METHOD_IN_USE]: 409;
+  readonly [OrderErrorCode.WAITLIST_NOT_SOLD_OUT]: 409;
+  readonly [OrderErrorCode.SEAT_NOT_ACTIVE]: 409;
+  readonly [OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING]: 409;
 
   readonly [DomainErrorCode.CAPACITY_TIER_MUST_WIDEN]: 409;
   readonly [DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES]: 500;
@@ -387,8 +391,17 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
     },
   },
   [OrderErrorCode.SALES_CLOSED]: { status: 409, example: { salesEndAt: '2026-11-04T20:00:00Z' } },
-  [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: { status: 409, example: {} },
+  [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: {
+    status: 409,
+    example: { cancelDeadline: '2026-11-04T18:30:00Z' },
+  },
   [OrderErrorCode.PAYMENT_METHOD_IN_USE]: { status: 409, example: {} },
+  [OrderErrorCode.WAITLIST_NOT_SOLD_OUT]: { status: 409, example: {} },
+  [OrderErrorCode.SEAT_NOT_ACTIVE]: { status: 409, example: { state: SeatState.CANCELLED } },
+  [OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING]: {
+    status: 409,
+    example: { remainingMinor: 1200, currencyCode: 'EUR' },
+  },
 
   [DomainErrorCode.CAPACITY_TIER_MUST_WIDEN]: { status: 409, example: { current: 500, next: 400 } },
   // Thrown on read only (`pickLanguage`): stored content breaking an invariant no client can fix.

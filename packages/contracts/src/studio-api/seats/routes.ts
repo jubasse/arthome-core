@@ -1,4 +1,4 @@
-import { ApiErrorCode, DomainErrorCode } from '@arthome/core';
+import { ApiErrorCode, DomainErrorCode, OrderErrorCode } from '@arthome/core';
 
 import { RefundSeatBodySchema, SeatIdParameter, SeatRefundSchema } from './schemas.js';
 import type { RefundSeatRoute } from './types.js';
@@ -23,5 +23,5 @@ export const refundSeat: RefundSeatRoute = seats.action('refund', {
   body: RefundSeatBodySchema,
   response: SeatRefundSchema,
   answer: 'Refund recorded, with its effect on the payout.',
-  errors: [DomainErrorCode.STATE_CONFLICT],
+  errors: [DomainErrorCode.STATE_CONFLICT, OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING],
 });
