@@ -44,6 +44,9 @@ with something.* These notes were the last chance to run it.
 > of the record rather than a defect in it. Code copied from `backend-contracts.md` needs that one
 > substitution.
 
+**Release candidates.** A `v<version>-rc.<n>` tag on `develop` publishes a GitHub pre-release. Develop
+stays at the wave's version and only the tarballs are stamped, so rc.1 and rc.2 need no version commit.
+
 ---
 
 ## storefront-web
