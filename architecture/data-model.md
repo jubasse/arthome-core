@@ -583,6 +583,15 @@ Seat
 **A seat is an access right, not a place** (D-077): everyone watches the same broadcast, so a seat
 has no location, and it exists from payment on. Before that, a `SeatHold` carries the capacity.
 
+**Its moves** (`seatStateMayMove`): `active` to `cancelled`, `credited` or `transferred`;
+`cancelled` to `refunded`; nothing else. A seat is `cancelled` when its cancellation is decided
+(`assertSeatCancellable`: `seat.not_active`, then `seat.cancel_deadline_passed` at or after
+`cancel_deadline`) and `refunded` once the provider confirms the money went back
+(`refund_succeeded`). Of the refund reasons, only `viewer_request`, `date_cancelled` and
+`account_deletion` cancel a seat (`refundCancelsSeat`, D-095): a studio refund for `goodwill`,
+`duplicate` or `dispute` leaves it active. A `credited` seat's card serves `refundReasonCode: null`,
+since the cause is the date's interruption, which the card carries.
+
 **The seat code is issued by the server** (`storefront-web` Q18). It appears identically on the web,
 on mobile and on TV. The mockup computes it by hashing: ported as it stands, it would give **three
 different codes for the same seat** as soon as one surface changed hash function. A served format,
@@ -605,7 +614,10 @@ SeatOrder
 ```
 
 Its seats are created in its `paid` transition, one per unit (D-077); an order never holds capacity
-itself, its hold does.
+itself, its hold does. Its refunds and credits are split over its seats in seat-id order by
+`seatSharesOf`, so the shares add up to the frozen total; what is left to refund counts every refund
+decided, settled or not (`refundableRemaining`). A refund decided while the date is cancelled
+carries `date_cancelled` (`refundReasonOnDate`, D-097).
 
 ### 3.4 `MerchOrder` — root aggregate, and `MerchItem`
 
@@ -669,11 +681,15 @@ internal currency**, therefore a liability, therefore an aggregate.
 ```
 Credit
   id · account_id · channel_id (scope)  · amount_minor · currency
-  origin        interrupted_date | goodwill
+  origin        interrupted_date | goodwill             CREDIT_ORIGINS
   origin_ref    date_id
-  state         issued | partially_used | used | expired
-  expires_at    12 months
+  state         issued | partially_used | used | expired   CREDIT_STATES
+  expires_at    creditExpiresAt(issued_at): CREDIT_VALIDITY_MONTHS calendar months
 ```
+
+`expires_at` counts calendar months in UTC, clamped to the month's last day (`plusMonths`): a credit
+issued on 29 February 2028 expires on 28 February 2029. A credit has no refund delay: the amount is
+on the account at once, so `refundDelayCodeOf(account_credit)` is null.
 
 **The recommended scope, and it is a decision to confirm**: a credit is issued for an `interrupted`
 outcome and is **redeployable on the same channel only**. An accounting reason, explained in
@@ -687,7 +703,7 @@ share out of its own money. The restriction is reversible; ignoring it is not.
 ```
 WaitlistEntry
   id · date_id · account_id      one per date and account
-  state        waiting | notified | converted | left | lapsed
+  state        waiting | notified | converted | left | lapsed | closed
 ```
 
 **Joined only once the date is sold out**, which is when `decideWatch` offers `join_waitlist`.
@@ -701,7 +717,14 @@ served (`converted`); an account registering while a window is open is notified 
 
 **One registration, one chance.** At `priority_until`, a notified entry that did not buy becomes
 `lapsed`: it has left the list, and registers again to be told next time. `left` is an entry its
-account withdrew.
+account withdrew. A new registration reuses the row: `left`, `lapsed` and `converted` move back to
+`waiting`, or to `notified` inside an open window (`waitlistEntryMayMove`, `waitlistStateOnJoin`).
+
+**`closed` is an entry its date ended** (D-096): a cancellation or an interruption closes every
+`waiting` or `notified` entry and the priority pool, and nobody is told beyond the date's card.
+Unlike `lapsed`, a `closed` entry takes no registration again: joining is refused with
+`order.sales_closed` (`assertWaitlistJoinable`), and the studio's counts tell the two apart. A
+postponement leaves the entries waiting.
 
 ---
 
