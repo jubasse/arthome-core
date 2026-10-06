@@ -2062,6 +2062,9 @@ components:
           - order.sales_closed
           - seat.cancel_deadline_passed
           - payment_method.in_use
+          - waitlist.not_sold_out
+          - seat.not_active
+          - refund.amount_exceeds_remaining
           - capacity.tier_must_widen
           - content.empty_in_both_languages
           - hold.quantity_invalid
