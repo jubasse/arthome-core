@@ -823,7 +823,17 @@ publishes `streaming.run.started.v1`, which `catalog` consumes to advance the pu
 period when going offline**: a two-second network break at the venue produces neither an incident
 nor an HLS manifest restarted from zero. The state pushed to the studio is the state **after** the
 glitch has been absorbed, and the studio tells "glitch absorbed" apart from "publisher gone" — two
-fields, not one.
+fields, not one. The grace is `PUBLISHER_GRACE_SECONDS` in core.
+
+**Transitions** (`RUN_TRANSITIONS`, `assertRunTransition`): `idle → rehearsal | on_air`,
+`rehearsal → idle | on_air`, `on_air → interrupted | ended`, `interrupted → on_air | ended`.
+**`ended` is final** (D-115): a new run is a new date. A move off the table is refused
+`run.transition_forbidden` with `from` and `to`; going on air from `idle` or `rehearsal` without a
+passed check, `date.technical_check_required`. `interrupted` is reached through an incident only.
+
+**A run left on air ends by itself** once no publisher has been connected for 15 minutes after the
+scheduled end (D-123, `RUN_AUTO_END_MINUTES`, `runAutoEndsAt`), and `streaming.run.ended.v1` names
+the system as `ended_by`. A check's failures are `TECHNICAL_CHECK_FAILURES` (D-114).
 
 ### 5.2 `StreamKey` — root aggregate
 
@@ -876,7 +886,7 @@ just to make a schema uniform: so the contract carries the truth, not uniformity
 ```
 PlaybackSession
   id · account_id · profile_id · device_id · date_id
-  state        active | released | expired | revoked
+  state        active | released | expired | revoked     ← PLAYBACK_SESSION_STATES
   lease_expires_at    now + 90 s, renewed by the token renewal
   quality_cap · drm_system · protocol
   opened_at · last_renewed_at
@@ -915,6 +925,8 @@ the last position must be taken even if it arrives after a `releasePlayback` —
 any moment.
 This is **not** a money command: it does not go through the strict idempotence regime, otherwise the
 key becomes a cost per minute of playback per viewer.
+**No resume point comes from a live** (D-111): a live gives no control of playback, positions are
+not recorded during one, and a write then is answered with the stored point, unchanged.
 
 ### 5.6 `Incident` — cause and outcome are two vocabularies
 
@@ -929,7 +941,10 @@ The answer to `studio-mobile` Q12. And the **automatic triggering of the standby
 channel rule "if the feed is lost for more than 15 s" — produces **an incident of the same nature as
 a manual trigger**, with `cause = venue_feed_lost` and `triggered_by = 'auto'`. That is the right
 answer to the "the run-desk operator is unreachable" case, and it is a server rule, not an
-application behaviour.
+application behaviour. The channel's default delay is `HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT` in core.
+
+**The automatic hold screen lifts itself when the feed returns; one raised by hand stays until the
+run desk lifts it** with `resolveIncident` (D-124, `holdScreenLiftsOnFeedReturn`).
 
 **The standby-screen message is content, not an i18n key** (`studio-web` Q19): it is written by the
 run desk, it travels **with the language it was written in**, like a synopsis. It is the one assumed

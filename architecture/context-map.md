@@ -694,7 +694,7 @@ axis and only the studio sees the check (D-072).
 
 
 `catalog.date.outcome_declared.v1` is published once, by the channel, from the studio
-(`decideOutcome`, reserved to `artist ∨ production`). Four contexts consume it, and each produces
+(`decideOutcome`, reserved to `artist ∨ production`). Each context that consumes it produces
 **its** consequence, without talking to the others:
 
 | Consequence | Context | Detail |
@@ -703,6 +703,7 @@ axis and only the studio sees the check (D-072).
 | payout withholding | `payouts` | `held` while an outcome is open; `refunded` if cancelled |
 | public copy | `catalog` | the outcome replaces the state on **every card**, not only on the sheet |
 | priority display | `catalog` | the date rises in "My tickets" and in the studio inbox |
+| the right to watch | `streaming` | `watch.date_cancelled`, or `watch.date_interrupted` for an interruption (step 2 below) |
 
 **What a viewer whose screen was open during the transition sees.** That is the chief's exact
 question, and it has a precise answer, in three steps:
