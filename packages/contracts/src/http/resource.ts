@@ -144,12 +144,16 @@ export type ItemResponse<K, S extends z.ZodType, Relations = unknown> = JsonResp
   z.ZodType<EnvelopeOf<K> & { readonly data: z.output<S> & Relations }>
 >;
 
+/** The answer of a batched read: the api's envelope and the records under `data`, keyed by id. */
+export type TableResponse<K, S extends z.ZodType> = JsonResponse<
+  z.ZodType<EnvelopeOf<K> & { readonly data: Readonly<Record<string, z.output<S>>> }>
+>;
+
 /** The answer of a list: the api's envelope, the records under `items` and the page (`transport.md` §5.5). */
 export type PageResponse<K, S extends z.ZodType> = JsonResponse<
   z.ZodType<EnvelopeOf<K> & { readonly items: readonly z.output<S>[]; readonly page: unknown }>
 >;
 
-type Envelope<C extends ResourceContext> = EnvelopeOf<Conv<C>>;
 type Schema<T> = z.ZodType<T>;
 
 type ItemOf<D> = D extends { readonly item: infer S extends z.ZodType } ? S : z.ZodType;
@@ -453,12 +457,19 @@ export type ActionRoute<
   Scope extends 'item' ? `${ItemPath<C>}/${Name}` : `${CollectionPath<C>}/${Name}`,
   readonly [
     ...(Scope extends 'item' ? ItemParameters<C> : C['parents']),
-    ...(ActionMethod<D> extends 'get' ? readonly [] : Added<C, 'writeParameters'>),
+    ...(Keyed<D> extends true ? Added<C, 'writeParameters'> : readonly []),
   ],
   ActionSuccess<C, D>,
-  ActionMethod<D> extends 'get' ? Record<never, never> : { readonly 409: IdempotencyCodes },
+  Keyed<D> extends true ? { readonly 409: IdempotencyCodes } : Record<never, never>,
   BodyPart<D>
 >;
+
+/** Whether an action takes the idempotency key: a write unless it says `idempotent: false`. */
+type Keyed<D> = D extends { readonly idempotent: infer K extends boolean }
+  ? K
+  : ActionMethod<D> extends 'get'
+    ? false
+    : true;
 
 export type SubresourceReplaceRoute<C extends ResourceContext, Name extends string, D> = Member<
   C,
@@ -477,15 +488,7 @@ export type BatchRoute<C extends ResourceContext, D> = Member<
   'post',
   `/${C['name']}/batch`,
   C['parents'],
-  {
-    readonly 200: JsonResponse<
-      Schema<
-        Envelope<C> & {
-          readonly data: Readonly<Record<string, z.output<ItemOf<D>>>>;
-        }
-      >
-    >;
-  },
+  { readonly 200: TableResponse<Conv<C>, ItemOf<D>> },
   Record<never, never>,
   Sent<
     D extends { readonly body: infer B extends z.ZodType }
@@ -1315,7 +1318,7 @@ export function makeResource(
       parameters: [...parents],
       responses: {
         200: jsonResponse(
-          'The records found, by id.',
+          said(docs, 'The records found, by id.'),
           conventions.item(z.record(z.string(), item)),
           undefined,
           shownById(item),

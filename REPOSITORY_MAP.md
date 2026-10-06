@@ -80,7 +80,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 202 exported names.
+Declarations: `dist/http/index.d.ts` — 203 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
@@ -222,6 +222,7 @@ Declarations: `dist/http/index.d.ts` — 202 exported names.
 - `SortKey` (type) — `type SortKey = string | { readonly key: string; readonly right: string; };` — A sort key, and the right a caller needs to order by it when the field is restricted.
 - `Strict` (type) — A declared shape without the index signatures its loose objects carry, so a handler returning an undeclared field is a compile error.
 - `SubresourceReplaceRoute` (type)
+- `TableResponse` (type) — `type TableResponse<K, S extends z.ZodType> = JsonResponse<z.ZodType<EnvelopeOf<K> & { readonly data: Readonly<Record<string, z.output<S>>>; }>>;` — The answer of a batched read: the api's envelope and the records under 'data', keyed by id.
 - `TaggedBrand` (interface) — Type-only: marks a union as tagged on 'Tag', so the client's view of it can add the unknown variant.
 - `TaggedSchema` (type) — `type TaggedSchema<Tag extends string, V extends Variants> = z.ZodType<Union<Tag, V>>;` — What 'tagged' returns: the explicit type of an exported union, under 'isolatedDeclarations'.
 - `TolerantParse` (type)

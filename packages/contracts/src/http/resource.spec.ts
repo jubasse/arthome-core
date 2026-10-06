@@ -179,6 +179,15 @@ describe('resource members', () => {
 
     expect(names.filter((name) => name === key.name)).toHaveLength(1);
   });
+
+  it('takes no idempotency key, in its type as at run time, when it says idempotent: false', () => {
+    const route = searches.action('ping', { idempotent: false });
+
+    expect(route.parameters).toEqual([savedSearchId]);
+    expect(route.errorCodes).not.toHaveProperty('409');
+    expectTypeOf(route.parameters).toEqualTypeOf<readonly [typeof savedSearchId]>();
+    expectTypeOf(route.errorCodes).not.toHaveProperty('409');
+  });
 });
 
 describe('owner: caller', () => {
