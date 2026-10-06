@@ -71,6 +71,17 @@ export const WATCH_FALLBACK_FOR: Readonly<
   [WatchDenialReason.NO_REPLAY]: [WatchFallbackAction.SEE_REPLAY_POLICY],
   [WatchDenialReason.REPLAY_NOT_ON_SALE]: [WatchFallbackAction.SEE_REPLAY_POLICY],
   [WatchDenialReason.NOT_PUBLISHED]: [WatchFallbackAction.NONE],
+  [WatchDenialReason.SEAT_EXPIRED]: [
+    WatchFallbackAction.BUY_SEAT,
+    WatchFallbackAction.JOIN_WAITLIST,
+    WatchFallbackAction.NONE,
+    WatchFallbackAction.SEE_OTHER_DATES,
+  ],
+  [WatchDenialReason.DATE_INTERRUPTED]: [WatchFallbackAction.SEE_OTHER_DATES],
+  [WatchDenialReason.LIVE_ENDED]: [
+    WatchFallbackAction.SEE_REPLAY_POLICY,
+    WatchFallbackAction.SEE_OTHER_DATES,
+  ],
 };
 
 /** The FIVE inputs, named. None is guessed, none is global. */

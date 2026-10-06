@@ -1218,6 +1218,9 @@ paths:
                 - $ref: '#/components/schemas/WatchConcurrentLimitReachedError'
                 - $ref: '#/components/schemas/WatchDateCancelledError'
                 - $ref: '#/components/schemas/WatchNotPublishedError'
+                - $ref: '#/components/schemas/WatchSeatExpiredError'
+                - $ref: '#/components/schemas/WatchDateInterruptedError'
+                - $ref: '#/components/schemas/WatchLiveEndedError'
               examples:
                 api.forbidden:
                   $ref: '#/components/examples/ApiForbiddenError'
@@ -1241,6 +1244,12 @@ paths:
                   $ref: '#/components/examples/WatchDateCancelledError'
                 watch.not_published:
                   $ref: '#/components/examples/WatchNotPublishedError'
+                watch.seat_expired:
+                  $ref: '#/components/examples/WatchSeatExpiredError'
+                watch.date_interrupted:
+                  $ref: '#/components/examples/WatchDateInterruptedError'
+                watch.live_ended:
+                  $ref: '#/components/examples/WatchLiveEndedError'
         '404':
           $ref: '#/components/responses/NotFound'
         '410':
@@ -1275,8 +1284,8 @@ paths:
         **Four distinct refusal codes**, because the surface displays four different messages. A
         generic code would produce a false one three times out of four.
 
-        **Refused (`403`).** `SEAT_EXPIRED` · `watch.concurrent_limit_reached` · `identity.signed_out_elsewhere` ·
-        `watch.preview_exhausted` · `DATE_INTERRUPTED`. `identity.signed_out_elsewhere` is what the television
+        **Refused (`403`).** `watch.seat_expired` · `watch.concurrent_limit_reached` · `identity.signed_out_elsewhere` ·
+        `watch.preview_exhausted` · `watch.date_interrupted`. `identity.signed_out_elsewhere` is what the television
         signed out from the web sees — **not a network error**. **Real window: up to 120 s** — see
         `revokeDevice`.
       x-arthome-maturity: provisional
@@ -2085,6 +2094,7 @@ components:
           - publication.promise_unacknowledged
           - publication.transition_forbidden
           - publication.transition_irreversible
+          - run.transition_forbidden
           - search.unknown_flag
           - seat_code.malformed
           - state.conflict
@@ -2099,6 +2109,9 @@ components:
           - watch.concurrent_limit_reached
           - watch.date_cancelled
           - watch.not_published
+          - watch.seat_expired
+          - watch.date_interrupted
+          - watch.live_ended
           x-arthome-vocabulary-source: ERROR_CODES
         params:
           type: object
@@ -3223,6 +3236,9 @@ components:
                   - watch.concurrent_limit_reached
                   - watch.date_cancelled
                   - watch.not_published
+                  - watch.seat_expired
+                  - watch.date_interrupted
+                  - watch.live_ended
                   x-arthome-vocabulary-source: WATCH_DENIAL_REASONS
                   examples:
                   - watch.subscription_required
@@ -4126,6 +4142,117 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    WatchSeatExpiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.seat_expired
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchDateInterruptedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.date_interrupted
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchLiveEndedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.live_ended
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     WatchReplayExpiredError:
       type: object
       properties:
@@ -4286,6 +4413,22 @@ components:
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
+    WatchDateInterruptedError:
+      value:
+        error:
+          code: watch.date_interrupted
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchLiveEndedError:
+      value:
+        error:
+          code: watch.live_ended
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     WatchNoReplayError:
       value:
         error:
@@ -4346,6 +4489,14 @@ components:
       value:
         error:
           code: watch.room_not_open
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchSeatExpiredError:
+      value:
+        error:
+          code: watch.seat_expired
           nature: refused
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736

@@ -81,8 +81,8 @@ minutes, visible on a static theatre shot. So:
 > **Never a token in a URL path.** It lives in a signed request or in a signed cookie, and the
 > manifest path, like the segment paths, stays stable.
 
-**A renewal refusal carries a code, and four distinct codes are necessary** — the TV shows four
-different messages:
+**A renewal refusal carries a code, and each screen needs its own** — the TV shows a different
+message for each:
 
 | Code | What the surface says |
 |---|---|
@@ -90,8 +90,11 @@ different messages:
 | `watch.concurrent_limit_reached` | the concurrent-screen limit has been reached |
 | `identity.signed_out_elsewhere` | you were signed out from another device |
 | `api.service_unavailable` | our servers are not responding |
+| `watch.date_interrupted` | the performance was interrupted |
+| `watch.live_ended` | the live is over |
 
-A generic code would produce a wrong one three times out of four.
+A generic code would produce a wrong one most of the time. A renewal re-runs `decideWatch`, so any
+other `watch.*` refusal can come too (`watch.date_cancelled` on air, `watch.preview_exhausted`).
 
 **What else the token carries, and why it belongs here**: the protocol and the DRM system **chosen
 by the server for this device**, and the **quality ceiling** its hardware security level allows.
@@ -248,7 +251,7 @@ error we have just corrected, in the other direction.
 **Immediate revocation, two paths:**
 - `identity.device.revoked.v1` consumed by `streaming` → that device's leases move to `revoked`.
   **Real exposure window: up to 120 s** — see the box above;
-- an `interrupted` outcome declared → the date's leases are revoked with `date.interrupted`, **at
+- an `interrupted` outcome declared → the date's leases are revoked with `watch.date_interrupted`, **at
   the end of the renewal in progress**, not by an abrupt cut: a feed cut with no explanation is
   exactly what principle no. 6 forbids.
 

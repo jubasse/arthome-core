@@ -147,6 +147,7 @@ export interface ErrorStatusMap {
   readonly [DomainErrorCode.PUBLICATION_PROMISE_UNACKNOWLEDGED]: 409;
   readonly [DomainErrorCode.PUBLICATION_TRANSITION_FORBIDDEN]: 409;
   readonly [DomainErrorCode.PUBLICATION_TRANSITION_IRREVERSIBLE]: 409;
+  readonly [DomainErrorCode.RUN_TRANSITION_FORBIDDEN]: 409;
   readonly [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: 400;
   readonly [DomainErrorCode.SEAT_CODE_MALFORMED]: 400;
   readonly [DomainErrorCode.STATE_CONFLICT]: 409;
@@ -162,6 +163,9 @@ export interface ErrorStatusMap {
   readonly [WatchDenialReason.CONCURRENT_LIMIT_REACHED]: 403;
   readonly [WatchDenialReason.DATE_CANCELLED]: 403;
   readonly [WatchDenialReason.NOT_PUBLISHED]: 403;
+  readonly [WatchDenialReason.SEAT_EXPIRED]: 403;
+  readonly [WatchDenialReason.DATE_INTERRUPTED]: 403;
+  readonly [WatchDenialReason.LIVE_ENDED]: 403;
 }
 
 export interface ErrorDefinition<C extends ErrorCode = ErrorCode> {
@@ -445,6 +449,10 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
       promise: PublicationPromise.PRICES_ENGAGED,
     },
   },
+  [DomainErrorCode.RUN_TRANSITION_FORBIDDEN]: {
+    status: 409,
+    example: { from: RunState.IDLE, to: RunState.ENDED },
+  },
   [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: { status: 400, example: { flag: 'subtitled' } },
   [DomainErrorCode.SEAT_CODE_MALFORMED]: { status: 400, example: { body: 'A12' } },
   [DomainErrorCode.STATE_CONFLICT]: {
@@ -478,6 +486,9 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
   },
   [WatchDenialReason.DATE_CANCELLED]: { status: 403, example: {} },
   [WatchDenialReason.NOT_PUBLISHED]: { status: 403, example: {} },
+  [WatchDenialReason.SEAT_EXPIRED]: { status: 403, example: {} },
+  [WatchDenialReason.DATE_INTERRUPTED]: { status: 403, example: {} },
+  [WatchDenialReason.LIVE_ENDED]: { status: 403, example: {} },
 };
 
 export function statusOf<C extends ErrorCode>(code: C): ErrorStatusMap[C] {

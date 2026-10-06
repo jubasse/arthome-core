@@ -713,7 +713,7 @@ question, and it has a precise answer, in three steps:
    written in. The veil states the outcome and what it means for the seat.
 2. **The playback token is not revoked in the same act.** For `postponed` and `cancelled`, the
    broadcast is over anyway or has not started. For `interrupted`, playback **stops at the next
-   renewal refusal** (≤ 45 s) with the `date.interrupted` code, not by an abrupt cut: a feed cut with
+   renewal refusal** (≤ 45 s) with the `watch.date_interrupted` code, not by an abrupt cut: a feed cut with
    no explanation is exactly what principle no. 6 forbids. The edge, for its part, may keep serving
    until the token in hand expires (120 s) — it is the client that stops, not the CDN.
 3. **The financial consequence comes afterwards, and it is visible elsewhere.** The viewer does not

@@ -6385,7 +6385,28 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -6526,6 +6547,8 @@ paths:
                 - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
                 - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
                 - $ref: '#/components/schemas/DateTechnicalCheckRequiredError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+                - $ref: '#/components/schemas/PublicationTransitionForbiddenError'
               examples:
                 state.conflict:
                   $ref: '#/components/examples/StateConflictError'
@@ -6535,6 +6558,10 @@ paths:
                   $ref: '#/components/examples/ApiIdempotencyInFlightError'
                 date.technical_check_required:
                   $ref: '#/components/examples/DateTechnicalCheckRequiredError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
+                publication.transition_forbidden:
+                  $ref: '#/components/examples/PublicationTransitionForbiddenError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -6656,7 +6683,28 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -6778,7 +6826,28 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -12040,6 +12109,7 @@ components:
           - publication.promise_unacknowledged
           - publication.transition_forbidden
           - publication.transition_irreversible
+          - run.transition_forbidden
           - search.unknown_flag
           - seat_code.malformed
           - state.conflict
@@ -12054,6 +12124,9 @@ components:
           - watch.concurrent_limit_reached
           - watch.date_cancelled
           - watch.not_published
+          - watch.seat_expired
+          - watch.date_interrupted
+          - watch.live_ended
           x-arthome-vocabulary-source: ERROR_CODES
           examples:
           - publication.checklist_incomplete
@@ -16954,6 +17027,60 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    RunTransitionForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: run.transition_forbidden
+            params:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              required:
+              - from
+              - to
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     DateTechnicalCheckRequiredError:
       type: object
       properties:
@@ -16966,6 +17093,60 @@ components:
             params:
               type: object
               properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    PublicationTransitionForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: publication.transition_forbidden
+            params:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              required:
+              - from
+              - to
               additionalProperties: {}
             traceId:
               type: string
@@ -17872,6 +18053,16 @@ components:
             promise: prices_engaged
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
+    PublicationTransitionForbiddenError:
+      value:
+        error:
+          code: publication.transition_forbidden
+          nature: refused
+          params:
+            from: draft
+            to: live
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     PublicationTransitionIrreversibleError:
       value:
         error:
@@ -17891,6 +18082,16 @@ components:
           params:
             remainingMinor: 1200
             currencyCode: EUR
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    RunTransitionForbiddenError:
+      value:
+        error:
+          code: run.transition_forbidden
+          nature: refused
+          params:
+            from: idle
+            to: ended
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     SeatNotActiveError:

@@ -44,18 +44,6 @@
       "reason": "Traefik's own 5xx, served by a static error service. No Traefik configuration exists in any repository yet, so nothing can emit it."
     },
     {
-      "code": "date.interrupted",
-      "kind": "open",
-      "named_in": ["architecture/context-map.md", "architecture/adr-stream-entitlement.md"],
-      "reason": "OPEN PRODUCT DECISION, not a promise. adr-stream-entitlement.md and context-map.md both name `DATE_INTERRUPTED` as a refusal, and the vocabulary has never declared it. `date.outcome_decision_forbidden` and `watch.date_cancelled` exist; whether an interruption is a third state, a cancellation, or an outcome is undecided, and the entitlement consequence differs in each case. Nobody has promised this code."
-    },
-    {
-      "code": "watch.seat_expired",
-      "kind": "open",
-      "named_in": ["architecture/adr-stream-entitlement.md"],
-      "reason": "OPEN PRODUCT DECISION, not a promise. adr-stream-entitlement.md names `SEAT_EXPIRED`. `SeatHold` has `isHoldExpired` and an expiry instant in core, but no refusal code: an expired hold is currently a state a surface reads, not a refusal it is told. Whether it becomes one is undecided, and the family it would join (watch. or order.) is part of that decision — this entry's own spelling is therefore provisional."
-    },
-    {
       "code": "watch.plan_opening_multi_screen",
       "kind": "open",
       "named_in": ["architecture/adr-stream-entitlement.md", "architecture/skeptic.md"],

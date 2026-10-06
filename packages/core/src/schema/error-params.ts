@@ -219,6 +219,7 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
     to: text(),
     promise: text(),
   }),
+  [DomainErrorCode.RUN_TRANSITION_FORBIDDEN]: z.looseObject({ from: text(), to: text() }),
   [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: z.looseObject({ flag: text() }),
   [DomainErrorCode.SEAT_CODE_MALFORMED]: z.looseObject({ body: text() }),
   [DomainErrorCode.STATE_CONFLICT]: z.looseObject({
@@ -242,6 +243,9 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
   }),
   [WatchDenialReason.DATE_CANCELLED]: none(),
   [WatchDenialReason.NOT_PUBLISHED]: none(),
+  [WatchDenialReason.SEAT_EXPIRED]: none(),
+  [WatchDenialReason.DATE_INTERRUPTED]: none(),
+  [WatchDenialReason.LIVE_ENDED]: none(),
 };
 
 export function errorParamsSchemaOf(code: ErrorCode): z.ZodType {
