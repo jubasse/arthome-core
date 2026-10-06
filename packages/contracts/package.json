@@ -1,6 +1,6 @@
 {
   "name": "@arthome/contracts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Arthome boundary contracts: the DTO schemas the BFFs serve and accept, derived from @arthome/core and never redeclared.",
   "license": "UNLICENSED",
   "private": false,
@@ -207,7 +207,7 @@
     "differently, nothing red."
   ],
   "peerDependencies": {
-    "@arthome/core": "0.1.0",
+    "@arthome/core": "0.2.0",
     "zod": "4.6.5"
   },
   "devDependencies": {

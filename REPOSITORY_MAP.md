@@ -5,8 +5,8 @@
 
 ## Generated against
 
-- `@arthome/contracts` 0.1.0 — read from workspace packages/contracts
-- `@arthome/core` 0.1.0 — read from workspace packages/core
+- `@arthome/contracts` 0.2.0 — read from workspace packages/contracts
+- `@arthome/core` 0.2.0 — read from workspace packages/core
 
 This map is true for exactly these versions.
 
