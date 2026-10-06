@@ -10,3 +10,4 @@ export * from './catalog.js';
 export * from './moderation.js';
 export * from './commerce.js';
 export * from './people.js';
+export * from './streaming.js';

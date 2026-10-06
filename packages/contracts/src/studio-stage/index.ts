@@ -20,7 +20,7 @@ import {
   DisplayState,
   INCIDENT_CAUSES,
   INCIDENT_KINDS,
-  IncidentCause,
+  INCIDENT_TRIGGERS,
   MEMBER_ROLES,
   PUBLICATION_CHECKLIST_ITEMS,
   PUBLICATION_PROMISES,
@@ -256,7 +256,7 @@ export const StudioIncidentSchema: z.ZodNullable<
     cause: vocabularyOut(INCIDENT_CAUSES).describe(
       'The **cause**, a distinct vocabulary. `compatibility_worker_failed` exists because a\ntranscoding *worker* must never die silently — otherwise the control room sees a player that\nnever starts, with no cause.\n',
     ),
-    trigger: localVocabulary([IncidentCause.MANUAL, 'auto']).describe(
+    trigger: vocabularyOut(INCIDENT_TRIGGERS).describe(
       'The **automatic** holding screen produces an incident **of the same kind** as a manual\ntrigger — that is the right answer to the "the stage manager is unreachable" case. The log\nmust nonetheless tell the two apart.\n',
     ),
     message: StudioLocalizedTextSchema.optional().describe(

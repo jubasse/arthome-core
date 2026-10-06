@@ -502,7 +502,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 499 exported names.
+Declarations: `dist/index.d.ts` — 507 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -603,6 +603,7 @@ Declarations: `dist/index.d.ts` — 499 exported names.
 - `IDENTITY_ERROR_CODES` (const) — Sign-in, sign-up and session refusals.
 - `INCIDENT_CAUSES` (const) — `INCIDENT_CAUSES: readonly ["venue_feed_lost", "run_desk_disconnected", "bitrate_collapsed", "compatibility_worker_failed", "provider_error", "manual"]` — The cause, a vocabulary distinct from the outcome.
 - `INCIDENT_KINDS` (const) — `INCIDENT_KINDS: readonly ["hold_screen", "postponed", "cancelled", "interrupted"]` — The four incident kinds a viewer can see.
+- `INCIDENT_TRIGGERS` (const) — `INCIDENT_TRIGGERS: readonly ["manual", "auto"]` — Who raised an incident: the run desk by hand, or the channel's automatic hold screen.
 - `INTENT_STATUSES` (const) — `INTENT_STATUSES: readonly ["succeeded", "requires_action", "processing", "declined"]`
 - `INTERNAL_TOKEN_ALGORITHM` (const) — `INTERNAL_TOKEN_ALGORITHM = "ES256"` — 'adr-auth.md' §8.1: ES256 for every issuer, never EdDSA.
 - `INTERNAL_TOKEN_ISSUERS` (const) — `INTERNAL_TOKEN_ISSUERS: readonly ["arthome.bff-storefront", "arthome.bff-studio"]` — The two BFFs, the only callers of a service.
@@ -610,6 +611,7 @@ Declarations: `dist/index.d.ts` — 499 exported names.
 - `IdentityErrorCode` (type+const)
 - `IncidentCause` (type+const)
 - `IncidentKind` (type+const)
+- `IncidentTrigger` (type+const) — `type IncidentTrigger = (typeof INCIDENT_TRIGGERS)[number]; IncidentTrigger: { readonly MANUAL: "manual"; readonly AUTO: "auto"; }`
 - `Instant` (type) — `type Instant = string;` — An instant, in ISO 8601 UTC.
 - `IntentStatus` (type+const)
 - `InternalTokenIssuer` (type+const)
@@ -675,6 +677,7 @@ Declarations: `dist/index.d.ts` — 499 exported names.
 - `PAYOUT_STATES` (const) — `PAYOUT_STATES: readonly ["scheduled", "held", "paid", "refunded", "suspended"]` — Where a payout stands: 'held' while an outcome is open, 'refunded' if the date is cancelled, 'suspended' while a bank-details change waits …
 - `PLAN_OPENINGS` (const) — `PLAN_OPENINGS: readonly ["browse", "trailers", "free_dates", "replays", "no_ads", "one_live_month", "all_lives", "multi_screen", "archive"]` — The nine openings 'catalogue.json' carries.
 - `PLAN_TIERS` (const) — `PLAN_TIERS: readonly ["free", "pass", "premium"]` — The plan a viewer holds; 'catalogue.json' has authority.
+- `PLAYBACK_SESSION_STATES` (const) — `PLAYBACK_SESSION_STATES: readonly ["active", "released", "expired", "revoked"]` — A playback lease's life ('data-model.md' §5.4).
 - `PREVIEW_BUDGET_SECONDS` (const) — `PREVIEW_BUDGET_SECONDS = 300` — The free-preview budget, counted down by the server, per account.
 - `PRICE_TIERS` (const) — `PRICE_TIERS: readonly ["full", "reduced", "support"]` — The price tier on a ticket, settled by 'shared': 'enums.priceTier'.
 - `PROMOTION_REASONS` (const) — `PROMOTION_REASONS: readonly ["pre_sale", "preview_night", "discovery_rate", "final_date", "late_rate"]` — Five reasons observed in the design, each with a distinct rule.
@@ -697,6 +700,7 @@ Declarations: `dist/index.d.ts` — 499 exported names.
 - `PersonId` (type) — `type PersonId = Brand<'PersonId'>;`
 - `PlanOpening` (type+const)
 - `PlanTier` (type+const) — `type PlanTier = (typeof PLAN_TIERS)[number]; PlanTier: { readonly FREE: "free"; readonly PASS: "pass"; readonly PREMIUM: "premium"; }`
+- `PlaybackSessionState` (type+const)
 - `PriceTier` (type+const) — `type PriceTier = (typeof PRICE_TIERS)[number]; PriceTier: { readonly FULL: "full"; readonly REDUCED: "reduced"; readonly SUPPORT: "support"; }`
 - `ProfileId` (type) — `type ProfileId = Brand<'ProfileId'>;`
 - `Promotion` (interface)
@@ -714,6 +718,7 @@ Declarations: `dist/index.d.ts` — 499 exported names.
 - `REFUND_METHODS` (const) — `REFUND_METHODS: readonly ["original_payment_method", "account_credit"]`
 - `REFUND_REASONS` (const) — `REFUND_REASONS: readonly ["viewer_request", "date_cancelled", "account_deletion", "goodwill", "duplicate", "dispute", "hold_expired_capacity_lost"]` — Why money went back to a viewer: domain facts, not refusals (D-037, D-039), in the order of the proto's 'RefundReason'.
 - `REMINDER_LEAD_MINUTES` (const) — `REMINDER_LEAD_MINUTES = 30` — Reminder before a live show for which I hold a seat.
+- `REPLAY_ASSET_STATES` (const) — `REPLAY_ASSET_STATES: readonly ["recording", "processing", "ready", "deleting", "deleted", "failed"]` — A recorded replay file's life, from the live's recording to its deletion.
 - `REPLAY_EXPIRY_WARNING_HOURS` (const) — `REPLAY_EXPIRY_WARNING_HOURS = 6` — End of a replay's availability.
 - `REPLAY_POLICIES` (const) — `REPLAY_POLICIES: readonly ["included", "subscription", "unit", "none"]` — The promise made before purchase — what justifies the price difference.
 - `RIGHTS_SCOPES` (const) — `RIGHTS_SCOPES: readonly ["worldwide", "restricted"]`
@@ -725,6 +730,7 @@ Declarations: `dist/index.d.ts` — 499 exported names.
 - `RefundReason` (type+const)
 - `RefundRequest` (interface)
 - `Rendition` (interface) — One image at a size that is actually displayed.
+- `ReplayAssetState` (type+const)
 - `ReplayPolicy` (type+const)
 - `Result` (type) — `type Result<T> = Ok<T> | Err;`
 - `RightsScope` (type+const) — `type RightsScope = (typeof RIGHTS_SCOPES)[number]; RightsScope: { readonly WORLDWIDE: "worldwide"; readonly RESTRICTED: "restricted"; }`
@@ -770,6 +776,7 @@ Declarations: `dist/index.d.ts` — 499 exported names.
 - `TAX_EVIDENCE_KINDS` (const) — `TAX_EVIDENCE_KINDS: readonly ["billing_address", "ip_address", "bank_country", "card_country", "sim_country", "declared_by_buyer"]` — What may evidence a buyer's location.
 - `TAX_JURISDICTION_LEVELS` (const) — `TAX_JURISDICTION_LEVELS: readonly ["country", "state", "county", "city"]` — Roughly 9,000 US jurisdictions: a country allows no calculation at all.
 - `TAX_SUPPLY_KINDS` (const) — `TAX_SUPPLY_KINDS: readonly ["live_stream_access", "replay_access", "subscription", "merchandise"]` — What is being supplied, for tax.
+- `TECHNICAL_CHECK_FAILURES` (const) — `TECHNICAL_CHECK_FAILURES: readonly ["no_feed", "codec_not_carried", "bitrate_below_floor"]` — Why a technical check failed, in the order a run desk reads them (D-114).
 - `TECHNICAL_PROVISION_THRESHOLD` (const) — `TECHNICAL_PROVISION_THRESHOLD = 10000` — The TECHNICAL PROVISIONING threshold and its parameters — CONTRACT DATA, not constants copied onto five surfaces.
 - `TOKEN_CLOCK_TOLERANCE_SECONDS` (const) — `TOKEN_CLOCK_TOLERANCE_SECONDS = 30` — 'adr-auth.md' §5.2 and §9.5: every verifier tolerates this much clock skew, both ways.
 - `Tag` (interface)
@@ -778,6 +785,7 @@ Declarations: `dist/index.d.ts` — 499 exported names.
 - `TaxSupplyKind` (type+const)
 - `Taxonomy` (interface) — The complete artefact, as served and as embedded at build time.
 - `TaxonomyRef` (interface) — A show's taxonomic reference.
+- `TechnicalCheckFailure` (type+const)
 - `TermMatch` (interface) — What a free-text term designated in the taxonomy.
 - `TerritoryRights` (interface)
 - `TierPrice` (interface)

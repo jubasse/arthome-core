@@ -192,6 +192,11 @@ paths:
                           type: array
                           items:
                             type: string
+                            x-arthome-vocabulary:
+                            - no_feed
+                            - codec_not_carried
+                            - bitrate_below_floor
+                            x-arthome-vocabulary-source: TECHNICAL_CHECK_FAILURES
                         sample:
                           type: object
                           properties:
@@ -2420,8 +2425,7 @@ components:
             x-arthome-vocabulary:
             - manual
             - auto
-            x-arthome-vocabulary-source: none
-            x-arthome-vocabulary-reason: A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.
+            x-arthome-vocabulary-source: INCIDENT_TRIGGERS
             description: |
               The **automatic** holding screen produces an incident **of the same kind** as a manual
               trigger — that is the right answer to the "the stage manager is unreachable" case. The log

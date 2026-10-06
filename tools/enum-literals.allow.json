@@ -110,6 +110,11 @@
       "file": "packages/contracts/src/http/schema-kinds.ts",
       "value": "custom",
       "reason": "A zod schema kind (`def.type`), the vocabulary of the library the walkers read, not a schema issue rule. The two share the word without being the same vocabulary."
+    },
+    {
+      "file": "packages/contracts/src/",
+      "value": "ready",
+      "reason": "An export job's state (studio-money's queued, running, ready, failed, expired) and the examples that show one. REPLAY_ASSET_STATES holds the word for a recorded replay file, and it is domain-only (domain-only-vocabularies.json): no contract carries a replay asset's state, so a `ready` in the contracts is never one of its members. The day one reaches a wire, check-vocabulary retracts that entry and this one must be narrowed."
     }
   ]
 }
