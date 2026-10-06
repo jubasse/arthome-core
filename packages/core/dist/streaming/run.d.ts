@@ -15,8 +15,10 @@ export interface TechnicalCheckProbe {
     readonly codecCarried: boolean;
     readonly bitrateKbps: number;
 }
+/** The floor a check holds a feed to: the channel's `recommendedBitrateKbps`, or the default until it serves one. */
+export declare function technicalCheckFloorKbps(recommendedBitrateKbps: number | null | undefined): number;
 /** The check's failures in vocabulary order, empty for a pass. Without a feed nothing else was measured, so `no_feed` comes alone. */
-export declare function technicalCheckFailuresOf(probe: TechnicalCheckProbe, floorKbps?: number): readonly TechnicalCheckFailure[];
+export declare function technicalCheckFailuresOf(probe: TechnicalCheckProbe, floorKbps: number): readonly TechnicalCheckFailure[];
 /** The channel's default delay before a lost feed raises the hold screen by itself (`realtime.md` §4, `data-model.md` §5.6). */
 export declare const HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT = 15;
 /**

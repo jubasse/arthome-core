@@ -99,7 +99,7 @@ export const datesDocs: ModuleDocs = {
   },
   runTechnicalCheck: {
     description:
-      "Its success **unlocks publication**: `technical_check_passed` is one of the seven checklist\nitems, and it comes from here. `catalog` **projects** it, it does not ask for it.\n`idle → on_air` is refused as long as the check has never passed.\n\n**What it proves** (D-114): a feed received on the date's key, in a codec the chain carries,\nabove a bitrate floor, the channel's recommended bitrate or, until a channel serves one,\n`TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT`. `failures` is the closed vocabulary\n`TECHNICAL_CHECK_FAILURES`, in its order: `no_feed` comes alone, since nothing else was measured.\n",
+      "Its success **unlocks publication**: `technical_check_passed` is one of the seven checklist\nitems, and it comes from here. `catalog` **projects** it, it does not ask for it.\n`idle → on_air` is refused as long as the check has never passed.\n\n**What it proves** (D-114): a feed received on the date's key, in a codec the chain carries,\nabove a bitrate floor, the channel's recommended bitrate or, until a channel serves one,\n`TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT` (`technicalCheckFloorKbps`). `failures` is the closed vocabulary\n`TECHNICAL_CHECK_FAILURES`, in its order: `no_feed` comes alone, since nothing else was measured.\n",
     upstream: [Service.STREAMING],
   },
   rehearseRun: {

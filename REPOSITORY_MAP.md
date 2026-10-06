@@ -510,7 +510,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 533 exported names.
+Declarations: `dist/index.d.ts` — 534 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -984,7 +984,7 @@ Declarations: `dist/index.d.ts` — 533 exported names.
 - `plusSeconds` (function) — `function plusSeconds(instant: Instant, seconds: number): Instant;`
 - `previewRenewAfterSeconds` (function) — `function previewRenewAfterSeconds(previewSecondsLeft: number): number;` — A preview ticket's 'renewAfterSec': never past its token's expiry, so a long veil renews rather than stalls.
 - `previewSecondsLeft` (function) — `function previewSecondsLeft(secondsUsed: number): number;`
-- `previewSecondsSpent` (function) — `function previewSecondsSpent(watched: Window, onAirIntervals: readonly Window[]): number;` — The whole seconds of 'watched' that fall inside the run's 'on_air' intervals: what the preview budget is charged.
+- `previewSecondsSpent` (function) — `function previewSecondsSpent(watched: Window, onAirIntervals: readonly Window[]): number;` — The whole seconds of 'watched' that fall inside the run's 'on_air' intervals, which are disjoint (overlapping ones charge twice): what the …
 - `previewTokenExpiresAt` (function) — `function previewTokenExpiresAt(now: Instant, previewSecondsLeft: number): Instant;` — A preview token's expiry: never past the budget left, under the incident veil too, so a veil lifting mid-token opens no on-air second the b…
 - `priceOfTier` (function) — `function priceOfTier(tiers: readonly TierPrice[], tier: PriceTier): Money | null;`
 - `priorityUntilOf` (function) — `function priorityUntilOf(openedAt: Instant): Instant;`
@@ -1035,7 +1035,8 @@ Declarations: `dist/index.d.ts` — 533 exported names.
 - `sum` (function) — `function sum(values: readonly Money[], currencyCode: string): Money;`
 - `survivorsOf` (function) — `function survivorsOf(confusableClass: readonly string[]): readonly string[];` — How many members of a class survive in the alphabet.
 - `taxIncludedIn` (function) — `function taxIncludedIn(grossTtc: Money, rate: BasisPoints): Money;` — Extracts the tax portion from a tax-inclusive amount.
-- `technicalCheckFailuresOf` (function) — `function technicalCheckFailuresOf(probe: TechnicalCheckProbe, floorKbps?: number): readonly TechnicalCheckFailure[];` — The check's failures in vocabulary order, empty for a pass.
+- `technicalCheckFailuresOf` (function) — `function technicalCheckFailuresOf(probe: TechnicalCheckProbe, floorKbps: number): readonly TechnicalCheckFailure[];` — The check's failures in vocabulary order, empty for a pass.
+- `technicalCheckFloorKbps` (function) — `function technicalCheckFloorKbps(recommendedBitrateKbps: number | null | undefined): number;` — The floor a check holds a feed to: the channel's 'recommendedBitrateKbps', or the default until it serves one.
 - `toEpochMs` (function) — `function toEpochMs(instant: Instant): number;`
 - `tvPairingIntentExpiry` (function) — `function tvPairingIntentExpiry(openedAt: Instant): Instant;` — The intent duration for a TV pairing — five minutes, not fifteen.
 - `vatLineFor` (function) — Extracts a VAT line from a tax-inclusive amount.

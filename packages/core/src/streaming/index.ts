@@ -24,4 +24,5 @@ export {
   holdScreenLiftsOnFeedReturn,
   runAutoEndsAt,
   technicalCheckFailuresOf,
+  technicalCheckFloorKbps,
 } from './run.js';

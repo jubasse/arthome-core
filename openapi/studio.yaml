@@ -6181,7 +6181,7 @@ paths:
 
         **What it proves** (D-114): a feed received on the date's key, in a codec the chain carries,
         above a bitrate floor, the channel's recommended bitrate or, until a channel serves one,
-        `TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT`. `failures` is the closed vocabulary
+        `TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT` (`technicalCheckFloorKbps`). `failures` is the closed vocabulary
         `TECHNICAL_CHECK_FAILURES`, in its order: `no_feed` comes alone, since nothing else was measured.
       x-arthome-maturity: provisional
       x-arthome-upstream:

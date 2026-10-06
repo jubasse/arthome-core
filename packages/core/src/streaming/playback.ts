@@ -35,7 +35,7 @@ export function isPreviewBudgetSpending(runState: RunState): boolean {
   return PREVIEW_BUDGET_SPENT_WHILE[runState];
 }
 
-/** The whole seconds of `watched` that fall inside the run's `on_air` intervals: what the preview budget is charged. */
+/** The whole seconds of `watched` that fall inside the run's `on_air` intervals, which are disjoint (overlapping ones charge twice): what the preview budget is charged. */
 export function previewSecondsSpent(watched: Window, onAirIntervals: readonly Window[]): number {
   const watchedStart = toEpochMs(watched.start);
   const watchedEnd = toEpochMs(watched.end);

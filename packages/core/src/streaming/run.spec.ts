@@ -10,6 +10,7 @@ import {
   holdScreenLiftsOnFeedReturn,
   runAutoEndsAt,
   technicalCheckFailuresOf,
+  technicalCheckFloorKbps,
 } from './index.js';
 import { DomainError } from '../kernel/errors.js';
 import { plusMinutes } from '../time/instant.js';
@@ -80,21 +81,38 @@ describe('the technical check (D-114)', () => {
   const floor = TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT;
 
   it("the check's failures, no_feed alone without a feed, the floor defaulting to TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT", () => {
+    expect(technicalCheckFloorKbps(null)).toBe(floor);
+    expect(technicalCheckFloorKbps(undefined)).toBe(floor);
+    expect(technicalCheckFloorKbps(4000)).toBe(4000);
     expect(
-      technicalCheckFailuresOf({ feedReceived: true, codecCarried: true, bitrateKbps: floor }),
+      technicalCheckFailuresOf(
+        { feedReceived: true, codecCarried: true, bitrateKbps: floor },
+        technicalCheckFloorKbps(null),
+      ),
     ).toEqual([]);
     expect(
-      technicalCheckFailuresOf({ feedReceived: false, codecCarried: false, bitrateKbps: 0 }),
+      technicalCheckFailuresOf({ feedReceived: false, codecCarried: false, bitrateKbps: 0 }, floor),
     ).toEqual([TechnicalCheckFailure.NO_FEED]);
     expect(
-      technicalCheckFailuresOf({ feedReceived: true, codecCarried: false, bitrateKbps: floor - 1 }),
+      technicalCheckFailuresOf(
+        { feedReceived: true, codecCarried: false, bitrateKbps: floor - 1 },
+        floor,
+      ),
     ).toEqual([TechnicalCheckFailure.CODEC_NOT_CARRIED, TechnicalCheckFailure.BITRATE_BELOW_FLOOR]);
     expect(
       technicalCheckFailuresOf(
         { feedReceived: true, codecCarried: true, bitrateKbps: floor },
-        floor + 1,
+        technicalCheckFloorKbps(floor + 1),
       ),
     ).toEqual([TechnicalCheckFailure.BITRATE_BELOW_FLOOR]);
+  });
+
+  it('a bitrate that was not measured proves nothing', () => {
+    for (const bitrateKbps of [Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(
+        technicalCheckFailuresOf({ feedReceived: true, codecCarried: true, bitrateKbps }, floor),
+      ).toEqual([TechnicalCheckFailure.BITRATE_BELOW_FLOOR]);
+    }
   });
 });
 

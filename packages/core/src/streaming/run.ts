@@ -60,13 +60,20 @@ const FAILS: Readonly<
 > = {
   [TechnicalCheckFailure.NO_FEED]: (probe) => !probe.feedReceived,
   [TechnicalCheckFailure.CODEC_NOT_CARRIED]: (probe) => !probe.codecCarried,
-  [TechnicalCheckFailure.BITRATE_BELOW_FLOOR]: (probe, floorKbps) => probe.bitrateKbps < floorKbps,
+  // A bitrate that is not a finite number was not measured, so it proves nothing.
+  [TechnicalCheckFailure.BITRATE_BELOW_FLOOR]: (probe, floorKbps) =>
+    !Number.isFinite(probe.bitrateKbps) || probe.bitrateKbps < floorKbps,
 };
+
+/** The floor a check holds a feed to: the channel's `recommendedBitrateKbps`, or the default until it serves one. */
+export function technicalCheckFloorKbps(recommendedBitrateKbps: number | null | undefined): number {
+  return recommendedBitrateKbps ?? TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT;
+}
 
 /** The check's failures in vocabulary order, empty for a pass. Without a feed nothing else was measured, so `no_feed` comes alone. */
 export function technicalCheckFailuresOf(
   probe: TechnicalCheckProbe,
-  floorKbps: number = TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT,
+  floorKbps: number,
 ): readonly TechnicalCheckFailure[] {
   if (!probe.feedReceived) return [TechnicalCheckFailure.NO_FEED];
   return TECHNICAL_CHECK_FAILURES.filter((failure) => FAILS[failure](probe, floorKbps));

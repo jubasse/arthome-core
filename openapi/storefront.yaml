@@ -8830,7 +8830,7 @@ paths:
         **Refused (`403`).** `watch.seat_expired` · `watch.concurrent_limit_reached` (the session another
         device's opening took over, D-117) · `identity.signed_out_elsewhere` · `watch.preview_exhausted` ·
         `watch.date_interrupted` · `watch.live_ended`, and any other watch code, `watch.date_cancelled` on
-        air included. `identity.signed_out_elsewhere` is what the television signed out from the web
+        air included (`watch.replay_expired` is a `410`). `identity.signed_out_elsewhere` is what the television signed out from the web
         sees — **not a network error**. **Real window: up to `PLAYBACK_TOKEN_LIFETIME_SECONDS`** — see
         `revokeDevice`.
       x-arthome-maturity: provisional

@@ -60,6 +60,11 @@ replay branch around `decideWatch`.
   subscription slice computes it.
 - **A lost seat** (`seatExpired`) is refused `watch.seat_expired` and never gets a preview, even with
   budget left.
+- **No media before on air.** A holder is allowed `full` in the room while the run is idle or in
+  rehearsal (D-109), for the waiting screen: a viewer ticket must not reach the rehearsal feed, so
+  no media is served on it until the run is on air.
+- **The check's floor.** `technicalCheckFailuresOf` takes the floor as a required argument: pass
+  `technicalCheckFloorKbps(channel.recommendedBitrateKbps)`, never the default alone.
 - **The run's moves.** `assertRunTransition` refuses by name. `interrupted` is reached through an
   incident only; resuming to `on_air` from it needs no technical check.
 - **The hold screen.** Only an automatic one caused by a lost feed lifts itself when the feed returns
