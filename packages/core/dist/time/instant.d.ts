@@ -21,6 +21,11 @@ export declare function fromEpochMs(ms: number): Instant;
 export declare function plusSeconds(instant: Instant, seconds: number): Instant;
 export declare function plusMinutes(instant: Instant, minutes: number): Instant;
 export declare function plusHours(instant: Instant, hours: number): Instant;
+/**
+ * Calendar months in UTC, the time of day kept. A day the target month lacks is clamped to its last:
+ * 31 January plus one month is the last day of February.
+ */
+export declare function plusMonths(instant: Instant, months: number): Instant;
 export declare function minutesBetween(from: Instant, to: Instant): number;
 export declare function isBefore(left: Instant, right: Instant): boolean;
 export declare function isAfter(left: Instant, right: Instant): boolean;

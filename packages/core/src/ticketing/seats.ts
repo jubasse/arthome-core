@@ -27,11 +27,28 @@ export interface Gauge {
   readonly seatsSold: number;
   readonly seatsHeld: number;
   readonly waitlistCount: number;
+  /** The open priority pool's seats neither held nor sold; 0 outside a window (adr-ticketing.md §9). */
+  readonly priorityPoolSeats: number;
 }
 
-/** The seats ACTUALLY available: net of holds in progress. */
+/**
+ * The PUBLIC count: net of holds in progress and of the priority pool, which only an account
+ * notified into the window buys from. The public sees a date sold out while the pool is open.
+ */
 export function seatsAvailable(gauge: Gauge): number {
-  return Math.max(0, gauge.capacityTotal - gauge.seatsSold - gauge.seatsHeld);
+  return Math.max(
+    0,
+    gauge.capacityTotal - gauge.seatsSold - gauge.seatsHeld - gauge.priorityPoolSeats,
+  );
+}
+
+/** What one account may buy: the public count, and the pool too for an account notified into it. */
+export function seatsAvailableTo(
+  gauge: Gauge,
+  account: { readonly inPriorityPool: boolean },
+): number {
+  const poolLeftOut = account.inPriorityPool ? 0 : gauge.priorityPoolSeats;
+  return Math.max(0, gauge.capacityTotal - gauge.seatsSold - gauge.seatsHeld - poolLeftOut);
 }
 
 export function availabilityOf(gauge: Gauge): SeatAvailability {

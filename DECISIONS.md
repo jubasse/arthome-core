@@ -3491,3 +3491,20 @@ Messages between services stay in `.proto`.
 
 **Arbitrated by the product owner on 2026-10-04**, who launched its first pass after reviewing `architecture/adr-contract-model.md`. A route declares what it requires, accepts and answers, and the server's guards, validation, projection and error documentation are derived from that declaration, as the typed client is. Routes are deny-by-default: a surface's identity is required unless a route is declared public or optionally authenticated, and every further rule (roles, re-authentication, rate limits) goes through one extension point, `requires`. Paths nest at any depth through `path`, `resource` and `single` (what exists once in its context), each optionally taking a closure that returns its routes; `crud` returns its routes keyed by operation id. The three open questions of the ADR take its recommended answers, the product owner having been told they would by default: one format (JSON, binaries through signed URLs), roles applied with the studio BFF, and `changePassword` and `cancelSubscription` converted to actions. Whether controller interfaces are derived types or generated at install is decided by a measured spike.
 
+### D-123 — A run left on air ends by itself 15 minutes after its scheduled end
+
+**Arbitrated by the product owner on 2026-10-06.** A run left on air ends by itself 15 minutes after
+its scheduled end with no publisher connected (`RUN_AUTO_END_MINUTES = 15`, completing D-115).
+
+### D-124 — An automatic hold screen lifts itself when the feed returns
+
+**Arbitrated by the product owner on 2026-10-06.** An automatic hold screen (cause `venue_feed_lost`,
+triggered `auto`) lifts itself when the feed returns. A hold screen raised by hand stays until the
+run desk lifts it.
+
+### D-125 — A cancelled subscription opens what it opened until the end of the paid period
+
+**Arbitrated by the product owner on 2026-10-06.** A cancelled subscription opens what it opened until
+the end of the paid period. A past_due subscription keeps its access while the payment is retried,
+and loses it when the payment finally fails.
+

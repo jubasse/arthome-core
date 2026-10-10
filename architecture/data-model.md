@@ -583,6 +583,15 @@ Seat
 **A seat is an access right, not a place** (D-077): everyone watches the same broadcast, so a seat
 has no location, and it exists from payment on. Before that, a `SeatHold` carries the capacity.
 
+**Its moves** (`seatStateMayMove`): `active` to `cancelled`, `credited` or `transferred`;
+`cancelled` to `refunded`; nothing else. A seat is `cancelled` when its cancellation is decided
+(`assertSeatCancellable`: `seat.not_active`, then `seat.cancel_deadline_passed` at or after
+`cancel_deadline`) and `refunded` once the provider confirms the money went back
+(`refund_succeeded`). Of the refund reasons, only `viewer_request`, `date_cancelled` and
+`account_deletion` cancel a seat (`refundCancelsSeat`, D-095): a studio refund for `goodwill`,
+`duplicate` or `dispute` leaves it active. A `credited` seat's card serves `refundReasonCode: null`,
+since the cause is the date's interruption, which the card carries.
+
 **The seat code is issued by the server** (`storefront-web` Q18). It appears identically on the web,
 on mobile and on TV. The mockup computes it by hashing: ported as it stands, it would give **three
 different codes for the same seat** as soon as one surface changed hash function. A served format,
@@ -605,7 +614,10 @@ SeatOrder
 ```
 
 Its seats are created in its `paid` transition, one per unit (D-077); an order never holds capacity
-itself, its hold does.
+itself, its hold does. Its refunds and credits are split over its seats in seat-id order by
+`seatSharesOf`, so the shares add up to the frozen total; what is left to refund counts every refund
+decided, settled or not (`refundableRemaining`). A refund decided while the date is cancelled
+carries `date_cancelled` (`refundReasonOnDate`, D-097).
 
 ### 3.4 `MerchOrder` — root aggregate, and `MerchItem`
 
@@ -655,7 +667,9 @@ what is a **way of buying** (the one-off seat, which is not a subscription). `mo
 
 `Subscription` **exists nowhere in `shared/`** — the mockup shows it as a literal. Shape to create:
 `plan_id`, `state` (`active | past_due | cancelled | trialing`), `started_at`,
-`current_period_end`, `payment_method_ref`, `cancel_at_period_end`, invoices.
+`current_period_end`, `paid_through` (the end of the last paid period: a renewal moves
+`current_period_end` forward before it is paid, so D-125 reads this one), `payment_method_ref`,
+`cancel_at_period_end`, invoices.
 
 **`multi_screen` is an execution constraint, not a marketing line**: "two screens at once" imposes a
 server-side count, held by `streaming` (§5.4). `ticketing` publishes the ceiling; `streaming`
@@ -669,11 +683,15 @@ internal currency**, therefore a liability, therefore an aggregate.
 ```
 Credit
   id · account_id · channel_id (scope)  · amount_minor · currency
-  origin        interrupted_date | goodwill
+  origin        interrupted_date | goodwill             CREDIT_ORIGINS
   origin_ref    date_id
-  state         issued | partially_used | used | expired
-  expires_at    12 months
+  state         issued | partially_used | used | expired   CREDIT_STATES
+  expires_at    creditExpiresAt(issued_at): CREDIT_VALIDITY_MONTHS calendar months
 ```
+
+`expires_at` counts calendar months in UTC, clamped to the month's last day (`plusMonths`): a credit
+issued on 29 February 2028 expires on 28 February 2029. A credit has no refund delay: the amount is
+on the account at once, so `refundDelayCodeOf(account_credit)` is null.
 
 **The recommended scope, and it is a decision to confirm**: a credit is issued for an `interrupted`
 outcome and is **redeployable on the same channel only**. An accounting reason, explained in
@@ -687,7 +705,7 @@ share out of its own money. The restriction is reversible; ignoring it is not.
 ```
 WaitlistEntry
   id · date_id · account_id      one per date and account
-  state        waiting | notified | converted | left | lapsed
+  state        waiting | notified | converted | left | lapsed | closed
 ```
 
 **Joined only once the date is sold out**, which is when `decideWatch` offers `join_waitlist`.
@@ -701,7 +719,15 @@ served (`converted`); an account registering while a window is open is notified 
 
 **One registration, one chance.** At `priority_until`, a notified entry that did not buy becomes
 `lapsed`: it has left the list, and registers again to be told next time. `left` is an entry its
-account withdrew.
+account withdrew. A new registration reuses the row: `left`, `lapsed` and `converted` move back to
+`waiting`, or to `notified` inside an open window (`waitlistEntryMayMove`, `waitlistStateOnJoin`).
+A second tier opening inside a window notifies a `notified` entry again, `notified` to `notified`.
+
+**`closed` is an entry its date ended** (D-096): a cancellation or an interruption closes every
+`waiting` or `notified` entry and the priority pool, and nobody is told beyond the date's card.
+Unlike `lapsed`, a `closed` entry takes no registration again: joining is refused with
+`order.sales_closed` (`assertWaitlistJoinable`), and the studio's counts tell the two apart. A
+postponement leaves the entries waiting.
 
 ---
 
@@ -799,7 +825,17 @@ publishes `streaming.run.started.v1`, which `catalog` consumes to advance the pu
 period when going offline**: a two-second network break at the venue produces neither an incident
 nor an HLS manifest restarted from zero. The state pushed to the studio is the state **after** the
 glitch has been absorbed, and the studio tells "glitch absorbed" apart from "publisher gone" — two
-fields, not one.
+fields, not one. The grace is `PUBLISHER_GRACE_SECONDS` in core.
+
+**Transitions** (`RUN_TRANSITIONS`, `assertRunTransition`): `idle → rehearsal | on_air`,
+`rehearsal → idle | on_air`, `on_air → interrupted | ended`, `interrupted → on_air | ended`.
+**`ended` is final** (D-115): a new run is a new date. A move off the table is refused
+`run.transition_forbidden` with `from` and `to`; going on air from `idle` or `rehearsal` without a
+passed check, `date.technical_check_required`. `interrupted` is reached through an incident only.
+
+**A run left on air ends by itself** once no publisher has been connected for 15 minutes after the
+scheduled end (D-123, `RUN_AUTO_END_MINUTES`, `runAutoEndsAt`), and `streaming.run.ended.v1` names
+the system as `ended_by`. A check's failures are `TECHNICAL_CHECK_FAILURES` (D-114).
 
 ### 5.2 `StreamKey` — root aggregate
 
@@ -852,7 +888,7 @@ just to make a schema uniform: so the contract carries the truth, not uniformity
 ```
 PlaybackSession
   id · account_id · profile_id · device_id · date_id
-  state        active | released | expired | revoked
+  state        active | released | expired | revoked     ← PLAYBACK_SESSION_STATES
   lease_expires_at    now + 90 s, renewed by the token renewal
   quality_cap · drm_system · protocol
   opened_at · last_renewed_at
@@ -891,6 +927,8 @@ the last position must be taken even if it arrives after a `releasePlayback` —
 any moment.
 This is **not** a money command: it does not go through the strict idempotence regime, otherwise the
 key becomes a cost per minute of playback per viewer.
+**No resume point comes from a live** (D-111): a live gives no control of playback, positions are
+not recorded during one, and a write then is answered with the stored point, unchanged.
 
 ### 5.6 `Incident` — cause and outcome are two vocabularies
 
@@ -905,7 +943,10 @@ The answer to `studio-mobile` Q12. And the **automatic triggering of the standby
 channel rule "if the feed is lost for more than 15 s" — produces **an incident of the same nature as
 a manual trigger**, with `cause = venue_feed_lost` and `triggered_by = 'auto'`. That is the right
 answer to the "the run-desk operator is unreachable" case, and it is a server rule, not an
-application behaviour.
+application behaviour. The channel's default delay is `HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT` in core.
+
+**The automatic hold screen lifts itself when the feed returns; one raised by hand stays until the
+run desk lifts it** with `resolveIncident` (D-124, `holdScreenLiftsOnFeedReturn`).
 
 **The standby-screen message is content, not an i18n key** (`studio-web` Q19): it is written by the
 run desk, it travels **with the language it was written in**, like a synopsis. It is the one assumed

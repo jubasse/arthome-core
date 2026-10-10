@@ -15,6 +15,7 @@ export {
   overlaps,
   plusHours,
   plusMinutes,
+  plusMonths,
   plusSeconds,
   toEpochMs,
   windowOf,

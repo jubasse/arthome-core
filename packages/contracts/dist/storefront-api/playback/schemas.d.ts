@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { DisplayState } from '@arthome/core';
 import type { VocabularyIn } from '@arthome/core/schema';
 import type { PathParameter } from '../../http/index.js';
+import { DRM_SYSTEMS } from '../../streaming/index.js';
 declare const OPEN_PLAYBACK_KIND: readonly [typeof DisplayState.LIVE, typeof DisplayState.REPLAY];
-declare const DRM_SYSTEMS: readonly ["fairplay", "widevine", "playready"];
 export declare const PlaybackSessionIdParameter: PathParameter<'sessionId', z.ZodString>;
 export declare const OpenPlaybackBodySchema: z.ZodObject<{
     deviceId: z.ZodString;

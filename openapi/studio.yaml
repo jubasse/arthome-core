@@ -3546,7 +3546,7 @@ paths:
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
-          description: Jauge, paliers, tarifs, promotions, provision technique.
+          description: Capacity, tiers, prices, promotions, technical provision.
           content:
             application/json:
               schema:
@@ -3795,7 +3795,18 @@ paths:
       summary: Opens a capacity tier, and warns the waiting list in the same gesture.
       description: |
         **One transactional command, not two.** Two calls would let the scarcity dissipate between
-        them: the priority window (2 h) is a **domain parameter**, served and not copied out.
+        them: the priority window (`WAITLIST_PRIORITY_HOURS`, `@arthome/core`) is a **domain parameter**,
+        served and not copied out.
+
+        **With `notifyWaitlist: true`**, the default (D-083), the new seats become a priority pool: every
+        `waiting` entry is notified in the same transaction (`waitlistNotified`) and may buy from the pool
+        until `priorityUntil`, first come first served. The public sees the date without the pool, and what
+        is left returns to public sale at `priorityUntil`; meanwhile `sales.priorityPool` serves the seats
+        left. **With an empty list** there is no pool either: `waitlistNotified` is `0`, `priorityUntil` is
+        absent, and the seats go on public sale at once.
+
+        **With `notifyWaitlist: false`** (D-094), nobody is notified and no pool is made: `waitlistNotified`
+        is `0`, `priorityUntil` is absent, and the new seats go on public sale at once.
 
         **Capacity widens in tiers and never shrinks** once the sale has opened: a reduction is
         refused with `capacity.tier_must_widen`.
@@ -3877,7 +3888,10 @@ paths:
                   sales:
                     dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                     capacityTotal: 250
-                    seatsAvailable: 76
+                    seatsAvailable: 26
+                    priorityPool:
+                      seatsLeft: 50
+                      priorityUntil: '2026-09-21T20:06:00Z'
                     priceTiers: []
                     pricesLocked: true
                     version: 13
@@ -4115,6 +4129,18 @@ paths:
         **The refund refunds the commission too**: we do not keep 12% of a show that did not happen.
         It is not merely decent, it is what the copy promises.
 
+        **Only `date_cancelled` cancels the seat** (D-095): a refund for `goodwill`, `duplicate` or
+        `dispute` gives money back and leaves the seat active, whatever the amount. `date_cancelled` on a
+        date that is not cancelled is refused with `409` `state.conflict` (D-097). A seat no longer active
+        is refused with `409` `seat.not_active` and its `state`.
+
+        **Never more than is left**: the amount asked, `partialAmountMinor` or else the seat's share of
+        the order, is refused above what remains to refund on the order, every refund decided counted,
+        with `409` `refund.amount_exceeds_remaining` and the amount left in its params.
+
+        `payoutId` stays `null` while `ticketing` owns no payout, and `commissionRefunded` is absent until
+        the payouts slice computes it.
+
         **Never queued offline**: it is a money command, it is refused locally with
         `offline_forbidden`.
       x-arthome-maturity: stable
@@ -4195,10 +4221,7 @@ paths:
                   refunded:
                     amountMinor: 2400
                     currencyCode: EUR
-                  commissionRefunded:
-                    amountMinor: 273
-                    currencyCode: EUR
-                  payoutId: 019928e5-0000-7000-8000-000000000001
+                  payoutId: null
           headers:
             X-Arthome-Rights-Version:
               $ref: '#/components/headers/RightsVersion'
@@ -4227,7 +4250,31 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/SeatNotActiveError'
+                - $ref: '#/components/schemas/RefundAmountExceedsRemainingError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                seat.not_active:
+                  $ref: '#/components/examples/SeatNotActiveError'
+                refund.amount_exceeds_remaining:
+                  $ref: '#/components/examples/RefundAmountExceedsRemainingError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -6131,6 +6178,11 @@ paths:
         Its success **unlocks publication**: `technical_check_passed` is one of the seven checklist
         items, and it comes from here. `catalog` **projects** it, it does not ask for it.
         `idle → on_air` is refused as long as the check has never passed.
+
+        **What it proves** (D-114): a feed received on the date's key, in a codec the chain carries,
+        above a bitrate floor, the channel's recommended bitrate or, until a channel serves one,
+        `TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT` (`technicalCheckFloorKbps`). `failures` is the closed vocabulary
+        `TECHNICAL_CHECK_FAILURES`, in its order: `no_feed` comes alone, since nothing else was measured.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6170,6 +6222,11 @@ paths:
                           type: array
                           items:
                             type: string
+                            x-arthome-vocabulary:
+                            - no_feed
+                            - codec_not_carried
+                            - bitrate_below_floor
+                            x-arthome-vocabulary-source: TECHNICAL_CHECK_FAILURES
                         sample:
                           $ref: '#/components/schemas/HealthSample'
                       additionalProperties: {}
@@ -6228,7 +6285,9 @@ paths:
     post:
       operationId: rehearseRun
       summary: Starts the rehearsal.
-      description: 'The run goes from `idle` to `rehearsal`: the feed is checked, nothing is sold against it.'
+      description: |
+        The run goes from `idle` to `rehearsal`: the feed is checked, nothing is sold against it. A move
+        the run cannot make (`RUN_TRANSITIONS`) is refused `run.transition_forbidden`, naming both ends.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6333,7 +6392,28 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -6356,7 +6436,10 @@ paths:
         transitions out of eight are caused that way, which leaves `Publication` the aggregate of a
         single context.
 
-        `idle → on_air` is **refused** if the technical check has never passed.
+        `idle → on_air` and `rehearsal → on_air` are **refused** `date.technical_check_required` if the
+        technical check has never passed. Resuming after an incident (`interrupted → on_air`) needs
+        none. `publication.transition_forbidden` comes when the date's publication cannot move to `live` from
+        its current state.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6474,6 +6557,8 @@ paths:
                 - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
                 - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
                 - $ref: '#/components/schemas/DateTechnicalCheckRequiredError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+                - $ref: '#/components/schemas/PublicationTransitionForbiddenError'
               examples:
                 state.conflict:
                   $ref: '#/components/examples/StateConflictError'
@@ -6483,6 +6568,10 @@ paths:
                   $ref: '#/components/examples/ApiIdempotencyInFlightError'
                 date.technical_check_required:
                   $ref: '#/components/examples/DateTechnicalCheckRequiredError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
+                publication.transition_forbidden:
+                  $ref: '#/components/examples/PublicationTransitionForbiddenError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -6499,7 +6588,13 @@ paths:
     post:
       operationId: endRun
       summary: Ends the broadcast.
-      description: 'The run goes to `ended`. It is final for this date: a new run is a new date.'
+      description: |
+        The run goes to `ended`. **It is final** for this date (D-115): a new run is a new date, and any
+        later move is refused `run.transition_forbidden`.
+
+        **A run left on air ends by itself** `RUN_AUTO_END_MINUTES` after the scheduled end once no
+        publisher has been connected (D-123, `runAutoEndsAt`); `streaming.run.ended.v1` then names the
+        system as `ended_by`.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6604,7 +6699,28 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -6621,7 +6737,9 @@ paths:
     post:
       operationId: resetRun
       summary: Returns the run to idle.
-      description: 'The run goes back to `idle`, before the date starts: the console is emptied.'
+      description: |
+        The run goes back to `idle` from `rehearsal`, before the date starts: the console is emptied.
+        From any other state it is refused `run.transition_forbidden`.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -6726,7 +6844,28 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            A final business refusal, and the `code` says which. `state.conflict` carries **the current
+            version, and the current state when the record has one**; `publication.transition_irreversible` carries the transition attempted **and the
+            promise committed**; `moderation.already_settled` carries **the winning verdict and its
+            author**.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+              examples:
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -7459,6 +7598,10 @@ paths:
       description: |
         The player **lifts the veil** without asking for a new playback token: otherwise the resume
         would be paid for with a stream reload, on media that was never cut.
+
+        **A hold screen raised by hand waits for this call** (D-124). The automatic one (cause
+        `venue_feed_lost`, triggered `auto`) lifts itself when the feed returns
+        (`holdScreenLiftsOnFeedReturn`).
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -11974,6 +12117,9 @@ components:
           - order.sales_closed
           - seat.cancel_deadline_passed
           - payment_method.in_use
+          - waitlist.not_sold_out
+          - seat.not_active
+          - refund.amount_exceeds_remaining
           - capacity.tier_must_widen
           - content.empty_in_both_languages
           - hold.quantity_invalid
@@ -11985,6 +12131,7 @@ components:
           - publication.promise_unacknowledged
           - publication.transition_forbidden
           - publication.transition_irreversible
+          - run.transition_forbidden
           - search.unknown_flag
           - seat_code.malformed
           - state.conflict
@@ -11999,6 +12146,9 @@ components:
           - watch.concurrent_limit_reached
           - watch.date_cancelled
           - watch.not_published
+          - watch.seat_expired
+          - watch.date_interrupted
+          - watch.live_ended
           x-arthome-vocabulary-source: ERROR_CODES
           examples:
           - publication.checklist_incomplete
@@ -13666,10 +13816,27 @@ components:
             additionalProperties: {}
         seatsAvailable:
           type: integer
+          description: 'The public count: the priority pool is left out.'
         seatsSold:
           type: integer
         waitlistCount:
           type: integer
+        priorityPool:
+          description: |
+            **Present while a priority window is open** (D-083): the pool's seats neither held nor sold,
+            which only the notified accounts buy, and the end of the window, when what is left returns to
+            public sale.
+          type: object
+          properties:
+            seatsLeft:
+              type: integer
+            priorityUntil:
+              type: string
+              format: date-time
+          required:
+          - seatsLeft
+          - priorityUntil
+          additionalProperties: {}
         fillRateBps:
           type: integer
         priceTiers:
@@ -14139,8 +14306,7 @@ components:
             x-arthome-vocabulary:
             - manual
             - auto
-            x-arthome-vocabulary-source: none
-            x-arthome-vocabulary-reason: A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.
+            x-arthome-vocabulary-source: INCIDENT_TRIGGERS
             description: |
               The **automatic** holding screen produces an incident **of the same kind** as a manual
               trigger — that is the right answer to the "the stage manager is unreachable" case. The log
@@ -16659,6 +16825,119 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    SeatNotActiveError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: seat.not_active
+            params:
+              type: object
+              properties:
+                state:
+                  type: string
+                  x-arthome-vocabulary:
+                  - active
+                  - cancelled
+                  - refunded
+                  - transferred
+                  - credited
+                  x-arthome-vocabulary-source: SEAT_STATES
+              required:
+              - state
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    RefundAmountExceedsRemainingError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: refund.amount_exceeds_remaining
+            params:
+              type: object
+              properties:
+                remainingMinor:
+                  type: integer
+                  format: int64
+                currencyCode:
+                  type: string
+              required:
+              - remainingMinor
+              - currencyCode
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     ModerationAlreadyClaimedError:
       type: object
       properties:
@@ -16770,6 +17049,60 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    RunTransitionForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: run.transition_forbidden
+            params:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              required:
+              - from
+              - to
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     DateTechnicalCheckRequiredError:
       type: object
       properties:
@@ -16782,6 +17115,60 @@ components:
             params:
               type: object
               properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    PublicationTransitionForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: publication.transition_forbidden
+            params:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              required:
+              - from
+              - to
               additionalProperties: {}
             traceId:
               type: string
@@ -17688,6 +18075,16 @@ components:
             promise: prices_engaged
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
+    PublicationTransitionForbiddenError:
+      value:
+        error:
+          code: publication.transition_forbidden
+          nature: refused
+          params:
+            from: draft
+            to: live
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     PublicationTransitionIrreversibleError:
       value:
         error:
@@ -17697,6 +18094,35 @@ components:
             from: scheduled
             to: reserve
             promise: prices_engaged
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    RefundAmountExceedsRemainingError:
+      value:
+        error:
+          code: refund.amount_exceeds_remaining
+          nature: refused
+          params:
+            remainingMinor: 1200
+            currencyCode: EUR
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    RunTransitionForbiddenError:
+      value:
+        error:
+          code: run.transition_forbidden
+          nature: refused
+          params:
+            from: idle
+            to: ended
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    SeatNotActiveError:
+      value:
+        error:
+          code: seat.not_active
+          nature: refused
+          params:
+            state: cancelled
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     StateConflictError:

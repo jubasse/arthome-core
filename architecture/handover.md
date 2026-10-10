@@ -21,6 +21,9 @@ to one document is six conflicts, and six agents committing into one repository 
 | [`handover/backend-domain.md`](handover/backend-domain.md) | rules that live where you would not look; **the one misdeclared block among the 114 exempt ones** |
 | [`handover/conventions.md`](handover/conventions.md) | how to build the repository map (D-061); **where §5.3.1 does *not* substitute** for the D-055 detector |
 | [`handover/skeptic.md`](handover/skeptic.md) | findings closed by answers it would reopen; **the two detectors that work with nobody else in the room** |
+| [`handover/ticketing-t4t5-core.md`](handover/ticketing-t4t5-core.md) | **`seatsAvailable` leaves the priority pool out**; one provider key per refund; a seat is `cancelled` before `refunded`; a credited seat's null refund reason |
+| [`handover/service-api-model.md`](handover/service-api-model.md) | the `-service-api` suffix and the five lists a new service api joins by hand; the caller rule on every route; **the codes kept equal to the public operation's, read by the spec** |
+| [`handover/streaming-core.md`](handover/streaming-core.md) | the takeover count, the null run keeping the clock, `watch.live_ended` replacing the replay verdict, **the preview spent on air only** |
 
 **Three of the six correct something already committed**, which is the reason they were worth the
 cost. `studio-mobile` contradicts the one section written before them; `storefront-mobile` shows
@@ -43,6 +46,9 @@ with something.* These notes were the last chance to run it.
 > / `MoneyIn`. Both splits happened *because* of findings in these notes, so the stale name is part
 > of the record rather than a defect in it. Code copied from `backend-contracts.md` needs that one
 > substitution.
+
+**Release candidates.** A `v<version>-rc.<n>` tag on `develop` publishes a GitHub pre-release. Develop
+stays at the wave's version and only the tarballs are stamped, so rc.1 and rc.2 need no version commit.
 
 ---
 

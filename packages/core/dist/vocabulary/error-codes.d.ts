@@ -163,10 +163,10 @@ export declare const PayoutErrorCode: {
     readonly BANK_CHANGE_REQUEST_EXPIRED: "payout.bank_change_request_expired";
 };
 /**
- * The viewer's commerce refusals: a purchase, a seat, a means of payment. `failureCode` narrows
+ * The commerce refusals: a purchase, a seat, a refund, a means of payment. `failureCode` narrows
  * it to the four a purchase command can refuse with.
  */
-export declare const ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.quote_expired", "order.sold_out", "order.tier_unavailable", "order.payment_declined", "order.price_stale", "order.plan_unavailable", "order.contribution_out_of_range", "order.checkout_line_unavailable", "order.sales_queue_admission_required", "order.late_entry_unacknowledged", "order.sales_closed", "seat.cancel_deadline_passed", "payment_method.in_use"];
+export declare const ORDER_ERROR_CODES: readonly ["order.quote_address_mismatch", "order.quote_expired", "order.sold_out", "order.tier_unavailable", "order.payment_declined", "order.price_stale", "order.plan_unavailable", "order.contribution_out_of_range", "order.checkout_line_unavailable", "order.sales_queue_admission_required", "order.late_entry_unacknowledged", "order.sales_closed", "seat.cancel_deadline_passed", "payment_method.in_use", "waitlist.not_sold_out", "seat.not_active", "refund.amount_exceeds_remaining"];
 export type OrderErrorCode = (typeof ORDER_ERROR_CODES)[number];
 export declare const OrderErrorCode: {
     readonly QUOTE_ADDRESS_MISMATCH: "order.quote_address_mismatch";
@@ -183,11 +183,14 @@ export declare const OrderErrorCode: {
     readonly SALES_CLOSED: "order.sales_closed";
     readonly SEAT_CANCEL_DEADLINE_PASSED: "seat.cancel_deadline_passed";
     readonly PAYMENT_METHOD_IN_USE: "payment_method.in_use";
+    readonly WAITLIST_NOT_SOLD_OUT: "waitlist.not_sold_out";
+    readonly SEAT_NOT_ACTIVE: "seat.not_active";
+    readonly REFUND_AMOUNT_EXCEEDS_REMAINING: "refund.amount_exceeds_remaining";
 };
 /**
  * The domain's refusals that reach a surface: a rule said no and somebody has to be told why.
  */
-export declare const DOMAIN_ERROR_CODES: readonly ["capacity.tier_must_widen", "content.empty_in_both_languages", "hold.quantity_invalid", "media.size_invalid", "media.url_empty", "order.quantity_invalid", "pairing_code.ambiguous_glyph", "publication.checklist_incomplete", "publication.promise_unacknowledged", "publication.transition_forbidden", "publication.transition_irreversible", "search.unknown_flag", "seat_code.malformed", "state.conflict"];
+export declare const DOMAIN_ERROR_CODES: readonly ["capacity.tier_must_widen", "content.empty_in_both_languages", "hold.quantity_invalid", "media.size_invalid", "media.url_empty", "order.quantity_invalid", "pairing_code.ambiguous_glyph", "publication.checklist_incomplete", "publication.promise_unacknowledged", "publication.transition_forbidden", "publication.transition_irreversible", "run.transition_forbidden", "search.unknown_flag", "seat_code.malformed", "state.conflict"];
 export type DomainErrorCode = (typeof DOMAIN_ERROR_CODES)[number];
 export declare const DomainErrorCode: {
     readonly CAPACITY_TIER_MUST_WIDEN: "capacity.tier_must_widen";
@@ -201,6 +204,7 @@ export declare const DomainErrorCode: {
     readonly PUBLICATION_PROMISE_UNACKNOWLEDGED: "publication.promise_unacknowledged";
     readonly PUBLICATION_TRANSITION_FORBIDDEN: "publication.transition_forbidden";
     readonly PUBLICATION_TRANSITION_IRREVERSIBLE: "publication.transition_irreversible";
+    readonly RUN_TRANSITION_FORBIDDEN: "run.transition_forbidden";
     readonly SEARCH_UNKNOWN_FLAG: "search.unknown_flag";
     readonly SEAT_CODE_MALFORMED: "seat_code.malformed";
     readonly STATE_CONFLICT: "state.conflict";

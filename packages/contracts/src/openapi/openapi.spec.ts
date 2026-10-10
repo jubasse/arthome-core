@@ -3,6 +3,8 @@ import { z } from 'zod';
 
 import { openApiDocumentOf } from './index.js';
 import { defineApi, defineRoute, tagged, type Parameter, type Response } from '../http/index.js';
+import { streamingServiceDocs } from '../streaming-service-api/docs.js';
+import { streamingServiceApi } from '../streaming-service-api/index.js';
 
 const Money = z.looseObject({ amountMinor: z.int(), currencyCode: z.string() });
 
@@ -150,5 +152,17 @@ describe('tagged unions', () => {
         declined: '#/components/schemas/PaymentDeclined',
       },
     });
+  });
+});
+
+describe('a service document', () => {
+  it('marks every operation internal', () => {
+    const { paths } = openApiDocumentOf(streamingServiceApi, streamingServiceDocs) as {
+      readonly paths: Readonly<Record<string, Readonly<Record<string, Record<string, unknown>>>>>;
+    };
+    const operations = Object.values(paths).flatMap((methods) => Object.values(methods));
+
+    expect(operations).toHaveLength(Object.keys(streamingServiceApi.routes).length);
+    expect(operations.filter((operation) => operation['x-arthome-internal'] !== true)).toEqual([]);
   });
 });

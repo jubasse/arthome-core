@@ -663,12 +663,51 @@ Found on review: what the declaration must also carry so that nothing else is wr
 - **The route is marked internal**, so the central OpenAPI lists it, and no surface document can
   include it.
 
+**Service APIs, as built** (streaming's first; `packages/contracts/README.md`, "A service API"):
+
+- **One api per service**, `<service>-service-api`, with its own document,
+  `openapi/<service>-service.yaml`, generated and gated like the BFFs'. Separate apis, because a
+  service route and the BFF route it serves share a path and an operation id: in one `defineApi` they
+  would collide. The central document of every service needs a prefix per service, and comes with the
+  second service api.
+- **One operation, two servers.** A service route that serves a public operation keeps its operation
+  id, path, body, answer and refusal codes; the BFF relays one shape, and its typed client calls
+  `streamingServiceApi.routes.goOnAir` as the surface calls `studioApi.routes.goOnAir`. Schemas, docs
+  and examples are read from the public operation's module, never copied, and a spec over every
+  service api holds each route's codes to a superset of its public operation's, less the codes the
+  BFF answers of its own (its identity's, its rules', its upstreams'). Only what no surface sees (the
+  progress batch) is declared by the service alone.
+- **The caller rule.** Every route names the BFFs it serves, `callerService(...issuers)`, a rule like
+  `roles` (§4.3): the server maps it to a guard that refuses any other issuer `403 api.forbidden`. A
+  viewer's playback refuses the studio BFF (D-118). No service route is public or optional.
+- **The principal** is the internal token's, and only the token's (critical rule 4): the calling BFF,
+  the account, and the profile and the device when the BFF's session names them. A body `profileId`
+  or `deviceId` other than the principal's is refused `403 api.forbidden`, and the body never picks
+  the profile: a route that reads it refuses `403 api.forbidden` a token that names none, and a BFF
+  composing an overlay from it degrades that part (§5.8).
+- **The error model** documents what a service answers whatever the route: `400`, `401`, `403`, `404`,
+  the idempotency `409`, `413`, `415`, `500` and `504 api.deadline_exceeded`. Every code is allowed,
+  since a BFF narrows what it relays; no BFF code is derived, since a service calls no service.
+- **The envelope is §5.5's**: `servedAt`, `validUntil` when a value is perishable, and `data`; a
+  versioned record carries its `version` inside `data`, never at the root. Streaming starts on the
+  rule. Catalog's and ticketing's services answer a root `version` today, their legacy envelope, and
+  change when they migrate to this model, in their own PRD.
+- **What every call carries**: `x-arthome-deadline` and `traceparent`, from the identity, and on
+  every write `x-arthome-actor-surface` (§5.2), so an event names its actor's place; the
+  surface's `Idempotency-Key`, relayed as is, on a write; `x-arthome-viewer-country` where a watch
+  verdict is decided.
+
 ### 9.2 The batched read (§5.6)
 
-`batch({ ids, max: 200, response })` declares a `POST /{res}/batch`:
+`batch({ item, max })` declares a `POST /{res}/batch`:
 - no idempotency key, since it is a read;
-- the 2 MiB body ceiling;
-- a table keyed by id as its response.
+- the 2 MiB body ceiling (`BATCH_BODY_LIMIT`), and the batched read's latency budget
+  (`BATCH_BUDGET_MS`, §5.9), unless the route says otherwise;
+- a body `{ ids }` of at most `max` ids, `BATCH_MAX_IDS` (§5.6) by default;
+- or, with `body` in place of `max`, the body the route states, for a read that takes more than its
+  ids: streaming's `getViewerProgressBatch` takes `{ profileId, dateIds }`, as §5.6 writes it;
+- a table keyed by id as its response, its example the item's registered one under the id
+  parameter's own.
 
 The rule "never one identifier at a time" stays in `definition-of-done.md`.
 

@@ -33,6 +33,7 @@ export type CancelSeatRoute = Route<{
       | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
       | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
       | typeof OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED
+      | typeof OrderErrorCode.SEAT_NOT_ACTIVE
     )[];
   };
 }>;

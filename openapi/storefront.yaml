@@ -6292,6 +6292,9 @@ paths:
 
         **Past the end of seat sales**, thirty minutes after the start (D-089), the quote is refused
         with `409` `order.sales_closed` and `salesEndAt`, as the purchase is.
+
+        **From an open priority pool** (D-083), a notified account's quote carries `priorityUntil`: the
+        pool is the caller's to buy from until then.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -6357,7 +6360,7 @@ paths:
               quantity: 2
       responses:
         '200':
-          description: Devis.
+          description: The quote.
           content:
             application/json:
               schema:
@@ -6630,6 +6633,10 @@ paths:
         params, before any seat is held. Seats sell until thirty minutes after the start; past it,
         `409` `order.sales_closed` with `salesEndAt`, never `order.sold_out`, which is the waiting
         list's cue.
+
+        **A notified account buys from the priority pool** until `priorityUntil` (D-083), first come first
+        served, with the same request; the public reads availability without the pool. `order.sold_out`
+        answers when neither the pool, for a notified account, nor public sale has a seat for the caller.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -7023,8 +7030,20 @@ paths:
       summary: Cancels a seat before its deadline.
       description: |
         The deadline is **served as an instant** on the seat (`cancelDeadline`), never as the
-        sentence "up to 1 h before". The refusal after the deadline carries
-        `seat.cancel_deadline_passed`, with the instant as a parameter.
+        sentence "up to 1 h before". A cancellation at or after it is refused with
+        `seat.cancel_deadline_passed`, `cancelDeadline` as its parameter; a seat no longer active
+        (cancelled, refunded, credited or transferred) is refused with `seat.not_active` and its `state`.
+
+        **Cancelled at once, refunded once settled.** The answer serves the seat `cancelled`, with the
+        refund's amount, its `method` and its `delayCode`; the seat becomes `refunded` once the payment
+        provider confirms the money went back. On a disputed order the seat is cancelled and `refund` is
+        `null`: the provider holds the money (adr-payments.md §9).
+
+        **The seat returns to public sale at once** (D-093), first come first served: the waiting list is
+        not notified and gets no priority.
+
+        **On a cancelled date** the deadline does not apply, the refund carries `date_cancelled` (D-097),
+        and the seat does not return to sale.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -7058,19 +7077,8 @@ paths:
                   type: string
                   enum:
                   - viewer_request
-                  x-arthome-vocabulary-source: none
-                  x-arthome-vocabulary-reason: 'A single-member enum: it records the actor on an audit line, and this path has exactly one actor. Flagged in the description as a question, not settled as a vocabulary.'
-                  description: |
-                    **One member, and that is a question rather than a vocabulary.** A field whose
-                    enum has a single value carries no information: every request that reaches this
-                    path says the same thing. It is here because the audit line must record *who*
-                    asked — and a viewer cancelling their own seat is the only actor this path has.
-
-                    **What would make it a vocabulary is a second actor**, and there is one in the
-                    domain already: the studio cancels seats too, through `refundSeat`, with its own
-                    four-member `refundReasonCode`. If those two paths ever merge, this field becomes
-                    the merged reason and the single member becomes the first of several. Until then
-                    it is a placeholder that is honest about being one.
+                  x-arthome-vocabulary-source: SEAT_CANCEL_REASONS
+                  x-arthome-vocabulary-narrowing: 'The one a viewer gives. The others are raised by the system: a cancelled date and a deleted account.'
             example:
               cancelReasonCode: viewer_request
       responses:
@@ -7102,7 +7110,7 @@ paths:
                     dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                     seatCode: ATH-7QK2-4M
                     tier: full
-                    state: refunded
+                    state: cancelled
                     date:
                       id: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
                       showId: 019928a0-7d31-7a10-b8c4-2f9e11a4c111
@@ -7181,12 +7189,15 @@ paths:
                 anyOf:
                 - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
                 - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/SeatNotActiveError'
                 - $ref: '#/components/schemas/SeatCancelDeadlinePassedError'
               examples:
                 api.idempotency_key_reused:
                   $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
                 api.idempotency_in_flight:
                   $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                seat.not_active:
+                  $ref: '#/components/examples/SeatNotActiveError'
                 seat.cancel_deadline_passed:
                   $ref: '#/components/examples/SeatCancelDeadlinePassedError'
         '413':
@@ -7202,13 +7213,143 @@ paths:
         '504':
           $ref: '#/components/responses/GatewayTimeout'
   /v1/dates/{dateId}/waitlist:
+    get:
+      operationId: getWaitlistRegistration
+      summary: Reads one's registration on a date's waiting list.
+      description: |
+        The caller's registration on a date's waiting list, and nobody else's: the session names the
+        account, never the path. `state` is `null` when the account never registered, and `joined` is true
+        for `waiting` or `notified` only.
+
+        **While the caller is `notified` into an open window** (D-083), the answer serves `priorityUntil`
+        and `priorityPoolSeats`, the pool's seats left. The public count, read from availability, leaves the
+        pool out, so the BFF adds them to build the caller's seat standing. Outside a window
+        `priorityPoolSeats` is absent, and `priorityUntil` is `null` unless the caller is `notified`. A tier
+        opened with `notifyWaitlist: false` makes no pool (D-094), and an entry its date's cancellation or
+        interruption ended is `closed` (D-096).
+
+        **`no-store`**: a registration is one account's, and its window is perishable.
+      x-arthome-maturity: stable
+      x-arthome-upstream:
+      - ticketing
+      tags:
+      - commerce
+      security:
+      - sessionCookie: []
+      - bearerToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: The caller's registration.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        joined:
+                          type: boolean
+                        state:
+                          description: |
+                            The caller's entry. `null` when the account never registered; `joined` is true for `waiting`
+                            or `notified` only.
+                          x-arthome-vocabulary:
+                          - waiting
+                          - notified
+                          - converted
+                          - left
+                          - lapsed
+                          - closed
+                          x-arthome-vocabulary-source: WAITLIST_ENTRY_STATES
+                          type:
+                          - string
+                          - 'null'
+                        rankDisclosed:
+                          type: boolean
+                        rank:
+                          anyOf:
+                          - type: integer
+                          - type: 'null'
+                        priorityWindowHours:
+                          type: integer
+                        priorityUntil:
+                          description: The end of the caller's priority window while `notified`, else `null`.
+                          anyOf:
+                          - type: string
+                            format: date-time
+                          - type: 'null'
+                        priorityPoolSeats:
+                          description: |
+                            The pool's seats left, **served only while the caller is notified into an open window**: the
+                            public count leaves them out, and the BFF adds them to build the caller's seat standing.
+                          type: integer
+                        date:
+                          $ref: '#/components/schemas/DateCard'
+                      required:
+                      - joined
+                      - rankDisclosed
+                      additionalProperties: {}
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  joined: true
+                  state: waiting
+                  rankDisclosed: false
+                  rank: null
+                  priorityWindowHours: 2
+                  priorityUntil: null
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+                const: no-store
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '502':
+          $ref: '#/components/responses/BadGateway'
+        '503':
+          $ref: '#/components/responses/Unavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
     put:
       operationId: joinWaitlist
-      summary: S'inscrit en liste d'attente.
+      summary: Joins a date's waiting list.
       description: |
-        **A state assignment, not a toggle**: two submissions leave one registration. The response
-        **states the rank, or states that it will not state it** — it is never silent. The priority
-        window (2 h) is served, never hardcoded in the surface.
+        **A state assignment, not a toggle**: two submissions leave one registration, and the answer is
+        the caller's registration as `getWaitlistRegistration` serves it.
+
+        **Joined only once the date is sold out**: while public seats remain it is refused with `409`
+        `waitlist.not_sold_out`, and the surface offers the purchase instead. Once sales have ended, by
+        time (D-089) or because the date was cancelled or interrupted, it is refused with `409`
+        `order.sales_closed` and `salesEndAt`. A postponed date keeps its list.
+
+        **Everyone registered gets the same chance** (D-083): there is no rank among them, so
+        `rankDisclosed` is `false`. A tier opening notifies the whole list at once, and each notified
+        account may buy from the priority pool until `priorityUntil`, first come first served; an account
+        that joins while a window is open is `notified` into it at once. One that does not buy in the
+        window becomes `lapsed`, and joins again to be told next time. The window's length is served in
+        `priorityWindowHours`, never written into the surface.
+
+        **A tier opened with `notifyWaitlist: false` notifies nobody and makes no pool** (D-094). **A
+        cancellation or an interruption ends the list** (D-096): every entry becomes `closed`, and nobody is
+        told beyond the date's own card.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -7225,7 +7366,7 @@ paths:
       - $ref: '#/components/parameters/Traceparent'
       responses:
         '200':
-          description: Inscrit.
+          description: The caller's registration.
           content:
             application/json:
               schema:
@@ -7238,6 +7379,21 @@ paths:
                       properties:
                         joined:
                           type: boolean
+                        state:
+                          description: |
+                            The caller's entry. `null` when the account never registered; `joined` is true for `waiting`
+                            or `notified` only.
+                          x-arthome-vocabulary:
+                          - waiting
+                          - notified
+                          - converted
+                          - left
+                          - lapsed
+                          - closed
+                          x-arthome-vocabulary-source: WAITLIST_ENTRY_STATES
+                          type:
+                          - string
+                          - 'null'
                         rankDisclosed:
                           type: boolean
                         rank:
@@ -7245,6 +7401,17 @@ paths:
                           - type: integer
                           - type: 'null'
                         priorityWindowHours:
+                          type: integer
+                        priorityUntil:
+                          description: The end of the caller's priority window while `notified`, else `null`.
+                          anyOf:
+                          - type: string
+                            format: date-time
+                          - type: 'null'
+                        priorityPoolSeats:
+                          description: |
+                            The pool's seats left, **served only while the caller is notified into an open window**: the
+                            public count leaves them out, and the BFF adds them to build the caller's seat standing.
                           type: integer
                         date:
                           $ref: '#/components/schemas/DateCard'
@@ -7259,9 +7426,11 @@ paths:
                 servedAt: '2026-09-21T19:00:00.000Z'
                 data:
                   joined: true
+                  state: waiting
                   rankDisclosed: false
                   rank: null
                   priorityWindowHours: 2
+                  priorityUntil: null
           headers:
             Idempotency-Replayed:
               $ref: '#/components/headers/IdempotencyReplayed'
@@ -7276,7 +7445,26 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          $ref: '#/components/responses/Conflict'
+          description: |
+            Definitive business refusal. The `code` says which one, and `params` carries what the screen
+            must display — never a sentence.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/WaitlistNotSoldOutError'
+                - $ref: '#/components/schemas/OrderSalesClosedError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                waitlist.not_sold_out:
+                  $ref: '#/components/examples/WaitlistNotSoldOutError'
+                order.sales_closed:
+                  $ref: '#/components/examples/OrderSalesClosedError'
         '500':
           $ref: '#/components/responses/InternalError'
         '502':
@@ -7290,7 +7478,8 @@ paths:
       summary: Leaves the waiting list.
       description: |
         **A state assignment**, like joining. Replayed on an already-removed registration, it
-        succeeds — an offline queue replays, and a failure there would be a false negative.
+        succeeds — an offline queue replays, and a failure there would be a false negative. Leaving while
+        `notified` gives up the priority window.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - ticketing
@@ -8394,6 +8583,18 @@ paths:
 
         **`Cache-Control: no-store`.** A right read back from disk is a false right.
 
+        **Before on air.** From the room opening, a holder (or an `all_lives` subscriber) is allowed, and
+        the player shows its **waiting screen** with no media until the run is on air (D-109); a late
+        start keeps the room open. A non-holder gets `watch.no_seat` with the seat action: **there is no
+        preview before on air** (D-110).
+
+        **The takeover** (D-117). An opening is never refused for the screen ceiling while the account
+        holds a lease to take over: it takes over the **least recently renewed** one, and that session's
+        next renewal is refused `watch.concurrent_limit_reached`.
+
+        **`kind: replay` is refused `watch.no_replay`** until the replay slice brings the replay's own
+        verdict (`adr-replay.md` §10). A live that ended is `watch.live_ended`.
+
         **Refused.** Each watch denial code produces a different screen (`watch.replay_expired` is a
         `410`, the others a `403`). On `watch.concurrent_limit_reached`, `params.activeSessions` carries the **list
         of active sessions** so the surface can offer to release one: a bare refusal would leave the
@@ -8461,8 +8662,7 @@ paths:
                         - fairplay
                         - widevine
                         - playready
-                        x-arthome-vocabulary-source: none
-                        x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+                        x-arthome-vocabulary-source: DRM_SYSTEMS
                     hardwareSecureDecode:
                       type: boolean
                     maxHeightPx:
@@ -8552,6 +8752,9 @@ paths:
                 - $ref: '#/components/schemas/WatchConcurrentLimitReachedError'
                 - $ref: '#/components/schemas/WatchDateCancelledError'
                 - $ref: '#/components/schemas/WatchNotPublishedError'
+                - $ref: '#/components/schemas/WatchSeatExpiredError'
+                - $ref: '#/components/schemas/WatchDateInterruptedError'
+                - $ref: '#/components/schemas/WatchLiveEndedError'
               examples:
                 api.forbidden:
                   $ref: '#/components/examples/ApiForbiddenError'
@@ -8575,6 +8778,12 @@ paths:
                   $ref: '#/components/examples/WatchDateCancelledError'
                 watch.not_published:
                   $ref: '#/components/examples/WatchNotPublishedError'
+                watch.seat_expired:
+                  $ref: '#/components/examples/WatchSeatExpiredError'
+                watch.date_interrupted:
+                  $ref: '#/components/examples/WatchDateInterruptedError'
+                watch.live_ended:
+                  $ref: '#/components/examples/WatchLiveEndedError'
         '404':
           $ref: '#/components/responses/NotFound'
         '410':
@@ -8607,19 +8816,22 @@ paths:
       operationId: renewPlaybackTicket
       summary: Renews the token and extends the lease, without restarting playback.
       description: |
-        **Every 45 s**, for a 120 s token and a 90 s lease. It is the renewal that carries the
-        concurrent-screen limit: **the window during which someone watches a stream they are no
-        longer entitled to is exactly the renewal interval.**
+        **Every `PLAYBACK_RENEWAL_INTERVAL_SECONDS`**, for a token of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and a
+        lease of `PLAYBACK_LEASE_SECONDS` (`@arthome/core`). It is the renewal that carries the
+        concurrent-screen limit, and it re-runs `decideWatch`: **the client learns within the renewal
+        interval** that it is no longer entitled, while **the edge may keep serving it for up to the
+        token's lifetime** (D-020).
 
         The response contains **nothing that would force a manifest reload**: the path is stable,
         only the signature changes.
 
-        **Four distinct refusal codes**, because the surface displays four different messages. A
-        generic code would produce a false one three times out of four.
+        **A distinct refusal code per screen**: a generic code would produce a false one.
 
-        **Refused (`403`).** `SEAT_EXPIRED` · `watch.concurrent_limit_reached` · `identity.signed_out_elsewhere` ·
-        `watch.preview_exhausted` · `DATE_INTERRUPTED`. `identity.signed_out_elsewhere` is what the television
-        signed out from the web sees — **not a network error**. **Real window: up to 120 s** — see
+        **Refused (`403`).** `watch.seat_expired` · `watch.concurrent_limit_reached` (the session another
+        device's opening took over, D-117) · `identity.signed_out_elsewhere` · `watch.preview_exhausted` ·
+        `watch.date_interrupted` · `watch.live_ended`, and any other watch code, `watch.date_cancelled` on
+        air included (`watch.replay_expired` is a `410`). `identity.signed_out_elsewhere` is what the television signed out from the web
+        sees — **not a network error**. **Real window: up to `PLAYBACK_TOKEN_LIFETIME_SECONDS`** — see
         `revokeDevice`.
       x-arthome-maturity: provisional
       x-arthome-upstream:
@@ -8689,19 +8901,65 @@ paths:
                 anyOf:
                 - $ref: '#/components/schemas/ApiForbiddenError'
                 - $ref: '#/components/schemas/IdentitySignedOutElsewhereError'
-                - $ref: '#/components/schemas/WatchConcurrentLimitReachedError'
+                - $ref: '#/components/schemas/WatchNoSeatError'
+                - $ref: '#/components/schemas/WatchRoomNotOpenError'
+                - $ref: '#/components/schemas/WatchOutOfTerritoryError'
+                - $ref: '#/components/schemas/WatchSubscriptionRequiredError'
+                - $ref: '#/components/schemas/WatchNoReplayError'
+                - $ref: '#/components/schemas/WatchReplayNotOnSaleError'
                 - $ref: '#/components/schemas/WatchPreviewExhaustedError'
+                - $ref: '#/components/schemas/WatchConcurrentLimitReachedError'
+                - $ref: '#/components/schemas/WatchDateCancelledError'
+                - $ref: '#/components/schemas/WatchNotPublishedError'
+                - $ref: '#/components/schemas/WatchSeatExpiredError'
+                - $ref: '#/components/schemas/WatchDateInterruptedError'
+                - $ref: '#/components/schemas/WatchLiveEndedError'
               examples:
                 api.forbidden:
                   $ref: '#/components/examples/ApiForbiddenError'
                 identity.signed_out_elsewhere:
                   $ref: '#/components/examples/IdentitySignedOutElsewhereError'
-                watch.concurrent_limit_reached:
-                  $ref: '#/components/examples/WatchConcurrentLimitReachedError'
+                watch.no_seat:
+                  $ref: '#/components/examples/WatchNoSeatError'
+                watch.room_not_open:
+                  $ref: '#/components/examples/WatchRoomNotOpenError'
+                watch.out_of_territory:
+                  $ref: '#/components/examples/WatchOutOfTerritoryError'
+                watch.subscription_required:
+                  $ref: '#/components/examples/WatchSubscriptionRequiredError'
+                watch.no_replay:
+                  $ref: '#/components/examples/WatchNoReplayError'
+                watch.replay_not_on_sale:
+                  $ref: '#/components/examples/WatchReplayNotOnSaleError'
                 watch.preview_exhausted:
                   $ref: '#/components/examples/WatchPreviewExhaustedError'
+                watch.concurrent_limit_reached:
+                  $ref: '#/components/examples/WatchConcurrentLimitReachedError'
+                watch.date_cancelled:
+                  $ref: '#/components/examples/WatchDateCancelledError'
+                watch.not_published:
+                  $ref: '#/components/examples/WatchNotPublishedError'
+                watch.seat_expired:
+                  $ref: '#/components/examples/WatchSeatExpiredError'
+                watch.date_interrupted:
+                  $ref: '#/components/examples/WatchDateInterruptedError'
+                watch.live_ended:
+                  $ref: '#/components/examples/WatchLiveEndedError'
         '404':
           $ref: '#/components/responses/NotFound'
+        '410':
+          description: The targeted cursor, pairing or replay has expired.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiCursorTooOldError'
+                - $ref: '#/components/schemas/WatchReplayExpiredError'
+              examples:
+                api.cursor_too_old:
+                  $ref: '#/components/examples/ApiCursorTooOldError'
+                watch.replay_expired:
+                  $ref: '#/components/examples/WatchReplayExpiredError'
         '500':
           $ref: '#/components/responses/InternalError'
         '502':
@@ -8716,7 +8974,7 @@ paths:
       summary: Releases a playback session — speeds things up, guarantees nothing.
       description: |
         **Nothing depends on it.** A television is unplugged, a set-top box cuts out, the operating
-        system kills a mobile application without warning: it is the **lease** that expires (90 s),
+        system kills a mobile application without warning: it is the **lease** that expires (`PLAYBACK_LEASE_SECONDS`),
         never this call that closes. A session that only closed on a client event would leave a ghost
         screen, and the viewer would be refused their own second playback.
 
@@ -8779,6 +9037,10 @@ paths:
         `releasePlayback` — a television can be cut off at any moment.
 
         **Last writer wins, and the ordering comes from the server.**
+
+        **No position is recorded during a live** (D-111): a live gives no control of playback, so no
+        resume point comes from it. A write then is answered with the stored point, unchanged, so an old
+        client stays harmless.
       x-arthome-maturity: provisional
       x-arthome-upstream:
       - streaming
@@ -10732,6 +10994,9 @@ components:
           - order.sales_closed
           - seat.cancel_deadline_passed
           - payment_method.in_use
+          - waitlist.not_sold_out
+          - seat.not_active
+          - refund.amount_exceeds_remaining
           - capacity.tier_must_widen
           - content.empty_in_both_languages
           - hold.quantity_invalid
@@ -10743,6 +11008,7 @@ components:
           - publication.promise_unacknowledged
           - publication.transition_forbidden
           - publication.transition_irreversible
+          - run.transition_forbidden
           - search.unknown_flag
           - seat_code.malformed
           - state.conflict
@@ -10757,6 +11023,9 @@ components:
           - watch.concurrent_limit_reached
           - watch.date_cancelled
           - watch.not_published
+          - watch.seat_expired
+          - watch.date_interrupted
+          - watch.live_ended
           x-arthome-vocabulary-source: ERROR_CODES
           examples:
           - publication.transition_irreversible
@@ -11086,6 +11355,9 @@ components:
             The refund delay is a **code**, never the sentence "3 to 5 business days" — which is a
             policy, hence translatable, hence i18n.
           type: string
+          x-arthome-vocabulary:
+          - refund_delay_business_days_3_5
+          x-arthome-vocabulary-source: REFUND_DELAY_CODES
           examples:
           - refund_delay_business_days_3_5
       required:
@@ -11474,8 +11746,8 @@ components:
             and the accessor is SCREAMING_SNAKE, so nothing compares a literal.
 
             **`watch.not_published` is the eleventh**, and it was missing here for the same reason
-            `displayState` was missing three members: `decideWatch` returns it for a `draft`, `reserve`
-            or `technical` date, and the non-public states keep falling out of contracts because no
+            `displayState` was missing three members: `decideWatch` returns it for a `draft` or `reserve`
+            date, and the non-public states keep falling out of contracts because no
             public screen shows them.
           x-arthome-vocabulary:
           - watch.no_seat
@@ -11489,6 +11761,9 @@ components:
           - watch.concurrent_limit_reached
           - watch.date_cancelled
           - watch.not_published
+          - watch.seat_expired
+          - watch.date_interrupted
+          - watch.live_ended
           x-arthome-vocabulary-source: WATCH_DENIAL_REASONS
           examples:
           - watch.subscription_required
@@ -11510,7 +11785,8 @@ components:
             meaning — "not denied" — would attach itself to whichever the writer had in mind.
 
             **And an ALLOWED verdict carries a real action.** A viewer watching on `scope: preview`
-            gets `buy_seat` beside it, before D-089's cutoff; past it, `see_other_dates`. A surface reading `null` as "no action" would be right for
+            gets the seat action beside it (`buy_seat`, `join_waitlist`, or `none` once on the waiting
+            list), before D-089's cutoff; past it, `see_other_dates`. A surface reading `null` as "no action" would be right for
             `denialReasonCode`, where null genuinely means *not denied*, and would silently drop the
             preview-to-purchase step — the one path that turns a free viewer into a paying one. The
             two fields look alike and must not be read alike.
@@ -11538,8 +11814,8 @@ components:
             crossed this boundary three times in a day because two people were each answering the
             other's last message instead of the code. The test that ends that, and the one this
             contract now defers to: **does a function return it?** `decideWatch` does not — the free
-            preview is expressed by an **allowed** verdict carrying `scope: preview` on both the live
-            and the replay path, with `buy_seat` beside it before D-089's cutoff, `see_other_dates` past it. A preview a viewer can still watch is not
+            preview is expressed by an **allowed** verdict carrying `scope: preview` on air, with the seat
+            action beside it before D-089's cutoff, `see_other_dates` past it. A preview a viewer can still watch is not
             a way out of a refusal, because there is no refusal.
 
             What the member was compensating for is the finding worth keeping: `WatchVerdict` had no
@@ -11706,7 +11982,8 @@ components:
           - type: 'null'
           description: |
             The instant the displayed state stops being true, the one `publicDisplayStateOf` returns.
-            **`null` when only an event can change it**: an outcome, or a date fully over. Never an
+            **`null` when only an event can change it**: an outcome, the run going on air or ending
+            (a known run in its room or on air, D-109, D-115), or a date fully over. Never an
             invented instant: a surface that re-runs the rule at a made-up time shows a false state.
         outcome:
           description: |
@@ -12770,6 +13047,9 @@ components:
           description: |
             What the viewer gets back, and **where**. The amount and a **delay code** — never the
             sentence "3 to 5 business days", which is a policy.
+
+            A **credited** seat serves `state: credited`, `method: account_credit`, `delayCode: null` and
+            `refundReasonCode: null`: the cause is the date's interruption, which the card's `date` carries.
           anyOf:
           - type: object
             properties:
@@ -12777,16 +13057,21 @@ components:
                 x-arthome-tax-basis: inherited
                 $ref: '#/components/schemas/Money'
               delayCode:
-                type: string
+                description: '`null` for a credit, which is on the account at once (`refundDelayCodeOf`).'
+                x-arthome-vocabulary:
+                - refund_delay_business_days_3_5
+                x-arthome-vocabulary-source: REFUND_DELAY_CODES
                 examples:
                 - refund_delay_business_days_3_5
+                type:
+                - string
+                - 'null'
               method:
                 type: string
                 x-arthome-vocabulary:
                 - original_payment_method
                 - account_credit
-                x-arthome-vocabulary-source: none
-                x-arthome-vocabulary-reason: Mirrors the payment provider's state machine. Theirs to change, ours to reflect — inventing a member here would describe a state their API never sends.
+                x-arthome-vocabulary-source: REFUND_METHODS
               refundReasonCode:
                 description: 'Why the seat was refunded: `date_cancelled` when its date was cancelled.'
                 x-arthome-vocabulary:
@@ -13075,6 +13360,12 @@ components:
         validUntil:
           type: string
           format: date-time
+        priorityUntil:
+          type: string
+          format: date-time
+          description: |
+            **Present when the caller quotes from an open priority pool** (D-083): the account was
+            notified, and the pool is its to buy from until then.
         lateEntry:
           description: |
             **Present once the live has started** (D-089): what the buyer has already missed, to be
@@ -13501,8 +13792,8 @@ components:
             True when this opening **took over this device's existing lease** instead of opening a second
             one. This is what stops a household being blocked by its own ghost screens — and it is
             decisive for a `pass` subscriber, whose ceiling is **one** screen: without takeover,
-            reopening the app after an OS kill locks them out of their own phone for the ninety seconds
-            of the lease.
+            reopening the app after an OS kill locks them out of their own phone for the lease's lifetime
+            (`PLAYBACK_LEASE_SECONDS`).
           type: boolean
         dateId:
           type: string
@@ -13520,7 +13811,9 @@ components:
             `none` here would be a token for watching nothing. `WatchVerdict.scope` carries all three
             because a verdict can say no; this one cannot.
 
-            `preview` for a non-holder. Its token expires at `min(now + 120 s, now + secondsLeft)`:
+            `preview` for a non-holder, from on air (D-110): under the incident veil it is granted and costs
+            nothing. Its token expires at the earlier of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and the seconds
+            left, under the veil too (`previewTokenExpiresAt`), and it renews before (`previewRenewAfterSeconds`):
             **reloading the page extends nothing**, and a reinstalled app resets no counter — the budget
             is **server-side**, per **account**.
         previewSecondsLeft:
@@ -13532,8 +13825,7 @@ components:
           x-arthome-vocabulary:
           - hls
           - dash
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+          x-arthome-vocabulary-source: PLAYBACK_PROTOCOLS
         drmSystem:
           description: |
             **Chosen by the server for this device.** The fleet imposes HLS + FairPlay on tvOS and
@@ -13543,8 +13835,7 @@ components:
           - fairplay
           - widevine
           - playready
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+          x-arthome-vocabulary-source: DRM_SYSTEMS
           type:
           - string
           - 'null'
@@ -13555,8 +13846,7 @@ components:
           - hd
           - fhd
           - uhd
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+          x-arthome-vocabulary-source: QUALITY_CAPS
           description: |
             The ceiling the device's **hardware** security level allows. An entry-level HDMI stick offers
             only software Widevine: the server **degrades cleanly** rather than refusing, and the surface
@@ -13588,8 +13878,7 @@ components:
           x-arthome-vocabulary:
           - signed_cookie
           - query_token
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+          x-arthome-vocabulary-source: EDGE_RENEWAL_MODES
           description: |
             **Declared, never guessed**: the two mechanisms are not equally available. `signed_cookie` for
             a browser — a same-origin call resets the cookie, zero URL change, zero interruption.
@@ -13601,21 +13890,24 @@ components:
           type: string
           format: date-time
           description: |
-            **120 s.** The window during which one watches a stream one is no longer entitled to is the
-            **renewal** interval, not the token's lifetime.
+            **`PLAYBACK_TOKEN_LIFETIME_SECONDS`** (D-020). The client learns it is no longer entitled
+            within the renewal interval, but the edge may keep serving it until the token in hand expires.
         renewAfterSec:
           type: integer
           examples:
           - 45
-          description: '**45 s**, under the 60 s ceiling the TV requires: it is the renewal that carries the concurrent-screen limit.'
+          description: '**`PLAYBACK_RENEWAL_INTERVAL_SECONDS`**, under the ceiling the TV requires: it is the renewal that carries the concurrent-screen limit. A preview renews sooner, before its token expires (`previewRenewAfterSeconds`).'
         leaseExpiresAt:
           type: string
           format: date-time
           description: |
-            **90 s.** It is the **lease** that carries the concurrent-screen limit, not a release command:
+            **`PLAYBACK_LEASE_SECONDS`.** It is the **lease** that carries the concurrent-screen limit, not a release command:
             a television gets unplugged, a set-top box loses power, the OS kills a mobile app without
             warning. `releasePlayback` speeds it up, **nothing depends on it**.
         resumePoint:
+          description: |
+            **A replay's only.** A live gives no control of playback and records no position (D-111),
+            so a live's ticket carries none.
           anyOf:
           - type: object
             properties:
@@ -13737,16 +14029,17 @@ components:
           - hd
           - fhd
           - uhd
-          x-arthome-vocabulary-source: none
-          x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+          x-arthome-vocabulary-source: QUALITY_CAPS
       required:
       - expiresAt
       - renewAfterSec
       - leaseExpiresAt
       additionalProperties: {}
       description: |
-        **Partial** renewal: nothing that would force a stream reload. The refusal carries one of the
-        four distinct codes — a generic code would produce a false one three times out of four.
+        **Partial** renewal: nothing that would force a stream reload. A player renews every
+        `PLAYBACK_RENEWAL_INTERVAL_SECONDS` for a token of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and a lease of
+        `PLAYBACK_LEASE_SECONDS` (`@arthome/core`). A refusal carries its own code, one per screen: a
+        generic code would produce a false one.
     ActivePlaybackSession:
       type: object
       properties:
@@ -14326,8 +14619,15 @@ components:
                 x-arthome-vocabulary:
                 - interrupted_date
                 - goodwill
-                x-arthome-vocabulary-source: none
-                x-arthome-vocabulary-reason: A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.
+                x-arthome-vocabulary-source: CREDIT_ORIGINS
+              stateCode:
+                type: string
+                x-arthome-vocabulary:
+                - issued
+                - partially_used
+                - used
+                - expired
+                x-arthome-vocabulary-source: CREDIT_STATES
               expiresAt:
                 type: string
                 format: date-time
@@ -15635,6 +15935,71 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    SeatNotActiveError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: seat.not_active
+            params:
+              type: object
+              properties:
+                state:
+                  type: string
+                  x-arthome-vocabulary:
+                  - active
+                  - cancelled
+                  - refunded
+                  - transferred
+                  - credited
+                  x-arthome-vocabulary-source: SEAT_STATES
+              required:
+              - state
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     SeatCancelDeadlinePassedError:
       type: object
       properties:
@@ -15644,6 +16009,64 @@ components:
             code:
               type: string
               const: seat.cancel_deadline_passed
+            params:
+              type: object
+              properties:
+                cancelDeadline:
+                  type: string
+              required:
+              - cancelDeadline
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WaitlistNotSoldOutError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: waitlist.not_sold_out
             params:
               type: object
               properties: {}
@@ -16419,6 +16842,168 @@ components:
             code:
               type: string
               const: watch.not_published
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchSeatExpiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.seat_expired
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchDateInterruptedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.date_interrupted
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: |
+                The `trace-id` part of the `traceparent`. Readable and copyable from the error screen: on
+                mobile it is the only link between "my application crashed" and a server log.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              examples:
+              - refused
+              description: |
+                The decision the person has to make. `refused`: do not retry, understand. `unavailable`:
+                retry. `offline_forbidden`: a **local** refusal, before anything is sent — **never emitted by
+                the server**, present in the vocabulary so the surface has only one error shape to render.
+
+                **Open vocabulary on read, and this is where it matters most.** An unknown nature —
+                `degraded`, `needs_reauth` — is treated as **`unavailable`**, hence retryable. A frozen
+                `enum` here would make a television on an earlier version reject the whole envelope: it would
+                not lose a card, it would lose its ability to **read errors**, precisely when something is
+                already wrong, and on a fleet we cannot update.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchLiveEndedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.live_ended
             params:
               type: object
               properties: {}
@@ -17258,7 +17843,17 @@ components:
         error:
           code: seat.cancel_deadline_passed
           nature: refused
-          params: {}
+          params:
+            cancelDeadline: '2026-11-04T18:30:00Z'
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    SeatNotActiveError:
+      value:
+        error:
+          code: seat.not_active
+          nature: refused
+          params:
+            state: cancelled
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     StateConflictError:
@@ -17269,6 +17864,14 @@ components:
           params:
             currentVersion: 8
             state: live
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WaitlistNotSoldOutError:
+      value:
+        error:
+          code: waitlist.not_sold_out
+          nature: refused
+          params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     WatchConcurrentLimitReachedError:
@@ -17291,6 +17894,22 @@ components:
       value:
         error:
           code: watch.date_cancelled
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchDateInterruptedError:
+      value:
+        error:
+          code: watch.date_interrupted
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchLiveEndedError:
+      value:
+        error:
+          code: watch.live_ended
           nature: refused
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
@@ -17355,6 +17974,14 @@ components:
       value:
         error:
           code: watch.room_not_open
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchSeatExpiredError:
+      value:
+        error:
+          code: watch.seat_expired
           nature: refused
           params: {}
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736

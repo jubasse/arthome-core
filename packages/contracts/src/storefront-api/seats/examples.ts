@@ -1,17 +1,20 @@
 import {
   DisplayState,
-  OrderState,
   PriceTier,
+  RefundDelayCode,
+  RefundMethod,
   RefundReason,
   ReplayPolicy,
   RightsScope,
+  SeatCancelReason,
+  SeatState,
 } from '@arthome/core';
 
 import type { CancelSeatBody, SeatCancellation } from './schemas.js';
 import { CancelSeatBodySchema, SeatCancellationSchema } from './schemas.js';
 import type { ModuleExamples } from '../../openapi/docs.js';
 
-const cancelSeatBody: CancelSeatBody = { cancelReasonCode: RefundReason.VIEWER_REQUEST };
+const cancelSeatBody: CancelSeatBody = { cancelReasonCode: SeatCancelReason.VIEWER_REQUEST };
 
 const DATE_ID = '019928a0-7d31-7a10-b8c4-2f9e11a4c001';
 
@@ -39,12 +42,12 @@ const seatCancellation: SeatCancellation = {
     dateId: DATE_ID,
     seatCode: 'ATH-7QK2-4M',
     tier: PriceTier.FULL,
-    state: OrderState.REFUNDED,
+    state: SeatState.CANCELLED,
     date,
     refund: {
       amount: { amountMinor: 2400, currencyCode: 'EUR' },
-      delayCode: 'refund_delay_business_days_3_5',
-      method: 'original_payment_method',
+      delayCode: RefundDelayCode.BUSINESS_DAYS_3_5,
+      method: RefundMethod.ORIGINAL_PAYMENT_METHOD,
       refundReasonCode: RefundReason.VIEWER_REQUEST,
     },
   },

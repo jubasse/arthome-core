@@ -90,6 +90,9 @@ export interface ErrorStatusMap {
     readonly [OrderErrorCode.SALES_CLOSED]: 409;
     readonly [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: 409;
     readonly [OrderErrorCode.PAYMENT_METHOD_IN_USE]: 409;
+    readonly [OrderErrorCode.WAITLIST_NOT_SOLD_OUT]: 409;
+    readonly [OrderErrorCode.SEAT_NOT_ACTIVE]: 409;
+    readonly [OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING]: 409;
     readonly [DomainErrorCode.CAPACITY_TIER_MUST_WIDEN]: 409;
     readonly [DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES]: 500;
     readonly [DomainErrorCode.HOLD_QUANTITY_INVALID]: 400;
@@ -101,6 +104,7 @@ export interface ErrorStatusMap {
     readonly [DomainErrorCode.PUBLICATION_PROMISE_UNACKNOWLEDGED]: 409;
     readonly [DomainErrorCode.PUBLICATION_TRANSITION_FORBIDDEN]: 409;
     readonly [DomainErrorCode.PUBLICATION_TRANSITION_IRREVERSIBLE]: 409;
+    readonly [DomainErrorCode.RUN_TRANSITION_FORBIDDEN]: 409;
     readonly [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: 400;
     readonly [DomainErrorCode.SEAT_CODE_MALFORMED]: 400;
     readonly [DomainErrorCode.STATE_CONFLICT]: 409;
@@ -115,6 +119,9 @@ export interface ErrorStatusMap {
     readonly [WatchDenialReason.CONCURRENT_LIMIT_REACHED]: 403;
     readonly [WatchDenialReason.DATE_CANCELLED]: 403;
     readonly [WatchDenialReason.NOT_PUBLISHED]: 403;
+    readonly [WatchDenialReason.SEAT_EXPIRED]: 403;
+    readonly [WatchDenialReason.DATE_INTERRUPTED]: 403;
+    readonly [WatchDenialReason.LIVE_ENDED]: 403;
 }
 export interface ErrorDefinition<C extends ErrorCode = ErrorCode> {
     readonly status: ErrorStatusMap[C];

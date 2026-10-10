@@ -28,6 +28,7 @@ import {
   ReplayPolicy,
   RunState,
   SchemaIssueRule,
+  SeatState,
   Service,
   StateChangeOrigin,
   TECHNICAL_PROVISION_THRESHOLD,
@@ -131,6 +132,9 @@ export interface ErrorStatusMap {
   readonly [OrderErrorCode.SALES_CLOSED]: 409;
   readonly [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: 409;
   readonly [OrderErrorCode.PAYMENT_METHOD_IN_USE]: 409;
+  readonly [OrderErrorCode.WAITLIST_NOT_SOLD_OUT]: 409;
+  readonly [OrderErrorCode.SEAT_NOT_ACTIVE]: 409;
+  readonly [OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING]: 409;
 
   readonly [DomainErrorCode.CAPACITY_TIER_MUST_WIDEN]: 409;
   readonly [DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES]: 500;
@@ -143,6 +147,7 @@ export interface ErrorStatusMap {
   readonly [DomainErrorCode.PUBLICATION_PROMISE_UNACKNOWLEDGED]: 409;
   readonly [DomainErrorCode.PUBLICATION_TRANSITION_FORBIDDEN]: 409;
   readonly [DomainErrorCode.PUBLICATION_TRANSITION_IRREVERSIBLE]: 409;
+  readonly [DomainErrorCode.RUN_TRANSITION_FORBIDDEN]: 409;
   readonly [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: 400;
   readonly [DomainErrorCode.SEAT_CODE_MALFORMED]: 400;
   readonly [DomainErrorCode.STATE_CONFLICT]: 409;
@@ -158,6 +163,9 @@ export interface ErrorStatusMap {
   readonly [WatchDenialReason.CONCURRENT_LIMIT_REACHED]: 403;
   readonly [WatchDenialReason.DATE_CANCELLED]: 403;
   readonly [WatchDenialReason.NOT_PUBLISHED]: 403;
+  readonly [WatchDenialReason.SEAT_EXPIRED]: 403;
+  readonly [WatchDenialReason.DATE_INTERRUPTED]: 403;
+  readonly [WatchDenialReason.LIVE_ENDED]: 403;
 }
 
 export interface ErrorDefinition<C extends ErrorCode = ErrorCode> {
@@ -387,8 +395,17 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
     },
   },
   [OrderErrorCode.SALES_CLOSED]: { status: 409, example: { salesEndAt: '2026-11-04T20:00:00Z' } },
-  [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: { status: 409, example: {} },
+  [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: {
+    status: 409,
+    example: { cancelDeadline: '2026-11-04T18:30:00Z' },
+  },
   [OrderErrorCode.PAYMENT_METHOD_IN_USE]: { status: 409, example: {} },
+  [OrderErrorCode.WAITLIST_NOT_SOLD_OUT]: { status: 409, example: {} },
+  [OrderErrorCode.SEAT_NOT_ACTIVE]: { status: 409, example: { state: SeatState.CANCELLED } },
+  [OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING]: {
+    status: 409,
+    example: { remainingMinor: 1200, currencyCode: 'EUR' },
+  },
 
   [DomainErrorCode.CAPACITY_TIER_MUST_WIDEN]: { status: 409, example: { current: 500, next: 400 } },
   // Thrown on read only (`pickLanguage`): stored content breaking an invariant no client can fix.
@@ -432,6 +449,10 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
       promise: PublicationPromise.PRICES_ENGAGED,
     },
   },
+  [DomainErrorCode.RUN_TRANSITION_FORBIDDEN]: {
+    status: 409,
+    example: { from: RunState.IDLE, to: RunState.ENDED },
+  },
   [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: { status: 400, example: { flag: 'subtitled' } },
   [DomainErrorCode.SEAT_CODE_MALFORMED]: { status: 400, example: { body: 'A12' } },
   [DomainErrorCode.STATE_CONFLICT]: {
@@ -465,6 +486,9 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
   },
   [WatchDenialReason.DATE_CANCELLED]: { status: 403, example: {} },
   [WatchDenialReason.NOT_PUBLISHED]: { status: 403, example: {} },
+  [WatchDenialReason.SEAT_EXPIRED]: { status: 403, example: {} },
+  [WatchDenialReason.DATE_INTERRUPTED]: { status: 403, example: {} },
+  [WatchDenialReason.LIVE_ENDED]: { status: 403, example: {} },
 };
 
 export function statusOf<C extends ErrorCode>(code: C): ErrorStatusMap[C] {

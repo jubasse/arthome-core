@@ -81,8 +81,8 @@ minutes, visible on a static theatre shot. So:
 > **Never a token in a URL path.** It lives in a signed request or in a signed cookie, and the
 > manifest path, like the segment paths, stays stable.
 
-**A renewal refusal carries a code, and four distinct codes are necessary** — the TV shows four
-different messages:
+**A renewal refusal carries a code, and each screen needs its own** — the TV shows a different
+message for each:
 
 | Code | What the surface says |
 |---|---|
@@ -90,8 +90,11 @@ different messages:
 | `watch.concurrent_limit_reached` | the concurrent-screen limit has been reached |
 | `identity.signed_out_elsewhere` | you were signed out from another device |
 | `api.service_unavailable` | our servers are not responding |
+| `watch.date_interrupted` | the performance was interrupted |
+| `watch.live_ended` | the live is over |
 
-A generic code would produce a wrong one three times out of four.
+A generic code would produce a wrong one most of the time. A renewal re-runs `decideWatch`, so any
+other `watch.*` refusal can come too (`watch.date_cancelled` on air, `watch.preview_exhausted`).
 
 **What else the token carries, and why it belongs here**: the protocol and the DRM system **chosen
 by the server for this device**, and the **quality ceiling** its hardware security level allows.
@@ -248,7 +251,7 @@ error we have just corrected, in the other direction.
 **Immediate revocation, two paths:**
 - `identity.device.revoked.v1` consumed by `streaming` → that device's leases move to `revoked`.
   **Real exposure window: up to 120 s** — see the box above;
-- an `interrupted` outcome declared → the date's leases are revoked with `date.interrupted`, **at
+- an `interrupted` outcome declared → the date's leases are revoked with `watch.date_interrupted`, **at
   the end of the renewal in progress**, not by an abrupt cut: a feed cut with no explanation is
   exactly what principle no. 6 forbids.
 
@@ -325,6 +328,13 @@ A non-holder's token is issued with `scope: preview` and
 `watch.preview_exhausted`, and the surface puts up its lock — with the action that gets out of the dead
 end, never a dead screen.
 
+**The budget is spent only while the run is on air with no incident veil up, and there is no
+preview before on air** (D-110): a non-holder in the room is refused `watch.no_seat` with the seat
+action. In core, `isPreviewBudgetSpending`, `previewSecondsSpent` (the seconds of a watched window
+inside the run's `on_air` intervals) and `previewTokenExpiresAt` (the cap above, under the veil too:
+a veil lifting mid-token must not open on-air seconds the budget does not cover), with
+`previewRenewAfterSeconds` keeping the renewal before that expiry.
+
 **The scope is the account, not the device**: otherwise a household with four devices gets four
 previews. And the budget is **served** in the entitlement verdict, so the surface can show the
 countdown without counting it itself.
@@ -333,23 +343,33 @@ countdown without counting it itself.
 
 ## 5. What `streaming` must know in order to decide — and why it knows it
 
-`decideWatch` has five inputs, belonging to three contexts. **No synchronous call between services
-being permitted**, `streaming` keeps a **local projection** fed by Kafka:
+`decideWatch`'s inputs belong to three contexts. **No synchronous call between services being
+permitted**, `streaming` keeps a **local projection** fed by Kafka, beside the run it owns:
 
 | Input | Source | Arrives via |
 |---|---|---|
-| holding a seat | `ticketing` | `ticketing.seat.activated.v1` / `.cancelled` |
+| holding a seat, the seats held on the date (`concurrentStreamsAllowedFor`, D-108), a seat lost (`seatExpired`) | `ticketing` | `ticketing.seat.activated.v1` / `.cancelled` |
 | plan and `opens[]`, screen ceiling | `ticketing` | `ticketing.subscription.changed.v1` |
 | the date's state and its bounds | `catalog` | `catalog.date.scheduled.v1` / `.rescheduled` / `.outcome_declared` |
+| the publication's state (`draft` and `reserve` are refused, `technical` stays public, D-072) | `catalog` | `catalog.publication.state_changed.v1` |
+| the run's state | `streaming` | its own `Run` |
 | replay policy and window | `catalog` | `catalog.date.replay_policy_set.v1` |
 | territorial rights | `catalog` | `catalog.date.rights_changed.v1` |
+| the seat standing (on public sale, priority pool, on the list) | `ticketing`, through the BFF | not projected: `streaming` passes `seatStanding: null`, the generic sold-out way out |
+
+**What a subscription opens** (D-125): `planOpeningsOf` gives the plan's openings for `active`,
+`trialing` and `past_due` (the retries keep the access), and for `cancelled` until `paidThrough`, the
+end of the last paid period (`paid_through` on `ticketing.subscription.changed.v1`). Never the
+provider's current period end: a renewal moves it forward before it is paid, so a final payment
+failure, which arrives as `cancelled`, would open the unpaid period. Every
+caller passes its result to `decideWatch` and `concurrentStreamsAllowedFor`; none reads the state.
 
 This is **the only projection in the system that carries authority** — the seven others
 (`data-model.md` §4) feed a display, this one decides an entitlement — and it is owned because both
 alternatives are worse: a synchronous call between services is forbidden, and an entitlement decided
 by the BFF has no authority — it produces no token.
 
-**Freshness tolerated: ≤ 5 s.** Beyond that, `context-map.md` §11's `read_model_staleness_seconds`
+**Freshness tolerated: ≤ 5 s** (`ENTITLEMENT_PROJECTION_MAX_STALENESS_SECONDS`). Beyond that, `context-map.md` §11's `read_model_staleness_seconds`
 alert fires. And the viewer's country is **resolved at every opening**, not projected: it changes
 between two reads (travel, roaming, corporate network), and on mobile that gap is measured in hours.
 

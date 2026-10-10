@@ -446,6 +446,12 @@ next day's reconciliation, not six months later.
 | `refunded` / `partially_refunded` | refund confirmed | `charge.refunded` |
 | `disputed` | chargeback opened | `charge.dispute.created` |
 
+**What a webhook maps to** (`PAYMENT_EVENT_KINDS`, `@arthome/core`): the intent kinds, plus
+`refund_succeeded`, a refund confirmed, which moves the cancelled seat to `refunded` and the order
+forward to `partially_refunded` or `refunded`, and `dispute_opened`, which moves the order to
+`disputed`. A refund event carries `refundRef` and `amountRefunded`, the amount refunded on the
+payment so far rather than this refund's. A failed refund is not mapped here and stays `unhandled`.
+
 **Three rules that are not negotiable:**
 
 1. **Our state never advances on a browser return.** `studio-mobile` puts it perfectly, and it holds

@@ -26,11 +26,7 @@ export type SignInRoute = Route<{
     method: 'post';
     version: 1;
     path: '/auth/sign-in';
-    parameters: readonly [
-        typeof IdempotencyKeyParameter,
-        typeof SurfaceParameter,
-        typeof TraceparentParameter
-    ];
+    parameters: readonly [typeof SurfaceParameter, typeof TraceparentParameter];
     requestBody: JsonRequestBody<typeof SignInBodySchema, true>;
     access: PublicAccess;
     responses: {
@@ -38,7 +34,6 @@ export type SignInRoute = Route<{
     };
     errorCodes: {
         401: readonly (typeof IdentityErrorCode.INVALID_CREDENTIALS | typeof IdentityErrorCode.TWO_FACTOR_REQUIRED)[];
-        409: readonly (typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED)[];
     };
 }>;
 export type SignOutRoute = Route<{

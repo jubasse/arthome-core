@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { PRICE_TIERS } from '@arthome/core';
-import type { VocabularyIn } from '@arthome/core/schema';
+import type { VocabularyIn, VocabularyOutNullable } from '@arthome/core/schema';
 import { MoneyOut } from '@arthome/core/schema';
 import { DateCardSchema, PriceTierSchema } from '../../catalog/index.js';
 import type { QueryParameter } from '../../http/index.js';
@@ -20,9 +20,12 @@ export declare const QuoteSeatBodySchema: z.ZodObject<{
 }, z.core.$strip>;
 export declare const WaitlistRegistrationSchema: z.ZodObject<{
     joined: z.ZodBoolean;
+    state: z.ZodOptional<VocabularyOutNullable>;
     rankDisclosed: z.ZodBoolean;
     rank: z.ZodOptional<z.ZodNullable<z.ZodInt>>;
     priorityWindowHours: z.ZodOptional<z.ZodInt>;
+    priorityUntil: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    priorityPoolSeats: z.ZodOptional<z.ZodInt>;
     date: z.ZodOptional<typeof DateCardSchema>;
 }, z.core.$loose>;
 export declare const WaitlistDepartureSchema: z.ZodOptional<z.ZodObject<{

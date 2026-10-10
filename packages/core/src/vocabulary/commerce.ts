@@ -173,6 +173,72 @@ export const RefundReason = {
 } as const;
 
 /**
+ * Why a seat was cancelled, in the order of the proto's `SeatCancelReason`. Its `PAYMENT_FAILED` is
+ * never produced: a seat exists only once its order is paid (D-077). Of the refund reasons, only
+ * these three cancel a seat (D-095).
+ */
+export const SEAT_CANCEL_REASONS = [
+  'viewer_request',
+  'date_cancelled',
+  'account_deletion',
+] as const;
+export type SeatCancelReason = (typeof SEAT_CANCEL_REASONS)[number];
+export const SeatCancelReason = {
+  VIEWER_REQUEST: 'viewer_request',
+  DATE_CANCELLED: 'date_cancelled',
+  ACCOUNT_DELETION: 'account_deletion',
+} as const;
+
+export const REFUND_METHODS = ['original_payment_method', 'account_credit'] as const;
+export type RefundMethod = (typeof REFUND_METHODS)[number];
+export const RefundMethod = {
+  ORIGINAL_PAYMENT_METHOD: 'original_payment_method',
+  ACCOUNT_CREDIT: 'account_credit',
+} as const;
+
+/** How long a refund takes to arrive, as a code a surface explains, never the sentence it stands for. */
+export const REFUND_DELAY_CODES = ['refund_delay_business_days_3_5'] as const;
+export type RefundDelayCode = (typeof REFUND_DELAY_CODES)[number];
+export const RefundDelayCode = { BUSINESS_DAYS_3_5: 'refund_delay_business_days_3_5' } as const;
+
+/** data-model.md §3.7. */
+export const CREDIT_STATES = ['issued', 'partially_used', 'used', 'expired'] as const;
+export type CreditState = (typeof CREDIT_STATES)[number];
+export const CreditState = {
+  ISSUED: 'issued',
+  PARTIALLY_USED: 'partially_used',
+  USED: 'used',
+  EXPIRED: 'expired',
+} as const;
+
+/** Why a credit was issued, in the order of the proto's `CreditOrigin`. */
+export const CREDIT_ORIGINS = ['interrupted_date', 'goodwill'] as const;
+export type CreditOrigin = (typeof CREDIT_ORIGINS)[number];
+export const CreditOrigin = { INTERRUPTED_DATE: 'interrupted_date', GOODWILL: 'goodwill' } as const;
+
+/**
+ * data-model.md §3.9. `lapsed`: notified, did not buy in the window, and may register again.
+ * `closed`: ended with its date's cancellation or interruption (D-096), and takes no registration.
+ */
+export const WAITLIST_ENTRY_STATES = [
+  'waiting',
+  'notified',
+  'converted',
+  'left',
+  'lapsed',
+  'closed',
+] as const;
+export type WaitlistEntryState = (typeof WAITLIST_ENTRY_STATES)[number];
+export const WaitlistEntryState = {
+  WAITING: 'waiting',
+  NOTIFIED: 'notified',
+  CONVERTED: 'converted',
+  LEFT: 'left',
+  LAPSED: 'lapsed',
+  CLOSED: 'closed',
+} as const;
+
+/**
  * Where a payout stands: `held` while an outcome is open, `refunded` if the date
  * is cancelled, `suspended` while a bank-details change waits for its
  * counter-signature. `shared/` has authority: 12% commission, 14-day delay,

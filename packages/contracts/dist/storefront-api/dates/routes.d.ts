@@ -1,9 +1,10 @@
-import type { EnterSalesQueueRoute, GetDateDetailRoute, GetSalesQueuePositionRoute, JoinWaitlistRoute, LeaveWaitlistRoute, ListChatMessagesRoute, QuoteSeatRoute, RefreshDateAvailabilityRoute, SendChatMessageRoute, SendReactionRoute } from './types.js';
+import type { EnterSalesQueueRoute, GetDateDetailRoute, GetSalesQueuePositionRoute, GetWaitlistRegistrationRoute, JoinWaitlistRoute, LeaveWaitlistRoute, ListChatMessagesRoute, QuoteSeatRoute, RefreshDateAvailabilityRoute, SendChatMessageRoute, SendReactionRoute } from './types.js';
 export declare const getDateDetail: GetDateDetailRoute;
 export declare const refreshDateAvailability: RefreshDateAvailabilityRoute;
 export declare const quoteSeat: QuoteSeatRoute;
 export declare const enterSalesQueue: EnterSalesQueueRoute;
 export declare const getSalesQueuePosition: GetSalesQueuePositionRoute;
+export declare const getWaitlistRegistration: GetWaitlistRegistrationRoute;
 export declare const joinWaitlist: JoinWaitlistRoute;
 export declare const leaveWaitlist: LeaveWaitlistRoute;
 export declare const listChatMessages: ListChatMessagesRoute;

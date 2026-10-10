@@ -159,8 +159,18 @@ may already be sold again.
   (`adr-payments.md` §7).
 - **Work that calls the payment provider runs in BullMQ queues inside `ticketing`** (critical
   rule 1): intent cancellations and refunds. Each queue is rate-limited below the provider's API
-  limit and uses provider idempotency keys (`refund:{orderId}`). Retries are bounded, with backoff
-  and jitter, then a DLQ row and an alert.
+  limit and uses provider idempotency keys. Retries are bounded, with backoff and jitter, then a
+  DLQ row and an alert.
+- **One provider key per refund.** `refundIdempotencyKey` gives `refund:{refundId}`, one per refund
+  row, so two partial refunds of one order never share a key; `intentCancelIdempotencyKey` gives
+  `cancel:{orderId}` (`@arthome/core`). The key is stored as text on the row that owes the call, so
+  a row already owed under the former `refund:{orderId}` keeps it. It is the provider's key and not
+  the BullMQ job id, which cannot hold a `:`.
+- **Every refund refunds the commission** (`refund_application_fee: true`,
+  `RefundRequest.refundApplicationFee`, `adr-payments.md` §9).
+- **A seat is `cancelled`, then `refunded`.** It leaves sale when its cancellation is decided and
+  becomes `refunded` once the provider confirms the money went back (`refund_succeeded`), so the
+  card tells the truth while the refund waits in its queue (`data-model.md` §3.3).
 - **A cancelled date** (`catalog.date.outcome_declared`): sales close, then one refund job per paid
   order. 10,000 orders drain at the rate limit in minutes, and each refund ends in `order.refunded`
   and `seat.cancelled` (`DATE_CANCELLED`).
@@ -177,10 +187,13 @@ may already be sold again.
 purchase decides, as in the waiting room.
 
 - **`WaitlistEntry`**, one per date and account, with a state:
-  `waiting | notified | converted | left | lapsed`. The rank is no longer disclosed:
+  `waiting | notified | converted | left | lapsed | closed`. The rank is no longer disclosed:
   `joinWaitlist` answers `rankDisclosed: false`, which the contract already allows.
 - **Joined only when the date is sold out**, which is when `decideWatch` offers `join_waitlist`.
-  Joining and leaving are state assignments (`joinWaitlist`, `leaveWaitlist`).
+  Joining and leaving are state assignments (`joinWaitlist`, `leaveWaitlist`); the caller reads
+  its own entry with `getWaitlistRegistration`. `assertWaitlistJoinable` refuses with
+  `order.sales_closed` once sales ended, by time or by a cancellation or an interruption, then with
+  `waitlist.not_sold_out` while public seats remain.
 - **`openCapacityTier` is one transaction**:
   - the capacity widens;
   - the new seats become a priority pool until `priority_until` (now plus
@@ -188,12 +201,22 @@ purchase decides, as in the waiting room.
   - every waiting entry is marked `notified`;
   - `waitlist.notified` is written in chunks of at most `WAITLIST_NOTIFIED_ACCOUNTS_MAX` (500)
     accounts, because one message listing ten thousand ids is a message size problem.
+- **With `notifyWaitlist: false`** (D-094), nobody is notified and no pool is made: the new seats
+  go on public sale at once. **An empty list** makes no pool either, whatever the flag.
 - **During the window**, any notified account buys from the pool, first come first served; the
-  public sees the availability without the pool. An account that registers while a window is open
-  is notified into it at once.
+  public sees the availability without the pool. `seatsAvailable` is that public count, and
+  `seatsAvailableTo` adds the pool for a notified account (`@arthome/core`). An account that
+  registers while a window is open is notified into it at once (`waitlistStateOnJoin`).
 - **At `priority_until`**, a sweeper returns what is left of the pool to public sale, and every
   notified entry that did not buy becomes `lapsed`: it has left the list and registers again to be
   told next time.
+- **A seat freed on a sold-out date returns to public sale at once** (D-093), first come first
+  served, whether a viewer cancelled it or a refund cancelled it: the list is not notified and
+  gets no priority.
+- **A cancellation or an interruption ends the list** (D-096): every `waiting` or `notified` entry
+  becomes `closed` and the priority pool closes. Nobody is told beyond the date's own card. `closed`
+  is not `lapsed`: a list ended by its date takes no registration again, and the studio's counts
+  tell the two apart. A postponement leaves the entries waiting (`outcomeEndsWaitlist`).
 
 ## 10. Events, keys and topics (D-078)
 

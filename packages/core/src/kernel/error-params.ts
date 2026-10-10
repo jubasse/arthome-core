@@ -155,8 +155,14 @@ export interface ErrorParamsMap {
     salesEndAt: string;
   };
   [OrderErrorCode.SALES_CLOSED]: { salesEndAt: string };
-  [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: NoErrorParams;
+  [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: { cancelDeadline: string };
   [OrderErrorCode.PAYMENT_METHOD_IN_USE]: NoErrorParams;
+  [OrderErrorCode.WAITLIST_NOT_SOLD_OUT]: NoErrorParams;
+  [OrderErrorCode.SEAT_NOT_ACTIVE]: { state: string };
+  [OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING]: {
+    remainingMinor: number;
+    currencyCode: string;
+  };
 
   [DomainErrorCode.CAPACITY_TIER_MUST_WIDEN]: { current: number; next: number };
   [DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES]: NoErrorParams;
@@ -178,6 +184,7 @@ export interface ErrorParamsMap {
     to: string;
     promise: string;
   };
+  [DomainErrorCode.RUN_TRANSITION_FORBIDDEN]: { from: string; to: string };
   [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: { flag: string };
   [DomainErrorCode.SEAT_CODE_MALFORMED]: { body: string };
   // `state` when the record has a lifecycle state: the operator learns it moved, without a reload.
@@ -194,6 +201,9 @@ export interface ErrorParamsMap {
   [WatchDenialReason.CONCURRENT_LIMIT_REACHED]: { allowed: number; activeSessions: unknown[] };
   [WatchDenialReason.DATE_CANCELLED]: NoErrorParams;
   [WatchDenialReason.NOT_PUBLISHED]: NoErrorParams;
+  [WatchDenialReason.SEAT_EXPIRED]: NoErrorParams;
+  [WatchDenialReason.DATE_INTERRUPTED]: NoErrorParams;
+  [WatchDenialReason.LIVE_ENDED]: NoErrorParams;
 
   [DomainGuardCode.I18N_KEY_MALFORMED]: { key: string };
   [DomainGuardCode.INSTANT_INVALID]: { instant: string };

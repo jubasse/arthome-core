@@ -13,6 +13,7 @@ import type {
   EnterSalesQueueRoute,
   GetDateDetailRoute,
   GetSalesQueuePositionRoute,
+  GetWaitlistRegistrationRoute,
   JoinWaitlistRoute,
   LeaveWaitlistRoute,
   ListChatMessagesRoute,
@@ -72,7 +73,7 @@ export const quoteSeat: QuoteSeatRoute = dates.action('seat-quote', {
   idempotent: false,
   body: QuoteSeatBodySchema,
   response: SeatQuoteSchema,
-  answer: 'Devis.',
+  answer: 'The quote.',
   errors: [
     ApiErrorCode.NOT_FOUND,
     OrderErrorCode.SALES_CLOSED,
@@ -109,12 +110,25 @@ export const getSalesQueuePosition: GetSalesQueuePositionRoute = polledDates
 
 const waitlist = dates.single('waitlist', { owner: 'caller' });
 
+export const getWaitlistRegistration: GetWaitlistRegistrationRoute = waitlist.find({
+  operationId: 'getWaitlistRegistration',
+  summary: "Reads one's registration on a date's waiting list.",
+  cache: cache(Freshness.NEVER),
+  item: WaitlistRegistrationSchema,
+  answer: "The caller's registration.",
+  errors: [ApiErrorCode.NOT_FOUND],
+});
+
 export const joinWaitlist: JoinWaitlistRoute = waitlist.upsert({
   operationId: 'joinWaitlist',
-  summary: "S'inscrit en liste d'attente.",
+  summary: "Joins a date's waiting list.",
   item: WaitlistRegistrationSchema,
-  answer: 'Inscrit.',
-  errors: [ApiErrorCode.NOT_FOUND],
+  answer: "The caller's registration.",
+  errors: [
+    ApiErrorCode.NOT_FOUND,
+    OrderErrorCode.WAITLIST_NOT_SOLD_OUT,
+    OrderErrorCode.SALES_CLOSED,
+  ],
 });
 
 export const leaveWaitlist: LeaveWaitlistRoute = waitlist.delete({

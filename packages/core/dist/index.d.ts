@@ -23,6 +23,7 @@ export * from './moderation/index.js';
 export * from './notification/index.js';
 export * from './search/index.js';
 export * from './entitlement/index.js';
+export * from './streaming/index.js';
 export * from './payment/index.js';
 export * from './payout/index.js';
 export * from './fixtures/index.js';

@@ -257,6 +257,8 @@ message Promotion {
 message DateSalesAvailabilityChanged {
   string date_id = 1;
   string channel_id = 2;
+  // The PUBLIC count: an open priority pool's seats are left out, since only
+  // the notified accounts buy from it (`seatsAvailable` in @arthome/core).
   uint32 seats_available = 3;
   uint32 waitlist_count = 4;
   // The fill RATE, not the capacity. The surface needs the rate; serving the
@@ -319,7 +321,9 @@ message SeatActivated {
   // for the same seat as soon as one surface changed function.
   string seat_code = 7;
   // The cancellation deadline, as an INSTANT. "Up to 1 h before the start" is a
-  // domain rule, not a screen note.
+  // domain rule, not a screen note. A postponement moves it and no event carries
+  // the new one: a consumer recomputes it with `seatCancelDeadline` from
+  // `catalog.date.rescheduled.v1`'s `new_starts_at`.
   google.protobuf.Timestamp cancel_deadline = 8;
   google.protobuf.Timestamp occurred_at = 9;
 }
@@ -377,6 +381,8 @@ message OrderPaid {
 message OrderRefunded {
   string order_id = 1;
   string channel_id = 2;
+  // This refund's amount, not the order's total refunded: an order refunded in
+  // parts emits one OrderRefunded per refund.
   arthome.common.v1.Money amount = 3;
   // The seat's cancellation, when the refund cancels one; `refund_reason`
   // says why the money went back.
@@ -419,6 +425,10 @@ message SubscriptionChanged {
   uint32 concurrent_streams_allowed = 6;
   google.protobuf.Timestamp current_period_end = 7;
   google.protobuf.Timestamp occurred_at = 8;
+  // The end of the last PAID period, absent when none was paid: what
+  // `planOpeningsOf` reads (D-125). Not `current_period_end`, which a renewal
+  // moves forward before it is paid.
+  google.protobuf.Timestamp paid_through = 9;
 }
 
 // Opening a tier notifies the whole waiting list in the same act, with a

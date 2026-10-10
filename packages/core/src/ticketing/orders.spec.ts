@@ -6,7 +6,7 @@ import {
   orderStateMovesForward,
   paymentReturnPath,
 } from './orders.js';
-import { OrderState } from '../vocabulary/commerce.js';
+import { ORDER_STATES, OrderState } from '../vocabulary/commerce.js';
 
 describe('order-state transitions', () => {
   it('lets a payment confirmed late still pay the order (D-082)', () => {
@@ -21,6 +21,22 @@ describe('order-state transitions', () => {
   it('orders the awaiting states ahead of a settled one', () => {
     expect(orderStateMovesForward(OrderState.PENDING, OrderState.AWAITING_ACTION)).toBe(true);
     expect(orderStateMovesForward(OrderState.AWAITING_ACTION, OrderState.PROCESSING)).toBe(true);
+  });
+
+  it('moves forward through refunds and a dispute', () => {
+    expect(orderStateMovesForward(OrderState.PAID, OrderState.PARTIALLY_REFUNDED)).toBe(true);
+    expect(orderStateMovesForward(OrderState.PARTIALLY_REFUNDED, OrderState.REFUNDED)).toBe(true);
+    expect(orderStateMovesForward(OrderState.PAID, OrderState.REFUNDED)).toBe(true);
+    for (const from of [OrderState.PAID, OrderState.PARTIALLY_REFUNDED, OrderState.REFUNDED]) {
+      expect(orderStateMovesForward(from, OrderState.DISPUTED)).toBe(true);
+    }
+  });
+
+  it('never goes back from a full refund, nor anywhere from a dispute', () => {
+    expect(orderStateMovesForward(OrderState.REFUNDED, OrderState.PARTIALLY_REFUNDED)).toBe(false);
+    for (const to of ORDER_STATES) {
+      expect(orderStateMovesForward(OrderState.DISPUTED, to)).toBe(false);
+    }
   });
 });
 

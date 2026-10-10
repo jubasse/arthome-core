@@ -5,6 +5,7 @@ import * as commerce from './commerce.js';
 import { SCHEMA_ISSUE_RULES, SchemaIssueRule } from './error-codes.js';
 import * as moderation from './moderation.js';
 import * as people from './people.js';
+import * as streaming from './streaming.js';
 import {
   WATCH_DENIAL_REASONS,
   WATCH_FALLBACK_ACTIONS,
@@ -33,8 +34,8 @@ import { MODERATION_BADGES, ModerationBadge } from '../moderation/index.js';
  *   silence. That is the same class of defect as E1, where `helpers.planOf()`
  *   silently dropped every account to `free`.
  *
- *   So the proof moves from the compiler to here. One test, forty-four
- *   vocabularies, and it fails loudly on a single mistyped letter.
+ *   So the proof moves from the compiler to here. One test, every vocabulary
+ *   below, and it fails loudly on a single mistyped letter.
  */
 
 interface VocabularyPair {
@@ -87,6 +88,24 @@ const PAIRS: readonly VocabularyPair[] = [
   },
   { name: 'OrderKind', values: commerce.ORDER_KINDS, members: commerce.OrderKind },
   { name: 'RefundReason', values: commerce.REFUND_REASONS, members: commerce.RefundReason },
+  {
+    name: 'SeatCancelReason',
+    values: commerce.SEAT_CANCEL_REASONS,
+    members: commerce.SeatCancelReason,
+  },
+  { name: 'RefundMethod', values: commerce.REFUND_METHODS, members: commerce.RefundMethod },
+  {
+    name: 'RefundDelayCode',
+    values: commerce.REFUND_DELAY_CODES,
+    members: commerce.RefundDelayCode,
+  },
+  { name: 'CreditState', values: commerce.CREDIT_STATES, members: commerce.CreditState },
+  { name: 'CreditOrigin', values: commerce.CREDIT_ORIGINS, members: commerce.CreditOrigin },
+  {
+    name: 'WaitlistEntryState',
+    values: commerce.WAITLIST_ENTRY_STATES,
+    members: commerce.WaitlistEntryState,
+  },
   { name: 'PayoutState', values: commerce.PAYOUT_STATES, members: commerce.PayoutState },
   { name: 'TaxSupplyKind', values: commerce.TAX_SUPPLY_KINDS, members: commerce.TaxSupplyKind },
   {
@@ -144,6 +163,27 @@ const PAIRS: readonly VocabularyPair[] = [
     values: people.NOTIFICATION_CHANNELS,
     members: people.NotificationChannel,
   },
+
+  {
+    name: 'TechnicalCheckFailure',
+    values: streaming.TECHNICAL_CHECK_FAILURES,
+    members: streaming.TechnicalCheckFailure,
+  },
+  {
+    name: 'IncidentTrigger',
+    values: streaming.INCIDENT_TRIGGERS,
+    members: streaming.IncidentTrigger,
+  },
+  {
+    name: 'PlaybackSessionState',
+    values: streaming.PLAYBACK_SESSION_STATES,
+    members: streaming.PlaybackSessionState,
+  },
+  {
+    name: 'ReplayAssetState',
+    values: streaming.REPLAY_ASSET_STATES,
+    members: streaming.ReplayAssetState,
+  },
 ];
 
 describe('named members match their vocabulary', () => {
@@ -168,6 +208,6 @@ describe('named members match their vocabulary', () => {
     // stops matching and the omission is visible. The two vocabularies without
     // named members are the publication checklist items, which are consumed as
     // a list and never referenced one by one.
-    expect(PAIRS).toHaveLength(44);
+    expect(PAIRS).toHaveLength(54);
   });
 });

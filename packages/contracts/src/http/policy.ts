@@ -108,6 +108,12 @@ export const DEFAULT_BODY_LIMIT = 1_048_576;
 /** 2 MiB: the ceiling of a batched read. */
 export const BATCH_BODY_LIMIT = 2_097_152;
 
+/** The ids a batched read takes at most (`transport.md` §5.6). */
+export const BATCH_MAX_IDS = 200;
+
+/** The latency budget of a batched read, in milliseconds (`transport.md` §5.9). */
+export const BATCH_BUDGET_MS = 150;
+
 /** On an answer carrying a `sensitive` field: kept out of every cache, and out of the app snapshot. */
 export const NO_STORE_HEADER: Header = {
   description:

@@ -213,8 +213,18 @@ export interface ErrorParamsMap {
     [OrderErrorCode.SALES_CLOSED]: {
         salesEndAt: string;
     };
-    [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: NoErrorParams;
+    [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: {
+        cancelDeadline: string;
+    };
     [OrderErrorCode.PAYMENT_METHOD_IN_USE]: NoErrorParams;
+    [OrderErrorCode.WAITLIST_NOT_SOLD_OUT]: NoErrorParams;
+    [OrderErrorCode.SEAT_NOT_ACTIVE]: {
+        state: string;
+    };
+    [OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING]: {
+        remainingMinor: number;
+        currencyCode: string;
+    };
     [DomainErrorCode.CAPACITY_TIER_MUST_WIDEN]: {
         current: number;
         next: number;
@@ -252,6 +262,10 @@ export interface ErrorParamsMap {
         to: string;
         promise: string;
     };
+    [DomainErrorCode.RUN_TRANSITION_FORBIDDEN]: {
+        from: string;
+        to: string;
+    };
     [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: {
         flag: string;
     };
@@ -276,6 +290,9 @@ export interface ErrorParamsMap {
     };
     [WatchDenialReason.DATE_CANCELLED]: NoErrorParams;
     [WatchDenialReason.NOT_PUBLISHED]: NoErrorParams;
+    [WatchDenialReason.SEAT_EXPIRED]: NoErrorParams;
+    [WatchDenialReason.DATE_INTERRUPTED]: NoErrorParams;
+    [WatchDenialReason.LIVE_ENDED]: NoErrorParams;
     [DomainGuardCode.I18N_KEY_MALFORMED]: {
         key: string;
     };

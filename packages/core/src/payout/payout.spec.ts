@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   COMMISSION_RATE_BPS,
+  CREDIT_VALIDITY_MONTHS,
   PAYOUT_DELAY_DAYS,
+  creditExpiresAt,
   dueAtFor,
   payoutOf,
   payoutStateFor,
@@ -324,5 +326,13 @@ describe("a payout's state", () => {
   it('runs from the end of the live show, not from the payment', () => {
     expect(dueAtFor('2026-09-21T21:00:00.000Z')).toBe('2026-10-05T21:00:00.000Z');
     expect(PAYOUT_DELAY_DAYS).toBe(14);
+  });
+});
+
+describe("a credit's validity", () => {
+  it("a credit expires twelve calendar months later, clamped at a month's end", () => {
+    expect(CREDIT_VALIDITY_MONTHS).toBe(12);
+    expect(creditExpiresAt('2026-10-06T09:30:00.000Z')).toBe('2027-10-06T09:30:00.000Z');
+    expect(creditExpiresAt('2028-02-29T21:00:00.000Z')).toBe('2029-02-28T21:00:00.000Z');
   });
 });

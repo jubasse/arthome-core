@@ -250,6 +250,8 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   typeof OrderErrorCode.LATE_ENTRY_UNACKNOWLEDGED,
   typeof OrderErrorCode.SALES_CLOSED,
   typeof OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED,
+  typeof OrderErrorCode.SEAT_NOT_ACTIVE,
+  typeof OrderErrorCode.WAITLIST_NOT_SOLD_OUT,
   typeof ChatErrorCode.HOLDERS_ONLY,
   typeof ChatErrorCode.RATE_LIMITED,
   typeof IdentityErrorCode.SIGNED_OUT_ELSEWHERE,
@@ -274,8 +276,9 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   IdentityErrorCode.RESET_TOKEN_EXPIRED,
   IdentityErrorCode.ONE_TIME_TOKEN_EXPIRED,
   IdentityErrorCode.TWO_FACTOR_CHALLENGE_EXPIRED,
-  // The refusals of a purchase, a cart checkout, a plan change and a seat cancellation: the viewer
-  // acts on each (pick another tier, accept the new price, join the waiting list, change the card).
+  // The refusals of a purchase, a cart checkout, a plan change, a seat cancellation and a waiting-list
+  // registration: the viewer acts on each (pick another tier, accept the new price, join the waiting
+  // list, change the card, buy the seat on sale).
   OrderErrorCode.QUOTE_ADDRESS_MISMATCH,
   OrderErrorCode.QUOTE_EXPIRED,
   OrderErrorCode.SOLD_OUT,
@@ -289,6 +292,8 @@ export const STOREFRONT_RELAYED_CODES: readonly [
   OrderErrorCode.LATE_ENTRY_UNACKNOWLEDGED,
   OrderErrorCode.SALES_CLOSED,
   OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED,
+  OrderErrorCode.SEAT_NOT_ACTIVE,
+  OrderErrorCode.WAITLIST_NOT_SOLD_OUT,
   ChatErrorCode.HOLDERS_ONLY,
   ChatErrorCode.RATE_LIMITED,
   IdentityErrorCode.SIGNED_OUT_ELSEWHERE,

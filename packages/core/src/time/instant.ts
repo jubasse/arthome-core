@@ -52,6 +52,28 @@ export function plusHours(instant: Instant, hours: number): Instant {
   return fromEpochMs(toEpochMs(instant) + hours * HOUR_MS);
 }
 
+/**
+ * Calendar months in UTC, the time of day kept. A day the target month lacks is clamped to its last:
+ * 31 January plus one month is the last day of February.
+ */
+export function plusMonths(instant: Instant, months: number): Instant {
+  const from = new Date(toEpochMs(instant));
+  const year = from.getUTCFullYear();
+  const month = from.getUTCMonth() + months;
+  const lastDayOfTargetMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return fromEpochMs(
+    Date.UTC(
+      year,
+      month,
+      Math.min(from.getUTCDate(), lastDayOfTargetMonth),
+      from.getUTCHours(),
+      from.getUTCMinutes(),
+      from.getUTCSeconds(),
+      from.getUTCMilliseconds(),
+    ),
+  );
+}
+
 export function minutesBetween(from: Instant, to: Instant): number {
   return (toEpochMs(to) - toEpochMs(from)) / MINUTE_MS;
 }

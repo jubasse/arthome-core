@@ -76,13 +76,18 @@ runs `.github/workflows/release.yml`: install, `pnpm -r run build`, `pnpm run ve
 which refuses a tag that disagrees with the three package versions and packs `@arthome/core`,
 `@arthome/contracts` and `@arthome/tooling`. `gh release create` attaches the tarballs
 (`arthome-<package>-<version>.tgz`) to the GitHub release. Nothing is published to a registry.
+A release candidate is a `v<version>-rc.<n>` tag cut from `develop`: the workflow checks the commit is on
+`develop`, packs the same packages stamped `<version>-rc.<n>` (develop stays at `<version>`; only the
+tarballs carry the rc), and creates a GitHub pre-release. A plain `v<version>` must be on `main`.
+Any other pre-release form is refused. The platform installs one with `pnpm run use-core <version>-rc.<n>`.
+
 Every pull request to `develop` or `main` runs `pnpm run verify` in CI (`.github/workflows/verify.yml`).
 
 The other repositories install those tarballs by URL (`pnpm run use-core <version>` in
 arthome-platform). To see what a release would carry without tagging anything:
 
 ```bash
-node tools/pack-release.mjs v0.1.0 /tmp/release-assets
+node tools/pack-release.mjs v0.2.0-rc.1 /tmp/release-assets
 ```
 
 ---

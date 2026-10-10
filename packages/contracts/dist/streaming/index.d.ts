@@ -25,6 +25,7 @@
 import { z } from 'zod';
 import { type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
 import { ChapterSchema, DateCardSchema } from '../catalog/index.js';
+import { type AccessorOf } from '../http/index.js';
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
 export declare const IncidentSchema: z.ZodNullable<z.ZodObject<{
     id: z.ZodOptional<z.ZodString>;
@@ -32,6 +33,21 @@ export declare const IncidentSchema: z.ZodNullable<z.ZodObject<{
     message: z.ZodOptional<typeof StorefrontLocalizedTextSchema>;
     raisedAt: z.ZodOptional<z.ZodString>;
 }, z.core.$loose>>;
+/** The ceiling a device's hardware security level allows. */
+export declare const QUALITY_CAPS: readonly ["sd", "hd", "fhd", "uhd"];
+export type QualityCap = (typeof QUALITY_CAPS)[number];
+export declare const QualityCap: AccessorOf<typeof QUALITY_CAPS>;
+export declare const PLAYBACK_PROTOCOLS: readonly ["hls", "dash"];
+export type PlaybackProtocol = (typeof PLAYBACK_PROTOCOLS)[number];
+export declare const PlaybackProtocol: AccessorOf<typeof PLAYBACK_PROTOCOLS>;
+/** Declared by a device opening playback, and chosen by the server for it. */
+export declare const DRM_SYSTEMS: readonly ["fairplay", "widevine", "playready"];
+export type DrmSystem = (typeof DRM_SYSTEMS)[number];
+export declare const DrmSystem: AccessorOf<typeof DRM_SYSTEMS>;
+/** How the edge's signature is renewed on this device (`adr-stream-entitlement.md` §3.2). */
+export declare const EDGE_RENEWAL_MODES: readonly ["signed_cookie", "query_token"];
+export type EdgeRenewalMode = (typeof EDGE_RENEWAL_MODES)[number];
+export declare const EdgeRenewalMode: AccessorOf<typeof EDGE_RENEWAL_MODES>;
 declare const playbackSignature: () => z.ZodObject<{
     queryToken: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     cookieSet: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;

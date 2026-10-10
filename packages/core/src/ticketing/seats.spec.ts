@@ -28,6 +28,7 @@ const gauge = (over: Partial<Gauge> = {}): Gauge => ({
   seatsSold: 0,
   seatsHeld: 0,
   waitlistCount: 0,
+  priorityPoolSeats: 0,
   ...over,
 });
 
@@ -224,6 +225,17 @@ describe('availability', () => {
       waitlistCount: 340,
     });
     expect(availabilityOf(gauge({ seatsSold: 100 }))).toEqual({ kind: 'sold_out' });
+  });
+
+  it('reads the public count, so an open priority pool leaves the date on its waiting list', () => {
+    // 100 seats, 80 sold, 20 opened as a pool to 340 notified accounts: the public buys none.
+    expect(
+      availabilityOf(gauge({ seatsSold: 80, waitlistCount: 340, priorityPoolSeats: 20 })),
+    ).toEqual({ kind: 'waitlist_only', waitlistCount: 340 });
+    expect(availabilityOf(gauge({ seatsSold: 75, priorityPoolSeats: 20 }))).toEqual({
+      kind: 'seats_available',
+      seatsAvailable: 5,
+    });
   });
 
   it('stops being "almost full" when nothing is left', () => {

@@ -2,9 +2,8 @@ import { OrderState } from '../vocabulary/commerce.js';
 
 /**
  * adr-payments.md §7.3: a transition is applied only if it moves forward. `failed` ranks below
- * `paid`, because a payment confirmed after its hold expired still pays the order (D-082). The
- * ranks of `partially_refunded`, `refunded` and `disputed` are to confirm in T4, which designs
- * their transitions.
+ * `paid`, because a payment confirmed after its hold expired still pays the order (D-082). A dispute
+ * outranks every refund state: the provider then holds the money, and no later refund moves it.
  */
 const ORDER_STATE_RANK: Readonly<Record<OrderState, number>> = {
   [OrderState.PENDING]: 0,

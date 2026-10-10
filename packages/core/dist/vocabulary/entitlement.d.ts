@@ -14,7 +14,7 @@
  * `denialCode === WatchDenialReason.NO_SEAT` compared `'NO_SEAT'` to `'no_seat'`
  * and was false for all eleven values, through two passes looking for it.
  */
-export declare const WATCH_DENIAL_REASONS: readonly ["watch.no_seat", "watch.room_not_open", "watch.out_of_territory", "watch.subscription_required", "watch.no_replay", "watch.replay_expired", "watch.replay_not_on_sale", "watch.preview_exhausted", "watch.concurrent_limit_reached", "watch.date_cancelled", "watch.not_published"];
+export declare const WATCH_DENIAL_REASONS: readonly ["watch.no_seat", "watch.room_not_open", "watch.out_of_territory", "watch.subscription_required", "watch.no_replay", "watch.replay_expired", "watch.replay_not_on_sale", "watch.preview_exhausted", "watch.concurrent_limit_reached", "watch.date_cancelled", "watch.not_published", "watch.seat_expired", "watch.date_interrupted", "watch.live_ended"];
 export type WatchDenialReason = (typeof WATCH_DENIAL_REASONS)[number];
 export declare const WatchDenialReason: {
     readonly NO_SEAT: "watch.no_seat";
@@ -28,6 +28,9 @@ export declare const WatchDenialReason: {
     readonly CONCURRENT_LIMIT_REACHED: "watch.concurrent_limit_reached";
     readonly DATE_CANCELLED: "watch.date_cancelled";
     readonly NOT_PUBLISHED: "watch.not_published";
+    readonly SEAT_EXPIRED: "watch.seat_expired";
+    readonly DATE_INTERRUPTED: "watch.date_interrupted";
+    readonly LIVE_ENDED: "watch.live_ended";
 };
 /** How much of the date the verdict opens. */
 export declare const WATCH_SCOPES: readonly ["full", "preview", "none"];

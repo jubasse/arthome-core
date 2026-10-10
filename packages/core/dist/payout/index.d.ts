@@ -83,4 +83,5 @@ export declare function payoutStateFor(outcome: DateOutcome | null, alreadyPaid:
  */
 export declare const CREDIT_VALIDITY_MONTHS = 12;
 export declare function creditAmountFor(paidAmount: Money): Money;
+export declare function creditExpiresAt(issuedAt: Instant): Instant;
 //# sourceMappingURL=index.d.ts.map

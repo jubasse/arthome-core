@@ -1,6 +1,6 @@
 {
   "name": "@arthome/core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The Arthome domain. Zero framework dependencies. Two entry points: the rules without zod, the boundary schemas with it.",
   "license": "UNLICENSED",
   "private": false,

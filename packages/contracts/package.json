@@ -1,6 +1,6 @@
 {
   "name": "@arthome/contracts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Arthome boundary contracts: the DTO schemas the BFFs serve and accept, derived from @arthome/core and never redeclared.",
   "license": "UNLICENSED",
   "private": false,
@@ -49,6 +49,7 @@
     "  ./studio-desk ./studio-money",
     "  ./http ./http-client ./openapi                — routes as TypeScript, their client, the document they emit",
     "  ./storefront-api ./studio-api                 — every route of each document, from which the document is generated",
+    "  ./<service>-service-api                       — a microservice's internal routes, called by the BFFs only (D-121)",
     "",
     "Fourteen bounded contexts, not the seven planned here. `./chat`, `./payouts` and `./notifications`",
     "were named as plans and never existed: chat and notifications are served to a",
@@ -135,6 +136,16 @@
       "types": "./dist/streaming/index.d.ts",
       "import": "./dist/streaming/index.js"
     },
+    "./streaming-service-api": {
+      "@arthome/source": "./src/streaming-service-api/index.ts",
+      "types": "./dist/streaming-service-api/index.d.ts",
+      "import": "./dist/streaming-service-api/index.js"
+    },
+    "./streaming-service-api/docs": {
+      "@arthome/source": "./src/streaming-service-api/docs.ts",
+      "types": "./dist/streaming-service-api/docs.d.ts",
+      "import": "./dist/streaming-service-api/docs.js"
+    },
     "./studio-access": {
       "@arthome/source": "./src/studio-access/index.ts",
       "types": "./dist/studio-access/index.d.ts",
@@ -207,7 +218,7 @@
     "differently, nothing red."
   ],
   "peerDependencies": {
-    "@arthome/core": "0.1.0",
+    "@arthome/core": "0.2.0",
     "zod": "4.6.5"
   },
   "devDependencies": {

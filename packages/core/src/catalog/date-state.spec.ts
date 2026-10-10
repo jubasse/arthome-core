@@ -7,6 +7,7 @@ import {
   publicDisplayStateOf,
   type DateTiming,
 } from './date-state.js';
+import { plusMinutes } from '../time/instant.js';
 import {
   DateOutcome,
   DisplayState,
@@ -158,10 +159,10 @@ describe('displayStateOf — the validity of what is served', () => {
     expect(result.validUntil).toBe('2026-09-21T18:30:00.000Z');
   });
 
-  it('expires at curtain-up when the room is open', () => {
+  it('expires at curtain-up when the room is open on the clock of an unknown run', () => {
     const result = displayStateOf({
       publicationState: PublicationState.SCHEDULED,
-      runState: RunState.IDLE,
+      runState: null,
       outcome: null,
       timing,
       now: '2026-09-21T18:45:00.000Z',
@@ -288,5 +289,109 @@ describe('the time derivations the surface re-evaluates itself', () => {
     expect(progressOf(timing, '2026-09-21T18:00:00.000Z')).toBe(0);
     expect(progressOf(timing, '2026-09-21T20:00:00.000Z')).toBe(0.5);
     expect(progressOf(timing, '2026-09-22T00:00:00.000Z')).toBe(1);
+  });
+});
+
+/**
+ * PROTECTED INVARIANT
+ *   A known run moves the card, the clock does not (D-109, D-115): `live` on the real on-air
+ *   switch, held through an overrun, and `ended` once the run ends. Only an unknown run, as the
+ *   catalog card passes until it consumes the run, keeps the clock.
+ */
+describe('displayStateOf — the run moves the card', () => {
+  const at = (runState: RunState | null, now: string) =>
+    displayStateOf({
+      publicationState: PublicationState.LIVE,
+      runState,
+      outcome: null,
+      timing,
+      now,
+    });
+
+  it('a known idle run past the start keeps the room open until the run moves (D-109)', () => {
+    for (const runState of [RunState.IDLE, RunState.REHEARSAL]) {
+      for (const now of [
+        '2026-09-21T18:45:00.000Z',
+        '2026-09-21T19:20:00.000Z',
+        '2026-09-21T21:30:00.000Z',
+        '2026-09-25T00:00:00.000Z',
+      ]) {
+        expect(at(runState, now)).toEqual({ state: DisplayState.ROOM_OPEN, validUntil: null });
+      }
+    }
+  });
+
+  it('a show starting 70 minutes late, past its scheduled end, is in its room, then live (D-109)', () => {
+    const hourLong: DateTiming = { ...timing, runtimeMin: 60 };
+    const lateBy = (minutes: number) => plusMinutes(hourLong.startsAt, minutes);
+    const of = (runState: RunState, now: string) =>
+      displayStateOf({
+        publicationState: PublicationState.LIVE,
+        runState,
+        outcome: null,
+        timing: hourLong,
+        now,
+      });
+
+    // Past the scheduled end (+60), the run still idle: the room, never the replay.
+    expect(of(RunState.IDLE, lateBy(65))).toEqual({
+      state: DisplayState.ROOM_OPEN,
+      validUntil: null,
+    });
+    expect(of(RunState.ON_AIR, lateBy(70))).toEqual({ state: DisplayState.LIVE, validUntil: null });
+    expect(of(RunState.ENDED, lateBy(140)).state).toBe(DisplayState.ENDED);
+    // An outcome still outranks the waiting room.
+    expect(
+      displayStateOf({
+        publicationState: PublicationState.LIVE,
+        runState: RunState.IDLE,
+        outcome: DateOutcome.CANCELLED,
+        timing: hourLong,
+        now: lateBy(65),
+      }).state,
+    ).toBe(DisplayState.CANCELLED);
+  });
+
+  it('a run on air serves no expiry, an overrun included', () => {
+    for (const runState of [RunState.ON_AIR, RunState.INTERRUPTED]) {
+      expect(at(runState, '2026-09-21T19:20:00.000Z')).toEqual({
+        state: DisplayState.LIVE,
+        validUntil: null,
+      });
+      expect(at(runState, '2026-09-21T21:40:00.000Z')).toEqual({
+        state: DisplayState.LIVE,
+        validUntil: null,
+      });
+    }
+  });
+
+  it('an ended run shows ended', () => {
+    expect(at(RunState.ENDED, '2026-09-21T20:50:00.000Z')).toEqual({
+      state: DisplayState.ENDED,
+      validUntil: null,
+    });
+  });
+
+  it('an unknown run keeps the clock', () => {
+    expect(at(null, '2026-09-21T18:45:00.000Z')).toEqual({
+      state: DisplayState.ROOM_OPEN,
+      validUntil: '2026-09-21T19:00:00.000Z',
+    });
+    expect(at(null, '2026-09-21T19:20:00.000Z')).toEqual({
+      state: DisplayState.LIVE,
+      validUntil: '2026-09-21T21:00:00.000Z',
+    });
+  });
+
+  it('publicDisplayStateOf inherits it on a date under technical check', () => {
+    expect(
+      publicDisplayStateOf({
+        publicationState: PublicationState.TECHNICAL,
+        runState: RunState.IDLE,
+        outcome: null,
+        timing,
+        now: '2026-09-21T19:20:00.000Z',
+      }).state,
+    ).toBe(DisplayState.ROOM_OPEN);
   });
 });

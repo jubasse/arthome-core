@@ -24,5 +24,9 @@ export const cancelSeat: CancelSeatRoute = seats.action('cancel', {
   optionalBody: true,
   response: SeatCancellationSchema,
   answer: 'Seat cancelled, with the refund and its delay code.',
-  errors: [ApiErrorCode.NOT_FOUND, OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED],
+  errors: [
+    ApiErrorCode.NOT_FOUND,
+    OrderErrorCode.SEAT_NOT_ACTIVE,
+    OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED,
+  ],
 });

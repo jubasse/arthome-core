@@ -1,0 +1,4663 @@
+# Generated from packages/contracts/src/streaming-service-api by tools/generate-openapi.py (D-120).
+# Edit the declarations, run `pnpm run generate:openapi`, commit both. Never edit this file.
+
+openapi: 3.1.1
+x-arthome-codes-source: ERROR_CODES
+info:
+  title: Arthome Streaming service
+  version: 1.0.0
+  summary: 'Streaming''s internal API: what the two BFFs call, never a surface.'
+  description: |
+    Contract of the **streaming service** (D-121). Only the BFFs call it, with the internal token
+    they mint; no surface does, and no route here is public. It is generated from
+    `@arthome/contracts/streaming-service-api`, as the BFFs' documents are from theirs.
+
+    ## One operation, two servers
+
+    An operation a surface reaches through a BFF keeps, here, its operation id, its path, its body,
+    its answer and its refusal codes: the BFF relays one shape, and its typed client calls this
+    document's operation as the surface calls the BFF's. Only what no surface sees, the progress
+    batch, is this document's alone.
+
+    ## Who calls
+
+    Every route names the BFFs it serves (`x-arthome-requires`, `callerService`): the run desk serves
+    the studio BFF, playback and progress the storefront BFF (D-118). Any other caller is refused
+    `403` `api.forbidden`. The caller is read from the token and nowhere else: a body's `profileId`
+    or `deviceId` other than the token's is refused `403` `api.forbidden` too, and a route that reads
+    the profile refuses a token that names none the same way: the body never picks the profile.
+
+    ## What every call carries
+
+    `x-arthome-deadline`, past which the service writes nothing and answers `504`
+    `api.deadline_exceeded`; `x-arthome-actor-surface` on every write, the place the event it emits
+    names; the surface's `Idempotency-Key`, relayed as is, on a write that takes one;
+    `x-arthome-viewer-country` on every call that decides a watch verdict.
+
+    ## Errors
+
+    The envelope of every Arthome error, and no BFF code: `502`, `503` and `api.upstream_timeout`
+    are the BFF's own, answered when this service fails or is too slow.
+  contact:
+    name: Arthome — architecture
+  license:
+    name: UNLICENSED
+servers:
+- url: http://streaming.internal
+  description: the cluster network (`transport.md` §5.1)
+tags:
+- name: run
+  description: The run desk and its incidents, for the studio BFF.
+- name: playback
+  description: Playback, its sessions and the viewer's progress, for the storefront BFF.
+security:
+- internalToken: []
+paths:
+  /v1/dates/{dateId}/run:
+    get:
+      operationId: getRunConsole
+      summary: The state of the run — one call, the whole control-room screen.
+      description: |
+        **The return path actually open is served** (`monitorPath`): the studio must **know** it so
+        as not to promise the operator a latency it does not have. The contract carries the truth, not
+        uniformity — creating a media branch to make a schema uniform would cost more than it returns.
+
+        **Two fields, not one**: `state` and `afterGracePeriod`. The studio distinguishes "hiccup
+        absorbed" from "publisher gone", and a two-second network break in a room must produce neither
+        an incident nor a manifest restarted from zero.
+
+        **The stream key is never here**: it appears in no list payload.
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - run
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-studio
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      responses:
+        '200':
+          description: The console.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/RunConsole'
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  state: on_air
+                  afterGracePeriod: true
+                  ingestProtocol: rtmps
+                  monitorPath: ll_hls
+                  monitorUrl: https://monitor.arthome.fr/a9f1c0/index.m3u8
+                  qualityLadder:
+                  - renditionId: 1080p
+                    heightPx: 1080
+                    enabled: true
+                  startedAt: '2026-09-21T19:00:12Z'
+                  lastSample:
+                    measuredAt: '2026-09-21T19:19:57Z'
+                    source: ingest_server
+                    ingestUpKbps: 8900
+                    latencyMs: null
+                    droppedPct: 0.1
+                    viewers: 1842
+                  incident: null
+                  chapters: []
+                  presence:
+                  - personId: 019928b2-0000-7000-8000-00000000000a
+                    displayName: Marie J.
+                    roles:
+                    - production
+                    lastActivityAt: '2026-09-21T19:19:48Z'
+                    isSelf: false
+                  chatThroughputPerMinute: 41
+                  version: 3
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+  /v1/dates/{dateId}/run/technical-check:
+    post:
+      operationId: runTechnicalCheck
+      summary: Starts the technical check.
+      description: |
+        Its success **unlocks publication**: `technical_check_passed` is one of the seven checklist
+        items, and it comes from here. `catalog` **projects** it, it does not ask for it.
+        `idle → on_air` is refused as long as the check has never passed.
+
+        **What it proves** (D-114): a feed received on the date's key, in a codec the chain carries,
+        above a bitrate floor, the channel's recommended bitrate or, until a channel serves one,
+        `TECHNICAL_CHECK_BITRATE_FLOOR_KBPS_DEFAULT` (`technicalCheckFloorKbps`). `failures` is the closed vocabulary
+        `TECHNICAL_CHECK_FAILURES`, in its order: `no_feed` comes alone, since nothing else was measured.
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - run
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-studio
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
+      responses:
+        '200':
+          description: The check's result, and the pre-flight checklist.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        passed:
+                          type: boolean
+                        passedAt:
+                          anyOf:
+                          - type: string
+                            format: date-time
+                          - type: 'null'
+                        failures:
+                          type: array
+                          items:
+                            type: string
+                            x-arthome-vocabulary:
+                            - no_feed
+                            - codec_not_carried
+                            - bitrate_below_floor
+                            x-arthome-vocabulary-source: TECHNICAL_CHECK_FAILURES
+                        sample:
+                          type: object
+                          properties:
+                            measuredAt:
+                              type: string
+                              format: date-time
+                            source:
+                              type: string
+                              x-arthome-vocabulary:
+                              - ingest_server
+                              - client_submitted
+                              x-arthome-vocabulary-source: none
+                              x-arthome-vocabulary-reason: A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.
+                              description: |
+                                `client_submitted` for the end-to-end latency, measured in the control room by
+                                `RTCPeerConnection.getStats()` on the WHEP return path and **submitted** — never a native
+                                figure presented as end-to-end. If it is not measured, it is **absent**.
+                            ingestUpKbps:
+                              description: |
+                                A **server-side** observation. Never to be confused with `deviceUpKbps`, which measures the
+                                phone's uplink and not the encoder: **two different bitrates never carry the same name**. Only
+                                the first feeds the pre-flight checklist.
+                              anyOf:
+                              - type: integer
+                              - type: 'null'
+                            deviceUpKbps:
+                              anyOf:
+                              - type: integer
+                              - type: 'null'
+                            latencyMs:
+                              anyOf:
+                              - type: integer
+                              - type: 'null'
+                            droppedPct:
+                              type:
+                              - number
+                              - 'null'
+                            jitterMs:
+                              description: '**Omitted** over RTMP — there is no sense in serving it.'
+                              anyOf:
+                              - type: integer
+                              - type: 'null'
+                            lostPackets:
+                              description: '**Omitted** over RTMP.'
+                              anyOf:
+                              - type: integer
+                              - type: 'null'
+                            viewers:
+                              description: '**Absent — never zero — when the date is not on air.**'
+                              anyOf:
+                              - type: integer
+                              - type: 'null'
+                          required:
+                          - measuredAt
+                          - source
+                          additionalProperties: {}
+                          description: |
+                            **Every metric is nullable, and the absence means something.** Jitter and lost packets
+                            **exist only on a WebRTC ingest**; over RTMP, carried on TCP, they have no meaning, and the
+                            contract **omits** them rather than serving zero. A zero reads as "perfect", not as "not
+                            measured".
+
+                            `measuredAt` is the instant of measurement **at the ingest**, not on reception: it is what
+                            lets you display "bitrate 8.9 Mb/s, measured 3 s ago" or "last measurement 2 min ago" instead
+                            of "0 Mb/s", which is a lie.
+                      additionalProperties: {}
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  passed: true
+                  passedAt: '2026-09-21T18:45:00Z'
+                  failures: []
+                  sample:
+                    measuredAt: '2026-09-21T18:44:58Z'
+                    source: ingest_server
+                    ingestUpKbps: 9100
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: 'Refused by the state of the record or by a reused key: the `code` says which.'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/StateConflictError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+  /v1/dates/{dateId}/run/rehearse:
+    post:
+      operationId: rehearseRun
+      summary: Starts the rehearsal.
+      description: |
+        The run goes from `idle` to `rehearsal`: the feed is checked, nothing is sold against it. A move
+        the run cannot make (`RUN_TRANSITIONS`) is refused `run.transition_forbidden`, naming both ends.
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - run
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-studio
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expectedVersion:
+                  type: integer
+              required:
+              - expectedVersion
+            example:
+              expectedVersion: 3
+      responses:
+        '200':
+          description: The console up to date.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/RunConsole'
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  state: on_air
+                  afterGracePeriod: true
+                  ingestProtocol: rtmps
+                  monitorPath: ll_hls
+                  monitorUrl: https://monitor.arthome.fr/a9f1c0/index.m3u8
+                  qualityLadder:
+                  - renditionId: 1080p
+                    heightPx: 1080
+                    enabled: true
+                  startedAt: '2026-09-21T19:00:12Z'
+                  lastSample:
+                    measuredAt: '2026-09-21T19:19:57Z'
+                    source: ingest_server
+                    ingestUpKbps: 8900
+                    latencyMs: null
+                    droppedPct: 0.1
+                    viewers: 1842
+                  incident: null
+                  chapters: []
+                  presence:
+                  - personId: 019928b2-0000-7000-8000-00000000000a
+                    displayName: Marie J.
+                    roles:
+                    - production
+                    lastActivityAt: '2026-09-21T19:19:48Z'
+                    isSelf: false
+                  chatThroughputPerMinute: 41
+                  version: 3
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: 'Refused by the state of the record or by a reused key: the `code` says which.'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+  /v1/dates/{dateId}/run/go-on-air:
+    post:
+      operationId: goOnAir
+      summary: Goes on air.
+      description: |
+        **The "go on air" command goes to `streaming`, not to `catalog`**: only `streaming` knows
+        whether the feed is arriving. Publication **learns** of it afterwards, by event — two
+        transitions out of eight are caused that way, which leaves `Publication` the aggregate of a
+        single context.
+
+        `idle → on_air` and `rehearsal → on_air` are **refused** `date.technical_check_required` if the
+        technical check has never passed. Resuming after an incident (`interrupted → on_air`) needs
+        none. `publication.transition_forbidden` comes when the date's publication cannot move to `live` from
+        its current state.
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - run
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-studio
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expectedVersion:
+                  type: integer
+              required:
+              - expectedVersion
+            example:
+              expectedVersion: 3
+      responses:
+        '200':
+          description: The console up to date.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/RunConsole'
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  state: on_air
+                  afterGracePeriod: true
+                  ingestProtocol: rtmps
+                  monitorPath: ll_hls
+                  monitorUrl: https://monitor.arthome.fr/a9f1c0/index.m3u8
+                  qualityLadder:
+                  - renditionId: 1080p
+                    heightPx: 1080
+                    enabled: true
+                  startedAt: '2026-09-21T19:00:12Z'
+                  lastSample:
+                    measuredAt: '2026-09-21T19:19:57Z'
+                    source: ingest_server
+                    ingestUpKbps: 8900
+                    latencyMs: null
+                    droppedPct: 0.1
+                    viewers: 1842
+                  incident: null
+                  chapters: []
+                  presence:
+                  - personId: 019928b2-0000-7000-8000-00000000000a
+                    displayName: Marie J.
+                    roles:
+                    - production
+                    lastActivityAt: '2026-09-21T19:19:48Z'
+                    isSelf: false
+                  chatThroughputPerMinute: 41
+                  version: 3
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: 'Refused by the state of the record or by a reused key: the `code` says which.'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/DateTechnicalCheckRequiredError'
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+                - $ref: '#/components/schemas/PublicationTransitionForbiddenError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                date.technical_check_required:
+                  $ref: '#/components/examples/DateTechnicalCheckRequiredError'
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
+                publication.transition_forbidden:
+                  $ref: '#/components/examples/PublicationTransitionForbiddenError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+  /v1/dates/{dateId}/run/end:
+    post:
+      operationId: endRun
+      summary: Ends the broadcast.
+      description: |
+        The run goes to `ended`. **It is final** for this date (D-115): a new run is a new date, and any
+        later move is refused `run.transition_forbidden`.
+
+        **A run left on air ends by itself** `RUN_AUTO_END_MINUTES` after the scheduled end once no
+        publisher has been connected (D-123, `runAutoEndsAt`); `streaming.run.ended.v1` then names the
+        system as `ended_by`.
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - run
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-studio
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expectedVersion:
+                  type: integer
+              required:
+              - expectedVersion
+            example:
+              expectedVersion: 3
+      responses:
+        '200':
+          description: The console up to date.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/RunConsole'
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  state: on_air
+                  afterGracePeriod: true
+                  ingestProtocol: rtmps
+                  monitorPath: ll_hls
+                  monitorUrl: https://monitor.arthome.fr/a9f1c0/index.m3u8
+                  qualityLadder:
+                  - renditionId: 1080p
+                    heightPx: 1080
+                    enabled: true
+                  startedAt: '2026-09-21T19:00:12Z'
+                  lastSample:
+                    measuredAt: '2026-09-21T19:19:57Z'
+                    source: ingest_server
+                    ingestUpKbps: 8900
+                    latencyMs: null
+                    droppedPct: 0.1
+                    viewers: 1842
+                  incident: null
+                  chapters: []
+                  presence:
+                  - personId: 019928b2-0000-7000-8000-00000000000a
+                    displayName: Marie J.
+                    roles:
+                    - production
+                    lastActivityAt: '2026-09-21T19:19:48Z'
+                    isSelf: false
+                  chatThroughputPerMinute: 41
+                  version: 3
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: 'Refused by the state of the record or by a reused key: the `code` says which.'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+  /v1/dates/{dateId}/run/reset:
+    post:
+      operationId: resetRun
+      summary: Returns the run to idle.
+      description: |
+        The run goes back to `idle` from `rehearsal`, before the date starts: the console is emptied.
+        From any other state it is refused `run.transition_forbidden`.
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - run
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-studio
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expectedVersion:
+                  type: integer
+              required:
+              - expectedVersion
+            example:
+              expectedVersion: 3
+      responses:
+        '200':
+          description: The console up to date.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/RunConsole'
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  state: on_air
+                  afterGracePeriod: true
+                  ingestProtocol: rtmps
+                  monitorPath: ll_hls
+                  monitorUrl: https://monitor.arthome.fr/a9f1c0/index.m3u8
+                  qualityLadder:
+                  - renditionId: 1080p
+                    heightPx: 1080
+                    enabled: true
+                  startedAt: '2026-09-21T19:00:12Z'
+                  lastSample:
+                    measuredAt: '2026-09-21T19:19:57Z'
+                    source: ingest_server
+                    ingestUpKbps: 8900
+                    latencyMs: null
+                    droppedPct: 0.1
+                    viewers: 1842
+                  incident: null
+                  chapters: []
+                  presence:
+                  - personId: 019928b2-0000-7000-8000-00000000000a
+                    displayName: Marie J.
+                    roles:
+                    - production
+                    lastActivityAt: '2026-09-21T19:19:48Z'
+                    isSelf: false
+                  chatThroughputPerMinute: 41
+                  version: 3
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: 'Refused by the state of the record or by a reused key: the `code` says which.'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/StateConflictError'
+                - $ref: '#/components/schemas/RunTransitionForbiddenError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+                run.transition_forbidden:
+                  $ref: '#/components/examples/RunTransitionForbiddenError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+  /v1/dates/{dateId}/incidents:
+    post:
+      operationId: raiseIncident
+      summary: Declares an incident and broadcasts the holding screen.
+      description: |
+        **A client-side veil, never a stream switch**: the control plane publishes the state, the
+        player displays it **over an untouched video**. Instant, identical on all three storefronts,
+        and the media stays intact for the resume.
+
+        **Cause and outcome are two vocabularies**, and separating them was necessary: the four
+        entries in the sources are **outcomes**, while the mobile control room distinguished three
+        more **causes** that existed nowhere.
+
+        The message travels **with its authoring language**. The catalogue supplies **templates** per
+        kind of incident, which the control room reuses or replaces.
+
+        **Broadcast latency: ≤ 2 s, non-negotiable** — the client-side veil depends on it.
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - run
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-studio
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                incidentId:
+                  type: string
+                  format: uuid
+                kind:
+                  type: string
+                  enum:
+                  - hold_screen
+                  - postponed
+                  - cancelled
+                  - interrupted
+                  x-arthome-vocabulary-source: INCIDENT_KINDS
+                cause:
+                  type: string
+                  enum:
+                  - venue_feed_lost
+                  - run_desk_disconnected
+                  - bitrate_collapsed
+                  - compatibility_worker_failed
+                  - provider_error
+                  - manual
+                  x-arthome-vocabulary-source: INCIDENT_CAUSES
+                message:
+                  type: object
+                  properties:
+                    contentLanguage:
+                      type: string
+                    text:
+                      type: string
+                      maxLength: 400
+                  required:
+                  - contentLanguage
+                  - text
+              required:
+              - incidentId
+              - kind
+              - cause
+              - message
+            example:
+              incidentId: 019928d1-0000-7000-8000-000000000001
+              kind: hold_screen
+              cause: venue_feed_lost
+              message:
+                contentLanguage: fr
+                text: Interruption technique. Nous reprenons dans quelques instants.
+      responses:
+        '201':
+          description: Incident raised, broadcast in under two seconds.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/StudioIncident'
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  id: 019928d1-0000-7000-8000-000000000001
+                  kind: hold_screen
+                  cause: venue_feed_lost
+                  trigger: manual
+                  message:
+                    contentLanguage: fr
+                    text: Interruption technique. Nous reprenons dans quelques instants.
+                  raisedAt: '2026-09-21T19:52:00Z'
+                  raisedBy:
+                    personId: 019928b0-0000-7000-8000-000000000001
+                    displayName: Claire D.
+                    surface: studio_mobile
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: 'Refused by the state of the record or by a reused key: the `code` says which.'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/StateConflictError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+  /v1/incidents/{incidentId}/resolve:
+    post:
+      operationId: resolveIncident
+      summary: Resolves the incident and lifts the veil.
+      description: |
+        The player **lifts the veil** without asking for a new playback token: otherwise the resume
+        would be paid for with a stream reload, on media that was never cut.
+
+        **A hold screen raised by hand waits for this call** (D-124). The automatic one (cause
+        `venue_feed_lost`, triggered `auto`) lifts itself when the feed returns
+        (`holdScreenLiftsOnFeedReturn`).
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - run
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-studio
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/IncidentId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
+      responses:
+        '200':
+          description: Incident resolved.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        resolvedAt:
+                          type: string
+                          format: date-time
+                      additionalProperties: {}
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  resolvedAt: '2026-09-21T19:56:00Z'
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+            X-Arthome-Served-At:
+              $ref: '#/components/headers/ServedAt'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: 'Refused by the state of the record or by a reused key: the `code` says which.'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiIdempotencyKeyReusedError'
+                - $ref: '#/components/schemas/ApiIdempotencyInFlightError'
+                - $ref: '#/components/schemas/StateConflictError'
+              examples:
+                api.idempotency_key_reused:
+                  $ref: '#/components/examples/ApiIdempotencyKeyReusedError'
+                api.idempotency_in_flight:
+                  $ref: '#/components/examples/ApiIdempotencyInFlightError'
+                state.conflict:
+                  $ref: '#/components/examples/StateConflictError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+  /v1/playback/{dateId}/open:
+    post:
+      operationId: openPlayback
+      summary: The binding verdict, the token, the lease, and the whole player screen.
+      description: |
+        **This is the only evaluation of the right that is authoritative**, because it is the only
+        one that produces a token. The verdict served on a card is advisory (`advisory: true`); this
+        one is not.
+
+        **The right is rechecked when playback starts, never inherited from the catalogue**: the
+        viewer's country changes between the two — travel, roaming, a corporate network — and on
+        mobile that gap is measured in hours.
+
+        **Budget ≤ 1 s.** All the screen's material arrives here: chapters, tracks, chat mode,
+        ongoing incident, resume point, live edge, DRM, quality cap. No panel of the player should
+        trigger another call.
+
+        **`Cache-Control: no-store`.** A right read back from disk is a false right.
+
+        **Before on air.** From the room opening, a holder (or an `all_lives` subscriber) is allowed, and
+        the player shows its **waiting screen** with no media until the run is on air (D-109); a late
+        start keeps the room open. A non-holder gets `watch.no_seat` with the seat action: **there is no
+        preview before on air** (D-110).
+
+        **The takeover** (D-117). An opening is never refused for the screen ceiling while the account
+        holds a lease to take over: it takes over the **least recently renewed** one, and that session's
+        next renewal is refused `watch.concurrent_limit_reached`.
+
+        **`kind: replay` is refused `watch.no_replay`** until the replay slice brings the replay's own
+        verdict (`adr-replay.md` §10). A live that ended is `watch.live_ended`.
+
+        **Refused.** Each watch denial code produces a different screen (`watch.replay_expired` is a
+        `410`, the others a `403`). On `watch.concurrent_limit_reached`, `params.activeSessions` carries the **list
+        of active sessions** so the surface can offer to release one: a bare refusal would leave the
+        viewer with no way out.
+
+        **On the service, the profile is the token's** (`pro`), never the body's: a call whose token names
+        no profile is refused `403` `api.forbidden`, and so is a body `profileId` other than the token's.
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - playback
+      x-arthome-idempotency-exemption: |
+        **Idempotency would be redundant here, because resumption already provides it.** An opening
+        on a `deviceId` that holds a live lease **resumes that lease** and returns the same
+        `sessionId`: the effect of a second call is the effect of the first, by construction and not
+        by memorisation. Adding a key would additionally memorise a `PlaybackTicket` — hence a signed
+        token and its expiry instant — in a 24-hour store, for a response the contract says is
+        **never** cached.
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-storefront
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/Surface'
+      - $ref: '#/components/parameters/ViewerCountry'
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deviceId:
+                  type: string
+                  format: uuid
+                  description: |
+                    **This is what carries resumption.** An opening on a `deviceId` that already holds a live
+                    lease for this date **resumes that lease** and returns the same `sessionId`; it does not open
+                    a second one and does not consume another screen. The promise "you can resume your own
+                    session, identified by the device" was written in the answers to the surfaces and was carried
+                    nowhere in the contract.
+                kind:
+                  type: string
+                  enum:
+                  - live
+                  - replay
+                  x-arthome-vocabulary-source: DISPLAY_STATES
+                  x-arthome-vocabulary-narrowing: Only two of the eleven states can be opened. The other nine are not refused as unknown values, they are not openable.
+                  description: |
+                    **A strict narrowing of `DISPLAY_STATES`, and the narrowing is the rule.** Only two
+                    of the eleven states can be opened: you watch a date that is on air, or a replay.
+                    The other nine are not refused here as unknown values, they are **not openable**.
+                profileId:
+                  anyOf:
+                  - type: string
+                    format: uuid
+                  - type: 'null'
+                capabilities:
+                  type: object
+                  properties:
+                    drmSystems:
+                      type: array
+                      items:
+                        type: string
+                        enum:
+                        - fairplay
+                        - widevine
+                        - playready
+                        x-arthome-vocabulary-source: DRM_SYSTEMS
+                    hardwareSecureDecode:
+                      type: boolean
+                    maxHeightPx:
+                      type: integer
+                  description: |
+                    What the device **can do**, declared. The server chooses protocol, DRM and quality cap; **a
+                    client that guesses gets it wrong**, and it gets it wrong on the devices we cannot test.
+              required:
+              - deviceId
+              - kind
+            example:
+              deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
+              kind: live
+              capabilities:
+                drmSystems:
+                - fairplay
+                hardwareSecureDecode: true
+                maxHeightPx: 2160
+      responses:
+        '200':
+          description: Right granted. The token, the lease and the complete screen.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/PlaybackTicket'
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  sessionId: 019928f7-0000-7000-8000-000000000001
+                  dateId: 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+                  scope: full
+                  protocol: hls
+                  drmSystem: fairplay
+                  qualityCap: fhd
+                  manifestUrl: https://cdn.arthome.fr/playback/a9f1c0/master.m3u8
+                  signature:
+                    queryToken: Expires=1790000000&Signature=abc
+                    cookieSet: null
+                  edgeRenewalMode: query_token
+                  expiresAt: '2026-09-21T19:07:00.000Z'
+                  renewAfterSec: 45
+                  leaseExpiresAt: '2026-09-21T19:06:30.000Z'
+                  chatMode: open
+                  chatRateLimitPerSecond: 2
+                  liveEdgeSec: 6
+                  chapters: []
+                  audioTracks:
+                  - id: fr-main
+                    language: fr
+                    kind: main
+                  subtitleTracks: []
+                  incident: null
+          headers:
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 'A BFF the route does not serve, or a caller the loaded record refuses: the service authorises for itself.'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/WatchNoSeatError'
+                - $ref: '#/components/schemas/WatchRoomNotOpenError'
+                - $ref: '#/components/schemas/WatchOutOfTerritoryError'
+                - $ref: '#/components/schemas/WatchSubscriptionRequiredError'
+                - $ref: '#/components/schemas/WatchNoReplayError'
+                - $ref: '#/components/schemas/WatchReplayNotOnSaleError'
+                - $ref: '#/components/schemas/WatchPreviewExhaustedError'
+                - $ref: '#/components/schemas/WatchConcurrentLimitReachedError'
+                - $ref: '#/components/schemas/WatchDateCancelledError'
+                - $ref: '#/components/schemas/WatchNotPublishedError'
+                - $ref: '#/components/schemas/WatchSeatExpiredError'
+                - $ref: '#/components/schemas/WatchDateInterruptedError'
+                - $ref: '#/components/schemas/WatchLiveEndedError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                watch.no_seat:
+                  $ref: '#/components/examples/WatchNoSeatError'
+                watch.room_not_open:
+                  $ref: '#/components/examples/WatchRoomNotOpenError'
+                watch.out_of_territory:
+                  $ref: '#/components/examples/WatchOutOfTerritoryError'
+                watch.subscription_required:
+                  $ref: '#/components/examples/WatchSubscriptionRequiredError'
+                watch.no_replay:
+                  $ref: '#/components/examples/WatchNoReplayError'
+                watch.replay_not_on_sale:
+                  $ref: '#/components/examples/WatchReplayNotOnSaleError'
+                watch.preview_exhausted:
+                  $ref: '#/components/examples/WatchPreviewExhaustedError'
+                watch.concurrent_limit_reached:
+                  $ref: '#/components/examples/WatchConcurrentLimitReachedError'
+                watch.date_cancelled:
+                  $ref: '#/components/examples/WatchDateCancelledError'
+                watch.not_published:
+                  $ref: '#/components/examples/WatchNotPublishedError'
+                watch.seat_expired:
+                  $ref: '#/components/examples/WatchSeatExpiredError'
+                watch.date_interrupted:
+                  $ref: '#/components/examples/WatchDateInterruptedError'
+                watch.live_ended:
+                  $ref: '#/components/examples/WatchLiveEndedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          description: Refused with status 410.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchReplayExpiredError'
+              examples:
+                watch.replay_expired:
+                  $ref: '#/components/examples/WatchReplayExpiredError'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+  /v1/playback/sessions/{sessionId}/renew:
+    post:
+      operationId: renewPlaybackTicket
+      summary: Renews the token and extends the lease, without restarting playback.
+      description: |
+        **Every `PLAYBACK_RENEWAL_INTERVAL_SECONDS`**, for a token of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and a
+        lease of `PLAYBACK_LEASE_SECONDS` (`@arthome/core`). It is the renewal that carries the
+        concurrent-screen limit, and it re-runs `decideWatch`: **the client learns within the renewal
+        interval** that it is no longer entitled, while **the edge may keep serving it for up to the
+        token's lifetime** (D-020).
+
+        The response contains **nothing that would force a manifest reload**: the path is stable,
+        only the signature changes.
+
+        **A distinct refusal code per screen**: a generic code would produce a false one.
+
+        **Refused (`403`).** `watch.seat_expired` · `watch.concurrent_limit_reached` (the session another
+        device's opening took over, D-117) · `identity.signed_out_elsewhere` · `watch.preview_exhausted` ·
+        `watch.date_interrupted` · `watch.live_ended`, and any other watch code, `watch.date_cancelled` on
+        air included (`watch.replay_expired` is a `410`). `identity.signed_out_elsewhere` is what the television signed out from the web
+        sees — **not a network error**. **Real window: up to `PLAYBACK_TOKEN_LIFETIME_SECONDS`** — see
+        `revokeDevice`.
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - playback
+      x-arthome-idempotency-exemption: |
+        **A renewal must produce a fresh window, never a memorised one.** Returning the original
+        response would return a token already part-spent — and, at the worst moment, an already
+        expired one — when the call exists precisely to obtain a new one. It is also this renewal
+        that carries the concurrent-screen limit: replaying it from a store would bypass the count.
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-storefront
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/PlaybackSessionId'
+      - $ref: '#/components/parameters/ViewerCountry'
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
+      responses:
+        '200':
+          description: Token renewed.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/PlaybackRenewal'
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  expiresAt: '2026-09-21T19:07:45.000Z'
+                  renewAfterSec: 45
+                  leaseExpiresAt: '2026-09-21T19:07:15.000Z'
+                  signature:
+                    queryToken: Expires=1790000120&Signature=def
+                    cookieSet: null
+                  qualityCap: fhd
+          headers:
+            Cache-Control:
+              description: Non-negotiable. It is what keeps the secret out of the cache and out of the app snapshot.
+              schema:
+                type: string
+                const: no-store
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: 'A BFF the route does not serve, or a caller the loaded record refuses: the service authorises for itself.'
+          content:
+            application/json:
+              schema:
+                anyOf:
+                - $ref: '#/components/schemas/ApiForbiddenError'
+                - $ref: '#/components/schemas/IdentitySignedOutElsewhereError'
+                - $ref: '#/components/schemas/WatchNoSeatError'
+                - $ref: '#/components/schemas/WatchRoomNotOpenError'
+                - $ref: '#/components/schemas/WatchOutOfTerritoryError'
+                - $ref: '#/components/schemas/WatchSubscriptionRequiredError'
+                - $ref: '#/components/schemas/WatchNoReplayError'
+                - $ref: '#/components/schemas/WatchReplayNotOnSaleError'
+                - $ref: '#/components/schemas/WatchPreviewExhaustedError'
+                - $ref: '#/components/schemas/WatchConcurrentLimitReachedError'
+                - $ref: '#/components/schemas/WatchDateCancelledError'
+                - $ref: '#/components/schemas/WatchNotPublishedError'
+                - $ref: '#/components/schemas/WatchSeatExpiredError'
+                - $ref: '#/components/schemas/WatchDateInterruptedError'
+                - $ref: '#/components/schemas/WatchLiveEndedError'
+              examples:
+                api.forbidden:
+                  $ref: '#/components/examples/ApiForbiddenError'
+                identity.signed_out_elsewhere:
+                  $ref: '#/components/examples/IdentitySignedOutElsewhereError'
+                watch.no_seat:
+                  $ref: '#/components/examples/WatchNoSeatError'
+                watch.room_not_open:
+                  $ref: '#/components/examples/WatchRoomNotOpenError'
+                watch.out_of_territory:
+                  $ref: '#/components/examples/WatchOutOfTerritoryError'
+                watch.subscription_required:
+                  $ref: '#/components/examples/WatchSubscriptionRequiredError'
+                watch.no_replay:
+                  $ref: '#/components/examples/WatchNoReplayError'
+                watch.replay_not_on_sale:
+                  $ref: '#/components/examples/WatchReplayNotOnSaleError'
+                watch.preview_exhausted:
+                  $ref: '#/components/examples/WatchPreviewExhaustedError'
+                watch.concurrent_limit_reached:
+                  $ref: '#/components/examples/WatchConcurrentLimitReachedError'
+                watch.date_cancelled:
+                  $ref: '#/components/examples/WatchDateCancelledError'
+                watch.not_published:
+                  $ref: '#/components/examples/WatchNotPublishedError'
+                watch.seat_expired:
+                  $ref: '#/components/examples/WatchSeatExpiredError'
+                watch.date_interrupted:
+                  $ref: '#/components/examples/WatchDateInterruptedError'
+                watch.live_ended:
+                  $ref: '#/components/examples/WatchLiveEndedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '410':
+          description: Refused with status 410.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchReplayExpiredError'
+              examples:
+                watch.replay_expired:
+                  $ref: '#/components/examples/WatchReplayExpiredError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+  /v1/playback/sessions/{sessionId}/release:
+    post:
+      operationId: releasePlayback
+      summary: Releases a playback session — speeds things up, guarantees nothing.
+      description: |
+        **Nothing depends on it.** A television is unplugged, a set-top box cuts out, the operating
+        system kills a mobile application without warning: it is the **lease** that expires (`PLAYBACK_LEASE_SECONDS`),
+        never this call that closes. A session that only closed on a client event would leave a ghost
+        screen, and the viewer would be refused their own second playback.
+
+        The client can **resume its own session**, identified by `deviceId`: reopening the player on
+        the same device reuses the lease instead of opening a second one.
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - playback
+      x-arthome-idempotency-exemption: |
+        **Idempotent by nature, and nothing depends on it.** Releasing twice leaves the same state,
+        and it is the **expiring lease** that is authoritative — this call merely speeds things up. A
+        key would protect an effect that has neither accumulation nor consequence.
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-storefront
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/PlaybackSessionId'
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
+      responses:
+        '204':
+          description: Done.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+  /v1/me/progress/{dateId}:
+    put:
+      operationId: recordPlaybackPosition
+      summary: Records the playback position.
+      description: |
+        **The most frequent write in the system.** It carries **no** idempotency key: one key per
+        30 s slice, per viewer and per live show would make the idempotency store the hottest table
+        in `streaming`, to protect a write whose loss has no consequence.
+
+        Expected cadence: **on pause, on exit, on end, and a 30-to-60 s heartbeat**, plus a **forced
+        write when going to the background**.
+
+        **A late write is accepted**: the last position must be taken even if it arrives **after** a
+        `releasePlayback` — a television can be cut off at any moment.
+
+        **Last writer wins, and the ordering comes from the server.**
+
+        **No position is recorded during a live** (D-111): a live gives no control of playback, so no
+        resume point comes from it. A write then is answered with the stored point, unchanged, so an old
+        client stays harmless.
+
+        **On the service, the profile is the token's** (`pro`), never the body's: a call whose token names
+        no profile is refused `403` `api.forbidden`, and so is a body `profileId` other than the token's.
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - playback
+      x-arthome-idempotency-exemption: |
+        **The most frequent write in the system.** One key per 30-second slice, per viewer and per
+        live show would make the idempotency store the hottest table in `streaming` — to protect a
+        write whose loss has no consequence and whose rule is already "last writer wins, server
+        ordering". The cost would be per minute of playback and per viewer.
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-storefront
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/DateId'
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                positionSec:
+                  type: integer
+                  minimum: 0
+                deviceId:
+                  type: string
+                  format: uuid
+                completed:
+                  default: false
+                  type: boolean
+              required:
+              - positionSec
+              - deviceId
+            example:
+              positionSec: 1840
+              deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
+              completed: false
+      responses:
+        '200':
+          description: Position recorded, with the server ordering applied.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        positionSec:
+                          type: integer
+                        version:
+                          type: integer
+                      additionalProperties: {}
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  positionSec: 1840
+                  version: 212
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+                const: no-store
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+  /v1/viewer-progress/batch:
+    post:
+      operationId: getViewerProgressBatch
+      summary: A profile's points on many dates, in one read.
+      description: |
+        **The third per-viewer overlay** (`transport.md` §5.6): the storefront BFF merges the table
+        into each card's `viewerProgress` by date id, so a screen of cards costs one call, never one per
+        card. A date with no point is absent from the table.
+
+        **On the service, the profile is the token's** (`pro`), never the body's: a call whose token names
+        no profile is refused `403` `api.forbidden`, and so is a body `profileId` other than the token's.
+
+        Refused, the storefront BFF serves the cards without the overlay (`degraded: ["viewerProgress"]`,
+        `transport.md` §5.8).
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - playback
+      x-arthome-idempotency-exemption: |
+        A read, which writes nothing: it is a `POST` only because its ids do not fit in a query string
+        (`transport.md` §5.6).
+      x-arthome-requires:
+      - name: callerService
+        issuers:
+        - arthome.bff-storefront
+      x-arthome-budget-ms: 150
+      x-arthome-internal: true
+      security:
+      - internalToken: []
+      parameters:
+      - $ref: '#/components/parameters/Deadline'
+      - $ref: '#/components/parameters/Traceparent'
+      - $ref: '#/components/parameters/ActorSurface'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                profileId:
+                  type: string
+                  format: uuid
+                dateIds:
+                  minItems: 1
+                  maxItems: 200
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+              required:
+              - profileId
+              - dateIds
+            example:
+              profileId: 019928b0-0000-7000-8000-000000000001
+              dateIds:
+              - 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+              - 019928a0-7d31-7a10-b8c4-2f9e11a4c002
+      responses:
+        '200':
+          description: The points found, by date id; a date without one is absent.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/EnvelopeMeta'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      propertyNames:
+                        type: string
+                      additionalProperties:
+                        $ref: '#/components/schemas/ViewerProgress'
+                  required:
+                  - data
+                  additionalProperties: {}
+              example:
+                servedAt: '2026-09-21T19:00:00.000Z'
+                data:
+                  019928a0-7d31-7a10-b8c4-2f9e11a4c001:
+                    positionSec: 1840
+                    writtenAt: '2026-09-22T21:14:03.000Z'
+                    completed: false
+                    version: 212
+          headers:
+            Cache-Control:
+              description: 'How long, and for whom, the answer may be kept: the route''s freshness family.'
+              schema:
+                type: string
+                const: no-store
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '504':
+          $ref: '#/components/responses/DeadlineExceeded'
+components:
+  securitySchemes:
+    internalToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        ES256, minted by the BFF for this service alone (`aud: arthome.streaming`) and short-lived
+        (`transport.md` §5.2, `adr-auth.md` §8). It names the BFF (`iss`), the account (`sub`) and,
+        when the session has them, the profile (`pro`) and the device (`did`): the route's principal.
+  parameters:
+    Deadline:
+      name: x-arthome-deadline
+      in: header
+      required: true
+      description: The RFC 3339 UTC instant after which the caller no longer waits. A service handed a past instant does nothing.
+      schema:
+        type: string
+        format: date-time
+    Traceparent:
+      name: traceparent
+      in: header
+      required: false
+      description: |
+        W3C trace context, created at the BFF when the surface sent none, and propagated unmodified
+        (`transport.md` §5.2): it is the one the service injects into `outbox_event.tracecontext` at
+        write time. A malformed one is never refused: a broken trace is an observability fault.
+      schema:
+        type: string
+    ActorSurface:
+      name: x-arthome-actor-surface
+      in: header
+      required: true
+      description: |
+        The surface the person wrote from, relayed by the BFF on every write (`transport.md` §5.2): the
+        event the write emits names its actor's place (`common.proto` `Actor.surface`).
+      schema:
+        type: string
+        enum:
+        - storefront_web
+        - storefront_mobile
+        - storefront_tv
+        - studio_web
+        - studio_mobile
+        - system
+        x-arthome-vocabulary-source: SURFACES
+        examples:
+        - studio_web
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        The surface's key, relayed as is by the BFF (`transport.md` §5.2, §5.4): a key the BFF
+        regenerated would protect nothing, since the surface is what replays. Scoped to the account the
+        token names. A replayed key answers the first attempt's response, verbatim.
+      schema:
+        type: string
+        format: uuid
+        examples:
+        - 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
+    ViewerCountry:
+      name: x-arthome-viewer-country
+      in: header
+      required: true
+      description: |
+        The viewer's country, ISO 3166-1 alpha-2, set by the BFF from the edge on every call that
+        decides a watch verdict, or `ZZ` when the edge resolves none. It is resolved at every
+        opening, never projected (`adr-stream-entitlement.md` §5): it changes between two reads.
+
+        A date restricted by country refuses `ZZ` (`watch.out_of_territory`), failing closed for
+        the rights holder; a date with no restriction ignores the header (`isAvailableIn`).
+      schema:
+        type: string
+        pattern: ^[A-Z]{2}$
+        examples:
+        - FR
+        - ZZ
+    Surface:
+      name: X-Arthome-Surface
+      in: header
+      required: true
+      description: |
+        The calling surface. It determines three **served** things, never guessed: the chat rate
+        ceiling (television 2 msg/s, mobile 6, web 10), the size of the catch-up on entering a room
+        (television 20 messages, 50 elsewhere) and which slice of the label and taxonomy catalogue to
+        load.
+        **A strict narrowing of `SURFACES`, and the strictness is the point.** The domain
+        vocabulary has six members; this header accepts the three that can legitimately call the
+        storefront BFF and **refuses the rest**, because an input is refused where an output is kept
+        raw and treated as neutral. A studio surface reaching this header is not a value to tolerate,
+        it is a caller in the wrong place.
+      schema:
+        type: string
+        enum:
+        - storefront_web
+        - storefront_mobile
+        - storefront_tv
+        x-arthome-vocabulary-source: SURFACES
+        x-arthome-vocabulary-narrowing: The three that may call the storefront BFF. A studio surface reaching this header is not a value to tolerate, it is a caller in the wrong place.
+        examples:
+        - storefront_tv
+    DateId:
+      name: dateId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+        examples:
+        - 019928a0-7d31-7a10-b8c4-2f9e11a4c001
+    IncidentId:
+      name: incidentId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PlaybackSessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  headers:
+    ServedAt:
+      description: |
+        Server instant **of this response**, sent with `Idempotency-Replayed`. On a replay it differs
+        from the body's `servedAt`, which is the first attempt's: a replay proves an effect took
+        place, it does not promise fresh data.
+      schema:
+        type: string
+        format: date-time
+    IdempotencyReplayed:
+      description: Present and `true` when this answer replays the one stored for the same `Idempotency-Key`.
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: Refused by shape validation, a header included.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                    const: api.schema_invalid
+                  params:
+                    type: object
+                    properties:
+                      issues:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            path:
+                              type: array
+                              items:
+                                anyOf:
+                                - type: string
+                                - type: integer
+                                  format: int64
+                            rule:
+                              type: string
+                              x-arthome-vocabulary:
+                              - too_small
+                              - too_big
+                              - invalid_type
+                              - invalid_format
+                              - invalid_value
+                              - unrecognized_key
+                              - custom
+                              x-arthome-vocabulary-source: SCHEMA_ISSUE_RULES
+                            minimum:
+                              type: number
+                            maximum:
+                              type: number
+                            inclusive:
+                              type: boolean
+                            format:
+                              type: string
+                            values:
+                              type: array
+                              items:
+                                type:
+                                - string
+                                - number
+                                - boolean
+                                - 'null'
+                          required:
+                          - path
+                          - rule
+                          additionalProperties: {}
+                    required:
+                    - issues
+                    additionalProperties: {}
+                  traceId:
+                    type: string
+                    minLength: 1
+                  nature:
+                    type: string
+                    x-arthome-vocabulary:
+                    - refused
+                    - unavailable
+                    - offline_forbidden
+                    x-arthome-vocabulary-source: FAILURE_NATURES
+                    x-arthome-unknown-fallback: unavailable
+                required:
+                - code
+                - params
+                - traceId
+                - nature
+                additionalProperties: {}
+              servedAt:
+                type: string
+                format: date-time
+            required:
+            - error
+            - servedAt
+            additionalProperties: {}
+          example:
+            error:
+              code: api.schema_invalid
+              nature: refused
+              params:
+                issues:
+                - path:
+                  - quantity
+                  rule: too_small
+                  minimum: 1
+                  inclusive: true
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    Unauthorized:
+      description: 'No internal token, or one refused: unsigned, expired, or minted for another service.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.unauthenticated
+              nature: refused
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    Forbidden:
+      description: 'A BFF the route does not serve, or a caller the loaded record refuses: the service authorises for itself.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.forbidden
+              nature: refused
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    NotFound:
+      description: Unknown record, or one that is not the caller's.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.not_found
+              nature: refused
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    Conflict:
+      description: 'Refused by the state of the record or by a reused key: the `code` says which.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.idempotency_key_reused
+              nature: refused
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    PayloadTooLarge:
+      description: The body is over the ceiling of the route.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.payload_too_large
+              nature: refused
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    UnsupportedMediaType:
+      description: The body is not `application/json`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.unsupported_media_type
+              nature: refused
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    InternalError:
+      description: A fault of the service. The BFF answers its surface `502 api.upstream_unavailable`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.internal
+              nature: unavailable
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    DeadlineExceeded:
+      description: 'The deadline had passed: the service did nothing (`transport.md` §5.3).'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.deadline_exceeded
+              nature: unavailable
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+  schemas:
+    EnvelopeMeta:
+      type: object
+      properties:
+        servedAt:
+          type: string
+          format: date-time
+        validUntil:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          format: date-time
+      required:
+      - servedAt
+      additionalProperties: {}
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: ^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+$
+          x-arthome-vocabulary:
+          - api.unauthenticated
+          - api.token_expired
+          - api.forbidden
+          - api.not_found
+          - api.rate_limited
+          - api.schema_invalid
+          - api.internal
+          - api.service_unavailable
+          - api.upstream_unavailable
+          - api.cursor_too_old
+          - api.sort_key_forbidden
+          - api.period_filter_required
+          - api.rights_version_stale
+          - api.idempotency_key_reused
+          - api.idempotency_in_flight
+          - api.deadline_exceeded
+          - api.upstream_timeout
+          - api.payload_too_large
+          - api.unsupported_media_type
+          - api.reauthentication_required
+          - identity.email_taken
+          - identity.handle_taken
+          - identity.invalid_credentials
+          - identity.two_factor_required
+          - identity.signed_out_elsewhere
+          - identity.verification_link_invalid
+          - identity.reset_token_expired
+          - identity.one_time_token_expired
+          - identity.two_factor_challenge_expired
+          - pairing.slow_down
+          - pairing.identity_mismatch
+          - pairing.intent_not_engageable
+          - pairing.execution_engaged
+          - chat.holders_only
+          - chat.rate_limited
+          - moderation.already_claimed
+          - moderation.already_settled
+          - moderation.automatic_cannot_override_human
+          - moderation.decision_version_stale
+          - artist.slug_taken
+          - artist.already_exists
+          - show.slug_taken
+          - date.has_sold_seats
+          - date.outcome_decision_forbidden
+          - date.prices_locked
+          - date.prices_currency_mismatch
+          - date.replay_policy_final
+          - date.technical_check_required
+          - date.technical_provision_required
+          - date.provision_deadline_passed
+          - date.provision_below_capacity
+          - date.stream_key_rotation_during_run
+          - date.postponement_limit_reached
+          - date.outcome_final
+          - date.not_public
+          - date.already_started
+          - date.not_started
+          - date.already_ended
+          - date.reschedule_in_past
+          - channel.has_open_obligations
+          - channel.crew_role_reserved
+          - channel.role_not_assignable
+          - channel.transfer_target_ineligible
+          - channel.same_actor_forbidden
+          - payout.reconciliation_discrepancy_unexplained
+          - payout.bank_change_request_expired
+          - order.quote_address_mismatch
+          - order.quote_expired
+          - order.sold_out
+          - order.tier_unavailable
+          - order.payment_declined
+          - order.price_stale
+          - order.plan_unavailable
+          - order.contribution_out_of_range
+          - order.checkout_line_unavailable
+          - order.sales_queue_admission_required
+          - order.late_entry_unacknowledged
+          - order.sales_closed
+          - seat.cancel_deadline_passed
+          - payment_method.in_use
+          - waitlist.not_sold_out
+          - seat.not_active
+          - refund.amount_exceeds_remaining
+          - capacity.tier_must_widen
+          - content.empty_in_both_languages
+          - hold.quantity_invalid
+          - media.size_invalid
+          - media.url_empty
+          - order.quantity_invalid
+          - pairing_code.ambiguous_glyph
+          - publication.checklist_incomplete
+          - publication.promise_unacknowledged
+          - publication.transition_forbidden
+          - publication.transition_irreversible
+          - run.transition_forbidden
+          - search.unknown_flag
+          - seat_code.malformed
+          - state.conflict
+          - watch.no_seat
+          - watch.room_not_open
+          - watch.out_of_territory
+          - watch.subscription_required
+          - watch.no_replay
+          - watch.replay_expired
+          - watch.replay_not_on_sale
+          - watch.preview_exhausted
+          - watch.concurrent_limit_reached
+          - watch.date_cancelled
+          - watch.not_published
+          - watch.seat_expired
+          - watch.date_interrupted
+          - watch.live_ended
+          x-arthome-vocabulary-source: ERROR_CODES
+        params:
+          type: object
+          properties: {}
+          additionalProperties: {}
+        traceId:
+          type: string
+          minLength: 1
+        nature:
+          type: string
+          x-arthome-vocabulary:
+          - refused
+          - unavailable
+          - offline_forbidden
+          x-arthome-vocabulary-source: FAILURE_NATURES
+          x-arthome-unknown-fallback: unavailable
+      required:
+      - code
+      - params
+      - traceId
+      - nature
+      additionalProperties: {}
+    ErrorEnvelope:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    RunConsole:
+      type: object
+      properties:
+        dateId:
+          type: string
+          format: uuid
+        state:
+          type: string
+          x-arthome-vocabulary:
+          - idle
+          - rehearsal
+          - on_air
+          - interrupted
+          - ended
+          x-arthome-vocabulary-source: RUN_STATES
+          description: |
+            The **technical** axis, and nothing else. `postponed` and `cancelled` are **withdrawn** from
+            it: they were echoes of the outcome lodged in the technical state. A control room has no
+            "cancelled" state — it has a stage sending nothing.
+        afterGracePeriod:
+          type: boolean
+        ingestProtocol:
+          type: string
+          x-arthome-vocabulary:
+          - rtmps
+          - srt
+          - whip
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+          description: '**Decides which metrics are actually available.**'
+        monitorPath:
+          type: string
+          x-arthome-vocabulary:
+          - whep
+          - ll_hls
+          x-arthome-vocabulary-source: none
+          x-arthome-vocabulary-reason: 'A transport or media capability, not a domain notion: the domain never chooses an ingest protocol, a container or a DRM system, and a new one appears because a device appeared.'
+          description: |
+            The return path **actually open**. WHEP under a second on a WHIP ingest, LL-HLS at a few
+            seconds on an RTMP ingest. **The studio must know it so as not to promise the operator a
+            latency it does not have** — the contract carries the truth, not uniformity. On the native
+            shell, `whep` is not promised at tier 5 (D-019).
+        monitorUrl:
+          format: uri
+          type:
+          - string
+          - 'null'
+        qualityLadder:
+          type: array
+          items:
+            type: object
+            properties:
+              renditionId:
+                type: string
+              heightPx:
+                type: integer
+              enabled:
+                type: boolean
+            additionalProperties: {}
+        cameras:
+          type: array
+          items:
+            type: string
+        startedAt:
+          format: date-time
+          type:
+          - string
+          - 'null'
+        lastSample:
+          type: object
+          properties:
+            measuredAt:
+              type: string
+              format: date-time
+            source:
+              type: string
+              x-arthome-vocabulary:
+              - ingest_server
+              - client_submitted
+              x-arthome-vocabulary-source: none
+              x-arthome-vocabulary-reason: A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.
+              description: |
+                `client_submitted` for the end-to-end latency, measured in the control room by
+                `RTCPeerConnection.getStats()` on the WHEP return path and **submitted** — never a native
+                figure presented as end-to-end. If it is not measured, it is **absent**.
+            ingestUpKbps:
+              description: |
+                A **server-side** observation. Never to be confused with `deviceUpKbps`, which measures the
+                phone's uplink and not the encoder: **two different bitrates never carry the same name**. Only
+                the first feeds the pre-flight checklist.
+              anyOf:
+              - type: integer
+              - type: 'null'
+            deviceUpKbps:
+              anyOf:
+              - type: integer
+              - type: 'null'
+            latencyMs:
+              anyOf:
+              - type: integer
+              - type: 'null'
+            droppedPct:
+              type:
+              - number
+              - 'null'
+            jitterMs:
+              description: '**Omitted** over RTMP — there is no sense in serving it.'
+              anyOf:
+              - type: integer
+              - type: 'null'
+            lostPackets:
+              description: '**Omitted** over RTMP.'
+              anyOf:
+              - type: integer
+              - type: 'null'
+            viewers:
+              description: '**Absent — never zero — when the date is not on air.**'
+              anyOf:
+              - type: integer
+              - type: 'null'
+          required:
+          - measuredAt
+          - source
+          additionalProperties: {}
+          description: |
+            **Every metric is nullable, and the absence means something.** Jitter and lost packets
+            **exist only on a WebRTC ingest**; over RTMP, carried on TCP, they have no meaning, and the
+            contract **omits** them rather than serving zero. A zero reads as "perfect", not as "not
+            measured".
+
+            `measuredAt` is the instant of measurement **at the ingest**, not on reception: it is what
+            lets you display "bitrate 8.9 Mb/s, measured 3 s ago" or "last measurement 2 min ago" instead
+            of "0 Mb/s", which is a lie.
+        incident:
+          $ref: '#/components/schemas/StudioIncident'
+        chapters:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              vocabId:
+                type: string
+              atMediaSec:
+                type: integer
+            additionalProperties: {}
+        presence:
+          description: |
+            **Who is online on this channel, with their roles and their last activity.** It is the
+            **snapshot** of what the `channel:{id}` room pushes every ~10 s, and a room that
+            broadcasts a differential without exposing a snapshot is not a contract: a console
+            opened at 21:40 had nothing to paint and stayed that way until the next change.
+
+            It is **not cosmetic**. The cut confirmation reads "cutting ends the broadcast for N
+            viewers · **M other people online**", and that sentence is the guard rail on the most
+            destructive act in the run desk, **in a studio deliberately without a lock**. Unserved,
+            the guard rail reads "0 other people online" — the same screen as "you are alone", and
+            false.
+
+            Composed by the BFF from `identity.GetChannelPresence`, which `context-map.md` §10.1
+            already counts among the run desk's three internal calls. Fan-out 2 for this operation,
+            under the threshold of 4.
+          type: array
+          items:
+            type: object
+            properties:
+              personId:
+                type: string
+                format: uuid
+              displayName:
+                type: string
+              roles:
+                type: array
+                items:
+                  type: string
+                  x-arthome-vocabulary:
+                  - artist
+                  - production
+                  - coordination
+                  - director
+                  - video
+                  - sound
+                  - moderation
+                  - treasury
+                  x-arthome-vocabulary-source: MEMBER_ROLES
+                description: |
+                  **A set**, as everywhere else in this document: the eight canonical values, never the
+                  fallback to six. Presence is read next to a cut button, and `director` there is not
+                  `video`.
+              lastActivityAt:
+                type: string
+                format: date-time
+                description: |
+                  **An instant, never "active 2 min ago".** The sentence belongs to the surface and is
+                  computed against `servedAt`; the contract carries the instant, like every other
+                  countdown here.
+              isSelf:
+                type: boolean
+                description: |
+                  **Served, because the sentence the screen shows says "M OTHER people online".** The
+                  surface holds its own `personId` from the bootstrap and could subtract itself — and two
+                  surfaces subtracting differently is exactly how a guard rail ends up off by one on the
+                  one screen where it guards a cut.
+            required:
+            - personId
+            - displayName
+            - roles
+            - lastActivityAt
+            - isSelf
+            additionalProperties: {}
+            description: |
+              A crew member online **on the channel**. The scope is the channel, not the date: presence
+              follows the person, and the run desk is simply where it is read.
+        chatThroughputPerMinute:
+          description: |
+            **Measured by the server, in a declared unit**: a 60 s sliding window, unit
+            messages/minute, refreshed every 5 s. The console's switching threshold (60 msg/min) reads
+            against **that measurement** — not against "number of messages ÷ hours elapsed", which is not
+            the same thing.
+          anyOf:
+          - type: integer
+          - type: 'null'
+        grossRevenue:
+          description: '**Absent** without `canRevenue`. The `:revenue` real-time room is separate for the same reason.'
+          type: object
+          properties:
+            amountMinor:
+              type: integer
+              format: int64
+              examples:
+              - 2400
+            currencyCode:
+              type: string
+              pattern: ^[A-Z]{3}$
+              examples:
+              - EUR
+          required:
+          - amountMinor
+          - currencyCode
+          additionalProperties: {}
+          x-arthome-tax-basis: inclusive
+          x-arthome-restricted: canRevenue
+        version:
+          type: integer
+      required:
+      - dateId
+      - state
+      - afterGracePeriod
+      - ingestProtocol
+      - monitorPath
+      additionalProperties: {}
+      description: |
+        The state of the run, served in **one** call. The studio distinguishes **"hiccup absorbed"**
+        from **"publisher gone"** — two fields, not one: a two-second network break in a room must
+        produce neither an incident in the control room nor an HLS manifest restarted from zero.
+    StudioIncident:
+      anyOf:
+      - type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          kind:
+            type: string
+            x-arthome-vocabulary:
+            - hold_screen
+            - postponed
+            - cancelled
+            - interrupted
+            x-arthome-vocabulary-source: INCIDENT_KINDS
+            description: The **outcome** the viewer sees.
+          cause:
+            type: string
+            x-arthome-vocabulary:
+            - venue_feed_lost
+            - run_desk_disconnected
+            - bitrate_collapsed
+            - compatibility_worker_failed
+            - provider_error
+            - manual
+            x-arthome-vocabulary-source: INCIDENT_CAUSES
+            description: |
+              The **cause**, a distinct vocabulary. `compatibility_worker_failed` exists because a
+              transcoding *worker* must never die silently — otherwise the control room sees a player that
+              never starts, with no cause.
+          trigger:
+            type: string
+            x-arthome-vocabulary:
+            - manual
+            - auto
+            x-arthome-vocabulary-source: INCIDENT_TRIGGERS
+            description: |
+              The **automatic** holding screen produces an incident **of the same kind** as a manual
+              trigger — that is the right answer to the "the stage manager is unreachable" case. The log
+              must nonetheless tell the two apart.
+          message:
+            description: |
+              Written by the control room: **content**, with its authoring language. The catalogue supplies
+              **templates** per kind of incident, which the control room reuses or replaces.
+            type: object
+            properties:
+              contentLanguage:
+                type: string
+                examples:
+                - fr
+              text:
+                type: string
+            required:
+            - contentLanguage
+            - text
+            additionalProperties: {}
+          raisedAt:
+            type: string
+            format: date-time
+          raisedBy:
+            type: object
+            properties:
+              accountId:
+                format: uuid
+                type:
+                - string
+                - 'null'
+              personId:
+                format: uuid
+                type:
+                - string
+                - 'null'
+              displayName:
+                type:
+                - string
+                - 'null'
+              surface:
+                type: string
+                x-arthome-vocabulary:
+                - storefront_web
+                - storefront_mobile
+                - storefront_tv
+                - studio_web
+                - studio_mobile
+                - system
+                x-arthome-vocabulary-source: SURFACES
+                description: |
+                  **One vocabulary, six members** — `SURFACES` — with the narrowing said here rather than
+                  written as a second, shorter list. A studio payload carries `studio_web`, `studio_mobile`
+                  or `system` and never the three storefront surfaces, **by construction**: the actor is
+                  whoever called this BFF. Declaring only three would be a second authored list for a field
+                  the domain already defines, which is how E4 started.
+            required:
+            - surface
+            additionalProperties: {}
+            description: |
+              Who caused the fact. **Empty for `system`** — a server rule (an automatic holding screen, a
+              lease expiring) is an actor all the same, and the log must be able to tell it apart from a
+              human decision.
+        required:
+        - id
+        - kind
+        - cause
+        - trigger
+        - raisedAt
+        additionalProperties: {}
+      - type: 'null'
+      description: |
+        **Cause and outcome are two vocabularies**, and conflating them was the original fault:
+        `catalogue.incidentMessages` carries only four entries, **which are outcomes**.
+    PlaybackTicket:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          description: |
+            **Recoverable after an OS kill.** The token being `no-store`, a client killed by the OS no
+            longer has this `sessionId`: it could neither renew, nor release, nor point at its own
+            session in the refusal list. Reopening with the **same `deviceId`** returns the same
+            session — that is the mechanism, and it is declared.
+        resumedExistingSession:
+          description: |
+            True when this opening **took over this device's existing lease** instead of opening a second
+            one. This is what stops a household being blocked by its own ghost screens — and it is
+            decisive for a `pass` subscriber, whose ceiling is **one** screen: without takeover,
+            reopening the app after an OS kill locks them out of their own phone for the lease's lifetime
+            (`PLAYBACK_LEASE_SECONDS`).
+          type: boolean
+        dateId:
+          type: string
+          format: uuid
+        scope:
+          type: string
+          x-arthome-vocabulary:
+          - full
+          - preview
+          x-arthome-vocabulary-source: WATCH_SCOPES
+          x-arthome-vocabulary-narrowing: '`none` is a verdict, not a ticket: a ticket exists only where playback was allowed, so a scope of `none` here would be a token for watching nothing.'
+          description: |
+            **A strict narrowing of `WATCH_SCOPES`, and the missing member is the rule.** `none` is a
+            verdict, not a ticket: a ticket exists only where playback was allowed, so a scope of
+            `none` here would be a token for watching nothing. `WatchVerdict.scope` carries all three
+            because a verdict can say no; this one cannot.
+
+            `preview` for a non-holder, from on air (D-110): under the incident veil it is granted and costs
+            nothing. Its token expires at the earlier of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and the seconds
+            left, under the veil too (`previewTokenExpiresAt`), and it renews before (`previewRenewAfterSeconds`):
+            **reloading the page extends nothing**, and a reinstalled app resets no counter — the budget
+            is **server-side**, per **account**.
+        previewSecondsLeft:
+          anyOf:
+          - type: integer
+          - type: 'null'
+        protocol:
+          type: string
+          x-arthome-vocabulary:
+          - hls
+          - dash
+          x-arthome-vocabulary-source: PLAYBACK_PROTOCOLS
+        drmSystem:
+          description: |
+            **Chosen by the server for this device.** The fleet imposes HLS + FairPlay on tvOS and
+            DASH + Widevine elsewhere, PlayReady on certain models: **a client that guesses gets it
+            wrong**, and it gets it wrong on the devices we cannot test.
+          x-arthome-vocabulary:
+          - fairplay
+          - widevine
+          - playready
+          x-arthome-vocabulary-source: DRM_SYSTEMS
+          type:
+          - string
+          - 'null'
+        qualityCap:
+          type: string
+          x-arthome-vocabulary:
+          - sd
+          - hd
+          - fhd
+          - uhd
+          x-arthome-vocabulary-source: QUALITY_CAPS
+          description: |
+            The ceiling the device's **hardware** security level allows. An entry-level HDMI stick offers
+            only software Widevine: the server **degrades cleanly** rather than refusing, and the surface
+            **knows** it has been capped — so it does not offer "4K" in its quality panel.
+        manifestUrl:
+          type: string
+          format: uri
+          description: |
+            **The path is stable and never carries the token.** A token in the path would force a
+            manifest reload on every renewal, hence a micro-freeze every N minutes — visible on a static
+            theatre shot. Stream paths are random and unpredictable.
+        signature:
+          type: object
+          properties:
+            queryToken:
+              anyOf:
+              - type: string
+                format: password
+                x-arthome-sensitive: true
+              - type: 'null'
+            cookieSet:
+              type:
+              - boolean
+              - 'null'
+          additionalProperties: {}
+          description: 'The signature covers a **path prefix**: signing the manifest and leaving the segments open is signing nothing.'
+        edgeRenewalMode:
+          type: string
+          x-arthome-vocabulary:
+          - signed_cookie
+          - query_token
+          x-arthome-vocabulary-source: EDGE_RENEWAL_MODES
+          description: |
+            **Declared, never guessed**: the two mechanisms are not equally available. `signed_cookie` for
+            a browser — a same-origin call resets the cookie, zero URL change, zero interruption.
+            `query_token` for native players, which reapply the current token through their request
+            filter. `AVPlayer` on tvOS does not share the WebView's cookies: it is
+            `AVAssetResourceLoaderDelegate`, and that is **the point to validate on a real device before
+            promising anything**.
+        expiresAt:
+          type: string
+          format: date-time
+          description: |
+            **`PLAYBACK_TOKEN_LIFETIME_SECONDS`** (D-020). The client learns it is no longer entitled
+            within the renewal interval, but the edge may keep serving it until the token in hand expires.
+        renewAfterSec:
+          type: integer
+          examples:
+          - 45
+          description: '**`PLAYBACK_RENEWAL_INTERVAL_SECONDS`**, under the ceiling the TV requires: it is the renewal that carries the concurrent-screen limit. A preview renews sooner, before its token expires (`previewRenewAfterSeconds`).'
+        leaseExpiresAt:
+          type: string
+          format: date-time
+          description: |
+            **`PLAYBACK_LEASE_SECONDS`.** It is the **lease** that carries the concurrent-screen limit, not a release command:
+            a television gets unplugged, a set-top box loses power, the OS kills a mobile app without
+            warning. `releasePlayback` speeds it up, **nothing depends on it**.
+        resumePoint:
+          description: |
+            **A replay's only.** A live gives no control of playback and records no position (D-111),
+            so a live's ticket carries none.
+          anyOf:
+          - type: object
+            properties:
+              positionSec:
+                type: integer
+              writtenAt:
+                type: string
+                format: date-time
+            additionalProperties: {}
+          - type: 'null'
+        liveEdgeSec:
+          anyOf:
+          - type: integer
+          - type: 'null'
+        chapters:
+          type: array
+          items:
+            $ref: '#/components/schemas/Chapter'
+        audioTracks:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              language:
+                type: string
+              kind:
+                type: string
+                x-arthome-vocabulary:
+                - main
+                - audio_description
+                x-arthome-vocabulary-source: none
+                x-arthome-vocabulary-reason: A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.
+            additionalProperties: {}
+        subtitleTracks:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              language:
+                type: string
+              kind:
+                type: string
+                x-arthome-vocabulary:
+                - subtitles
+                - captions
+                - surtitles
+                x-arthome-vocabulary-source: none
+                x-arthome-vocabulary-reason: A vocabulary local to this contract. The domain neither produces nor consumes these values — they describe what this endpoint offers, and a new member is an endpoint change.
+            additionalProperties: {}
+        chatMode:
+          type: string
+          x-arthome-vocabulary:
+          - open
+          - emoji
+          - read_only
+          - 'off'
+          x-arthome-vocabulary-source: CHAT_MODES
+        chatRateLimitPerSecond:
+          type: integer
+        incident:
+          $ref: '#/components/schemas/Incident'
+        date:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            showId:
+              type: string
+              format: uuid
+            channelId:
+              type: string
+              format: uuid
+            artist:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                  examples:
+                  - Compagnie Verticale
+                verified:
+                  type: boolean
+                avatar:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      format: uri
+                    widthPx:
+                      type: integer
+                      minimum: 1
+                    heightPx:
+                      type: integer
+                      minimum: 1
+                  required:
+                  - url
+                  - widthPx
+                  - heightPx
+                  additionalProperties: {}
+                  description: |
+                    A visual **already rendered at a size actually displayed**, never a URL recipe with a width
+                    template: on a television with 1 GB, a 4K backdrop decoded for a thumbnail costs as much as a
+                    full screen.
+              required:
+              - id
+              - name
+              additionalProperties: {}
+            slug:
+              type: string
+              examples:
+              - '2026-09-21'
+            canonicalUrl:
+              type: string
+              format: uri
+              description: |
+                **Served, never built by the surface.** It is what gets shared, bookmarked, what a reminder
+                and a notification point at, and what gets indexed — and it is what the television encodes in
+                a QR code for the Share action, since a television has neither a clipboard nor a useful
+                messaging app.
+            title:
+              type: string
+            categoryId:
+              type: string
+              examples:
+              - dance-contemporary
+            genreIds:
+              description: '**Multiple**: a show is both "contemporary" and "repertoire" at once. The singular forbade it (E9).'
+              type: array
+              items:
+                type: string
+            tagIds:
+              type: array
+              items:
+                type: string
+            startsAt:
+              type: string
+              format: date-time
+            venueClock:
+              type: object
+              properties:
+                venueTimezone:
+                  type: string
+                  pattern: ^[A-Za-z][A-Za-z0-9_+-]*(?:\/[A-Za-z0-9_+-]+)+$
+                  examples:
+                  - Europe/Paris
+                venueUtcOffsetMin:
+                  type: integer
+                  minimum: -720
+                  maximum: 840
+                  examples:
+                  - 120
+              required:
+              - venueTimezone
+              - venueUtcOffsetMin
+              additionalProperties: {}
+              description: |-
+                The venue's timezone, served alongside the UTC instant it qualifies. The offset is
+                **computed by the server for that instant**, never stored: this is not a return to a frozen
+                offset, it is a served value, and it avoids embedding a timezone database in five
+                applications.
+            runtimeMin:
+              type: integer
+            venue:
+              type: object
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                city:
+                  type: string
+                countryCode:
+                  type: string
+                  pattern: ^[A-Z]{2}$
+              additionalProperties: {}
+            roomOpensAt:
+              type: string
+              format: date-time
+              description: |
+                The **instant** the room opens, served. The surface schedules the switch locally, to the
+                second, **without a single call**: a standby mode running for eight hours therefore makes no
+                request at all.
+            displayState:
+              type: string
+              x-arthome-vocabulary:
+              - draft
+              - reserve
+              - scheduled
+              - technical
+              - room_open
+              - live
+              - replay
+              - ended
+              - postponed
+              - cancelled
+              - interrupted
+              x-arthome-vocabulary-source: DISPLAY_STATES
+              examples:
+              - live
+              description: |
+                The **only** state value the cards display, and nobody recomposes it. Produced by
+                `publicDisplayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`. The
+                hierarchy, written once: `outcome` outranks `run.state`, which outranks `publication.state`.
+
+                **One vocabulary, eleven members, and the narrowing is said here rather than written as a
+                second list.** A storefront never receives `draft`, `reserve` or `technical` — not by
+                filtering, but **by construction**: a date reaches a public surface only once it is
+                published, and a published date under technical check is shown on the time axis. Declaring only the eight would be a second authored list for a field the
+                domain already defines, and two independently authored lists for one field is how E4
+                started. A surface that wants to know what it can actually receive reads this sentence;
+                the vocabulary stays the domain's.
+            displayStateValidUntil:
+              anyOf:
+              - type: string
+                format: date-time
+              - type: 'null'
+              description: |
+                The instant the displayed state stops being true, the one `publicDisplayStateOf` returns.
+                **`null` when only an event can change it**: an outcome, the run going on air or ending
+                (a known run in its room or on air, D-109, D-115), or a date fully over. Never an
+                invented instant: a surface that re-runs the rule at a made-up time shows a false state.
+            outcome:
+              description: |
+                The outcome **replaces the state on every card**, not only on the detail page. It is a fact
+                about the performance, never erased; only a postponement can be followed by another outcome
+                (D-076). A postponement moves the date to `rescheduledTo` and replaces the state only until the
+                room opens there.
+              x-arthome-vocabulary:
+              - postponed
+              - cancelled
+              - interrupted
+              x-arthome-vocabulary-source: DATE_OUTCOMES
+              type:
+              - string
+              - 'null'
+            rescheduledTo:
+              anyOf:
+              - type: string
+                format: date-time
+              - type: 'null'
+            viewers:
+              description: |
+                **Absent — never zero — when the date is not on air.** A zero reads as "nobody", not as "not
+                measured", and the brief's rule forbids "0 WATCHING".
+              anyOf:
+              - type: integer
+              - type: 'null'
+            availability:
+              description: Projected from `ticketing`. Absent while no price is active.
+              anyOf:
+              - type: object
+                properties:
+                  seatsAvailable:
+                    type: integer
+                  waitlistCount:
+                    type: integer
+                  fillRateBps:
+                    description: |
+                      The **rate**, not the capacity. Serving the capacity and letting the client compute recreates
+                      the value composed in two places, and the design proves it by applying a constant of 2,000
+                      seats regardless of the venue.
+                    type: integer
+                  soldOut:
+                    type: boolean
+                  lowestPrice:
+                    type: object
+                    properties:
+                      amountMinor:
+                        type: integer
+                        format: int64
+                        examples:
+                        - 2400
+                      currencyCode:
+                        type: string
+                        pattern: ^[A-Z]{3}$
+                        examples:
+                        - EUR
+                    required:
+                    - amountMinor
+                    - currencyCode
+                    additionalProperties: {}
+                    description: |-
+                      An amount. **Integer minor unit** — cents for EUR and CHF — plus an ISO 4217 currency code.
+                      Never a formatted string: formatting is presentation and happens client-side. May be negative
+                      (credit, refund).
+
+                      **`Money` says nothing about tax, and that is deliberate.** It carries credits, refunds,
+                      commissions and payouts as well as prices. **A price, however, is tax-inclusive** (D-056),
+                      and every field that is one says so where it is declared rather than relying on this shape —
+                      a reader who assumes the wrong side of a VAT rate computes a total that is wrong by that
+                      rate, and `Money` is not the place that can warn them.
+                    x-arthome-tax-basis: inclusive
+                  promotion:
+                    anyOf:
+                    - type: object
+                      properties:
+                        reason:
+                          type: string
+                          x-arthome-vocabulary:
+                          - pre_sale
+                          - preview_night
+                          - discovery_rate
+                          - final_date
+                          - late_rate
+                          x-arthome-vocabulary-source: PROMOTION_REASONS
+                        struckPrice:
+                          type: object
+                          properties:
+                            amountMinor:
+                              type: integer
+                              format: int64
+                              examples:
+                              - 2400
+                            currencyCode:
+                              type: string
+                              pattern: ^[A-Z]{3}$
+                              examples:
+                              - EUR
+                          required:
+                          - amountMinor
+                          - currencyCode
+                          additionalProperties: {}
+                          description: |-
+                            An amount. **Integer minor unit** — cents for EUR and CHF — plus an ISO 4217 currency code.
+                            Never a formatted string: formatting is presentation and happens client-side. May be negative
+                            (credit, refund).
+
+                            **`Money` says nothing about tax, and that is deliberate.** It carries credits, refunds,
+                            commissions and payouts as well as prices. **A price, however, is tax-inclusive** (D-056),
+                            and every field that is one says so where it is declared rather than relying on this shape —
+                            a reader who assumes the wrong side of a VAT rate computes a total that is wrong by that
+                            rate, and `Money` is not the place that can warn them.
+                          x-arthome-tax-basis: inclusive
+                        currentPrice:
+                          type: object
+                          properties:
+                            amountMinor:
+                              type: integer
+                              format: int64
+                              examples:
+                              - 2400
+                            currencyCode:
+                              type: string
+                              pattern: ^[A-Z]{3}$
+                              examples:
+                              - EUR
+                          required:
+                          - amountMinor
+                          - currencyCode
+                          additionalProperties: {}
+                          description: |-
+                            An amount. **Integer minor unit** — cents for EUR and CHF — plus an ISO 4217 currency code.
+                            Never a formatted string: formatting is presentation and happens client-side. May be negative
+                            (credit, refund).
+
+                            **`Money` says nothing about tax, and that is deliberate.** It carries credits, refunds,
+                            commissions and payouts as well as prices. **A price, however, is tax-inclusive** (D-056),
+                            and every field that is one says so where it is declared rather than relying on this shape —
+                            a reader who assumes the wrong side of a VAT rate computes a total that is wrong by that
+                            rate, and `Money` is not the place that can warn them.
+                          x-arthome-tax-basis: inclusive
+                        validUntil:
+                          type: string
+                          format: date-time
+                      additionalProperties: {}
+                    - type: 'null'
+                additionalProperties: {}
+              - type: 'null'
+            replay:
+              type: object
+              properties:
+                policy:
+                  type: string
+                  x-arthome-vocabulary:
+                  - included
+                  - subscription
+                  - unit
+                  - none
+                  x-arthome-vocabulary-source: REPLAY_POLICIES
+                windowHours:
+                  anyOf:
+                  - type: integer
+                  - type: 'null'
+                availableFrom:
+                  anyOf:
+                  - type: string
+                    format: date-time
+                  - type: 'null'
+                expiresAt:
+                  description: Derived from the end of the live show and `windowHours`. Served as an instant, never as "41 h left".
+                  anyOf:
+                  - type: string
+                    format: date-time
+                  - type: 'null'
+                unitPrice:
+                  type: object
+                  properties:
+                    amountMinor:
+                      type: integer
+                      format: int64
+                      examples:
+                      - 2400
+                    currencyCode:
+                      type: string
+                      pattern: ^[A-Z]{3}$
+                      examples:
+                      - EUR
+                  required:
+                  - amountMinor
+                  - currencyCode
+                  additionalProperties: {}
+                  description: |-
+                    An amount. **Integer minor unit** — cents for EUR and CHF — plus an ISO 4217 currency code.
+                    Never a formatted string: formatting is presentation and happens client-side. May be negative
+                    (credit, refund).
+
+                    **`Money` says nothing about tax, and that is deliberate.** It carries credits, refunds,
+                    commissions and payouts as well as prices. **A price, however, is tax-inclusive** (D-056),
+                    and every field that is one says so where it is declared rather than relying on this shape —
+                    a reader who assumes the wrong side of a VAT rate computes a total that is wrong by that
+                    rate, and `Money` is not the place that can warn them.
+                  x-arthome-tax-basis: inclusive
+              required:
+              - policy
+              additionalProperties: {}
+              description: |
+                The **promise** made before purchase — it is what justifies the price difference. `none` is
+                **final** for this date.
+            rights:
+              type: object
+              properties:
+                scope:
+                  type: string
+                  x-arthome-vocabulary:
+                  - worldwide
+                  - restricted
+                  x-arthome-vocabulary-source: RIGHTS_SCOPES
+                blackoutCountries:
+                  type: array
+                  items:
+                    type: string
+                    pattern: ^[A-Z]{2}$
+                blackoutReasonCode:
+                  description: 'A **code**, never a sentence. The current data carries `label`/`labelEn` authored inside the data: an i18n leak (E8).'
+                  x-arthome-vocabulary:
+                  - co_production
+                  - broadcaster
+                  - festival
+                  x-arthome-vocabulary-source: BLACKOUT_REASONS
+                  type:
+                  - string
+                  - 'null'
+              required:
+              - scope
+              additionalProperties: {}
+            chatMode:
+              type: string
+              x-arthome-vocabulary:
+              - open
+              - emoji
+              - read_only
+              - 'off'
+              x-arthome-vocabulary-source: CHAT_MODES
+            media:
+              type: object
+              properties:
+                wide:
+                  description: 16:9, smallest to largest.
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                        format: uri
+                      widthPx:
+                        type: integer
+                        minimum: 1
+                      heightPx:
+                        type: integer
+                        minimum: 1
+                    required:
+                    - url
+                    - widthPx
+                    - heightPx
+                    additionalProperties: {}
+                    description: |
+                      A visual **already rendered at a size actually displayed**, never a URL recipe with a width
+                      template: on a television with 1 GB, a 4K backdrop decoded for a thumbnail costs as much as a
+                      full screen.
+                poster:
+                  description: 2:3 or 3:4 depending on the surface, smallest to largest.
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                        format: uri
+                      widthPx:
+                        type: integer
+                        minimum: 1
+                      heightPx:
+                        type: integer
+                        minimum: 1
+                    required:
+                    - url
+                    - widthPx
+                    - heightPx
+                    additionalProperties: {}
+                    description: |
+                      A visual **already rendered at a size actually displayed**, never a URL recipe with a width
+                      template: on a television with 1 GB, a 4K backdrop decoded for a thumbnail costs as much as a
+                      full screen.
+              additionalProperties: {}
+            languageDependency:
+              type: string
+              x-arthome-vocabulary:
+              - none
+              - helpful
+              - essential
+              x-arthome-vocabulary-source: LANGUAGE_DEPENDENCIES
+            watchVerdict:
+              description: |
+                Per-viewer overlay. **Absent — not null — on an anonymous read**, which makes the public body
+                identical for every caller and therefore shareable in a common cache.
+              type: object
+              properties:
+                allowed:
+                  type: boolean
+                scope:
+                  description: |
+                    **`allowed` alone cannot say what kind of access was allowed**, and that was a real gap
+                    rather than a nicety. `PlaybackTicket` — the binding verdict — has carried `full` versus
+                    `preview` since it was written; this one, the advisory verdict a card is painted from,
+                    carried only a boolean. So a card for a subscription-required date with budget remaining
+                    had to infer preview-ness from `previewSecondsLeft > 0`, which is a rule evaluated on
+                    three storefronts instead of served once (rule 2), and the card must say "Watch 5 min
+                    free" rather than "Watch" **without a second call**.
+
+                    It is the same vocabulary as `PlaybackTicket.scope`, deliberately: two evaluation sites,
+                    one implementation, and now one shape.
+                  type: string
+                  x-arthome-vocabulary:
+                  - full
+                  - preview
+                  - none
+                  x-arthome-vocabulary-source: WATCH_SCOPES
+                  examples:
+                  - preview
+                advisory:
+                  type: boolean
+                  description: |
+                    `true` everywhere in this document. The binding verdict is the one from `POST /v1/playback/{dateId}/open`.
+                denialReasonCode:
+                  description: |
+                    The **same refusal vocabulary** as the player: a card announcing "subscription required" and
+                    a player refusing for the same reason say the same code. Each produces a different screen on
+                    the three storefronts; a generic code would produce a false one.
+
+                    **One dotted-lowercase form, like every other code.** This rides on `reasonParams`, which is
+                    the error envelope's `code` + `params` shape, and it stands beside `order.price_stale` and
+                    `api.cursor_too_old`. The declaration and the wire once disagreed on spelling, so
+                    `denialReasonCode === WatchDenialReason.NO_SEAT` compared `'NO_SEAT'` to `'no_seat'` and was
+                    **false for every value**, silently, across the storefront's entire refusal experience. A
+                    separator-insensitive comparison cannot see a case difference, which is why it outlived two
+                    passes looking for exactly this defect. D-067 settled it: the wire form is dotted lowercase
+                    and the accessor is SCREAMING_SNAKE, so nothing compares a literal.
+
+                    **`watch.not_published` is the eleventh**, and it was missing here for the same reason
+                    `displayState` was missing three members: `decideWatch` returns it for a `draft` or `reserve`
+                    date, and the non-public states keep falling out of contracts because no
+                    public screen shows them.
+                  x-arthome-vocabulary:
+                  - watch.no_seat
+                  - watch.room_not_open
+                  - watch.out_of_territory
+                  - watch.subscription_required
+                  - watch.no_replay
+                  - watch.replay_expired
+                  - watch.replay_not_on_sale
+                  - watch.preview_exhausted
+                  - watch.concurrent_limit_reached
+                  - watch.date_cancelled
+                  - watch.not_published
+                  - watch.seat_expired
+                  - watch.date_interrupted
+                  - watch.live_ended
+                  x-arthome-vocabulary-source: WATCH_DENIAL_REASONS
+                  examples:
+                  - watch.subscription_required
+                  type:
+                  - string
+                  - 'null'
+                reasonParams:
+                  description: What the screen must display — the territory, the plan required, the expiry instant.
+                  type: object
+                  properties: {}
+                  additionalProperties: {}
+                fallbackAction:
+                  description: |
+                    The action that leads out of the dead end. A code, never a sentence, and never a dead screen.
+
+                    **Not nullable, and that is the point of `none` being a member.** `decideWatch` returns
+                    `none` when there is nothing to offer, so the absence is **spelled** rather than left to a
+                    null. Nullable would make `null` and `none` two spellings of one state, and a third
+                    meaning — "not denied" — would attach itself to whichever the writer had in mind.
+
+                    **And an ALLOWED verdict carries a real action.** A viewer watching on `scope: preview`
+                    gets the seat action beside it (`buy_seat`, `join_waitlist`, or `none` once on the waiting
+                    list), before D-089's cutoff; past it, `see_other_dates`. A surface reading `null` as "no action" would be right for
+                    `denialReasonCode`, where null genuinely means *not denied*, and would silently drop the
+                    preview-to-purchase step — the one path that turns a free viewer into a paying one. The
+                    two fields look alike and must not be read alike.
+
+                    **The two vocabularies are coupled, and the coupling is data rather than prose.**
+                    A fallback action exists to answer a denial reason, so the invariant is: every reason maps
+                    to an action that leads out of it, and every action answers at least one reason.
+                    **`WATCH_FALLBACK_FOR` in `@arthome/core` holds the mapping**, with a spec asserting both
+                    directions and asserting that `decideWatch` never returns a pairing the table forbids.
+
+                    **This description used to restate that table row by row, and that was a parallel literal
+                    table** — eleven rows of it, written to prevent drift, in a document that cannot be
+                    executed, next to a table that can. So it is gone: the rule is here, the rows are in core,
+                    and a surface that needs to know which action answers which reason reads the constant.
+
+                    **One row deserves its argument in the contract rather than in the domain**, because it is
+                    a contract obligation and not a domain preference: `adr-stream-entitlement.md` §3.3
+                    requires a `watch.concurrent_limit_reached` refusal to be served with the list of active
+                    sessions *"so the surface can offer to release one. A bare refusal would leave the viewer
+                    with no way out"*. This contract stated that refusal for its whole life and had no action
+                    expressing the remedy, which is the dead end principle 8 forbids. `release_a_screen` is
+                    what closes it.
+
+                    **`watch_preview` is not here, and the round trip that removed it is worth recording.** It
+                    crossed this boundary three times in a day because two people were each answering the
+                    other's last message instead of the code. The test that ends that, and the one this
+                    contract now defers to: **does a function return it?** `decideWatch` does not — the free
+                    preview is expressed by an **allowed** verdict carrying `scope: preview` on air, with the seat
+                    action beside it before D-089's cutoff, `see_other_dates` past it. A preview a viewer can still watch is not
+                    a way out of a refusal, because there is no refusal.
+
+                    What the member was compensating for is the finding worth keeping: `WatchVerdict` had no
+                    way to say "allowed, but only as a preview", so preview-ness was inferred from
+                    `previewSecondsLeft > 0` on three storefronts instead of being served once. The fix was the
+                    `scope` field, not a fallback action. **When a vocabulary member answers nothing, look for
+                    the field that is missing.**
+                  type: string
+                  x-arthome-vocabulary:
+                  - buy_seat
+                  - join_waitlist
+                  - subscribe
+                  - see_replay_policy
+                  - see_other_dates
+                  - release_a_screen
+                  - none
+                  x-arthome-vocabulary-source: WATCH_FALLBACK_ACTIONS
+                previewSecondsLeft:
+                  description: |
+                    Remaining preview budget, **counted server-side, per account** — not per device, otherwise a
+                    household with four devices gets four previews; not per date alone, it is `(account, date)`.
+                    Reloading the page extends nothing.
+                  anyOf:
+                  - type: integer
+                  - type: 'null'
+                validUntil:
+                  type: string
+                  format: date-time
+              required:
+              - allowed
+              - advisory
+              - validUntil
+              additionalProperties: {}
+            viewerRelations:
+              description: |
+                Per-viewer overlay, merged from a **batched** read, never one call per card. **Absent on an
+                anonymous read.**
+              anyOf:
+              - type: object
+                properties:
+                  inWatchlist:
+                    type: boolean
+                  reminderSet:
+                    type: boolean
+                  followsArtist:
+                    type: boolean
+                additionalProperties: {}
+              - type: 'null'
+            viewerProgress:
+              description: Per-viewer overlay. **Absent on an anonymous read.**
+              anyOf:
+              - type: object
+                properties:
+                  positionSec:
+                    type: integer
+                  durationSec:
+                    type: integer
+                  completed:
+                    type: boolean
+                additionalProperties: {}
+              - type: 'null'
+          required:
+          - id
+          - showId
+          - channelId
+          - slug
+          - canonicalUrl
+          - title
+          - startsAt
+          - venueClock
+          - runtimeMin
+          - displayState
+          - displayStateValidUntil
+          - replay
+          - rights
+          - media
+          additionalProperties: {}
+          description: |
+            **The most consumed shape in the product.** It must stand alone: a card never triggers a call
+            in order to paint itself.
+
+            It carries the **inputs** of the perishable rules **and** their result at serving time **and**
+            the instant that result stops being true. That is what lets a response cached for eight hours
+            stay correct: the surface calls the same `@arthome/core` function again once
+            `displayStateValidUntil` has passed, it does not rewrite the rule.
+
+            **No ticketing or control-room field appears here** (E8): no `sold`, no `revenue`, no
+            `publication`, no `publishedBy`.
+      required:
+      - sessionId
+      - dateId
+      - scope
+      - protocol
+      - qualityCap
+      - manifestUrl
+      - signature
+      - edgeRenewalMode
+      - expiresAt
+      - renewAfterSec
+      - leaseExpiresAt
+      - chatMode
+      additionalProperties: {}
+      description: |
+        **The whole `player` screen in a single response**: chapters, tracks, chat regime, ongoing
+        incident, resume point, live edge, DRM and quality ceiling. No player panel may trigger a
+        call — on television a modal *is* a page, and the budget is one round trip.
+
+        **Budget: ≤ 1 s**, within a total budget of about 10 s to first frame.
+
+        **Never cached** — `Cache-Control: no-store`. A right reread from disk is a false right.
+    PlaybackRenewal:
+      type: object
+      properties:
+        expiresAt:
+          type: string
+          format: date-time
+        renewAfterSec:
+          type: integer
+        leaseExpiresAt:
+          type: string
+          format: date-time
+        signature:
+          type: object
+          properties:
+            queryToken:
+              anyOf:
+              - type: string
+                format: password
+                x-arthome-sensitive: true
+              - type: 'null'
+            cookieSet:
+              type:
+              - boolean
+              - 'null'
+          additionalProperties: {}
+        qualityCap:
+          type: string
+          x-arthome-vocabulary:
+          - sd
+          - hd
+          - fhd
+          - uhd
+          x-arthome-vocabulary-source: QUALITY_CAPS
+      required:
+      - expiresAt
+      - renewAfterSec
+      - leaseExpiresAt
+      additionalProperties: {}
+      description: |
+        **Partial** renewal: nothing that would force a stream reload. A player renews every
+        `PLAYBACK_RENEWAL_INTERVAL_SECONDS` for a token of `PLAYBACK_TOKEN_LIFETIME_SECONDS` and a lease of
+        `PLAYBACK_LEASE_SECONDS` (`@arthome/core`). A refusal carries its own code, one per screen: a
+        generic code would produce a false one.
+    Chapter:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vocabId:
+          type: string
+          description: Chapter vocabulary identifier, **never an authored label**.
+        atMediaSec:
+          type: integer
+          description: Position **in the media**, not the time it was posted. Free now, unrecoverable later.
+      required:
+      - id
+      - vocabId
+      - atMediaSec
+      additionalProperties: {}
+    Incident:
+      anyOf:
+      - type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          kind:
+            type: string
+            x-arthome-vocabulary:
+            - hold_screen
+            - postponed
+            - cancelled
+            - interrupted
+            x-arthome-vocabulary-source: INCIDENT_KINDS
+          message:
+            description: |
+              Written by the control room: it is **content**, not an i18n key, and it travels with its
+              authoring language like a synopsis. One of the only two acknowledged exceptions to "i18n by
+              codes".
+            type: object
+            properties:
+              contentLanguage:
+                type: string
+                examples:
+                - fr
+              text:
+                type: string
+            required:
+            - contentLanguage
+            - text
+            additionalProperties: {}
+          raisedAt:
+            type: string
+            format: date-time
+        additionalProperties: {}
+      - type: 'null'
+      description: |
+        **A client-side veil, never a stream switch**: the control room publishes the state, the
+        player displays it over an untouched video. Instant, identical on all three storefronts, and
+        the media stays intact for the resume. Latency **≤ 2 s, non-negotiable**.
+    ViewerProgress:
+      type: object
+      properties:
+        positionSec:
+          type: integer
+        version:
+          type: integer
+        writtenAt:
+          type: string
+          format: date-time
+        completed:
+          type: boolean
+      required:
+      - positionSec
+      - version
+      - writtenAt
+      - completed
+      additionalProperties: {}
+    ApiIdempotencyKeyReusedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.idempotency_key_reused
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ApiIdempotencyInFlightError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.idempotency_in_flight
+            params:
+              type: object
+              properties:
+                retryAfterMs:
+                  type: integer
+                  format: int64
+              required:
+              - retryAfterMs
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    StateConflictError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: state.conflict
+            params:
+              type: object
+              properties:
+                currentVersion:
+                  type: integer
+                  format: int64
+                state:
+                  type: string
+                  description: Present when the record has a lifecycle state.
+              required:
+              - currentVersion
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    RunTransitionForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: run.transition_forbidden
+            params:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              required:
+              - from
+              - to
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    DateTechnicalCheckRequiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: date.technical_check_required
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    PublicationTransitionForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: publication.transition_forbidden
+            params:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+              required:
+              - from
+              - to
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    ApiForbiddenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: api.forbidden
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchNoSeatError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.no_seat
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchRoomNotOpenError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.room_not_open
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchOutOfTerritoryError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.out_of_territory
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchSubscriptionRequiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.subscription_required
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchNoReplayError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.no_replay
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchReplayNotOnSaleError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.replay_not_on_sale
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchPreviewExhaustedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.preview_exhausted
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchConcurrentLimitReachedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.concurrent_limit_reached
+            params:
+              type: object
+              properties:
+                allowed:
+                  type: integer
+                  format: int64
+                activeSessions:
+                  type: array
+                  items:
+                    type: object
+                    properties: {}
+                    additionalProperties: {}
+              required:
+              - allowed
+              - activeSessions
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchDateCancelledError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.date_cancelled
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchNotPublishedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.not_published
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchSeatExpiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.seat_expired
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchDateInterruptedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.date_interrupted
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchLiveEndedError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.live_ended
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    WatchReplayExpiredError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: watch.replay_expired
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    IdentitySignedOutElsewhereError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: identity.signed_out_elsewhere
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+  examples:
+    ApiForbiddenError:
+      value:
+        error:
+          code: api.forbidden
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ApiIdempotencyInFlightError:
+      value:
+        error:
+          code: api.idempotency_in_flight
+          nature: unavailable
+          params:
+            retryAfterMs: 1000
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    ApiIdempotencyKeyReusedError:
+      value:
+        error:
+          code: api.idempotency_key_reused
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    DateTechnicalCheckRequiredError:
+      value:
+        error:
+          code: date.technical_check_required
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    IdentitySignedOutElsewhereError:
+      value:
+        error:
+          code: identity.signed_out_elsewhere
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    PublicationTransitionForbiddenError:
+      value:
+        error:
+          code: publication.transition_forbidden
+          nature: refused
+          params:
+            from: draft
+            to: live
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    RunTransitionForbiddenError:
+      value:
+        error:
+          code: run.transition_forbidden
+          nature: refused
+          params:
+            from: idle
+            to: ended
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    StateConflictError:
+      value:
+        error:
+          code: state.conflict
+          nature: refused
+          params:
+            currentVersion: 8
+            state: live
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchConcurrentLimitReachedError:
+      value:
+        error:
+          code: watch.concurrent_limit_reached
+          nature: refused
+          params:
+            allowed: 2
+            activeSessions:
+            - sessionId: 019928f7-0000-7000-8000-0000000000aa
+              deviceId: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
+              deviceLabel: Téléviseur du salon
+              city: Paris
+              openedAt: '2026-09-21T19:00:00Z'
+              isCurrentDevice: false
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchDateCancelledError:
+      value:
+        error:
+          code: watch.date_cancelled
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchDateInterruptedError:
+      value:
+        error:
+          code: watch.date_interrupted
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchLiveEndedError:
+      value:
+        error:
+          code: watch.live_ended
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchNoReplayError:
+      value:
+        error:
+          code: watch.no_replay
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchNoSeatError:
+      value:
+        error:
+          code: watch.no_seat
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchNotPublishedError:
+      value:
+        error:
+          code: watch.not_published
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchOutOfTerritoryError:
+      value:
+        error:
+          code: watch.out_of_territory
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchPreviewExhaustedError:
+      value:
+        error:
+          code: watch.preview_exhausted
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchReplayExpiredError:
+      value:
+        error:
+          code: watch.replay_expired
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchReplayNotOnSaleError:
+      value:
+        error:
+          code: watch.replay_not_on_sale
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchRoomNotOpenError:
+      value:
+        error:
+          code: watch.room_not_open
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchSeatExpiredError:
+      value:
+        error:
+          code: watch.seat_expired
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    WatchSubscriptionRequiredError:
+      value:
+        error:
+          code: watch.subscription_required
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'

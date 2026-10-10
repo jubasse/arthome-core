@@ -5,6 +5,8 @@ import type { ApiDocs } from './openapi/index.js';
 import { openApiDocumentOf } from './openapi/index.js';
 import { storefrontDocs } from './storefront-api/docs.js';
 import { storefrontApi } from './storefront-api/index.js';
+import { streamingServiceDocs } from './streaming-service-api/docs.js';
+import { streamingServiceApi } from './streaming-service-api/index.js';
 import { studioDocs } from './studio-api/docs.js';
 import { studioApi } from './studio-api/index.js';
 
@@ -12,6 +14,7 @@ import { studioApi } from './studio-api/index.js';
 describe.each([
   ['storefront', storefrontApi, storefrontDocs],
   ['studio', studioApi, studioDocs],
+  ['streaming service', streamingServiceApi, streamingServiceDocs],
 ] as const)('docs and examples out of the routes, %s', (_name, api: Api, docs: ApiDocs) => {
   it('has no route carry a description, a doc-only x-arthome-* or an example itself', () => {
     expect(() => openApiDocumentOf(api, docs)).not.toThrow();

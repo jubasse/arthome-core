@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { int64 } from './primitives.js';
 import { vocabularyOut } from './vocabulary.js';
 import type { ErrorParamsMap, NoErrorParams, SchemaIssue } from '../kernel/error-params.js';
+import { SEAT_STATES } from '../vocabulary/commerce.js';
 import { WatchDenialReason } from '../vocabulary/entitlement.js';
 import {
   ApiErrorCode,
@@ -187,8 +188,14 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
     salesEndAt: text(),
   }),
   [OrderErrorCode.SALES_CLOSED]: z.looseObject({ salesEndAt: text() }),
-  [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: none(),
+  [OrderErrorCode.SEAT_CANCEL_DEADLINE_PASSED]: z.looseObject({ cancelDeadline: text() }),
   [OrderErrorCode.PAYMENT_METHOD_IN_USE]: none(),
+  [OrderErrorCode.WAITLIST_NOT_SOLD_OUT]: none(),
+  [OrderErrorCode.SEAT_NOT_ACTIVE]: z.looseObject({ state: vocabularyOut(SEAT_STATES) }),
+  [OrderErrorCode.REFUND_AMOUNT_EXCEEDS_REMAINING]: z.looseObject({
+    remainingMinor: count(),
+    currencyCode: text(),
+  }),
 
   [DomainErrorCode.CAPACITY_TIER_MUST_WIDEN]: z.looseObject({ current: count(), next: count() }),
   [DomainErrorCode.CONTENT_EMPTY_IN_BOTH_LANGUAGES]: none(),
@@ -212,6 +219,7 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
     to: text(),
     promise: text(),
   }),
+  [DomainErrorCode.RUN_TRANSITION_FORBIDDEN]: z.looseObject({ from: text(), to: text() }),
   [DomainErrorCode.SEARCH_UNKNOWN_FLAG]: z.looseObject({ flag: text() }),
   [DomainErrorCode.SEAT_CODE_MALFORMED]: z.looseObject({ body: text() }),
   [DomainErrorCode.STATE_CONFLICT]: z.looseObject({
@@ -235,6 +243,9 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
   }),
   [WatchDenialReason.DATE_CANCELLED]: none(),
   [WatchDenialReason.NOT_PUBLISHED]: none(),
+  [WatchDenialReason.SEAT_EXPIRED]: none(),
+  [WatchDenialReason.DATE_INTERRUPTED]: none(),
+  [WatchDenialReason.LIVE_ENDED]: none(),
 };
 
 export function errorParamsSchemaOf(code: ErrorCode): z.ZodType {

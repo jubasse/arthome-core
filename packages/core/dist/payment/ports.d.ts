@@ -16,8 +16,11 @@ export declare const IntentStatus: {
     readonly PROCESSING: "processing";
     readonly DECLINED: "declined";
 };
-/** What a provider's webhook says happened to an intent, recorded before anything reads it. */
-export declare const PAYMENT_EVENT_KINDS: readonly ["intent_succeeded", "intent_requires_action", "intent_processing", "intent_failed", "intent_cancelled", "unhandled"];
+/**
+ * What a provider's webhook says happened to a payment, recorded before anything reads it. A failed
+ * refund is not mapped by adr-payments.md §8, so it stays `unhandled`.
+ */
+export declare const PAYMENT_EVENT_KINDS: readonly ["intent_succeeded", "intent_requires_action", "intent_processing", "intent_failed", "intent_cancelled", "refund_succeeded", "dispute_opened", "unhandled"];
 export type PaymentEventKind = (typeof PAYMENT_EVENT_KINDS)[number];
 export declare const PaymentEventKind: {
     readonly INTENT_SUCCEEDED: "intent_succeeded";
@@ -25,6 +28,8 @@ export declare const PaymentEventKind: {
     readonly INTENT_PROCESSING: "intent_processing";
     readonly INTENT_FAILED: "intent_failed";
     readonly INTENT_CANCELLED: "intent_cancelled";
+    readonly REFUND_SUCCEEDED: "refund_succeeded";
+    readonly DISPUTE_OPENED: "dispute_opened";
     readonly UNHANDLED: "unhandled";
 };
 export interface PaymentIntentRequest {
@@ -48,6 +53,8 @@ export interface RefundRequest {
     readonly intentRef: string;
     readonly amount: Money;
     readonly idempotencyKey: string;
+    /** adr-payments.md §9: the commission goes back with the money. */
+    readonly refundApplicationFee: boolean;
 }
 export interface PaymentEvent {
     readonly eventId: string;
@@ -56,7 +63,19 @@ export interface PaymentEvent {
     readonly orderId: string | null;
     readonly occurredAt: Instant;
     readonly declineCode: string | null;
+    /** Null on an intent event. */
+    readonly refundRef: string | null;
+    /** Everything refunded on the payment so far, not this refund alone; null on an intent event. */
+    readonly amountRefunded: Money | null;
 }
+/**
+ * The provider's idempotency key for one refund row, so two partial refunds of one order never share
+ * one. Stored as text on the row that owes the call: a row already owed under `refund:{orderId}`
+ * keeps its key. Not a BullMQ job id, which refuses `:`.
+ */
+export declare function refundIdempotencyKey(refundId: string): string;
+/** The provider's idempotency key for cancelling an order's intent; not a BullMQ job id either. */
+export declare function intentCancelIdempotencyKey(orderId: string): string;
 /**
  * The provider could not be reached or did not answer: nothing is known of what it did, so the
  * caller retries under the same idempotency key, never a new one.

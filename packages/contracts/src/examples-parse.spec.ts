@@ -5,12 +5,15 @@ import type { Api, MediaType, Route } from './http/index.js';
 import type { ApiDocs } from './openapi/docs.js';
 import { storefrontDocs } from './storefront-api/docs.js';
 import { storefrontApi } from './storefront-api/index.js';
+import { streamingServiceDocs } from './streaming-service-api/docs.js';
+import { streamingServiceApi } from './streaming-service-api/index.js';
 import { studioDocs } from './studio-api/docs.js';
 import { studioApi } from './studio-api/index.js';
 
 const APIS: readonly (readonly [string, Api, ApiDocs])[] = [
   ['storefront', storefrontApi, storefrontDocs],
   ['studio', studioApi, studioDocs],
+  ['streaming service', streamingServiceApi, streamingServiceDocs],
 ];
 
 function failureOf(schema: z.ZodType, example: unknown): string | undefined {

@@ -74,7 +74,6 @@ export type QuoteSeatRoute = Route<{
   path: '/dates/{dateId}/seat-quote';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
@@ -86,8 +85,6 @@ export type QuoteSeatRoute = Route<{
   errorCodes: {
     404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
     409: readonly (
-      | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
-      | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
       | typeof OrderErrorCode.CONTRIBUTION_OUT_OF_RANGE
       | typeof OrderErrorCode.SALES_CLOSED
       | typeof OrderErrorCode.TIER_UNAVAILABLE
@@ -101,7 +98,6 @@ export type EnterSalesQueueRoute = Route<{
   path: '/dates/{dateId}/sales-queue/enter';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
@@ -111,9 +107,6 @@ export type EnterSalesQueueRoute = Route<{
   };
   errorCodes: {
     404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
-    409: readonly (
-      typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
-    )[];
   };
 }>;
 
@@ -129,6 +122,24 @@ export type GetSalesQueuePositionRoute = Route<{
   access: IdentifiedAccess<typeof viewer, false>;
   responses: {
     200: ItemResponse<typeof storefrontConventions, typeof SalesQueuePositionSchema, unknown>;
+  };
+  errorCodes: {
+    404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
+  };
+}>;
+
+export type GetWaitlistRegistrationRoute = Route<{
+  method: 'get';
+  version: 1;
+  path: '/dates/{dateId}/waitlist';
+  parameters: readonly [
+    typeof DateIdParameter,
+    typeof SurfaceParameter,
+    typeof TraceparentParameter,
+  ];
+  access: IdentifiedAccess<typeof viewer, false>;
+  responses: {
+    200: ItemResponse<typeof storefrontConventions, typeof WaitlistRegistrationSchema, unknown>;
   };
   errorCodes: {
     404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
@@ -152,7 +163,10 @@ export type JoinWaitlistRoute = Route<{
   errorCodes: {
     404: readonly (typeof ApiErrorCode.NOT_FOUND)[];
     409: readonly (
-      typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
+      | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof OrderErrorCode.SALES_CLOSED
+      | typeof OrderErrorCode.WAITLIST_NOT_SOLD_OUT
     )[];
   };
 }>;
@@ -231,7 +245,6 @@ export type SendReactionRoute = Route<{
   path: '/dates/{dateId}/chat/reactions';
   parameters: readonly [
     typeof DateIdParameter,
-    typeof IdempotencyKeyParameter,
     typeof SurfaceParameter,
     typeof TraceparentParameter,
   ];
@@ -241,9 +254,6 @@ export type SendReactionRoute = Route<{
     200: ItemResponse<typeof storefrontConventions, typeof ReactionQuotaSchema, unknown>;
   };
   errorCodes: {
-    409: readonly (
-      typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
-    )[];
     429: readonly (typeof ChatErrorCode.RATE_LIMITED)[];
   };
 }>;

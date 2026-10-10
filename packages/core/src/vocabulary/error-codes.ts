@@ -301,7 +301,7 @@ export const PayoutErrorCode = {
 } as const;
 
 /**
- * The viewer's commerce refusals: a purchase, a seat, a means of payment. `failureCode` narrows
+ * The commerce refusals: a purchase, a seat, a refund, a means of payment. `failureCode` narrows
  * it to the four a purchase command can refuse with.
  */
 export const ORDER_ERROR_CODES = [
@@ -326,8 +326,16 @@ export const ORDER_ERROR_CODES = [
   // A seat quoted or bought past the end of seat sales, thirty minutes after the start (D-089):
   //   ended, not sold out, which is the waiting list's cue. Params: `salesEndAt`.
   'order.sales_closed',
+  // Cancelling a seat at or after its deadline. Params: `cancelDeadline`, the instant.
   'seat.cancel_deadline_passed',
   'payment_method.in_use',
+  // Joining a waiting list while public seats remain: the viewer buys instead.
+  'waitlist.not_sold_out',
+  // Cancelling a seat no longer active. Params: `state`, the seat's.
+  'seat.not_active',
+  // A studio refund above what is left to refund on the order, every decided refund counted, settled
+  //   or not. Params: `remainingMinor`, `currencyCode`.
+  'refund.amount_exceeds_remaining',
 ] as const;
 export type OrderErrorCode = (typeof ORDER_ERROR_CODES)[number];
 
@@ -346,6 +354,9 @@ export const OrderErrorCode = {
   SALES_CLOSED: 'order.sales_closed',
   SEAT_CANCEL_DEADLINE_PASSED: 'seat.cancel_deadline_passed',
   PAYMENT_METHOD_IN_USE: 'payment_method.in_use',
+  WAITLIST_NOT_SOLD_OUT: 'waitlist.not_sold_out',
+  SEAT_NOT_ACTIVE: 'seat.not_active',
+  REFUND_AMOUNT_EXCEEDS_REMAINING: 'refund.amount_exceeds_remaining',
 } as const;
 
 /**
@@ -363,6 +374,8 @@ export const DOMAIN_ERROR_CODES = [
   'publication.promise_unacknowledged',
   'publication.transition_forbidden',
   'publication.transition_irreversible',
+  // A move off `RUN_TRANSITIONS`, named by its two ends (`assertRunTransition`).
+  'run.transition_forbidden',
   'search.unknown_flag',
   'seat_code.malformed',
   // A conditional command sent against a version that has moved: publication, prices and run
@@ -383,6 +396,7 @@ export const DomainErrorCode = {
   PUBLICATION_PROMISE_UNACKNOWLEDGED: 'publication.promise_unacknowledged',
   PUBLICATION_TRANSITION_FORBIDDEN: 'publication.transition_forbidden',
   PUBLICATION_TRANSITION_IRREVERSIBLE: 'publication.transition_irreversible',
+  RUN_TRANSITION_FORBIDDEN: 'run.transition_forbidden',
   SEARCH_UNKNOWN_FLAG: 'search.unknown_flag',
   SEAT_CODE_MALFORMED: 'seat_code.malformed',
   STATE_CONFLICT: 'state.conflict',

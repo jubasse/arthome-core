@@ -16,11 +16,14 @@ export interface TerritoryRights {
 }
 export declare function worldwideRights(): TerritoryRights;
 export declare function restrictedRights(blackoutCountries: readonly string[], reason: BlackoutReason): TerritoryRights;
+/** The country a viewer is served under when the edge resolves none: ISO 3166-1's user-assigned `ZZ`. */
+export declare const UNRESOLVED_COUNTRY = "ZZ";
 /**
  * Can the viewer watch from this country?
  *
  * The country is an ARGUMENT resolved at every opening, never a global nor a projection: it
- * changes between two reads — travel, roaming, corporate network.
+ * changes between two reads — travel, roaming, corporate network. An unresolved country watches a
+ * worldwide date and no restricted one: a restriction fails closed for the rights holder.
  */
 export declare function isAvailableIn(rights: TerritoryRights, viewerCountry: string): boolean;
 /** The reason for the refusal, as a CODE — served with the error, so no second request. */
