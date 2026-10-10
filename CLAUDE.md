@@ -17,6 +17,12 @@ repository is stricter and is written down: `architecture/critical-rules.md` (re
 session), `architecture/code-conventions.md`, and `DECISIONS.md`, whose arbitrations are never
 reopened. Fourteen gates enforce what those documents say; `pnpm run verify` runs them.
 
+A core task whose change reaches a consumer's stack (a contract, a DTO, an event consumed by a service
+or an application) loads that consumer's router first, as the first action and as the first line of any
+agent prompt: `nestjs-how-to` for arthome-platform, `nextjs-how-to` for the storefront,
+`angular-how-to` for the studio, plus `nestjs-review` for a review that reaches NestJS code. Never
+deferred.
+
 If a task in this repository turns out to need a framework, that is the signal that the task belongs
 in another repository.
 
