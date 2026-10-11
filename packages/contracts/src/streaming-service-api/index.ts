@@ -11,6 +11,8 @@ import {
 } from './dates/routes.js';
 import { resolveIncident } from './incidents/routes.js';
 import { recordPlaybackPosition } from './me/routes.js';
+import { authorizeMediaServerAccess } from './media-server/routes.js';
+import { MediaServerAuthorizationSchema } from './media-server/schemas.js';
 import { openPlayback, releasePlayback, renewPlaybackTicket } from './playback/routes.js';
 import { getViewerProgressBatch } from './viewer-progress/routes.js';
 import { ViewerProgressSchema } from './viewer-progress/schemas.js';
@@ -20,6 +22,7 @@ import {
   ActorSurfaceParameter,
   DeadlineParameter,
   IDEMPOTENCY_REPLAYED_HEADER,
+  MediaServerUnauthorizedResponse,
   RelayedIdempotencyKeyParameter,
   RelayedTraceparentParameter,
   SERVED_AT_HEADER,
@@ -57,6 +60,7 @@ export const streamingServiceApi: Api<{
   releasePlayback: typeof releasePlayback;
   recordPlaybackPosition: typeof recordPlaybackPosition;
   getViewerProgressBatch: typeof getViewerProgressBatch;
+  authorizeMediaServerAccess: typeof authorizeMediaServerAccess;
 }> = defineApi({
   openapi: '3.1.1',
   security: [{ internalToken: [] }],
@@ -74,6 +78,7 @@ export const streamingServiceApi: Api<{
     releasePlayback,
     recordPlaybackPosition,
     getViewerProgressBatch,
+    authorizeMediaServerAccess,
   },
   components: {
     parameters: {
@@ -94,6 +99,7 @@ export const streamingServiceApi: Api<{
     responses: {
       BadRequest: ServiceBadRequestResponse,
       Unauthorized: ServiceUnauthorizedResponse,
+      MediaServerUnauthorized: MediaServerUnauthorizedResponse,
       Forbidden: ServiceForbiddenResponse,
       NotFound: ServiceNotFoundResponse,
       Conflict: ServiceConflictResponse,
@@ -116,6 +122,8 @@ export const streamingServiceApi: Api<{
       Chapter: ChapterSchema,
       Incident: IncidentSchema,
       ViewerProgress: ViewerProgressSchema,
+      // the media server
+      MediaServerAuthorization: MediaServerAuthorizationSchema,
     },
   },
 });

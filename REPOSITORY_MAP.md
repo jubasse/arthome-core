@@ -5,8 +5,8 @@
 
 ## Generated against
 
-- `@arthome/contracts` 0.2.0 — read from workspace packages/contracts
-- `@arthome/core` 0.2.0 — read from workspace packages/core
+- `@arthome/contracts` 0.3.0 — read from workspace packages/contracts
+- `@arthome/core` 0.3.0 — read from workspace packages/core
 
 This map is true for exactly these versions.
 
@@ -80,7 +80,7 @@ Declarations: `dist/envelope/index.d.ts` — 8 exported names.
 
 #### @arthome/contracts/http
 
-Declarations: `dist/http/index.d.ts` — 205 exported names.
+Declarations: `dist/http/index.d.ts` — 210 exported names.
 
 - `AcceptedOptions` (interface)
 - `Access` (type) — A route's caller: nobody in particular, or an identity, optionally.
@@ -113,9 +113,10 @@ Declarations: `dist/http/index.d.ts` — 205 exported names.
 - `CrudMember` (type) — `type CrudMember = 'find' | 'findAll' | 'create' | 'update' | 'replace' | 'upsert' | 'delete';`
 - `CrudOptions` (interface)
 - `CrudRoutes` (type) — What 'crud' returns: its routes keyed by operation id, so the record spreads into a closure.
+- `DEADLINE_HEADER_NAME` (const) — `DEADLINE_HEADER_NAME = "x-arthome-deadline"` — The header an internal caller's deadline travels in: a route taking it answers '504' once it is past.
 - `DEFAULT_BODY_LIMIT` (const) — `DEFAULT_BODY_LIMIT = 1048576` — 1 MiB: the ceiling of a request body unless a route says otherwise ('transport.md' §5.7).
 - `DERIVED_ERROR_CODES` (const) — The errors every route of an api can answer whatever it declares: the framework's refusals, the rate limit, the identity and the surface.
-- `DeadlineParameter` (const) — `DeadlineParameter: HeaderParameter<'x-arthome-deadline', z.ZodString, true>`
+- `DeadlineParameter` (const) — `DeadlineParameter: HeaderParameter<typeof DEADLINE_HEADER_NAME, z.ZodString, true>`
 - `Degraded` (type) — `type Degraded<R> = R extends { readonly degradable: infer D extends readonly string[]; } ? { readonly degraded?: readonly D[number][]; } : unknown;` — 'degraded' is typed from the route's 'degradable': only the parts it names.
 - `DeleteRoute` (type)
 - `Deleted` (const) — `Deleted: z.ZodOptional<z.ZodObject<{ deleted: z.ZodOptional<z.ZodBoolean>; }, z.core.$loose>>` — The data of a removal: replayed on something already removed, it still succeeds.
@@ -150,6 +151,9 @@ Declarations: `dist/http/index.d.ts` — 205 exported names.
 - `ItemResponse` (type) — `type ItemResponse<K, S extends z.ZodType, Relations = unknown> = JsonResponse<z.ZodType<EnvelopeOf<K> & { readonly data: z.output<S> & Relations; }>>;` — The answer of one record: the api's envelope and the record under 'data'.
 - `JsonRequestBody` (interface) — The annotation of a request carrying a JSON body.
 - `JsonResponse` (interface) — The annotation of a response with a JSON body.
+- `MediaServerPrincipalSchema` (const) — `MediaServerPrincipalSchema: z.ZodObject<Record<never, never>, z.core.$strip>` — The identity names no one beyond the media server itself: the shared secret proves only that.
+- `MediaServerTraceparentParameter` (const) — `MediaServerTraceparentParameter: HeaderParameter<'traceparent', z.ZodString>`
+- `MediaServerUnauthorizedResponse` (const) — `MediaServerUnauthorizedResponse: JsonResponse<typeof ServiceErrorEnvelopeSchema> & CodedResponse<typeof ApiErrorCode.UNAUTHENTICATED>`
 - `MediaType` (interface) — Its example is never written here: the emitter takes it from a registry (a module's or 'ERRORS').
 - `MemberDocs` (type) — What a member says beyond the convention: prose, metadata, extra parameters, responses and codes.
 - `MergedErrors` (type) — The error responses a list of codes, or the same codes grouped by status, makes over those already held.
@@ -259,6 +263,7 @@ Declarations: `dist/http/index.d.ts` — 205 exported names.
 - `identity` (function)
 - `localVocabulary` (function) — `function localVocabulary<const T extends readonly [string, ...string[]]>(values: T, reason: string): VocabularyIn<T>;` — A request vocabulary no domain owns: 'source: none', and why.
 - `makeResource` (function)
+- `mediaServer` (const) — `mediaServer: Identity<'mediaServer', typeof MediaServerPrincipalSchema, never, readonly [typeof MediaServerTraceparentParameter], readonly []>`
 - `pages` (function) — `function pages(options: { readonly maxPageSize: number; }): { readonly kind: 'pages'; readonly maxPageSize: number; };` — 'page' and 'pageSize': the studio's page with its total.
 - `paramsSchemaOf` (function) — `function paramsSchemaOf<R extends RouteShape>(route: R): z.ZodType<RouteParams<R>, unknown>;`
 - `parseTolerant` (function) — `function parseTolerant(schema: z.ZodType, value: unknown): TolerantParse;` — Parses with the schema, and accepts a value whose only faults are variants of a tagged union it does not know: the value comes back raw, wi…

@@ -14,8 +14,9 @@ import { ErrorSchema } from '@arthome/core/schema';
 import type { Identity, Requirement } from './access.js';
 import type { CodedResponse, ErrorBody, ErrorModel } from './errors.js';
 import type { Header, HeaderParameter, JsonResponse } from './index.js';
+import { DEADLINE_HEADER_NAME } from './policy.js';
 import type { ResourceConventions } from './resource.js';
-export declare const DeadlineParameter: HeaderParameter<'x-arthome-deadline', z.ZodString, true>;
+export declare const DeadlineParameter: HeaderParameter<typeof DEADLINE_HEADER_NAME, z.ZodString, true>;
 export declare const RelayedTraceparentParameter: HeaderParameter<'traceparent', z.ZodString>;
 /**
  * Who calls, from the verified token: the BFF (`iss`), the account (`sub`), and the profile and the

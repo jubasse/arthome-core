@@ -392,6 +392,9 @@ a synchronous check **before** accepting anything.
 **The hooks are not for authorising** — `streaming.md` is explicit, and the reason is concrete:
 `runOnConnect` is a lifecycle event, so **a feed can get in before being refused**.
 
+The MediaMTX adapter learns a feed's lifecycle by polling the origin's Control API
+(`/v3/paths/list`), not through hooks (MX2).
+
 **The stream key is a secret displayed on a phone, in a venue, often in front of a contractor.**
 Hence four guarantees, already stated in `data-model.md` §5.2: never in a list payload, revealed by
 a distinct and audited command, rotated immediately with the old one stopping instantly, and

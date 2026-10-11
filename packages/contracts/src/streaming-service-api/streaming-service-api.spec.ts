@@ -14,6 +14,7 @@ import {
   RelayedIdempotencyKeyParameter,
   ViewerCountryParameter,
   errorCodesOf,
+  service,
 } from '../http/index.js';
 import { SurfaceParameter } from '../storefront-api/components.js';
 import { storefrontApi } from '../storefront-api/index.js';
@@ -23,6 +24,9 @@ import { studioApi } from '../studio-api/index.js';
 // service-apis.spec.ts's; this holds what is streaming's own.
 
 const routes: readonly Route[] = Object.values(streamingServiceApi.routes);
+const bffRoutes = routes.filter(
+  (route) => route.access?.kind === 'identified' && route.access.identity === service,
+);
 const { routes: served } = streamingServiceApi;
 
 const SURFACE_APIS: readonly (readonly [Api, InternalTokenIssuer])[] = [
@@ -41,14 +45,17 @@ function issuersOf(route: Route): readonly unknown[] | undefined {
 }
 
 describe('the streaming service api', () => {
-  it('declares on its own only what no surface sees: the progress batch', () => {
+  it("declares on its own only what no surface sees: the progress batch and the media server's call", () => {
     const own = routes.filter((route) => bffOf(route) === undefined);
 
-    expect(own.map((route) => route.operationId)).toEqual(['getViewerProgressBatch']);
+    expect(own.map((route) => route.operationId)).toEqual([
+      'getViewerProgressBatch',
+      'authorizeMediaServerAccess',
+    ]);
   });
 
   it('serves the run desk to the studio BFF alone, playback and progress to the storefront BFF alone', () => {
-    const astray = routes.filter(
+    const astray = bffRoutes.filter(
       (route) =>
         JSON.stringify(issuersOf(route)) !==
         JSON.stringify([bffOf(route) ?? InternalTokenIssuer.STOREFRONT_BFF]),

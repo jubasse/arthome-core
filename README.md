@@ -87,7 +87,7 @@ The other repositories install those tarballs by URL (`pnpm run use-core <versio
 arthome-platform). To see what a release would carry without tagging anything:
 
 ```bash
-node tools/pack-release.mjs v0.2.0-rc.1 /tmp/release-assets
+node tools/pack-release.mjs v0.3.0-rc.1 /tmp/release-assets
 ```
 
 ---
