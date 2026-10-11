@@ -365,10 +365,11 @@ per-user quota · global quota · temporary stream token
 random, unpredictable stream paths
 ```
 
-**Authorisation by hooks, not by polling**: MediaMTX's `runOnConnect` and
-`runOnPublish` call the NestJS API at the moment of publication — the token is
-validated before the stream gets in. Prometheus polling remains useful for
-watching the bitrate and cutting off, not for authorising.
+**Authorisation by the external HTTP authentication, not by hooks or polling**:
+MediaMTX calls the streaming service before it accepts a feed
+(`authorizeMediaServerAccess`, identified by the media server's shared secret),
+so the key is checked before the stream gets in. Prometheus polling remains
+useful for watching the bitrate and cutting off, not for authorising.
 
 ### Quotas
 

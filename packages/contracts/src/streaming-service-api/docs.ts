@@ -8,6 +8,8 @@ import { incidentsDocs } from './incidents/docs.js';
 import { incidentsExamples } from './incidents/examples.js';
 import { meDocs } from './me/docs.js';
 import { meExamples } from './me/examples.js';
+import { mediaServerDocs } from './media-server/docs.js';
+import { mediaServerExamples } from './media-server/examples.js';
 import { playbackDocs } from './playback/docs.js';
 import { playbackExamples } from './playback/examples.js';
 import { viewerProgressDocs } from './viewer-progress/docs.js';
@@ -19,9 +21,9 @@ export const streamingServiceDocs: ApiDocs = apiDocs({
   info: {
     title: 'Arthome Streaming service',
     version: '1.0.0',
-    summary: "Streaming's internal API: what the two BFFs call, never a surface.",
+    summary: "Streaming's internal API: what the BFFs and the media server call, never a surface.",
     description:
-      "Contract of the **streaming service** (D-121). Only the BFFs call it, with the internal token\nthey mint; no surface does, and no route here is public. It is generated from\n`@arthome/contracts/streaming-service-api`, as the BFFs' documents are from theirs.\n\n## One operation, two servers\n\nAn operation a surface reaches through a BFF keeps, here, its operation id, its path, its body,\nits answer and its refusal codes: the BFF relays one shape, and its typed client calls this\ndocument's operation as the surface calls the BFF's. Only what no surface sees, the progress\nbatch, is this document's alone.\n\n## Who calls\n\nEvery route names the BFFs it serves (`x-arthome-requires`, `callerService`): the run desk serves\nthe studio BFF, playback and progress the storefront BFF (D-118). Any other caller is refused\n`403` `api.forbidden`. The caller is read from the token and nowhere else: a body's `profileId`\nor `deviceId` other than the token's is refused `403` `api.forbidden` too, and a route that reads\nthe profile refuses a token that names none the same way: the body never picks the profile.\n\n## What every call carries\n\n`x-arthome-deadline`, past which the service writes nothing and answers `504`\n`api.deadline_exceeded`; `x-arthome-actor-surface` on every write, the place the event it emits\nnames; the surface's `Idempotency-Key`, relayed as is, on a write that takes one;\n`x-arthome-viewer-country` on every call that decides a watch verdict.\n\n## Errors\n\nThe envelope of every Arthome error, and no BFF code: `502`, `503` and `api.upstream_timeout`\nare the BFF's own, answered when this service fails or is too slow.\n",
+      "Contract of the **streaming service** (D-121). The BFFs call it, with the internal token they\nmint, and the media server calls its own route; no surface does, and no route here is public. It\nis generated from `@arthome/contracts/streaming-service-api`, as the BFFs' documents are from\ntheirs.\n\n## One operation, two servers\n\nAn operation a surface reaches through a BFF keeps, here, its operation id, its path, its body,\nits answer and its refusal codes: the BFF relays one shape, and its typed client calls this\ndocument's operation as the surface calls the BFF's. Only what no surface sees, the progress\nbatch, is this document's alone.\n\n## Who calls\n\nThe BFFs. Every route they call names the BFFs it serves (`x-arthome-requires`,\n`callerService`): the run desk serves the studio BFF, playback and progress the storefront BFF\n(D-118). Any other caller is refused `403` `api.forbidden`. The caller is read from the token and\nnowhere else: a body's `profileId` or `deviceId` other than the token's is refused `403`\n`api.forbidden` too, and a route that reads the profile refuses a token that names none the same\nway: the body never picks the profile.\n\nThe media server, on `authorizeMediaServerAccess` alone (`mediaServer`, tag `media`): MediaMTX's\nexternal HTTP authentication, identified by a shared secret (`mediaServerSecret`) rather than a\ntoken. It names no one, so the service decides on the run the attempt names.\n\n## What every call carries\n\nOn a BFF's call: `x-arthome-deadline`, past which the service writes nothing and answers `504`\n`api.deadline_exceeded`; `x-arthome-actor-surface` on every write, the place the event it emits\nnames; the surface's `Idempotency-Key`, relayed as is, on a write that takes one;\n`x-arthome-viewer-country` on every call that decides a watch verdict. The media server's call\ncarries MediaMTX's body and its credential, no deadline: it answers no `504`.\n\n## Errors\n\nThe envelope of every Arthome error, and no BFF code: `502`, `503` and `api.upstream_timeout`\nare the BFF's own, answered when this service fails or is too slow.\n",
     contact: {
       name: 'Arthome — architecture',
     },
@@ -44,6 +46,10 @@ export const streamingServiceDocs: ApiDocs = apiDocs({
       name: StreamingServiceTag.PLAYBACK,
       description: "Playback, its sessions and the viewer's progress, for the storefront BFF.",
     },
+    {
+      name: StreamingServiceTag.MEDIA,
+      description: 'What the media server asks before it lets a feed in.',
+    },
   ],
   securitySchemes: {
     internalToken: {
@@ -53,14 +59,21 @@ export const streamingServiceDocs: ApiDocs = apiDocs({
       description:
         "ES256, minted by the BFF for this service alone (`aud: arthome.streaming`) and short-lived\n(`transport.md` §5.2, `adr-auth.md` §8). It names the BFF (`iss`), the account (`sub`) and,\nwhen the session has them, the profile (`pro`) and the device (`did`): the route's principal.\n",
     },
+    mediaServerSecret: {
+      type: 'http',
+      scheme: 'basic',
+      description:
+        "The media server's shared secret, `MEDIA_SERVER_SECRET`, as the password; the username is\nignored. MediaMTX cannot set a header, so it sends the secret in the userinfo of\n`authHTTPAddress`, which Go's HTTP client turns into `Authorization: Basic`. The route is\nmeant to be reached on the private network only; the secret, not the network, is the barrier.\n",
+    },
   },
-  modules: [datesDocs, incidentsDocs, playbackDocs, meDocs, viewerProgressDocs],
+  modules: [datesDocs, incidentsDocs, playbackDocs, meDocs, viewerProgressDocs, mediaServerDocs],
   examples: [
     datesExamples,
     incidentsExamples,
     playbackExamples,
     meExamples,
     viewerProgressExamples,
+    mediaServerExamples,
   ],
 });
 

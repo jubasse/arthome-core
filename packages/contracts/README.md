@@ -65,7 +65,7 @@ So: **one subpath per bounded context**, added as each lands and never before.
 | `./storefront-api` | `storefrontApi`: every operation of the storefront contract, declared once, and the source of `openapi/storefront.yaml` |
 | `./studio-api` | `studioApi`: the same for the studio, and the source of `openapi/studio.yaml` |
 | `./storefront-api/docs`, `./studio-api/docs` | **server only, never imported by a surface**: each api's introduction (`info`, `servers`, security schemes), its modules' docs and examples, and `storefrontDocsOf(route)` / `studioDocsOf(route)`, an operation's prose and doc-only `x-arthome-*`, for a server's own docs (Swagger). `check:contract-docs` proves no surface subpath reaches them |
-| `./streaming-service-api` | `streamingServiceApi`: streaming's internal operations, which only the BFFs call (D-121), and the source of `openapi/streaming-service.yaml` ("A service API" below) |
+| `./streaming-service-api` | `streamingServiceApi`: streaming's internal operations, which the BFFs and the media server call (D-121), and the source of `openapi/streaming-service.yaml` ("A service API" below) |
 | `./streaming-service-api/docs` | its introduction, docs and examples, and `streamingServiceDocsOf(route)`: server only, like the BFFs' |
 
 **Fourteen subpaths of schemas, 106 schemas, and together with `@arthome/core` they are all 111 schemas of both
@@ -508,21 +508,22 @@ is the first; catalog and ticketing move to it later.
 - **A versioned record carries its `version` inside `data`** (`transport.md` §5.5), as `RunConsole`
   does, never at the envelope's root. Catalog's and ticketing's services still answer it at the root,
   their legacy envelope; it moves when they migrate to this model, in their own PRD.
-- **Who calls.** Every route declares `callerService(...issuers)`, the BFFs it serves, a rule the
-  server maps to a guard that refuses any other `403 api.forbidden`. The principal
-  (`ServicePrincipalSchema`) is the token's: the BFF, the account, the profile and the device. A body
-  `profileId` or `deviceId` other than the principal's is refused `403 api.forbidden`. **The body
-  never picks the profile**: a route that reads it (`openPlayback`, `recordPlaybackPosition`,
-  `getViewerProgressBatch`) refuses `403 api.forbidden` a token that names none, says so in its docs
-  (`PROFILE_FROM_THE_TOKEN`), and a BFF composing an overlay from it degrades that part
-  (`transport.md` §5.8). No route is `.public()` or `.optionalAuth()`.
+- **Who calls.** Every route of the `service` identity declares `callerService(...issuers)`, the
+  BFFs it serves, a rule the server maps to a guard that refuses any other `403 api.forbidden`. The
+  principal (`ServicePrincipalSchema`) is the token's: the BFF, the account, the profile and the
+  device. A body `profileId` or `deviceId` other than the principal's is refused
+  `403 api.forbidden`. **The body never picks the profile**: a route that reads it (`openPlayback`,
+  `recordPlaybackPosition`, `getViewerProgressBatch`) refuses `403 api.forbidden` a token that names
+  none, says so in its docs (`PROFILE_FROM_THE_TOKEN`), and a BFF composing an overlay from it
+  degrades that part (`transport.md` §5.8). No route is `.public()` or `.optionalAuth()`.
 - **One operation, two servers.** A service route that serves a public operation keeps its operation
   id, path, body, answer and refusal codes, so the BFF relays one shape. It takes the public module's
   schemas, its docs (`operationDocsOf(storefrontDocs, [...])`) and its examples
   (`storefrontDocs.examples.entriesOf([...])`), never a copy; only what no surface sees is declared in
   the service's own module. `service-apis.spec.ts` finds every `*-service-api` and holds each route
-  to the model: internal, a caller rule, never public, and its public operation's paging and codes
-  (a superset, read from the public route, less what the BFF answers of its own).
+  to the model: internal, a caller rule (or the media server's identity), never public, and its
+  public operation's paging and codes (a superset, read from the public route, less what the BFF
+  answers of its own).
 
 ```ts
 const run = streamingServiceV1
@@ -540,6 +541,15 @@ export const getRunConsole: GetRunConsoleRoute = run.find({
   answer: 'The console.',
 });
 ```
+
+**A caller that is not a BFF** gets an identity of its own (`adr-contract-model.md` §9.1, "An
+infrastructure caller"). `mediaServer` (`./http`) is MediaMTX's external HTTP authentication: an HTTP
+Basic shared secret (scheme `mediaServerSecret`, declared in the api's `docs.ts`), a principal that
+names no one, internal, and no deadline, so its routes derive no `504`. Its route,
+`authorizeMediaServerAccess` (`POST /v1/media-server/authorize`, tag `media`), takes MediaMTX's own
+body (`MediaServerAuthorizationSchema`: loose, its words kept raw, `password`, `token` and `query`
+sensitive) and answers `204`. It relays no public operation and names no BFF; the service authorises
+the attempt on the run it names. This closes C3's Open point 2.
 
 The central document of every service comes with the second service api.
 

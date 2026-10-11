@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { ApiErrorCode, InternalTokenIssuer, UNRESOLVED_COUNTRY } from '@arthome/core';
 
+import { identity } from './access.js';
 import { routeBuilder } from './builder.js';
 import { DERIVED_ERROR_CODES } from './errors.js';
 import { defineApi, errorCodesOf } from './index.js';
@@ -62,6 +63,28 @@ describe('the service error model', () => {
       ApiErrorCode.UNAUTHENTICATED,
       ApiErrorCode.TOKEN_EXPIRED,
     ]);
+  });
+
+  it('answers 504 where the route takes the deadline, and not on an internal identity without it', () => {
+    const unhurried = identity('unhurried', {
+      schemes: { read: [{ sharedSecret: [] }], write: [{ sharedSecret: [] }] },
+      principal: z.object({}),
+      internal: true,
+    });
+    const notify = routeBuilder(serviceErrors)
+      .version(1)
+      .conventions(serviceConventions)
+      .identity(unhurried)
+      .defineRoute({
+        method: 'post',
+        path: '/notices',
+        operationId: 'notify',
+        responses: { 204: { description: 'Noted.' } },
+      });
+
+    expect(notify.internal).toBe(true);
+    expect(Object.keys(notify.responses)).not.toContain('504');
+    expect(errorCodesOf(openConsole, 504)).toEqual([ApiErrorCode.DEADLINE_EXCEEDED]);
   });
 
   it('marks the route internal, with the deadline and the trace context it relays', () => {

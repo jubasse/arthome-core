@@ -52,6 +52,8 @@ export declare const BATCH_BODY_LIMIT = 2097152;
 export declare const BATCH_MAX_IDS = 200;
 /** The latency budget of a batched read, in milliseconds (`transport.md` §5.9). */
 export declare const BATCH_BUDGET_MS = 150;
+/** The header an internal caller's deadline travels in: a route taking it answers `504` once it is past. */
+export declare const DEADLINE_HEADER_NAME = "x-arthome-deadline";
 /** On an answer carrying a `sensitive` field: kept out of every cache, and out of the app snapshot. */
 export declare const NO_STORE_HEADER: Header;
 export declare const VARY_HEADER: Header;
