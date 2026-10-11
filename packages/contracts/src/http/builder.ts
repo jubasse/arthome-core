@@ -27,6 +27,7 @@ import type { CachePolicy } from './policy.js';
 import {
   CallerKind,
   cacheControlHeaderOf,
+  DEADLINE_HEADER_NAME,
   NO_STORE_HEADER,
   DEFAULT_BODY_LIMIT,
   IDEMPOTENCY_REPLAYED_HEADER,
@@ -359,8 +360,8 @@ const IDEMPOTENCY_KEY = 'Idempotency-Key';
 
 /**
  * The errors a route can answer because of what it declares (`transport.md` §5.12, ADR §7.1): its
- * input, its body, its idempotency key, its identity and rules, its rate limit, and the surface.
- * A response the route or its identity writes whole is kept over the derived one.
+ * input, its body, its idempotency key, its identity and rules, its rate limit, its deadline, and
+ * the surface. A response the route or its identity writes whole is kept over the derived one.
  */
 function derivedCodes(
   access: Access,
@@ -415,7 +416,7 @@ function derivedCodes(
       503: [ApiErrorCode.SERVICE_UNAVAILABLE],
       504: [ApiErrorCode.UPSTREAM_TIMEOUT, ApiErrorCode.DEADLINE_EXCEEDED],
     });
-  } else if (access.kind === 'identified' && access.identity.internal) {
+  } else if (definition.parameters.some((parameter) => parameter.name === DEADLINE_HEADER_NAME)) {
     add({ 504: [ApiErrorCode.DEADLINE_EXCEEDED] });
   }
   return out;

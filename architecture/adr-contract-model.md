@@ -658,8 +658,9 @@ Found on review: what the declaration must also carry so that nothing else is wr
 - **The `service` identity.** It is the internal token (§5.2): the calling service and the end user,
   verified by `InternalTokenGuard`. A service route requires it by default, as a BFF route requires
   its viewer.
-- **The deadline header is required** on every internal route, and the `504 api.deadline_exceeded`
-  is derived on the services too, not only on the BFFs.
+- **The deadline header is required** on every route of the `service` identity, and the
+  `504 api.deadline_exceeded` is derived on the services too, not only on the BFFs. The `504` follows
+  the deadline parameter, not the internal mark: a route that takes no deadline promises no `504`.
 - **The route is marked internal**, so the central OpenAPI lists it, and no surface document can
   include it.
 
@@ -676,7 +677,7 @@ Found on review: what the declaration must also carry so that nothing else is wr
   and examples are read from the public operation's module, never copied, and a spec over every
   service api holds each route's codes to a superset of its public operation's, less the codes the
   BFF answers of its own (its identity's, its rules', its upstreams'). Only what no surface sees (the
-  progress batch) is declared by the service alone.
+  progress batch, the media server's authorisation) is declared by the service alone.
 - **The caller rule.** Every route names the BFFs it serves, `callerService(...issuers)`, a rule like
   `roles` (§4.3): the server maps it to a guard that refuses any other issuer `403 api.forbidden`. A
   viewer's playback refuses the studio BFF (D-118). No service route is public or optional.
@@ -696,6 +697,24 @@ Found on review: what the declaration must also carry so that nothing else is wr
   every write `x-arthome-actor-surface` (§5.2), so an event names its actor's place; the
   surface's `Idempotency-Key`, relayed as is, on a write; `x-arthome-viewer-country` where a watch
   verdict is decided.
+
+**An infrastructure caller** (MX0, 2026-10-11). Some internal callers are not a BFF and cannot mint
+the internal token: MediaMTX's external HTTP authentication posts its own JSON with an HTTP Basic
+credential, and nothing else. Such a caller gets an identity of its own, never a special case:
+
+- **One identity per caller kind**, declared with `identity(...)` like `service`, its scheme a
+  native OpenAPI one: `http` `basic` for the media server (`mediaServer`, scheme
+  `mediaServerSecret`), `apiKey` in a header for a caller that sends a static header. The server maps
+  the identity to its guard by name, as it does `service`'s. Its routes name no BFF, so they carry no
+  `callerService`; the service still authorises the attempt on the record it names (critical rule 5).
+- **The caller is never public.** Its routes are internal and identified, and the network is a second
+  barrier, not the first.
+- **The `504` follows the deadline parameter.** The media server sends no `x-arthome-deadline`, so
+  `mediaServer` takes none and its routes derive no `504`.
+- **Signed bodies keep §8's `signature` rule.** A caller that signs its body (Cloudflare Stream's
+  video webhooks) is `.public().requires(signature(...))` with a raw body. A caller that sends an
+  unsigned static secret (Cloudflare Notifications' `cf-webhook-auth` header) is a shared-secret
+  identity, like `mediaServer`.
 
 ### 9.2 The batched read (§5.6)
 

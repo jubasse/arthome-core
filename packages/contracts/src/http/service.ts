@@ -28,11 +28,11 @@ import type { Identity, Requirement } from './access.js';
 import { defineErrorModel, errorResponse } from './errors.js';
 import type { CodedResponse, ErrorBody, ErrorModel } from './errors.js';
 import type { Header, HeaderParameter, JsonResponse } from './index.js';
-import { IDEMPOTENCY_REPLAYED_HEADER } from './policy.js';
+import { DEADLINE_HEADER_NAME, IDEMPOTENCY_REPLAYED_HEADER } from './policy.js';
 import type { ResourceConventions } from './resource.js';
 
-export const DeadlineParameter: HeaderParameter<'x-arthome-deadline', z.ZodString, true> = {
-  name: 'x-arthome-deadline',
+export const DeadlineParameter: HeaderParameter<typeof DEADLINE_HEADER_NAME, z.ZodString, true> = {
+  name: DEADLINE_HEADER_NAME,
   in: 'header',
   required: true,
   description:

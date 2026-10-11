@@ -6,11 +6,12 @@ x-arthome-codes-source: ERROR_CODES
 info:
   title: Arthome Streaming service
   version: 1.0.0
-  summary: 'Streaming''s internal API: what the two BFFs call, never a surface.'
+  summary: 'Streaming''s internal API: what the BFFs and the media server call, never a surface.'
   description: |
-    Contract of the **streaming service** (D-121). Only the BFFs call it, with the internal token
-    they mint; no surface does, and no route here is public. It is generated from
-    `@arthome/contracts/streaming-service-api`, as the BFFs' documents are from theirs.
+    Contract of the **streaming service** (D-121). The BFFs call it, with the internal token they
+    mint, and the media server calls its own route; no surface does, and no route here is public. It
+    is generated from `@arthome/contracts/streaming-service-api`, as the BFFs' documents are from
+    theirs.
 
     ## One operation, two servers
 
@@ -21,18 +22,24 @@ info:
 
     ## Who calls
 
-    Every route names the BFFs it serves (`x-arthome-requires`, `callerService`): the run desk serves
-    the studio BFF, playback and progress the storefront BFF (D-118). Any other caller is refused
-    `403` `api.forbidden`. The caller is read from the token and nowhere else: a body's `profileId`
-    or `deviceId` other than the token's is refused `403` `api.forbidden` too, and a route that reads
-    the profile refuses a token that names none the same way: the body never picks the profile.
+    The BFFs. Every route they call names the BFFs it serves (`x-arthome-requires`,
+    `callerService`): the run desk serves the studio BFF, playback and progress the storefront BFF
+    (D-118). Any other caller is refused `403` `api.forbidden`. The caller is read from the token and
+    nowhere else: a body's `profileId` or `deviceId` other than the token's is refused `403`
+    `api.forbidden` too, and a route that reads the profile refuses a token that names none the same
+    way: the body never picks the profile.
+
+    The media server, on `authorizeMediaServerAccess` alone (`mediaServer`, tag `media`): MediaMTX's
+    external HTTP authentication, identified by a shared secret (`mediaServerSecret`) rather than a
+    token. It names no one, so the service decides on the run the attempt names.
 
     ## What every call carries
 
-    `x-arthome-deadline`, past which the service writes nothing and answers `504`
+    On a BFF's call: `x-arthome-deadline`, past which the service writes nothing and answers `504`
     `api.deadline_exceeded`; `x-arthome-actor-surface` on every write, the place the event it emits
     names; the surface's `Idempotency-Key`, relayed as is, on a write that takes one;
-    `x-arthome-viewer-country` on every call that decides a watch verdict.
+    `x-arthome-viewer-country` on every call that decides a watch verdict. The media server's call
+    carries MediaMTX's body and its credential, no deadline: it answers no `504`.
 
     ## Errors
 
@@ -50,6 +57,8 @@ tags:
   description: The run desk and its incidents, for the studio BFF.
 - name: playback
   description: Playback, its sessions and the viewer's progress, for the storefront BFF.
+- name: media
+  description: What the media server asks before it lets a feed in.
 security:
 - internalToken: []
 paths:
@@ -1729,6 +1738,71 @@ paths:
           $ref: '#/components/responses/InternalError'
         '504':
           $ref: '#/components/responses/DeadlineExceeded'
+  /v1/media-server/authorize:
+    post:
+      operationId: authorizeMediaServerAccess
+      summary: Accepts or refuses an attempt MediaMTX is about to let in.
+      description: |
+        **MediaMTX's external HTTP authentication** (`authMethod: http`), called before the origin
+        accepts a feed. The body is MediaMTX's own; MediaMTX accepts any `2xx` and reads no body, so
+        an acceptance is a `204`. Only a `publish` is accepted: the origin sends no read, viewers
+        reading on an edge instance that checks its own token.
+
+        `401` means the shared secret was missing or wrong: a misconfiguration to alarm on, never a
+        feed refused. `403` is the attempt refused, by the run it names: its stream key, its state, a
+        publisher already online. The reason of a refusal is logged by the service and never answered.
+      x-arthome-maturity: provisional
+      x-arthome-upstream:
+      - streaming
+      tags:
+      - media
+      x-arthome-idempotency-exemption: |
+        A decision, which writes nothing: the same attempt asked twice is decided twice, on the state
+        of the run at that moment.
+      x-arthome-internal: true
+      security:
+      - mediaServerSecret: []
+      parameters:
+      - name: traceparent
+        in: header
+        required: false
+        description: |
+          W3C trace context. MediaMTX sends none, so the service starts the trace; one sent is continued,
+          and a malformed one is never refused.
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaServerAuthorization'
+            example:
+              user: publisher
+              password: sk_live_9f2ac1b4
+              token: ''
+              ip: 203.0.113.24
+              action: publish
+              path: live/studio-a
+              protocol: srt
+              id: 019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77
+              query: ''
+              userAgent: ''
+      responses:
+        '204':
+          description: 'Accepted: MediaMTX lets the attempt in.'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/MediaServerUnauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   securitySchemes:
     internalToken:
@@ -1739,6 +1813,14 @@ components:
         ES256, minted by the BFF for this service alone (`aud: arthome.streaming`) and short-lived
         (`transport.md` §5.2, `adr-auth.md` §8). It names the BFF (`iss`), the account (`sub`) and,
         when the session has them, the profile (`pro`) and the device (`did`): the route's principal.
+    mediaServerSecret:
+      type: http
+      scheme: basic
+      description: |
+        The media server's shared secret, `MEDIA_SERVER_SECRET`, as the password; the username is
+        ignored. MediaMTX cannot set a header, so it sends the secret in the userinfo of
+        `authHTTPAddress`, which Go's HTTP client turns into `Authorization: Basic`. The route is
+        reached on the private network only.
   parameters:
     Deadline:
       name: x-arthome-deadline
@@ -1969,6 +2051,19 @@ components:
             servedAt: '2026-09-21T20:31:04.118Z'
     Unauthorized:
       description: 'No internal token, or one refused: unsigned, expired, or minted for another service.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: api.unauthenticated
+              nature: refused
+              params: {}
+              traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+            servedAt: '2026-09-21T20:31:04.118Z'
+    MediaServerUnauthorized:
+      description: 'The media server''s shared secret, missing or refused: a misconfiguration to alarm on, never a refused feed.'
       content:
         application/json:
           schema:
@@ -3615,6 +3710,48 @@ components:
       - version
       - writtenAt
       - completed
+      additionalProperties: {}
+    MediaServerAuthorization:
+      type: object
+      properties:
+        action:
+          type: string
+          description: |
+            MediaMTX's action: `publish`, `read`, `playback`, `api`, `metrics` or `pprof`. Only `publish` is
+            accepted; any other is refused `403`.
+        path:
+          type: string
+          description: 'The MediaMTX path of the attempt: `live/...` for a feed.'
+        protocol:
+          type: string
+          description: 'The protocol of the attempt: `rtsp`, `rtmp`, `hls`, `webrtc`, `srt`, or a later one.'
+        ip:
+          type: string
+        user:
+          type: string
+        password:
+          type: string
+          format: password
+          x-arthome-sensitive: true
+        token:
+          type: string
+          format: password
+          x-arthome-sensitive: true
+        query:
+          description: The query string of the attempt. It can carry the stream key, `?pass=` or `?token=`.
+          type: string
+          format: password
+          x-arthome-sensitive: true
+        userAgent:
+          type: string
+        id:
+          type:
+          - string
+          - 'null'
+      required:
+      - action
+      - path
+      - protocol
       additionalProperties: {}
     ApiIdempotencyKeyReusedError:
       type: object

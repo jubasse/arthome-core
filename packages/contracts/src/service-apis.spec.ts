@@ -3,7 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { API_ERROR_CODES, InternalTokenIssuer } from '@arthome/core';
 
 import type { Api, ErrorModel, Route } from './http/index.js';
-import { errorCodesOf, service, serviceErrors, versionedPath } from './http/index.js';
+import {
+  DEADLINE_HEADER_NAME,
+  errorCodesOf,
+  mediaServer,
+  service,
+  serviceErrors,
+  versionedPath,
+} from './http/index.js';
 import { storefrontErrors } from './storefront-api/components.js';
 import { storefrontApi } from './storefront-api/index.js';
 import { studioErrors } from './studio-api/components.js';
@@ -62,6 +69,9 @@ const successesOf = (route: Route): readonly string[] =>
 const isTransportCode = (code: string): boolean =>
   (API_ERROR_CODES as readonly string[]).includes(code);
 
+const isOnMediaServer = (route: Route): boolean =>
+  route.access?.kind === 'identified' && route.access.identity === mediaServer;
+
 /**
  * The codes a BFF answers of its own, which its service never sends it: its identity's, its rules',
  * and the transport codes its shared responses stand for where the service model's do not (the
@@ -97,18 +107,43 @@ it('finds every service api', () => {
   expect(SERVICE_APIS.length).toBeGreaterThan(0);
 });
 
+it("holds authorizeMediaServerAccess to the media server's rules", () => {
+  const onMediaServer = SERVICE_APIS.flatMap(([, api]) =>
+    Object.values(api.routes).filter(isOnMediaServer),
+  );
+
+  expect(onMediaServer.map((route) => route.operationId)).toContain('authorizeMediaServerAccess');
+});
+
 describe.each(SERVICE_APIS)('%s', (_file, api) => {
   const routes: readonly Route[] = Object.values(api.routes);
   const relaying = routes.filter((route) => publicOperationOf(route) !== undefined);
 
-  it('has every route internal, on the service identity, with a caller rule', () => {
+  it("has every route internal, on the service identity with a caller rule, or on the media server's", () => {
     const astray = routes.filter(
       (route) =>
         route.internal !== true ||
         route.access?.kind !== 'identified' ||
-        route.access.identity !== service ||
-        issuersOf(route) === undefined,
+        (route.access.identity === service
+          ? issuersOf(route) === undefined
+          : route.access.identity !== mediaServer),
     );
+
+    expect(astray.map((route) => route.operationId)).toEqual([]);
+  });
+
+  it("relays no public operation on the media server's identity", () => {
+    expect(relaying.filter(isOnMediaServer).map((route) => route.operationId)).toEqual([]);
+  });
+
+  it("takes no deadline and answers no 504 on the media server's identity", () => {
+    const astray = routes
+      .filter(isOnMediaServer)
+      .filter(
+        (route) =>
+          '504' in route.responses ||
+          route.parameters?.some((parameter) => parameter.name === DEADLINE_HEADER_NAME) === true,
+      );
 
     expect(astray.map((route) => route.operationId)).toEqual([]);
   });

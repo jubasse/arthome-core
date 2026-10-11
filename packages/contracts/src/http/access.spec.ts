@@ -10,7 +10,7 @@ import { defineErrorModel } from './errors.js';
 import type { Response } from './index.js';
 import { errorCodesOf } from './index.js';
 import { restricted, restrictedFieldsOf, sensitive, sensitivePathsOf } from './marks.js';
-import { Freshness, cache, DEFAULT_BODY_LIMIT } from './policy.js';
+import { DEADLINE_HEADER_NAME, Freshness, cache, DEFAULT_BODY_LIMIT } from './policy.js';
 import { accepted } from './responses.js';
 import { ReauthProof } from './schemas.js';
 import { parseTolerant, tagged } from './tagged.js';
@@ -310,7 +310,7 @@ describe('derived errors', () => {
 
   it('marks the routes of an internal identity internal, with the deadline of a service', () => {
     const deadline = {
-      name: 'X-Deadline',
+      name: DEADLINE_HEADER_NAME,
       in: 'header',
       required: true,
       schema: z.string(),
@@ -328,7 +328,7 @@ describe('derived errors', () => {
       .defineRoute({ method: 'get', path: '/a', operationId: 'a', responses: ok });
 
     expect(route.internal).toBe(true);
-    expect(route.parameters.map((parameter) => parameter.name)).toEqual(['X-Deadline']);
+    expect(route.parameters.map((parameter) => parameter.name)).toEqual([DEADLINE_HEADER_NAME]);
     expect(Object.keys(route.responses)).toContain('504');
   });
 });
