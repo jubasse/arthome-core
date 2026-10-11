@@ -63,7 +63,7 @@ export const streamingServiceDocs: ApiDocs = apiDocs({
       type: 'http',
       scheme: 'basic',
       description:
-        "The media server's shared secret, `MEDIA_SERVER_SECRET`, as the password; the username is\nignored. MediaMTX cannot set a header, so it sends the secret in the userinfo of\n`authHTTPAddress`, which Go's HTTP client turns into `Authorization: Basic`. The route is\nreached on the private network only.\n",
+        "The media server's shared secret, `MEDIA_SERVER_SECRET`, as the password; the username is\nignored. MediaMTX cannot set a header, so it sends the secret in the userinfo of\n`authHTTPAddress`, which Go's HTTP client turns into `Authorization: Basic`. The route is\nmeant to be reached on the private network only; the secret, not the network, is the barrier.\n",
     },
   },
   modules: [datesDocs, incidentsDocs, playbackDocs, meDocs, viewerProgressDocs, mediaServerDocs],

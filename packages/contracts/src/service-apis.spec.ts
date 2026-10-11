@@ -6,6 +6,7 @@ import type { Api, ErrorModel, Route } from './http/index.js';
 import {
   DEADLINE_HEADER_NAME,
   errorCodesOf,
+  MediaServerUnauthorizedResponse,
   mediaServer,
   service,
   serviceErrors,
@@ -144,6 +145,14 @@ describe.each(SERVICE_APIS)('%s', (_file, api) => {
           '504' in route.responses ||
           route.parameters?.some((parameter) => parameter.name === DEADLINE_HEADER_NAME) === true,
       );
+
+    expect(astray.map((route) => route.operationId)).toEqual([]);
+  });
+
+  it("answers MediaServerUnauthorizedResponse at 401 on the media server's identity", () => {
+    const astray = routes
+      .filter(isOnMediaServer)
+      .filter((route) => route.responses[401] !== MediaServerUnauthorizedResponse);
 
     expect(astray.map((route) => route.operationId)).toEqual([]);
   });

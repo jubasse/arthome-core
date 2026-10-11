@@ -21,29 +21,34 @@ export const MediaServerAuthorizationSchema: z.ZodObject<
     id: z.ZodOptional<z.ZodNullable<z.ZodString>>;
   },
   z.core.$loose
-> = z.looseObject({
-  action: z.string().meta({
+> = z
+  .looseObject({
+    action: z.string().meta({
+      description:
+        "MediaMTX's action: `publish`, `read`, `playback`, `api`, `metrics` or `pprof`. Only `publish` is\naccepted; any other is refused `403`.\n",
+    }),
+    path: z
+      .string()
+      .meta({ description: 'The MediaMTX path of the attempt: `live/...` for a feed.' }),
+    protocol: z.string().meta({
+      description:
+        'The protocol of the attempt: `rtsp`, `rtmp`, `hls`, `webrtc`, `srt`, or a later one.',
+    }),
+    ip: z.string().optional(),
+    user: z.string().optional(),
+    password: sensitive(z.string()).optional(),
+    token: sensitive(z.string()).optional(),
+    query: sensitive(z.string())
+      .optional()
+      .describe(
+        'The query string of the attempt. It can carry the stream key, `?pass=` or `?token=`.',
+      ),
+    userAgent: z.string().optional(),
+    id: z.string().nullable().optional(),
+  })
+  .meta({
     description:
-      "MediaMTX's action: `publish`, `read`, `playback`, `api`, `metrics` or `pprof`. Only `publish` is\naccepted; any other is refused `403`.\n",
-  }),
-  path: z
-    .string()
-    .meta({ description: 'The MediaMTX path of the attempt: `live/...` for a feed.' }),
-  protocol: z.string().meta({
-    description:
-      'The protocol of the attempt: `rtsp`, `rtmp`, `hls`, `webrtc`, `srt`, or a later one.',
-  }),
-  ip: z.string().optional(),
-  user: z.string().optional(),
-  password: sensitive(z.string()).optional(),
-  token: sensitive(z.string()).optional(),
-  query: sensitive(z.string())
-    .optional()
-    .describe(
-      'The query string of the attempt. It can carry the stream key, `?pass=` or `?token=`.',
-    ),
-  userAgent: z.string().optional(),
-  id: z.string().nullable().optional(),
-});
+      'The body is loose and only three fields are marked sensitive: a service logs an allow-list (`action`, `path`, `protocol`, `id`, `ip`), never the parsed body.',
+  });
 
 export type MediaServerAuthorization = z.output<typeof MediaServerAuthorizationSchema>;

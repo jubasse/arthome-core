@@ -1820,7 +1820,7 @@ components:
         The media server's shared secret, `MEDIA_SERVER_SECRET`, as the password; the username is
         ignored. MediaMTX cannot set a header, so it sends the secret in the userinfo of
         `authHTTPAddress`, which Go's HTTP client turns into `Authorization: Basic`. The route is
-        reached on the private network only.
+        meant to be reached on the private network only; the secret, not the network, is the barrier.
   parameters:
     Deadline:
       name: x-arthome-deadline
@@ -3753,6 +3753,7 @@ components:
       - path
       - protocol
       additionalProperties: {}
+      description: 'The body is loose and only three fields are marked sensitive: a service logs an allow-list (`action`, `path`, `protocol`, `id`, `ip`), never the parsed body.'
     ApiIdempotencyKeyReusedError:
       type: object
       properties:

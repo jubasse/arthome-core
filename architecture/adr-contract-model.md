@@ -711,6 +711,9 @@ credential, and nothing else. Such a caller gets an identity of its own, never a
   barrier, not the first.
 - **The `504` follows the deadline parameter.** The media server sends no `x-arthome-deadline`, so
   `mediaServer` takes none and its routes derive no `504`.
+- **`traceparent` stays declared, optional.** Every operation takes it (`check-openapi` R12), so the
+  identity declares its own: MediaMTX sends none and the service starts the trace, one sent is
+  continued, and a malformed one is never refused. The gate is unchanged.
 - **Signed bodies keep §8's `signature` rule.** A caller that signs its body (Cloudflare Stream's
   video webhooks) is `.public().requires(signature(...))` with a raw body. A caller that sends an
   unsigned static secret (Cloudflare Notifications' `cf-webhook-auth` header) is a shared-secret
