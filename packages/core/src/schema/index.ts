@@ -87,5 +87,7 @@ export { ErrorSchema, FailureNatureOut, schemaInvalidParams } from './error.js';
 export type { ErrorParamsRead } from './error-params.js';
 export { ERROR_PARAMS, errorParamsSchemaOf } from './error-params.js';
 
+export { ActivePlaybackSessionSchema } from './playback-session.js';
+
 export { InternalTokenClaimsSchema } from './internal-token.js';
 export type { InternalTokenClaims } from './internal-token.js';

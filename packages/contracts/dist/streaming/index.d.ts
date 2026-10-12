@@ -23,7 +23,7 @@
  *     `uuidOut()` and `InstantOut` become those core schemas, one edit per file.
  */
 import { z } from 'zod';
-import { type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
+import { ActivePlaybackSessionSchema, type VocabularyOut, type VocabularyOutNullable } from '@arthome/core/schema';
 import { ChapterSchema, DateCardSchema } from '../catalog/index.js';
 import { type AccessorOf } from '../http/index.js';
 import { StorefrontLocalizedTextSchema } from '../text/index.js';
@@ -52,14 +52,7 @@ declare const playbackSignature: () => z.ZodObject<{
     queryToken: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     cookieSet: z.ZodOptional<z.ZodNullable<z.ZodBoolean>>;
 }, z.core.$loose>;
-export declare const ActivePlaybackSessionSchema: z.ZodObject<{
-    sessionId: z.ZodString;
-    deviceId: z.ZodOptional<z.ZodString>;
-    isCurrentDevice: z.ZodOptional<z.ZodBoolean>;
-    deviceLabel: z.ZodString;
-    city: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-    openedAt: z.ZodString;
-}, z.core.$loose>;
+export { ActivePlaybackSessionSchema };
 export declare const PlaybackRenewalSchema: z.ZodObject<{
     expiresAt: z.ZodString;
     renewAfterSec: z.ZodNumber;
@@ -103,5 +96,4 @@ export declare const PlaybackTicketSchema: z.ZodObject<{
     incident: z.ZodOptional<typeof IncidentSchema>;
     date: z.ZodOptional<typeof DateCardSchema>;
 }, z.core.$loose>;
-export {};
 //# sourceMappingURL=index.d.ts.map

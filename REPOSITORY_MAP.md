@@ -1070,9 +1070,10 @@ Declarations: `dist/index.d.ts` — 550 exported names.
 
 #### @arthome/core/schema
 
-Declarations: `dist/schema/index.d.ts` — 58 exported names.
+Declarations: `dist/schema/index.d.ts` — 59 exported names.
 
 - `AccountIdSchema` (const) — `AccountIdSchema: z.ZodString`
+- `ActivePlaybackSessionSchema` (const)
 - `ArtistIdSchema` (const) — `ArtistIdSchema: z.ZodString`
 - `BasisPointsSchema` (const) — `BasisPointsSchema: z.ZodInt` — A rate in basis points: 1200 = 12%, 550 = 5.5%.
 - `BuyerTaxLocationSchema` (const) — The location adopted, with the evidence that produced it.
