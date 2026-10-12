@@ -338,6 +338,38 @@ session and gives access to no personal data.
 This also settles **E13** (`devices` has two shapes under one name): `Device` is the registered
 device, durable, revocable; `DeviceSession` is the (device, profile) pair. Two names, two shapes.
 
+**The browser's device (D-126).** A browser is a registered device too, with a credential of its
+own rather than the ES256 JWT above.
+
+- **Registration.** A web surface never calls `registerDevice`. The storefront BFF registers the
+  browser inside `signUp` and `signIn`, once identity accepted the credential and the account may
+  sign in, so registration has exactly the caps those routes have (§6.2) and no bucket of its own.
+- **The credential.** An opaque random token of 256 bits, which identity stores as a digest only.
+  It travels in the `__Host-arthome_device` cookie (`HttpOnly`, `Secure`, `SameSite=Lax`, path `/`,
+  no `Domain`), which the BFF sets beside the session cookie (§8.2.4), and never in a public body,
+  a header the page can read, a log or local storage. From the BFF to identity it crosses in the
+  internal call's body only.
+- **Its lifetime.** Every sign-up or sign-in that presents it rotates it (a replayed sign-up re-sets nothing), and it lives the device
+  token's lifetime above from its last rotation: the cookie's `Max-Age` and identity's expiry both
+  read `DEVICE_TOKEN_LIFETIME_SECONDS` (`@arthome/core`). Accepted: renewing a session (§6.1) is not
+  a sign-in, so a viewer who does not sign in again within that lifetime loses the cookie and gets
+  a new device at the next sign-in.
+- **What it opens: nothing.** It is not a session. It names the device a new session binds to,
+  which makes the internal token's device claim (`did` in `InternalTokenClaimsSchema`, §8's
+  `device_id`) the registered device; without a session it grants
+  no request.
+- **Sign-out and revocation.** Sign-out, and signing out the browser's own profile, keep it; §8.2.5 clears the
+  session's cookies, not this one.
+  `revokeDevice` ends it, and clears it when the browser revokes its own device. A revoked, expired
+  or unknown token presented at a later sign-in registers a new device; the sign-in is never
+  refused for it.
+- **Why not the ES256 JWT.** The JWT serves a device that calls before any session and holds its
+  credential itself. A browser has a server in front of it that can check the token's digest, and
+  the page never reads an `HttpOnly` cookie, so a signature would give the client nothing to verify.
+  An opaque token is enough, and a row revokes it.
+
+Counting the BFF's caps per device with this cookie (§6.2's OWASP device cookie) is a later slice.
+
 ### Q2 — **Refusal with a distinct code for the four purchase intents. No profile switch.**
 
 If the approving phone is signed in under a different identity from the profile that opened the
@@ -567,7 +599,7 @@ Declared clock tolerance: **± 30 s** (`jose`'s `clockTolerance`).
   `storefront-mobile`, `storefront-tv`), via the `bearer` plugin, which returns the token in the
   `set-auth-token` header and receives it as `Authorization: Bearer`. **The mode is chosen by the
   BFF and declared explicitly — §8.2.4.**
-- **`device_token`** — §4/Q3.
+- **`device_token`** — §4/Q3; a browser's device carries an opaque token in a cookie instead (D-126).
 - **Internal token** — minted by the **BFF**, ~60 s, per-service `aud` (§8).
 
 **Answer to `studio-mobile` on returning from background with an expired token**: **silent

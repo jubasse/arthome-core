@@ -6,6 +6,8 @@
 export declare const SESSION_LIFETIME_SECONDS: number;
 /** `adr-auth.md` §6.1: a session in use slides forward at most once a day. */
 export declare const SESSION_RENEWAL_AGE_SECONDS: number;
+/** `adr-auth.md` §4/Q3: a device token lives 180 days from its last rotation, the browser's cookie too (D-126). */
+export declare const DEVICE_TOKEN_LIFETIME_SECONDS: number;
 /** `adr-auth.md` §8: one internal token covers one BFF → service call. */
 export declare const INTERNAL_TOKEN_LIFETIME_SECONDS = 60;
 /** `adr-auth.md` §5.2 and §9.5: every verifier tolerates this much clock skew, both ways. */
