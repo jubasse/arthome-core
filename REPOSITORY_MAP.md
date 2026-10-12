@@ -515,7 +515,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 547 exported names.
+Declarations: `dist/index.d.ts` — 550 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -615,6 +615,8 @@ Declarations: `dist/index.d.ts` — 547 exported names.
 - `HOLD_MINUTES_CHECKOUT` (const) — `HOLD_MINUTES_CHECKOUT = 15` — THE CAPACITY HOLD, and its SINGLE-INSTANT invariant.
 - `HOLD_MINUTES_TV_PAIRING` (const) — `HOLD_MINUTES_TV_PAIRING = 5`
 - `HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT` (const) — `HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT = 15` — The channel's default delay before a lost feed raises the hold screen by itself ('realtime.md' §4, 'data-model.md' §5.6).
+- `HOLD_SCREEN_AUTO_AFTER_SECONDS_MAX` (const) — `HOLD_SCREEN_AUTO_AFTER_SECONDS_MAX = 120` — The longest delay a channel may set before a lost feed raises the hold screen by itself.
+- `HOLD_SCREEN_AUTO_AFTER_SECONDS_MIN` (const) — `HOLD_SCREEN_AUTO_AFTER_SECONDS_MIN = 5` — The shortest delay a channel may set before a lost feed raises the hold screen by itself.
 - `HOUR_MS` (const) — `HOUR_MS = 3600000`
 - `IDENTITY_ERROR_CODES` (const) — Sign-in, sign-up and session refusals.
 - `INCIDENT_CAUSES` (const) — `INCIDENT_CAUSES: readonly ["venue_feed_lost", "run_desk_disconnected", "bitrate_collapsed", "compatibility_worker_failed", "provider_error", "manual"]` — The cause, a vocabulary distinct from the outcome.
@@ -999,9 +1001,10 @@ Declarations: `dist/index.d.ts` — 547 exported names.
 - `plusMinutes` (function) — `function plusMinutes(instant: Instant, minutes: number): Instant;`
 - `plusMonths` (function) — `function plusMonths(instant: Instant, months: number): Instant;` — Calendar months in UTC, the time of day kept.
 - `plusSeconds` (function) — `function plusSeconds(instant: Instant, seconds: number): Instant;`
+- `previewMsSpent` (function) — `function previewMsSpent(watched: Window, onAirIntervals: readonly Window[]): number;` — The milliseconds of 'watched' that fall inside the run's 'on_air' intervals, which are disjoint (overlapping ones charge twice): what the p…
 - `previewRenewAfterSeconds` (function) — `function previewRenewAfterSeconds(previewSecondsLeft: number): number;` — A preview ticket's 'renewAfterSec': never past its token's expiry, so a long veil renews rather than stalls.
 - `previewSecondsLeft` (function) — `function previewSecondsLeft(secondsUsed: number): number;`
-- `previewSecondsSpent` (function) — `function previewSecondsSpent(watched: Window, onAirIntervals: readonly Window[]): number;` — The whole seconds of 'watched' that fall inside the run's 'on_air' intervals, which are disjoint (overlapping ones charge twice): what the …
+- `previewSecondsSpent` (function) — `function previewSecondsSpent(watched: Window, onAirIntervals: readonly Window[]): number;`
 - `previewTokenExpiresAt` (function) — `function previewTokenExpiresAt(now: Instant, previewSecondsLeft: number): Instant;` — A preview token's expiry: never past the budget left, under the incident veil too, so a veil lifting mid-token opens no on-air second the b…
 - `priceOfTier` (function) — `function priceOfTier(tiers: readonly TierPrice[], tier: PriceTier): Money | null;`
 - `priorityUntilOf` (function) — `function priorityUntilOf(openedAt: Instant): Instant;`

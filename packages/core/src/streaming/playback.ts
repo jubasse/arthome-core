@@ -35,8 +35,8 @@ export function isPreviewBudgetSpending(runState: RunState): boolean {
   return PREVIEW_BUDGET_SPENT_WHILE[runState];
 }
 
-/** The whole seconds of `watched` that fall inside the run's `on_air` intervals, which are disjoint (overlapping ones charge twice): what the preview budget is charged. */
-export function previewSecondsSpent(watched: Window, onAirIntervals: readonly Window[]): number {
+/** The milliseconds of `watched` that fall inside the run's `on_air` intervals, which are disjoint (overlapping ones charge twice): what the preview budget is charged. */
+export function previewMsSpent(watched: Window, onAirIntervals: readonly Window[]): number {
   const watchedStart = toEpochMs(watched.start);
   const watchedEnd = toEpochMs(watched.end);
   let insideMs = 0;
@@ -45,7 +45,12 @@ export function previewSecondsSpent(watched: Window, onAirIntervals: readonly Wi
     const end = Math.min(watchedEnd, toEpochMs(interval.end));
     if (end > start) insideMs += end - start;
   }
-  return Math.floor(insideMs / 1000);
+  return insideMs;
+}
+
+/** @deprecated Use `previewMsSpent`: the budget is counted in milliseconds, this floors it to whole seconds. */
+export function previewSecondsSpent(watched: Window, onAirIntervals: readonly Window[]): number {
+  return Math.floor(previewMsSpent(watched, onAirIntervals) / 1000);
 }
 
 /**

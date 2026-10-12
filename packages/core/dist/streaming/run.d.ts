@@ -21,6 +21,10 @@ export declare function technicalCheckFloorKbps(recommendedBitrateKbps: number |
 export declare function technicalCheckFailuresOf(probe: TechnicalCheckProbe, floorKbps: number): readonly TechnicalCheckFailure[];
 /** The channel's default delay before a lost feed raises the hold screen by itself (`realtime.md` §4, `data-model.md` §5.6). */
 export declare const HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT = 15;
+/** The shortest delay a channel may set before a lost feed raises the hold screen by itself. */
+export declare const HOLD_SCREEN_AUTO_AFTER_SECONDS_MIN = 5;
+/** The longest delay a channel may set before a lost feed raises the hold screen by itself. */
+export declare const HOLD_SCREEN_AUTO_AFTER_SECONDS_MAX = 120;
 /**
  * How long a publisher may drop before the run desk is told it is gone: the venue cut
  * `streaming.md` §6 describes, plus the encoder's reconnect. It equals the floor of the channel's
