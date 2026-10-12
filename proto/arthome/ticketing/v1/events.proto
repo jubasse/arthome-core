@@ -429,6 +429,10 @@ message SubscriptionChanged {
   // `planOpeningsOf` reads (D-125). Not `current_period_end`, which a renewal
   // moves forward before it is paid.
   google.protobuf.Timestamp paid_through = 9;
+  // The subscription's version after the change, monotonic per account:
+  // `streaming` keeps the newest, as it does the publication's. Set by the
+  // publisher, which does not exist yet.
+  uint64 version = 10;
 }
 
 // Opening a tier notifies the whole waiting list in the same act, with a

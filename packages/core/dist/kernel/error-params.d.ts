@@ -161,6 +161,10 @@ export interface ErrorParamsMap {
     [CatalogErrorCode.RESCHEDULE_IN_PAST]: {
         rescheduledTo: string;
     };
+    [CatalogErrorCode.REPLAY_UNAVAILABLE]: {
+        replayState: string | null;
+    };
+    [CatalogErrorCode.REPLAY_ASSET_NOT_READY]: NoErrorParams;
     [ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS]: {
         datesOnSale: number;
         payoutsDue: number;

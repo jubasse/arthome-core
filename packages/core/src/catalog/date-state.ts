@@ -14,6 +14,7 @@ import {
   DisplayState,
   PublicationState,
   ReplayPolicy,
+  ReplayState,
   RunState,
 } from '../vocabulary/catalog.js';
 
@@ -27,12 +28,23 @@ export interface DateTiming {
   readonly replayWindowHours: number;
 }
 
+/** What the date's display reads of its `Replay`: its state and its one closing (D-113). */
+export interface ReplayDisplayInput {
+  readonly state: ReplayState;
+  readonly closesAt: Instant;
+}
+
 export interface DisplayStateInput {
   readonly publicationState: PublicationState;
   readonly runState: RunState | null;
   readonly outcome: DateOutcome | null;
   readonly timing: DateTiming;
   readonly now: Instant;
+  /**
+   * The date's `Replay`, once one exists. Read only after the run ended: absent, an ended run
+   * shows `ended` as it always did.
+   */
+  readonly replay?: ReplayDisplayInput | null;
 }
 
 export interface DisplayStateResult {
@@ -101,8 +113,16 @@ function preSaleDisplay(state: PublicationState): DisplayState | null {
   }
 }
 
+/** An ended run shows its `Replay` while it is online and before its closing, never past it. */
+function replayDisplay(replay: ReplayDisplayInput | null, now: Instant): DisplayStateResult {
+  if (replay?.state === ReplayState.ONLINE && isBefore(now, replay.closesAt)) {
+    return { state: DisplayState.REPLAY, validUntil: replay.closesAt };
+  }
+  return { state: DisplayState.ENDED, validUntil: null };
+}
+
 export function displayStateOf(input: DisplayStateInput): DisplayStateResult {
-  const { publicationState, runState, outcome, timing, now } = input;
+  const { publicationState, runState, outcome, timing, now, replay } = input;
 
   if (outcome === DateOutcome.POSTPONED) {
     // A postponement moves the date to its new time (D-074): it shows as postponed until its room
@@ -120,7 +140,7 @@ export function displayStateOf(input: DisplayStateInput): DisplayStateResult {
     return { state: DisplayState.LIVE, validUntil: null };
   }
   if (runState === RunState.ENDED) {
-    return { state: DisplayState.ENDED, validUntil: null };
+    return replayDisplay(replay ?? null, now);
   }
 
   const preSale = preSaleDisplay(publicationState);

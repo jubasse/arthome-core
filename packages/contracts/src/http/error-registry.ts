@@ -26,6 +26,7 @@ import {
   PublicationPromise,
   PublicationState,
   ReplayPolicy,
+  ReplayState,
   RunState,
   SchemaIssueRule,
   SeatState,
@@ -108,6 +109,8 @@ export interface ErrorStatusMap {
   readonly [CatalogErrorCode.DATE_NOT_STARTED]: 409;
   readonly [CatalogErrorCode.DATE_ALREADY_ENDED]: 409;
   readonly [CatalogErrorCode.RESCHEDULE_IN_PAST]: 400;
+  readonly [CatalogErrorCode.REPLAY_UNAVAILABLE]: 409;
+  readonly [CatalogErrorCode.REPLAY_ASSET_NOT_READY]: 409;
 
   readonly [ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS]: 409;
   readonly [ChannelErrorCode.CREW_ROLE_RESERVED]: 403;
@@ -330,6 +333,11 @@ export const ERRORS: { readonly [C in ErrorCode]: ErrorDefinition<C> } = {
     status: 400,
     example: { rescheduledTo: '2026-10-01T19:30:00Z' },
   },
+  [CatalogErrorCode.REPLAY_UNAVAILABLE]: {
+    status: 409,
+    example: { replayState: ReplayState.CLOSED },
+  },
+  [CatalogErrorCode.REPLAY_ASSET_NOT_READY]: { status: 409, example: {} },
 
   [ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS]: {
     status: 409,

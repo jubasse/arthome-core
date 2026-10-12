@@ -105,6 +105,11 @@ Access validity  a property of the ReplayAccess
 | `closed` | `closesAt` passed | `catalog`'s sweeper |
 | `withdrawn` | an outcome declared after the live ended: an interruption, or a cancellation after a short live | `catalog`, with the outcome |
 
+**`online` stays the guarded studio command** (2026-10-12): core's `assertReplayGoesOnline`
+refuses `ended → replay_online` with `date.replay_unavailable` when the date has no `Replay` or it
+is past `pending`, and with `date.replay_asset_not_ready` while its file has not arrived. The
+publication and the `Replay` move in one transaction.
+
 **When accesses are created (D-092).** `ticketing` creates the `included` accesses when it reads
 `catalog.replay.state_changed.v1` → `pending`: the end of the show, as the product owner set it. They
 are valid from the window's opening, so nobody watches before the replay is online. Unit accesses are
@@ -192,6 +197,14 @@ function grantsReplayOnLiveEnd(modes: ReplayModes, outcome: DateOutcome | null):
 | `ticketing.replay_access.granted.v1` | `arthome.ticketing.date_sales`, `date_id` | access id, account, profile, origin (`seat` \| `unit`), origin reference | `streaming` (entitlement), `notifications` |
 | `ticketing.replay_access.revoked.v1` | `arthome.ticketing.date_sales`, `date_id` | access id, reason (`REPLAY_ACCESS_REVOCATION_REASONS`) | `streaming`, `payouts` |
 
+**`catalog.replay.state_changed.v1` as built** (2026-10-12, `ReplayStateChanged` in
+`proto/arthome/catalog/v1/events.proto`): `date_id`, `channel_id`, `from_state` (unset at
+creation), `to_state`, `version` (the `Replay`'s, consumers keep the newest), `policy` (the date's
+one policy until D-091's modes land), `live_ended_at`, `closes_at`, `online_at` and `duration_sec`
+(set once online, kept after), `occurred_at`. Its consumers this wave are `ticketing` and
+`search-indexer`; `streaming` reads it with the playback wave. The two access events wait for that
+wave too: nothing consumes them yet, so no message is frozen.
+
 The access events sit with the seat events, on the date's key (D-078). Subscription access needs no
 event of its own: `ticketing.subscription.changed.v1` already carries `opens[]`. The `included`
 accesses are created in batches, as the credits of an interrupted date are (`adr-ticketing.md` §8).
@@ -209,6 +222,9 @@ In `@arthome/core`:
   `hasReplayPolicy`, `isReplaySoldSeparately` and `replayUnavailabilityReason` read the modes.
 - `catalog/date-state.ts`: `replayEndsAt` gives way to `replayClosesAt`, and `DisplayState.REPLAY`
   leaves the date's display state; the card shows the replay as a facet of its own.
+  **Deferred (2026-10-12)**: `DisplayState.REPLAY` stays this wave, core's changes being additive.
+  An ended run enters it only through `DisplayStateInput.replay`, while the `Replay` is `online`
+  and until its `closesAt`; without that input an ended run shows `ended`. The facet move waits.
 - New vocabularies: `REPLAY_ACCESS_MODES`, `REPLAY_STATES`, `REPLAY_ACCESS_REVOCATION_REASONS`, and
   `WatchDenialReason.LIVE_ENDED`.
 - The `Replay` root in `catalog` (`data-model.md` §2.2), with `live_ended_at` and `closes_at`.
@@ -232,6 +248,15 @@ In the contracts:
   date's display state.
 - `REPLAY_EXPIRED`, `NO_REPLAY`, `REPLAY_NOT_ON_SALE` and `SUBSCRIPTION_REQUIRED` keep their
   `WATCH_FALLBACK_FOR` rows, for the replay's verdict; `decideWatch` returns none of them.
+
+**Already done, with the replay contracts (2026-10-12):**
+- The vocabularies `REPLAY_STATES`, `REPLAY_ACCESS_ORIGINS` and `REPLAY_ACCESS_REVOCATION_REASONS`.
+- `replay/`: `createsReplayOnLiveEnd(policy, windowHours, outcome)`, `grantsReplayOnLiveEnd(policy,
+  outcome)` (one policy until the modes land, then `ReplayModes`) and `assertReplayGoesOnline`.
+- `DisplayStateInput.replay` (§10's deferral above), and `DateCard.replay.durationSec`; the card's
+  `availableFrom` and `expiresAt` are the `Replay`'s online instant and closing.
+- `catalog.replay.state_changed.v1` (§9). `REPLAY_ACCESS_MODES`, `replayWindowOf`,
+  `decideReplayAccess`, `canBuyReplayUnit` and the unit order kind wait for the playback wave.
 
 ## 11. What the product owner settled, and what stays open
 

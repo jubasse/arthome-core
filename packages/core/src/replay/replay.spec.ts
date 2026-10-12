@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  assertReplayGoesOnline,
+  createsReplayOnLiveEnd,
+  grantsReplayOnLiveEnd,
   isReplayWindowOpen,
   outcomeWithdrawsReplay,
   replayClosesAt,
@@ -8,8 +11,10 @@ import {
   replayUnavailabilityReason,
 } from './index.js';
 import type { DateTiming } from '../catalog/date-state.js';
-import { DateOutcome, ReplayPolicy } from '../vocabulary/catalog.js';
+import { isDomainError } from '../kernel/errors.js';
+import { DateOutcome, ReplayPolicy, ReplayState } from '../vocabulary/catalog.js';
 import { WatchDenialReason } from '../vocabulary/entitlement.js';
+import { CatalogErrorCode } from '../vocabulary/error-codes.js';
 
 const timing: DateTiming = {
   startsAt: '2026-09-21T19:00:00.000Z',
@@ -80,5 +85,66 @@ describe('the replay asset (D-092, D-113)', () => {
     expect(outcomeWithdrawsReplay(DateOutcome.INTERRUPTED)).toBe(true);
     expect(outcomeWithdrawsReplay(DateOutcome.POSTPONED)).toBe(false);
     expect(outcomeWithdrawsReplay(null)).toBe(false);
+  });
+});
+
+describe("the Replay at the live's end (adr-replay.md §5, §8)", () => {
+  it('creates a Replay for a promised replay with a window, unless an outcome withdrew it', () => {
+    expect(createsReplayOnLiveEnd(ReplayPolicy.NONE, 48, null)).toBe(false);
+    expect(createsReplayOnLiveEnd(ReplayPolicy.INCLUDED, 0, null)).toBe(false);
+    expect(createsReplayOnLiveEnd(ReplayPolicy.INCLUDED, 48, DateOutcome.INTERRUPTED)).toBe(false);
+    expect(createsReplayOnLiveEnd(ReplayPolicy.INCLUDED, 48, DateOutcome.CANCELLED)).toBe(false);
+    expect(createsReplayOnLiveEnd(ReplayPolicy.INCLUDED, 48, DateOutcome.POSTPONED)).toBe(true);
+    expect(createsReplayOnLiveEnd(ReplayPolicy.INCLUDED, 48, null)).toBe(true);
+  });
+
+  it('grants the seat holders their accesses under included alone, unless withdrawn', () => {
+    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, null)).toBe(true);
+    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, DateOutcome.POSTPONED)).toBe(true);
+    for (const policy of [ReplayPolicy.UNIT, ReplayPolicy.SUBSCRIPTION, ReplayPolicy.NONE]) {
+      expect(grantsReplayOnLiveEnd(policy, null)).toBe(false);
+    }
+    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, DateOutcome.INTERRUPTED)).toBe(false);
+    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, DateOutcome.CANCELLED)).toBe(false);
+  });
+});
+
+describe('assertReplayGoesOnline — the guard of ended -> replay_online', () => {
+  function refusalOf(check: () => void): unknown {
+    try {
+      check();
+    } catch (error) {
+      if (isDomainError(error)) return { code: error.code, params: error.params };
+      throw error;
+    }
+    return null;
+  }
+
+  it('refuses a date with no Replay', () => {
+    expect(refusalOf(() => assertReplayGoesOnline(null))).toEqual({
+      code: CatalogErrorCode.REPLAY_UNAVAILABLE,
+      params: { replayState: null },
+    });
+  });
+
+  it('refuses a pending Replay whose file has not arrived', () => {
+    expect(
+      refusalOf(() => assertReplayGoesOnline({ state: ReplayState.PENDING, assetReady: false })),
+    ).toEqual({ code: CatalogErrorCode.REPLAY_ASSET_NOT_READY, params: {} });
+  });
+
+  it('accepts a pending Replay with its file', () => {
+    expect(
+      refusalOf(() => assertReplayGoesOnline({ state: ReplayState.PENDING, assetReady: true })),
+    ).toBeNull();
+  });
+
+  it('refuses a Replay already online, closed or withdrawn, naming its state', () => {
+    for (const state of [ReplayState.ONLINE, ReplayState.CLOSED, ReplayState.WITHDRAWN]) {
+      expect(refusalOf(() => assertReplayGoesOnline({ state, assetReady: true }))).toEqual({
+        code: CatalogErrorCode.REPLAY_UNAVAILABLE,
+        params: { replayState: state },
+      });
+    }
   });
 });

@@ -515,7 +515,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 536 exported names.
+Declarations: `dist/index.d.ts` — 547 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -738,9 +738,12 @@ Declarations: `dist/index.d.ts` — 536 exported names.
 - `REFUND_METHODS` (const) — `REFUND_METHODS: readonly ["original_payment_method", "account_credit"]`
 - `REFUND_REASONS` (const) — `REFUND_REASONS: readonly ["viewer_request", "date_cancelled", "account_deletion", "goodwill", "duplicate", "dispute", "hold_expired_capacity_lost"]` — Why money went back to a viewer: domain facts, not refusals (D-037, D-039), in the order of the proto's 'RefundReason'.
 - `REMINDER_LEAD_MINUTES` (const) — `REMINDER_LEAD_MINUTES = 30` — Reminder before a live show for which I hold a seat.
+- `REPLAY_ACCESS_ORIGINS` (const) — `REPLAY_ACCESS_ORIGINS: readonly ["seat", "unit"]` — Where a 'ReplayAccess' comes from ('adr-replay.md' §1): the seat (mode 'included') or a unit purchase.
+- `REPLAY_ACCESS_REVOCATION_REASONS` (const) — `REPLAY_ACCESS_REVOCATION_REASONS: readonly ["replay_withdrawn", "seat_refunded", "access_refunded"]` — Why a 'ReplayAccess' is revoked ('adr-replay.md' §8): its 'Replay' withdrawn, or the money back.
 - `REPLAY_ASSET_STATES` (const) — `REPLAY_ASSET_STATES: readonly ["recording", "processing", "ready", "deleting", "deleted", "failed"]` — A recorded replay file's life, from the live's recording to its deletion.
 - `REPLAY_EXPIRY_WARNING_HOURS` (const) — `REPLAY_EXPIRY_WARNING_HOURS = 6` — End of a replay's availability.
 - `REPLAY_POLICIES` (const) — `REPLAY_POLICIES: readonly ["included", "subscription", "unit", "none"]` — The promise made before purchase — what justifies the price difference.
+- `REPLAY_STATES` (const) — `REPLAY_STATES: readonly ["pending", "online", "closed", "withdrawn"]` — The 'Replay''s life ('adr-replay.md' §5): its own axis, never the publication's.
 - `RIGHTS_SCOPES` (const) — `RIGHTS_SCOPES: readonly ["worldwide", "restricted"]`
 - `RUN_AUTO_END_MINUTES` (const) — `RUN_AUTO_END_MINUTES = 15` — D-123, completing D-115.
 - `RUN_STATES` (const) — `RUN_STATES: readonly ["idle", "rehearsal", "on_air", "interrupted", "ended"]` — The technical axis, and nothing else.
@@ -752,8 +755,13 @@ Declarations: `dist/index.d.ts` — 536 exported names.
 - `RefundReason` (type+const)
 - `RefundRequest` (interface)
 - `Rendition` (interface) — One image at a size that is actually displayed.
+- `ReplayAccessOrigin` (type+const) — `type ReplayAccessOrigin = (typeof REPLAY_ACCESS_ORIGINS)[number]; ReplayAccessOrigin: { readonly SEAT: "seat"; readonly UNIT: "unit"; }`
+- `ReplayAccessRevocationReason` (type+const)
 - `ReplayAssetState` (type+const)
+- `ReplayDisplayInput` (interface) — What the date's display reads of its 'Replay': its state and its one closing (D-113).
+- `ReplayOnlineCheck` (interface) — What putting a replay online checks of the date's 'Replay'.
 - `ReplayPolicy` (type+const)
+- `ReplayState` (type+const)
 - `Result` (type) — `type Result<T> = Ok<T> | Err;`
 - `RightsScope` (type+const) — `type RightsScope = (typeof RIGHTS_SCOPES)[number]; RightsScope: { readonly WORLDWIDE: "worldwide"; readonly RESTRICTED: "restricted"; }`
 - `RunState` (type+const)
@@ -850,6 +858,7 @@ Declarations: `dist/index.d.ts` — 536 exported names.
 - `assertOutcomeDeclarable` (function) — `function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;` — Refuses a declaration that does not fit the date, naming what it met: a final outcome already declared, a date not public yet (deleted rath…
 - `assertPricesShareCurrency` (function) — `function assertPricesShareCurrency(tiers: readonly TierPrice[]): void;` — A date sells in one currency, its billing market's (D-016).
 - `assertRefundWithinRemaining` (function) — `function assertRefundWithinRemaining(requested: Money, remaining: Money): void;`
+- `assertReplayGoesOnline` (function) — `function assertReplayGoesOnline(replay: ReplayOnlineCheck | null): void;` — Refuses putting a replay online ('ended -> replay_online') unless the date's 'Replay' is 'pending' and its file has arrived.
 - `assertRunTransition` (function) — `function assertRunTransition(from: RunState, to: RunState, technicalCheckPassed: boolean): void;`
 - `assertSeatCancellable` (function) — `function assertSeatCancellable(seat: { readonly state: SeatState; readonly cancelDeadline: Instant | null; }, now: Instant): void;` — A seat with no deadline is cancellable; one at or past its deadline is not.
 - `assertTechnicalProvisionCovers` (function) — `function assertTechnicalProvisionCovers(capacityTotal: number, provisionedCapacity: number | null, startsAt: Instant | null): void;` — Refuses a capacity beyond the threshold that no recorded provision covers.
@@ -878,6 +887,7 @@ Declarations: `dist/index.d.ts` — 536 exported names.
 - `compare` (function) — `function compare(left: Money, right: Money): number;`
 - `concurrentStreamsAllowedFor` (function) — `function concurrentStreamsAllowedFor(planOpenings: readonly PlanOpening[], activeSeatsOnDate: number): number;` — The concurrent-screen ceiling on a date: the active seats held on it, or the plan's ceiling if higher (D-108).
 - `contains` (function) — `function contains(window: Window, instant: Instant): boolean;`
+- `createsReplayOnLiveEnd` (function) — `function createsReplayOnLiveEnd(policy: ReplayPolicy, windowHours: number, outcome: DateOutcome | null): boolean;` — Does the live's end create a 'Replay' ('adr-replay.md' §5): a replay promised, a window, no withdrawing outcome?
 - `creditAmountFor` (function) — `function creditAmountFor(paidAmount: Money): Money;`
 - `creditExpiresAt` (function) — `function creditExpiresAt(issuedAt: Instant): Instant;`
 - `criteriaSignature` (function) — `function criteriaSignature(criteria: SearchCriteria): string;` — The signature that answers "already saved" — canonical, not a hash: hashing would need a platform API, which this package forbids itself, a…
@@ -912,6 +922,7 @@ Declarations: `dist/index.d.ts` — 536 exported names.
 - `fromEpochMs` (function) — `function fromEpochMs(ms: number): Instant;`
 - `generatedPublicHandle` (function) — `function generatedPublicHandle(randomBytes: Uint8Array): string;` — A handle 'PublicHandleSchema' accepts, from the first 'GENERATED_HANDLE_RANDOM_LENGTH' bytes.
 - `genreIdsOf` (function) — `function genreIdsOf(taxonomy: Taxonomy, disciplineId: string): readonly string[];`
+- `grantsReplayOnLiveEnd` (function) — `function grantsReplayOnLiveEnd(policy: ReplayPolicy, outcome: DateOutcome | null): boolean;` — Does the live's end grant the seat holders their accesses ('adr-replay.md' §8): 'included', not withdrawn.
 - `hasLanguageBarrier` (function) — `function hasLanguageBarrier(profile: LanguageProfile): boolean;` — Is there a language barrier?
 - `hasReplayPolicy` (function) — `function hasReplayPolicy(timing: DateTiming): boolean;` — Does the date promise a replay at all, whatever the window?
 - `holdFor` (function) — `function holdFor(quantity: number, intentExpiresAt: Instant): SeatHold;` — Places a hold whose expiry IS the intent's.

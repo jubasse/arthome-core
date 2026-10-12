@@ -238,6 +238,10 @@ export const CATALOG_ERROR_CODES = [
   'date.not_started',
   'date.already_ended',
   'date.reschedule_in_past',
+  // The refusals of putting a replay online (`assertReplayGoesOnline`): no `Replay`, or one past
+  //   `pending`; then a `pending` one whose file has not arrived.
+  'date.replay_unavailable',
+  'date.replay_asset_not_ready',
 ] as const;
 export type CatalogErrorCode = (typeof CATALOG_ERROR_CODES)[number];
 
@@ -262,6 +266,8 @@ export const CatalogErrorCode = {
   DATE_NOT_STARTED: 'date.not_started',
   DATE_ALREADY_ENDED: 'date.already_ended',
   RESCHEDULE_IN_PAST: 'date.reschedule_in_past',
+  REPLAY_UNAVAILABLE: 'date.replay_unavailable',
+  REPLAY_ASSET_NOT_READY: 'date.replay_asset_not_ready',
 } as const;
 
 /**

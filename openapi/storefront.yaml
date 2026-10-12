@@ -10986,6 +10986,8 @@ components:
           - date.not_started
           - date.already_ended
           - date.reschedule_in_past
+          - date.replay_unavailable
+          - date.replay_asset_not_ready
           - channel.has_open_obligations
           - channel.crew_role_reserved
           - channel.role_not_assignable
@@ -11978,8 +11980,10 @@ components:
           - live
           description: |
             The **only** state value the cards display, and nobody recomposes it. Produced by
-            `publicDisplayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`. The
+            `publicDisplayStateOf(publication, run, outcome, instants, now, replay)` in `@arthome/core`. The
             hierarchy, written once: `outcome` outranks `run.state`, which outranks `publication.state`.
+            `replay` is the date's `Replay`, its state and its closing: an ended run shows `replay` while
+            the `Replay` is online and until its closing, `ended` otherwise.
 
             **One vocabulary, eleven members, and the narrowing is said here rather than written as a
             second list.** A storefront never receives `draft`, `reserve` or `technical` — not by
@@ -12086,16 +12090,23 @@ components:
               - type: integer
               - type: 'null'
             availableFrom:
+              description: The instant the date's `Replay` went online. Absent before.
               anyOf:
               - type: string
                 format: date-time
               - type: 'null'
             expiresAt:
-              description: Derived from the end of the live show and `windowHours`. Served as an instant, never as "41 h left".
+              description: |
+                The `Replay`'s closing: the live's **real** end plus `windowHours` (`replayClosesAt`),
+                computed once by `catalog`, never from the scheduled end. Absent until the replay is online.
+                Served as an instant, never as "41 h left".
               anyOf:
               - type: string
                 format: date-time
               - type: 'null'
+            durationSec:
+              description: The recording's length, in seconds. Absent until the replay is online.
+              type: integer
             unitPrice:
               x-arthome-tax-basis: inclusive
               $ref: '#/components/schemas/Money'

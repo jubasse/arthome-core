@@ -322,12 +322,20 @@ a read model into the write contract.
 Replay
   date_id (root, one per date) · channel_id
   state            pending | online | closed | withdrawn
-  modes            the date's access modes, copied when created (locked since publication)
+  modes            the date's access modes, copied when created (locked since publication);
+                   its one replay_policy until D-091's modes land
   live_ended_at    the run's actual end, from streaming.run.ended.v1
   closes_at        replayClosesAt(live_ended_at, replay_window_hours), computed once
+  asset_duration_sec   nullable · the file's length, from streaming.replay.asset_ready.v1
+  asset_ready_at       nullable · when that file arrived: what assertReplayGoesOnline reads
   online_at        nullable
+  closed_at        nullable
+  withdrawn_at     nullable
   version
 ```
+
+Every transition is published as `catalog.replay.state_changed.v1` (`events.md` §4.2); the file's
+arrival counts one more `version` and is not published.
 
 ### 2.3 `Publication` — an entity of the `Date` aggregate (D-085)
 
@@ -739,7 +747,7 @@ one query.
 
 | Model | Held by | Written by its own commands | Fed by (Kafka) |
 |---|---|---|---|
-| `date_card_public` | `catalog` | date, publication, outcome, rights, media, taxonomy | `ticketing.date_sales.availability_changed.v1` (capacity, waiting list, headline price, promotion) · `ticketing.date_sales.pricing_changed.v1` · `streaming.run.state_changed.v1` · `streaming.viewer_count.sampled.v1` (per-minute aggregate) · `streaming.replay.asset_ready.v1` (existence + expiry) · `chat.date_chat_policy.changed.v1` |
+| `date_card_public` | `catalog` | date, publication, outcome, rights, media, taxonomy | `ticketing.date_sales.availability_changed.v1` (capacity, waiting list, headline price, promotion) · `ticketing.date_sales.pricing_changed.v1` · `streaming.run.state_changed.v1` · `streaming.viewer_count.sampled.v1` (per-minute aggregate) · `chat.date_chat_policy.changed.v1`. The replay's state, closing, online instant and length come from `catalog`'s own `Replay`, in the same transaction, never from `streaming.replay.asset_ready.v1` |
 | `date_detail_public` | `catalog` | + synopsis, cast, languages, attributes, venue | + `streaming.chapter.posted.v1` · `ticketing.date_sales.pricing_changed.v1` (the three tiers) |
 | `home_rails` · `live_grid` · `category_page` · `artist_page` | `catalog` | composition and order by `@arthome/core` | derived from `date_card_public` + the index |
 | `search_index` (OpenSearch) | `catalog` (the context) | via **`search-indexer`, a separate deployable** — the index belongs to `catalog`'s language, not to its process (`context-map.md` §1.2) | same, `version_type: external_gte`. **Not `external`**: it demands strictly greater, and the version is `occurred_at` in epoch ms, so two events for one show inside the same millisecond would see the second refused and its content lost |

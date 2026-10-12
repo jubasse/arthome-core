@@ -117,6 +117,9 @@ export interface ErrorParamsMap {
   [CatalogErrorCode.DATE_NOT_STARTED]: { startsAt: string };
   [CatalogErrorCode.DATE_ALREADY_ENDED]: { endsAt: string };
   [CatalogErrorCode.RESCHEDULE_IN_PAST]: { rescheduledTo: string };
+  // `null` when the date has no `Replay` at all.
+  [CatalogErrorCode.REPLAY_UNAVAILABLE]: { replayState: string | null };
+  [CatalogErrorCode.REPLAY_ASSET_NOT_READY]: NoErrorParams;
 
   [ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS]: { datesOnSale: number; payoutsDue: number };
   [ChannelErrorCode.CREW_ROLE_RESERVED]: {

@@ -7,9 +7,11 @@
 
 import { replayEndsAt, type DateTiming } from '../catalog/date-state.js';
 import type { Instant } from '../kernel/clock.js';
+import { DomainError } from '../kernel/errors.js';
 import { minutesBetween, plusHours } from '../time/instant.js';
-import { DateOutcome, ReplayPolicy } from '../vocabulary/catalog.js';
+import { DateOutcome, ReplayPolicy, ReplayState } from '../vocabulary/catalog.js';
 import { WatchDenialReason } from '../vocabulary/entitlement.js';
+import { CatalogErrorCode } from '../vocabulary/error-codes.js';
 
 /**
  * The replay hours remaining — a DECREASING value.
@@ -63,4 +65,43 @@ const WITHDRAWS_REPLAY: Readonly<Record<DateOutcome, boolean>> = {
 /** Does this outcome take the replay away, so its recording is deleted (D-092)? */
 export function outcomeWithdrawsReplay(outcome: DateOutcome | null): boolean {
   return outcome !== null && WITHDRAWS_REPLAY[outcome];
+}
+
+/** Does the live's end create a `Replay` (`adr-replay.md` §5): a replay promised, a window, no withdrawing outcome? */
+export function createsReplayOnLiveEnd(
+  policy: ReplayPolicy,
+  windowHours: number,
+  outcome: DateOutcome | null,
+): boolean {
+  return policy !== ReplayPolicy.NONE && windowHours > 0 && !outcomeWithdrawsReplay(outcome);
+}
+
+/**
+ * Does the live's end grant the seat holders their accesses (`adr-replay.md` §8): `included`, not
+ * withdrawn. One policy stands for D-091's set of modes until they land.
+ */
+export function grantsReplayOnLiveEnd(policy: ReplayPolicy, outcome: DateOutcome | null): boolean {
+  return policy === ReplayPolicy.INCLUDED && !outcomeWithdrawsReplay(outcome);
+}
+
+/** What putting a replay online checks of the date's `Replay`. */
+export interface ReplayOnlineCheck {
+  readonly state: ReplayState;
+  readonly assetReady: boolean;
+}
+
+/**
+ * Refuses putting a replay online (`ended -> replay_online`) unless the date's `Replay` is
+ * `pending` and its file has arrived. `null` is a date with no `Replay`.
+ */
+export function assertReplayGoesOnline(replay: ReplayOnlineCheck | null): void {
+  if (replay?.state !== ReplayState.PENDING) {
+    throw new DomainError({
+      code: CatalogErrorCode.REPLAY_UNAVAILABLE,
+      params: { replayState: replay?.state ?? null },
+    });
+  }
+  if (!replay.assetReady) {
+    throw new DomainError({ code: CatalogErrorCode.REPLAY_ASSET_NOT_READY });
+  }
 }

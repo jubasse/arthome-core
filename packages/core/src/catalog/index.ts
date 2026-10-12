@@ -1,6 +1,11 @@
 /** The catalogue: what is published, its displayed state, its rights, its language. */
 
-export type { DateTiming, DisplayStateInput, DisplayStateResult } from './date-state.js';
+export type {
+  DateTiming,
+  DisplayStateInput,
+  DisplayStateResult,
+  ReplayDisplayInput,
+} from './date-state.js';
 export {
   displayStateOf,
   endsAt,

@@ -42,6 +42,11 @@
       "reason": "A sales-queue entry's own state (not_queued, waiting, admitted, lapsed), local to the queue's endpoints (SalesQueuePosition.state). It shares the word with WAITLIST_ENTRY_STATES without being a waiting-list entry's state: a place in the queue to buy and a registration to hear of new seats are unrelated facts."
     },
     {
+      "file": "packages/contracts/src/studio-api/channels/examples.ts",
+      "value": "online",
+      "reason": "The studio's replay list's own state (online, expired, archived), local to that endpoint (ChannelReplay.state, CHANNEL_REPLAY_STATES), shown by its example. It shares the word with REPLAY_STATES without being a Replay's state: that list has no pending or withdrawn, and its expired and archived are not the Replay's closed."
+    },
+    {
       "file": "packages/contracts/src/studio-access/index.ts",
       "value": "pending",
       "reason": "A channel invitation's own state machine (pending, accepted, declined, expired), local to this endpoint. Shares the word with ORDER_STATES without being an order's state."
