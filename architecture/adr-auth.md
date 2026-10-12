@@ -349,15 +349,17 @@ own rather than the ES256 JWT above.
   no `Domain`), which the BFF sets beside the session cookie (§8.2.4), and never in a public body,
   a header the page can read, a log or local storage. From the BFF to identity it crosses in the
   internal call's body only.
-- **Its lifetime.** Every sign-up or sign-in that presents it rotates it, and it lives the device
+- **Its lifetime.** Every sign-up or sign-in that presents it rotates it (a replayed sign-up re-sets nothing), and it lives the device
   token's lifetime above from its last rotation: the cookie's `Max-Age` and identity's expiry both
   read `DEVICE_TOKEN_LIFETIME_SECONDS` (`@arthome/core`). Accepted: renewing a session (§6.1) is not
   a sign-in, so a viewer who does not sign in again within that lifetime loses the cookie and gets
   a new device at the next sign-in.
 - **What it opens: nothing.** It is not a session. It names the device a new session binds to,
-  which makes the internal token's `did` (§8) the registered device; without a session it grants
+  which makes the internal token's device claim (`did` in `InternalTokenClaimsSchema`, §8's
+  `device_id`) the registered device; without a session it grants
   no request.
-- **Sign-out and revocation.** Sign-out keeps it (§8.2.5 clears the session's cookies only).
+- **Sign-out and revocation.** Sign-out, and signing out the browser's own profile, keep it; §8.2.5 clears the
+  session's cookies, not this one.
   `revokeDevice` ends it, and clears it when the browser revokes its own device. A revoked, expired
   or unknown token presented at a later sign-in registers a new device; the sign-in is never
   refused for it.

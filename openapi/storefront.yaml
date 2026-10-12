@@ -10298,7 +10298,8 @@ components:
         still be able to sign out.
 
         **The browser's device, `__Host-arthome_device`**: `signUp` and `signIn` set it beside the
-        session cookie, with the same attributes; it names the browser as a registered device
+        session cookie, with the same flags (`HttpOnly`, `Secure`, `SameSite=Lax`, path `/`) and a `Max-Age`
+        of `DEVICE_TOKEN_LIFETIME_SECONDS` (`@arthome/core`), renewed at each sign-up or sign-in; it names the browser as a registered device
         (`adr-auth.md` §4/Q3, D-126). `signOut` keeps it, and revoking the browser's own device
         (`revokeDevice`) clears it. It is no session and opens nothing. The page has nothing to read
         or send: the cookie is `HttpOnly`, and the BFF reads it only at sign-up and sign-in.
@@ -10323,7 +10324,7 @@ components:
       in: header
       name: X-Arthome-Device-Token
       description: |
-        ES256 JWT, `aud: "arthome.device"`, 180 days, **rotated on every use**, carrying `device_id`
+        ES256 JWT, `aud: "arthome.device"`, `DEVICE_TOKEN_LIFETIME_SECONDS` (`@arthome/core`), **rotated on every use**, carrying `device_id`
         and nothing else. A native surface obtains it on first launch through `registerDevice`,
         **before any session**. It is not a session: it opens only pairing, pairing polling and the
         public bootstrap, and **opens no personal data** — in particular not the real-time channel
