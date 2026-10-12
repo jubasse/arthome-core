@@ -2782,9 +2782,9 @@ paths:
         `streaming` knows whether the feed is arriving.
 
         **`ended → replay_online` is guarded by the date's `Replay`** (`assertReplayGoesOnline`): refused
-        with `date.replay_unavailable` when the date has none or it is past `pending` (`replayState`
-        names it, `null` for none), and with `date.replay_asset_not_ready` while its file has not
-        arrived.
+        with `date.replay_unavailable` when the date has none, it is past `pending` (`replayState`
+        names it, `null` for none), or it is past its `closesAt` (`replayState` is `closed`), and with
+        `date.replay_asset_not_ready` while its file has not arrived.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - catalog

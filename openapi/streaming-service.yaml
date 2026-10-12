@@ -3238,7 +3238,8 @@ components:
                 expiresAt:
                   description: |
                     The `Replay`'s closing: the live's **real** end plus `windowHours` (`replayClosesAt`),
-                    computed once by `catalog`, never from the scheduled end. Absent until the replay is online.
+                    computed once by `catalog`, never from the scheduled end. Served once the replay is online or
+                    closed, a replay closed without going online included; absent while it is pending or withdrawn.
                     Served as an instant, never as "41 h left".
                   anyOf:
                   - type: string

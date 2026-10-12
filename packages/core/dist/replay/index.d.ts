@@ -30,18 +30,25 @@ export declare function outcomeWithdrawsReplay(outcome: DateOutcome | null): boo
 /** Does the live's end create a `Replay` (`adr-replay.md` §5): a replay promised, a window, no withdrawing outcome? */
 export declare function createsReplayOnLiveEnd(policy: ReplayPolicy, windowHours: number, outcome: DateOutcome | null): boolean;
 /**
- * Does the live's end grant the seat holders their accesses (`adr-replay.md` §8): `included`, not
- * withdrawn. One policy stands for D-091's set of modes until they land.
+ * Does the live's end grant the seat holders their accesses (`adr-replay.md` §8): `included`, and
+ * only where `createsReplayOnLiveEnd` holds, since a `ReplayAccess` exists only for a `Replay` (§5).
+ * One policy stands for D-091's set of modes until they land.
  */
-export declare function grantsReplayOnLiveEnd(policy: ReplayPolicy, outcome: DateOutcome | null): boolean;
+export declare function grantsReplayOnLiveEnd(policy: ReplayPolicy, windowHours: number, outcome: DateOutcome | null): boolean;
 /** What putting a replay online checks of the date's `Replay`. */
 export interface ReplayOnlineCheck {
     readonly state: ReplayState;
     readonly assetReady: boolean;
+    /** `closesAt` and the command's instant: a closing the sweeper has not applied yet still counts. */
+    readonly closing?: {
+        readonly closesAt: Instant;
+        readonly now: Instant;
+    };
 }
 /**
  * Refuses putting a replay online (`ended -> replay_online`) unless the date's `Replay` is
- * `pending` and its file has arrived. `null` is a date with no `Replay`.
+ * `pending`, not past its `closesAt`, and its file has arrived. `null` is a date with no `Replay`.
+ * A `pending` `Replay` past its `closesAt` is refused as `closed`.
  */
 export declare function assertReplayGoesOnline(replay: ReplayOnlineCheck | null): void;
 //# sourceMappingURL=index.d.ts.map

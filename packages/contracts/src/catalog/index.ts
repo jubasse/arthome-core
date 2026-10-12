@@ -497,7 +497,7 @@ export const DateCardSchema: z.ZodObject<
         expiresAt: InstantOut.nullable()
           .optional()
           .describe(
-            'The `Replay`\'s closing: the live\'s **real** end plus `windowHours` (`replayClosesAt`),\ncomputed once by `catalog`, never from the scheduled end. Absent until the replay is online.\nServed as an instant, never as "41 h left".\n',
+            'The `Replay`\'s closing: the live\'s **real** end plus `windowHours` (`replayClosesAt`),\ncomputed once by `catalog`, never from the scheduled end. Served once the replay is online or\nclosed, a replay closed without going online included; absent while it is pending or withdrawn.\nServed as an instant, never as "41 h left".\n',
           ),
         durationSec: int64()
           .meta({ format: undefined })

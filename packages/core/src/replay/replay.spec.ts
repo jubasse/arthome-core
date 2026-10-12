@@ -99,13 +99,17 @@ describe("the Replay at the live's end (adr-replay.md §5, §8)", () => {
   });
 
   it('grants the seat holders their accesses under included alone, unless withdrawn', () => {
-    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, null)).toBe(true);
-    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, DateOutcome.POSTPONED)).toBe(true);
+    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, 48, null)).toBe(true);
+    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, 48, DateOutcome.POSTPONED)).toBe(true);
     for (const policy of [ReplayPolicy.UNIT, ReplayPolicy.SUBSCRIPTION, ReplayPolicy.NONE]) {
-      expect(grantsReplayOnLiveEnd(policy, null)).toBe(false);
+      expect(grantsReplayOnLiveEnd(policy, 48, null)).toBe(false);
     }
-    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, DateOutcome.INTERRUPTED)).toBe(false);
-    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, DateOutcome.CANCELLED)).toBe(false);
+    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, 48, DateOutcome.INTERRUPTED)).toBe(false);
+    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, 48, DateOutcome.CANCELLED)).toBe(false);
+  });
+
+  it('grants nothing where no Replay is created, a zero window included', () => {
+    expect(grantsReplayOnLiveEnd(ReplayPolicy.INCLUDED, 0, null)).toBe(false);
   });
 });
 
@@ -136,6 +140,31 @@ describe('assertReplayGoesOnline — the guard of ended -> replay_online', () =>
   it('accepts a pending Replay with its file', () => {
     expect(
       refusalOf(() => assertReplayGoesOnline({ state: ReplayState.PENDING, assetReady: true })),
+    ).toBeNull();
+  });
+
+  it('refuses a pending Replay past its closesAt as closed, the sweeper not having run', () => {
+    const closesAt = '2026-09-23T21:10:00.000Z';
+    expect(
+      refusalOf(() =>
+        assertReplayGoesOnline({
+          state: ReplayState.PENDING,
+          assetReady: true,
+          closing: { closesAt, now: closesAt },
+        }),
+      ),
+    ).toEqual({
+      code: CatalogErrorCode.REPLAY_UNAVAILABLE,
+      params: { replayState: ReplayState.CLOSED },
+    });
+    expect(
+      refusalOf(() =>
+        assertReplayGoesOnline({
+          state: ReplayState.PENDING,
+          assetReady: true,
+          closing: { closesAt, now: '2026-09-23T21:09:59.999Z' },
+        }),
+      ),
     ).toBeNull();
   });
 

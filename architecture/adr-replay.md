@@ -106,9 +106,10 @@ Access validity  a property of the ReplayAccess
 | `withdrawn` | an outcome declared after the live ended: an interruption, or a cancellation after a short live | `catalog`, with the outcome |
 
 **`online` stays the guarded studio command** (2026-10-12): core's `assertReplayGoesOnline`
-refuses `ended → replay_online` with `date.replay_unavailable` when the date has no `Replay` or it
-is past `pending`, and with `date.replay_asset_not_ready` while its file has not arrived. The
-publication and the `Replay` move in one transaction.
+refuses `ended → replay_online` with `date.replay_unavailable` when the date has no `Replay`, it is
+past `pending`, or it is past its `closesAt` (refused as `closed`, the sweeper not having run yet),
+and with `date.replay_asset_not_ready` while its file has not arrived. The publication and the
+`Replay` move in one transaction.
 
 **When accesses are created (D-092).** `ticketing` creates the `included` accesses when it reads
 `catalog.replay.state_changed.v1` → `pending`: the end of the show, as the product owner set it. They
@@ -185,8 +186,12 @@ function canBuyReplayUnit(input: ReplayAccessInput): ReplayPurchaseVerdict;
 /** Whether a past seat shows its replay. */
 function isReplayShownOnSeat(verdict: ReplayAccessVerdict): boolean;
 
-/** Whether the end of the live creates the seat holders' accesses: `included`, not interrupted. */
-function grantsReplayOnLiveEnd(modes: ReplayModes, outcome: DateOutcome | null): boolean;
+/** Whether the end of the live creates the seat holders' accesses: `included`, a `Replay` created. */
+function grantsReplayOnLiveEnd(
+  modes: ReplayModes,
+  windowHours: number,
+  outcome: DateOutcome | null,
+): boolean;
 ```
 
 ## 9. Events
@@ -252,7 +257,8 @@ In the contracts:
 **Already done, with the replay contracts (2026-10-12):**
 - The vocabularies `REPLAY_STATES`, `REPLAY_ACCESS_ORIGINS` and `REPLAY_ACCESS_REVOCATION_REASONS`.
 - `replay/`: `createsReplayOnLiveEnd(policy, windowHours, outcome)`, `grantsReplayOnLiveEnd(policy,
-  outcome)` (one policy until the modes land, then `ReplayModes`) and `assertReplayGoesOnline`.
+  windowHours, outcome)` (one policy until the modes land, then `ReplayModes`; never true where
+  `createsReplayOnLiveEnd` is false) and `assertReplayGoesOnline`.
 - `DisplayStateInput.replay` (§10's deferral above), and `DateCard.replay.durationSec`; the card's
   `availableFrom` and `expiresAt` are the `Replay`'s online instant and closing.
 - `catalog.replay.state_changed.v1` (§9). `REPLAY_ACCESS_MODES`, `replayWindowOf`,

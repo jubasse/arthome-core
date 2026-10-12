@@ -858,7 +858,7 @@ Declarations: `dist/index.d.ts` — 547 exported names.
 - `assertOutcomeDeclarable` (function) — `function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;` — Refuses a declaration that does not fit the date, naming what it met: a final outcome already declared, a date not public yet (deleted rath…
 - `assertPricesShareCurrency` (function) — `function assertPricesShareCurrency(tiers: readonly TierPrice[]): void;` — A date sells in one currency, its billing market's (D-016).
 - `assertRefundWithinRemaining` (function) — `function assertRefundWithinRemaining(requested: Money, remaining: Money): void;`
-- `assertReplayGoesOnline` (function) — `function assertReplayGoesOnline(replay: ReplayOnlineCheck | null): void;` — Refuses putting a replay online ('ended -> replay_online') unless the date's 'Replay' is 'pending' and its file has arrived.
+- `assertReplayGoesOnline` (function) — `function assertReplayGoesOnline(replay: ReplayOnlineCheck | null): void;` — Refuses putting a replay online ('ended -> replay_online') unless the date's 'Replay' is 'pending', not past its 'closesAt', and its file h…
 - `assertRunTransition` (function) — `function assertRunTransition(from: RunState, to: RunState, technicalCheckPassed: boolean): void;`
 - `assertSeatCancellable` (function) — `function assertSeatCancellable(seat: { readonly state: SeatState; readonly cancelDeadline: Instant | null; }, now: Instant): void;` — A seat with no deadline is cancellable; one at or past its deadline is not.
 - `assertTechnicalProvisionCovers` (function) — `function assertTechnicalProvisionCovers(capacityTotal: number, provisionedCapacity: number | null, startsAt: Instant | null): void;` — Refuses a capacity beyond the threshold that no recorded provision covers.
@@ -922,7 +922,7 @@ Declarations: `dist/index.d.ts` — 547 exported names.
 - `fromEpochMs` (function) — `function fromEpochMs(ms: number): Instant;`
 - `generatedPublicHandle` (function) — `function generatedPublicHandle(randomBytes: Uint8Array): string;` — A handle 'PublicHandleSchema' accepts, from the first 'GENERATED_HANDLE_RANDOM_LENGTH' bytes.
 - `genreIdsOf` (function) — `function genreIdsOf(taxonomy: Taxonomy, disciplineId: string): readonly string[];`
-- `grantsReplayOnLiveEnd` (function) — `function grantsReplayOnLiveEnd(policy: ReplayPolicy, outcome: DateOutcome | null): boolean;` — Does the live's end grant the seat holders their accesses ('adr-replay.md' §8): 'included', not withdrawn.
+- `grantsReplayOnLiveEnd` (function) — `function grantsReplayOnLiveEnd(policy: ReplayPolicy, windowHours: number, outcome: DateOutcome | null): boolean;` — Does the live's end grant the seat holders their accesses ('adr-replay.md' §8): 'included', and only where 'createsReplayOnLiveEnd' holds, …
 - `hasLanguageBarrier` (function) — `function hasLanguageBarrier(profile: LanguageProfile): boolean;` — Is there a language barrier?
 - `hasReplayPolicy` (function) — `function hasReplayPolicy(timing: DateTiming): boolean;` — Does the date promise a replay at all, whatever the window?
 - `holdFor` (function) — `function holdFor(quantity: number, intentExpiresAt: Instant): SeatHold;` — Places a hold whose expiry IS the intent's.

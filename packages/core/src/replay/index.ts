@@ -8,7 +8,7 @@
 import { replayEndsAt, type DateTiming } from '../catalog/date-state.js';
 import type { Instant } from '../kernel/clock.js';
 import { DomainError } from '../kernel/errors.js';
-import { minutesBetween, plusHours } from '../time/instant.js';
+import { isBefore, minutesBetween, plusHours } from '../time/instant.js';
 import { DateOutcome, ReplayPolicy, ReplayState } from '../vocabulary/catalog.js';
 import { WatchDenialReason } from '../vocabulary/entitlement.js';
 import { CatalogErrorCode } from '../vocabulary/error-codes.js';
@@ -77,28 +77,42 @@ export function createsReplayOnLiveEnd(
 }
 
 /**
- * Does the live's end grant the seat holders their accesses (`adr-replay.md` §8): `included`, not
- * withdrawn. One policy stands for D-091's set of modes until they land.
+ * Does the live's end grant the seat holders their accesses (`adr-replay.md` §8): `included`, and
+ * only where `createsReplayOnLiveEnd` holds, since a `ReplayAccess` exists only for a `Replay` (§5).
+ * One policy stands for D-091's set of modes until they land.
  */
-export function grantsReplayOnLiveEnd(policy: ReplayPolicy, outcome: DateOutcome | null): boolean {
-  return policy === ReplayPolicy.INCLUDED && !outcomeWithdrawsReplay(outcome);
+export function grantsReplayOnLiveEnd(
+  policy: ReplayPolicy,
+  windowHours: number,
+  outcome: DateOutcome | null,
+): boolean {
+  return policy === ReplayPolicy.INCLUDED && createsReplayOnLiveEnd(policy, windowHours, outcome);
 }
 
 /** What putting a replay online checks of the date's `Replay`. */
 export interface ReplayOnlineCheck {
   readonly state: ReplayState;
   readonly assetReady: boolean;
+  /** `closesAt` and the command's instant: a closing the sweeper has not applied yet still counts. */
+  readonly closing?: { readonly closesAt: Instant; readonly now: Instant };
 }
 
 /**
  * Refuses putting a replay online (`ended -> replay_online`) unless the date's `Replay` is
- * `pending` and its file has arrived. `null` is a date with no `Replay`.
+ * `pending`, not past its `closesAt`, and its file has arrived. `null` is a date with no `Replay`.
+ * A `pending` `Replay` past its `closesAt` is refused as `closed`.
  */
 export function assertReplayGoesOnline(replay: ReplayOnlineCheck | null): void {
   if (replay?.state !== ReplayState.PENDING) {
     throw new DomainError({
       code: CatalogErrorCode.REPLAY_UNAVAILABLE,
       params: { replayState: replay?.state ?? null },
+    });
+  }
+  if (replay.closing && !isBefore(replay.closing.now, replay.closing.closesAt)) {
+    throw new DomainError({
+      code: CatalogErrorCode.REPLAY_UNAVAILABLE,
+      params: { replayState: ReplayState.CLOSED },
     });
   }
   if (!replay.assetReady) {
