@@ -163,6 +163,9 @@ paths:
 
         It **is not a session** and opens no personal data; in particular it does not open the
         real-time channel.
+
+        `storefront-web` does not call it: the BFF registers the browser at sign-up and
+        sign-in (see `sessionCookie`).
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
@@ -10293,6 +10296,13 @@ components:
         the session cookie: sign-up and sign-in are what set it. `signOut` needs none either: a
         forged one ends a session and grants nothing, and a browser that lost its CSRF cookie must
         still be able to sign out.
+
+        **The browser's device, `__Host-arthome_device`**: `signUp` and `signIn` set it beside the
+        session cookie, with the same flags (`HttpOnly`, `Secure`, `SameSite=Lax`, path `/`) and a `Max-Age`
+        of `DEVICE_TOKEN_LIFETIME_SECONDS` (`@arthome/core`), renewed at each sign-up or sign-in; it names the browser as a registered device
+        (`adr-auth.md` §4/Q3, D-126). `signOut` keeps it, and revoking the browser's own device
+        (`revokeDevice`) clears it. It is no session and opens nothing. The page has nothing to read
+        or send: the cookie is `HttpOnly`, and the BFF reads it only at sign-up and sign-in.
     csrfToken:
       type: apiKey
       in: header
@@ -10314,11 +10324,14 @@ components:
       in: header
       name: X-Arthome-Device-Token
       description: |
-        ES256 JWT, `aud: "arthome.device"`, 180 days, **rotated on every use**, carrying `device_id`
-        and nothing else. Obtained on first launch through `registerDevice`, **before any session**.
-        It is not a session: it opens only pairing, pairing polling and the public bootstrap, and
-        **opens no personal data** — in particular not the real-time channel (`adr-auth.md` §4/Q3,
-        §5.3).
+        ES256 JWT, `aud: "arthome.device"`, `DEVICE_TOKEN_LIFETIME_SECONDS` (`@arthome/core`), **rotated on every use**, carrying `device_id`
+        and nothing else. A native surface obtains it on first launch through `registerDevice`,
+        **before any session**. It is not a session: it opens only pairing, pairing polling and the
+        public bootstrap, and **opens no personal data** — in particular not the real-time channel
+        (`adr-auth.md` §4/Q3, §5.3).
+
+        A browser carries none: its device is the `__Host-arthome_device` cookie (see
+        `sessionCookie`).
   parameters:
     Traceparent:
       name: traceparent
@@ -10973,6 +10986,8 @@ components:
           - date.not_started
           - date.already_ended
           - date.reschedule_in_past
+          - date.replay_unavailable
+          - date.replay_asset_not_ready
           - channel.has_open_obligations
           - channel.crew_role_reserved
           - channel.role_not_assignable
@@ -11965,8 +11980,10 @@ components:
           - live
           description: |
             The **only** state value the cards display, and nobody recomposes it. Produced by
-            `publicDisplayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`. The
+            `publicDisplayStateOf(publication, run, outcome, instants, now, replay)` in `@arthome/core`. The
             hierarchy, written once: `outcome` outranks `run.state`, which outranks `publication.state`.
+            `replay` is the date's `Replay`, its state and its closing: an ended run shows `replay` while
+            the `Replay` is online and until its closing, `ended` otherwise.
 
             **One vocabulary, eleven members, and the narrowing is said here rather than written as a
             second list.** A storefront never receives `draft`, `reserve` or `technical` — not by
@@ -12073,16 +12090,24 @@ components:
               - type: integer
               - type: 'null'
             availableFrom:
+              description: The instant the date's `Replay` went online. Absent before.
               anyOf:
               - type: string
                 format: date-time
               - type: 'null'
             expiresAt:
-              description: Derived from the end of the live show and `windowHours`. Served as an instant, never as "41 h left".
+              description: |
+                The `Replay`'s closing: the live's **real** end plus `windowHours` (`replayClosesAt`),
+                computed once by `catalog`, never from the scheduled end. Served once the replay is online or
+                closed, a replay closed without going online included; absent while it is pending or withdrawn.
+                Served as an instant, never as "41 h left".
               anyOf:
               - type: string
                 format: date-time
               - type: 'null'
+            durationSec:
+              description: The recording's length, in seconds. Absent until the replay is online.
+              type: integer
             unitPrice:
               x-arthome-tax-basis: inclusive
               $ref: '#/components/schemas/Money'
@@ -16731,9 +16756,7 @@ components:
                 activeSessions:
                   type: array
                   items:
-                    type: object
-                    properties: {}
-                    additionalProperties: {}
+                    $ref: '#/components/schemas/ActivePlaybackSession'
               required:
               - allowed
               - activeSessions

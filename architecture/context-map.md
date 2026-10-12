@@ -480,7 +480,7 @@ the other three.
 
 | Read model | Held by | Fed by |
 |---|---|---|
-| `date_card_public` | `catalog` | its own writes + `ticketing.date_sales.availability_changed.v1`, `ticketing.date_sales.pricing_changed.v1`, `streaming.run.state_changed.v1`, `streaming.viewer_count.sampled.v1`, `streaming.replay.asset_ready.v1`, `chat.date_chat_policy.changed.v1` |
+| `date_card_public` | `catalog` | its own writes (the replay's facts from its own `Replay`, never from `streaming.replay.asset_ready.v1`) + `ticketing.date_sales.availability_changed.v1`, `ticketing.date_sales.pricing_changed.v1`, `streaming.run.state_changed.v1`, `streaming.viewer_count.sampled.v1`, `chat.date_chat_policy.changed.v1` |
 | `date_detail_public` | `catalog` | same + cast, chapters (`streaming.chapter.posted.v1`) |
 | `home_rails`, `live_grid`, `category_page`, `artist_page` | `catalog` | composed from `date_card_public` + the index |
 | `search_index` (OpenSearch) | `catalog` | same, via `catalog-indexer` |

@@ -8,6 +8,7 @@ import { MoneyOut } from './money.js';
 import { IanaTimeZoneSchema, InstantIn, LocaleIn, LocaleOut, int64 } from './primitives.js';
 import { vocabularyIn, vocabularyOut, vocabularyOutNullable } from './vocabulary.js';
 import { DATE_OUTCOMES } from '../vocabulary/catalog.js';
+import { WatchDenialReason } from '../vocabulary/entitlement.js';
 import { ApiErrorCode, SchemaIssueRule } from '../vocabulary/error-codes.js';
 
 /**
@@ -194,5 +195,31 @@ describe('int64', () => {
     const emitted = z.toJSONSchema(InstantIn, { io: 'output' });
     expect(emitted).toMatchObject({ format: 'date-time' });
     expect(emitted).toHaveProperty('pattern');
+  });
+});
+
+describe('the concurrent-limit refusal params', () => {
+  it('keeps every field of an active session a relay reads', () => {
+    const session = {
+      sessionId: '019928f7-0000-7000-8000-0000000000aa',
+      deviceId: '019928f4-1b6c-7c3a-9f2e-6a1d0c4b8e77',
+      deviceLabel: 'Téléviseur du salon',
+      city: 'Paris',
+      openedAt: '2026-09-21T19:00:00Z',
+      isCurrentDevice: false,
+    };
+    const parsed = ERROR_PARAMS[WatchDenialReason.CONCURRENT_LIMIT_REACHED].parse({
+      allowed: 2,
+      activeSessions: [session],
+    });
+    expect(parsed.activeSessions).toEqual([session]);
+  });
+
+  it('refuses an active session that lacks its identifier', () => {
+    const read = ERROR_PARAMS[WatchDenialReason.CONCURRENT_LIMIT_REACHED].safeParse({
+      allowed: 2,
+      activeSessions: [{}],
+    });
+    expect(read.success).toBe(false);
   });
 });

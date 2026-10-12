@@ -2248,6 +2248,8 @@ components:
           - date.not_started
           - date.already_ended
           - date.reschedule_in_past
+          - date.replay_unavailable
+          - date.replay_asset_not_ready
           - channel.has_open_obligations
           - channel.crew_role_reserved
           - channel.role_not_assignable
@@ -3043,8 +3045,10 @@ components:
               - live
               description: |
                 The **only** state value the cards display, and nobody recomposes it. Produced by
-                `publicDisplayStateOf(publication, run, outcome, instants, now)` in `@arthome/core`. The
+                `publicDisplayStateOf(publication, run, outcome, instants, now, replay)` in `@arthome/core`. The
                 hierarchy, written once: `outcome` outranks `run.state`, which outranks `publication.state`.
+                `replay` is the date's `Replay`, its state and its closing: an ended run shows `replay` while
+                the `Replay` is online and until its closing, `ended` otherwise.
 
                 **One vocabulary, eleven members, and the narrowing is said here rather than written as a
                 second list.** A storefront never receives `draft`, `reserve` or `technical` — not by
@@ -3226,16 +3230,24 @@ components:
                   - type: integer
                   - type: 'null'
                 availableFrom:
+                  description: The instant the date's `Replay` went online. Absent before.
                   anyOf:
                   - type: string
                     format: date-time
                   - type: 'null'
                 expiresAt:
-                  description: Derived from the end of the live show and `windowHours`. Served as an instant, never as "41 h left".
+                  description: |
+                    The `Replay`'s closing: the live's **real** end plus `windowHours` (`replayClosesAt`),
+                    computed once by `catalog`, never from the scheduled end. Served once the replay is online or
+                    closed, a replay closed without going online included; absent while it is pending or withdrawn.
+                    Served as an instant, never as "41 h left".
                   anyOf:
                   - type: string
                     format: date-time
                   - type: 'null'
+                durationSec:
+                  description: The recording's length, in seconds. Absent until the replay is online.
+                  type: integer
                 unitPrice:
                   type: object
                   properties:
@@ -4318,8 +4330,38 @@ components:
                   type: array
                   items:
                     type: object
-                    properties: {}
+                    properties:
+                      sessionId:
+                        type: string
+                        format: uuid
+                      deviceId:
+                        description: |
+                          **Served, because without it the list is not actionable.** The surface must be able to
+                          recognise **its own** session in order to offer "resume here" rather than "release another
+                          screen", and a device label is not enough: two phones of the same model carry the same one.
+                        type: string
+                        format: uuid
+                      isCurrentDevice:
+                        type: boolean
+                      deviceLabel:
+                        type: string
+                        examples:
+                        - Téléviseur du salon
+                      city:
+                        type:
+                        - string
+                        - 'null'
+                      openedAt:
+                        type: string
+                        format: date-time
+                    required:
+                    - sessionId
+                    - deviceLabel
+                    - openedAt
                     additionalProperties: {}
+                    description: |
+                      Served **with** the `watch.concurrent_limit_reached` refusal, so the surface can offer to release
+                      one. A bare refusal would leave the viewer with no way out.
               required:
               - allowed
               - activeSessions

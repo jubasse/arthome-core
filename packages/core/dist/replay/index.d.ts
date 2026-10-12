@@ -6,7 +6,7 @@
  */
 import { type DateTiming } from '../catalog/date-state.js';
 import type { Instant } from '../kernel/clock.js';
-import { DateOutcome } from '../vocabulary/catalog.js';
+import { DateOutcome, ReplayPolicy, ReplayState } from '../vocabulary/catalog.js';
 import { WatchDenialReason } from '../vocabulary/entitlement.js';
 /**
  * The replay hours remaining — a DECREASING value.
@@ -27,4 +27,28 @@ export declare function replayUnavailabilityReason(timing: DateTiming, now: Inst
 export declare function replayClosesAt(liveEndedAt: Instant, windowHours: number): Instant;
 /** Does this outcome take the replay away, so its recording is deleted (D-092)? */
 export declare function outcomeWithdrawsReplay(outcome: DateOutcome | null): boolean;
+/** Does the live's end create a `Replay` (`adr-replay.md` §5): a replay promised, a window, no withdrawing outcome? */
+export declare function createsReplayOnLiveEnd(policy: ReplayPolicy, windowHours: number, outcome: DateOutcome | null): boolean;
+/**
+ * Does the live's end grant the seat holders their accesses (`adr-replay.md` §8): `included`, and
+ * only where `createsReplayOnLiveEnd` holds, since a `ReplayAccess` exists only for a `Replay` (§5).
+ * One policy stands for D-091's set of modes until they land.
+ */
+export declare function grantsReplayOnLiveEnd(policy: ReplayPolicy, windowHours: number, outcome: DateOutcome | null): boolean;
+/** What putting a replay online checks of the date's `Replay`. */
+export interface ReplayOnlineCheck {
+    readonly state: ReplayState;
+    readonly assetReady: boolean;
+    /** `closesAt` and the command's instant: a closing the sweeper has not applied yet still counts. */
+    readonly closing?: {
+        readonly closesAt: Instant;
+        readonly now: Instant;
+    };
+}
+/**
+ * Refuses putting a replay online (`ended -> replay_online`) unless the date's `Replay` is
+ * `pending`, not past its `closesAt`, and its file has arrived. `null` is a date with no `Replay`.
+ * A `pending` `Replay` past its `closesAt` is refused as `closed`.
+ */
+export declare function assertReplayGoesOnline(replay: ReplayOnlineCheck | null): void;
 //# sourceMappingURL=index.d.ts.map

@@ -8,6 +8,7 @@ import {
   playbackLeaseExpiresAt,
   playbackTokenExpiresAt,
   previewRenewAfterSeconds,
+  previewMsSpent,
   previewSecondsSpent,
   previewTokenExpiresAt,
 } from './index.js';
@@ -69,5 +70,18 @@ describe('the preview budget (D-110)', () => {
     ];
     expect(previewSecondsSpent(watched, onAir)).toBe(70);
     expect(previewSecondsSpent(watched, [])).toBe(0);
+  });
+
+  it('the millisecond budget keeps sub-second remainders and sums disjoint intervals', () => {
+    const watched = windowOf('2026-09-21T19:30:00.000Z', '2026-09-21T19:32:00.000Z');
+    const onAir = [
+      windowOf('2026-09-21T19:00:00.000Z', '2026-09-21T19:30:40.500Z'),
+      windowOf('2026-09-21T19:31:30.000Z', '2026-09-21T21:00:00.000Z'),
+    ];
+    expect(previewMsSpent(watched, onAir)).toBe(70_500);
+    expect(previewSecondsSpent(watched, onAir)).toBe(70);
+    expect(previewMsSpent(watched, [])).toBe(0);
+    const apart = [windowOf('2026-09-21T18:00:00.000Z', '2026-09-21T18:10:00.000Z')];
+    expect(previewMsSpent(watched, apart)).toBe(0);
   });
 });

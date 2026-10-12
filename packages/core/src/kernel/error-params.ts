@@ -43,6 +43,16 @@ export interface SchemaIssue {
   readonly values?: readonly (string | number | boolean | null)[];
 }
 
+/** One session a viewer holds, as the concurrent-limit refusal lists it. */
+export interface ActivePlaybackSessionParams {
+  sessionId: string;
+  deviceId?: string | undefined;
+  isCurrentDevice?: boolean | undefined;
+  deviceLabel: string;
+  city?: string | null | undefined;
+  openedAt: string;
+}
+
 export interface ErrorParamsMap {
   [ApiErrorCode.UNAUTHENTICATED]: NoErrorParams;
   [ApiErrorCode.TOKEN_EXPIRED]: NoErrorParams;
@@ -117,6 +127,9 @@ export interface ErrorParamsMap {
   [CatalogErrorCode.DATE_NOT_STARTED]: { startsAt: string };
   [CatalogErrorCode.DATE_ALREADY_ENDED]: { endsAt: string };
   [CatalogErrorCode.RESCHEDULE_IN_PAST]: { rescheduledTo: string };
+  // `null` when the date has no `Replay` at all.
+  [CatalogErrorCode.REPLAY_UNAVAILABLE]: { replayState: string | null };
+  [CatalogErrorCode.REPLAY_ASSET_NOT_READY]: NoErrorParams;
 
   [ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS]: { datesOnSale: number; payoutsDue: number };
   [ChannelErrorCode.CREW_ROLE_RESERVED]: {
@@ -198,7 +211,10 @@ export interface ErrorParamsMap {
   [WatchDenialReason.REPLAY_EXPIRED]: NoErrorParams;
   [WatchDenialReason.REPLAY_NOT_ON_SALE]: NoErrorParams;
   [WatchDenialReason.PREVIEW_EXHAUSTED]: NoErrorParams;
-  [WatchDenialReason.CONCURRENT_LIMIT_REACHED]: { allowed: number; activeSessions: unknown[] };
+  [WatchDenialReason.CONCURRENT_LIMIT_REACHED]: {
+    allowed: number;
+    activeSessions: ActivePlaybackSessionParams[];
+  };
   [WatchDenialReason.DATE_CANCELLED]: NoErrorParams;
   [WatchDenialReason.NOT_PUBLISHED]: NoErrorParams;
   [WatchDenialReason.SEAT_EXPIRED]: NoErrorParams;

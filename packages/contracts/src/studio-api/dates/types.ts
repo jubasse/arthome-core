@@ -151,6 +151,8 @@ export type MoveDatePublicationStateRoute = Route<{
     409: readonly (
       | typeof ApiErrorCode.IDEMPOTENCY_IN_FLIGHT
       | typeof ApiErrorCode.IDEMPOTENCY_KEY_REUSED
+      | typeof CatalogErrorCode.REPLAY_ASSET_NOT_READY
+      | typeof CatalogErrorCode.REPLAY_UNAVAILABLE
       | typeof DomainErrorCode.PUBLICATION_CHECKLIST_INCOMPLETE
       | typeof DomainErrorCode.PUBLICATION_PROMISE_UNACKNOWLEDGED
       | typeof DomainErrorCode.PUBLICATION_TRANSITION_IRREVERSIBLE

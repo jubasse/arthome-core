@@ -7,7 +7,7 @@
  * one bound: a postponement outranks them only until the room opens at the date's new time.
  */
 import type { Instant } from '../kernel/clock.js';
-import { DateOutcome, DisplayState, PublicationState, ReplayPolicy, RunState } from '../vocabulary/catalog.js';
+import { DateOutcome, DisplayState, PublicationState, ReplayPolicy, ReplayState, RunState } from '../vocabulary/catalog.js';
 /** The BOUNDS of a date — what the contract serves alongside the state. */
 export interface DateTiming {
     readonly startsAt: Instant;
@@ -17,12 +17,22 @@ export interface DateTiming {
     readonly replayPolicy: ReplayPolicy;
     readonly replayWindowHours: number;
 }
+/** What the date's display reads of its `Replay`: its state and its one closing (D-113). */
+export interface ReplayDisplayInput {
+    readonly state: ReplayState;
+    readonly closesAt: Instant;
+}
 export interface DisplayStateInput {
     readonly publicationState: PublicationState;
     readonly runState: RunState | null;
     readonly outcome: DateOutcome | null;
     readonly timing: DateTiming;
     readonly now: Instant;
+    /**
+     * The date's `Replay`, once one exists. Read only after the run ended: absent, an ended run
+     * shows `ended` as it always did.
+     */
+    readonly replay?: ReplayDisplayInput | null;
 }
 export interface DisplayStateResult {
     readonly state: DisplayState;

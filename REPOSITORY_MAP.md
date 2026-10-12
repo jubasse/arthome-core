@@ -5,8 +5,8 @@
 
 ## Generated against
 
-- `@arthome/contracts` 0.3.0 — read from workspace packages/contracts
-- `@arthome/core` 0.3.0 — read from workspace packages/core
+- `@arthome/contracts` 0.4.0 — read from workspace packages/contracts
+- `@arthome/core` 0.4.0 — read from workspace packages/core
 
 This map is true for exactly these versions.
 
@@ -515,7 +515,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 535 exported names.
+Declarations: `dist/index.d.ts` — 550 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -568,6 +568,7 @@ Declarations: `dist/index.d.ts` — 535 exported names.
 - `DAY_MS` (const) — `DAY_MS = 86400000`
 - `DEFAULT_CHANNELS` (const) — `DEFAULT_CHANNELS: readonly NotificationChannel[]` — The channels every trigger offers by default — the third is in-app, not sms (D-017).
 - `DEVICE_KINDS` (const) — `DEVICE_KINDS: readonly ["tv", "mobile", "tablet", "desktop", "stick", "console", "box"]` — A device is registered; a session is the (device, profile) pair.
+- `DEVICE_TOKEN_LIFETIME_SECONDS` (const) — `DEVICE_TOKEN_LIFETIME_SECONDS: number` — 'adr-auth.md' §4/Q3: a device token lives 180 days from its last rotation, the browser's cookie too (D-126).
 - `DISPLAY_STATES` (const) — `DISPLAY_STATES: readonly ["draft", "reserve", "scheduled", "technical", "room_open", "live", "replay", "ended", "postponed", "cancelled", "interrupted"]` — The fourth value, derived: what the badge says.
 - `DOMAIN_ERROR_CODES` (const) — The domain's refusals that reach a surface: a rule said no and somebody has to be told why.
 - `DOMAIN_GUARD_CODES` (const) — The domain's internal guards, which no contract publishes and none should.
@@ -614,6 +615,8 @@ Declarations: `dist/index.d.ts` — 535 exported names.
 - `HOLD_MINUTES_CHECKOUT` (const) — `HOLD_MINUTES_CHECKOUT = 15` — THE CAPACITY HOLD, and its SINGLE-INSTANT invariant.
 - `HOLD_MINUTES_TV_PAIRING` (const) — `HOLD_MINUTES_TV_PAIRING = 5`
 - `HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT` (const) — `HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT = 15` — The channel's default delay before a lost feed raises the hold screen by itself ('realtime.md' §4, 'data-model.md' §5.6).
+- `HOLD_SCREEN_AUTO_AFTER_SECONDS_MAX` (const) — `HOLD_SCREEN_AUTO_AFTER_SECONDS_MAX = 120` — The longest delay a channel may set before a lost feed raises the hold screen by itself.
+- `HOLD_SCREEN_AUTO_AFTER_SECONDS_MIN` (const) — `HOLD_SCREEN_AUTO_AFTER_SECONDS_MIN = 5` — The shortest delay a channel may set before a lost feed raises the hold screen by itself.
 - `HOUR_MS` (const) — `HOUR_MS = 3600000`
 - `IDENTITY_ERROR_CODES` (const) — Sign-in, sign-up and session refusals.
 - `INCIDENT_CAUSES` (const) — `INCIDENT_CAUSES: readonly ["venue_feed_lost", "run_desk_disconnected", "bitrate_collapsed", "compatibility_worker_failed", "provider_error", "manual"]` — The cause, a vocabulary distinct from the outcome.
@@ -737,9 +740,12 @@ Declarations: `dist/index.d.ts` — 535 exported names.
 - `REFUND_METHODS` (const) — `REFUND_METHODS: readonly ["original_payment_method", "account_credit"]`
 - `REFUND_REASONS` (const) — `REFUND_REASONS: readonly ["viewer_request", "date_cancelled", "account_deletion", "goodwill", "duplicate", "dispute", "hold_expired_capacity_lost"]` — Why money went back to a viewer: domain facts, not refusals (D-037, D-039), in the order of the proto's 'RefundReason'.
 - `REMINDER_LEAD_MINUTES` (const) — `REMINDER_LEAD_MINUTES = 30` — Reminder before a live show for which I hold a seat.
+- `REPLAY_ACCESS_ORIGINS` (const) — `REPLAY_ACCESS_ORIGINS: readonly ["seat", "unit"]` — Where a 'ReplayAccess' comes from ('adr-replay.md' §1): the seat (mode 'included') or a unit purchase.
+- `REPLAY_ACCESS_REVOCATION_REASONS` (const) — `REPLAY_ACCESS_REVOCATION_REASONS: readonly ["replay_withdrawn", "seat_refunded", "access_refunded"]` — Why a 'ReplayAccess' is revoked ('adr-replay.md' §8): its 'Replay' withdrawn, or the money back.
 - `REPLAY_ASSET_STATES` (const) — `REPLAY_ASSET_STATES: readonly ["recording", "processing", "ready", "deleting", "deleted", "failed"]` — A recorded replay file's life, from the live's recording to its deletion.
 - `REPLAY_EXPIRY_WARNING_HOURS` (const) — `REPLAY_EXPIRY_WARNING_HOURS = 6` — End of a replay's availability.
 - `REPLAY_POLICIES` (const) — `REPLAY_POLICIES: readonly ["included", "subscription", "unit", "none"]` — The promise made before purchase — what justifies the price difference.
+- `REPLAY_STATES` (const) — `REPLAY_STATES: readonly ["pending", "online", "closed", "withdrawn"]` — The 'Replay''s life ('adr-replay.md' §5): its own axis, never the publication's.
 - `RIGHTS_SCOPES` (const) — `RIGHTS_SCOPES: readonly ["worldwide", "restricted"]`
 - `RUN_AUTO_END_MINUTES` (const) — `RUN_AUTO_END_MINUTES = 15` — D-123, completing D-115.
 - `RUN_STATES` (const) — `RUN_STATES: readonly ["idle", "rehearsal", "on_air", "interrupted", "ended"]` — The technical axis, and nothing else.
@@ -751,8 +757,13 @@ Declarations: `dist/index.d.ts` — 535 exported names.
 - `RefundReason` (type+const)
 - `RefundRequest` (interface)
 - `Rendition` (interface) — One image at a size that is actually displayed.
+- `ReplayAccessOrigin` (type+const) — `type ReplayAccessOrigin = (typeof REPLAY_ACCESS_ORIGINS)[number]; ReplayAccessOrigin: { readonly SEAT: "seat"; readonly UNIT: "unit"; }`
+- `ReplayAccessRevocationReason` (type+const)
 - `ReplayAssetState` (type+const)
+- `ReplayDisplayInput` (interface) — What the date's display reads of its 'Replay': its state and its one closing (D-113).
+- `ReplayOnlineCheck` (interface) — What putting a replay online checks of the date's 'Replay'.
 - `ReplayPolicy` (type+const)
+- `ReplayState` (type+const)
 - `Result` (type) — `type Result<T> = Ok<T> | Err;`
 - `RightsScope` (type+const) — `type RightsScope = (typeof RIGHTS_SCOPES)[number]; RightsScope: { readonly WORLDWIDE: "worldwide"; readonly RESTRICTED: "restricted"; }`
 - `RunState` (type+const)
@@ -849,6 +860,7 @@ Declarations: `dist/index.d.ts` — 535 exported names.
 - `assertOutcomeDeclarable` (function) — `function assertOutcomeDeclarable(date: DateBeforeOutcome, declaration: OutcomeDeclaration, now: Instant): void;` — Refuses a declaration that does not fit the date, naming what it met: a final outcome already declared, a date not public yet (deleted rath…
 - `assertPricesShareCurrency` (function) — `function assertPricesShareCurrency(tiers: readonly TierPrice[]): void;` — A date sells in one currency, its billing market's (D-016).
 - `assertRefundWithinRemaining` (function) — `function assertRefundWithinRemaining(requested: Money, remaining: Money): void;`
+- `assertReplayGoesOnline` (function) — `function assertReplayGoesOnline(replay: ReplayOnlineCheck | null): void;` — Refuses putting a replay online ('ended -> replay_online') unless the date's 'Replay' is 'pending', not past its 'closesAt', and its file h…
 - `assertRunTransition` (function) — `function assertRunTransition(from: RunState, to: RunState, technicalCheckPassed: boolean): void;`
 - `assertSeatCancellable` (function) — `function assertSeatCancellable(seat: { readonly state: SeatState; readonly cancelDeadline: Instant | null; }, now: Instant): void;` — A seat with no deadline is cancellable; one at or past its deadline is not.
 - `assertTechnicalProvisionCovers` (function) — `function assertTechnicalProvisionCovers(capacityTotal: number, provisionedCapacity: number | null, startsAt: Instant | null): void;` — Refuses a capacity beyond the threshold that no recorded provision covers.
@@ -877,6 +889,7 @@ Declarations: `dist/index.d.ts` — 535 exported names.
 - `compare` (function) — `function compare(left: Money, right: Money): number;`
 - `concurrentStreamsAllowedFor` (function) — `function concurrentStreamsAllowedFor(planOpenings: readonly PlanOpening[], activeSeatsOnDate: number): number;` — The concurrent-screen ceiling on a date: the active seats held on it, or the plan's ceiling if higher (D-108).
 - `contains` (function) — `function contains(window: Window, instant: Instant): boolean;`
+- `createsReplayOnLiveEnd` (function) — `function createsReplayOnLiveEnd(policy: ReplayPolicy, windowHours: number, outcome: DateOutcome | null): boolean;` — Does the live's end create a 'Replay' ('adr-replay.md' §5): a replay promised, a window, no withdrawing outcome?
 - `creditAmountFor` (function) — `function creditAmountFor(paidAmount: Money): Money;`
 - `creditExpiresAt` (function) — `function creditExpiresAt(issuedAt: Instant): Instant;`
 - `criteriaSignature` (function) — `function criteriaSignature(criteria: SearchCriteria): string;` — The signature that answers "already saved" — canonical, not a hash: hashing would need a platform API, which this package forbids itself, a…
@@ -911,6 +924,7 @@ Declarations: `dist/index.d.ts` — 535 exported names.
 - `fromEpochMs` (function) — `function fromEpochMs(ms: number): Instant;`
 - `generatedPublicHandle` (function) — `function generatedPublicHandle(randomBytes: Uint8Array): string;` — A handle 'PublicHandleSchema' accepts, from the first 'GENERATED_HANDLE_RANDOM_LENGTH' bytes.
 - `genreIdsOf` (function) — `function genreIdsOf(taxonomy: Taxonomy, disciplineId: string): readonly string[];`
+- `grantsReplayOnLiveEnd` (function) — `function grantsReplayOnLiveEnd(policy: ReplayPolicy, windowHours: number, outcome: DateOutcome | null): boolean;` — Does the live's end grant the seat holders their accesses ('adr-replay.md' §8): 'included', and only where 'createsReplayOnLiveEnd' holds, …
 - `hasLanguageBarrier` (function) — `function hasLanguageBarrier(profile: LanguageProfile): boolean;` — Is there a language barrier?
 - `hasReplayPolicy` (function) — `function hasReplayPolicy(timing: DateTiming): boolean;` — Does the date promise a replay at all, whatever the window?
 - `holdFor` (function) — `function holdFor(quantity: number, intentExpiresAt: Instant): SeatHold;` — Places a hold whose expiry IS the intent's.
@@ -987,9 +1001,10 @@ Declarations: `dist/index.d.ts` — 535 exported names.
 - `plusMinutes` (function) — `function plusMinutes(instant: Instant, minutes: number): Instant;`
 - `plusMonths` (function) — `function plusMonths(instant: Instant, months: number): Instant;` — Calendar months in UTC, the time of day kept.
 - `plusSeconds` (function) — `function plusSeconds(instant: Instant, seconds: number): Instant;`
+- `previewMsSpent` (function) — `function previewMsSpent(watched: Window, onAirIntervals: readonly Window[]): number;` — The milliseconds of 'watched' that fall inside the run's 'on_air' intervals, which are disjoint (overlapping ones charge twice): what the p…
 - `previewRenewAfterSeconds` (function) — `function previewRenewAfterSeconds(previewSecondsLeft: number): number;` — A preview ticket's 'renewAfterSec': never past its token's expiry, so a long veil renews rather than stalls.
 - `previewSecondsLeft` (function) — `function previewSecondsLeft(secondsUsed: number): number;`
-- `previewSecondsSpent` (function) — `function previewSecondsSpent(watched: Window, onAirIntervals: readonly Window[]): number;` — The whole seconds of 'watched' that fall inside the run's 'on_air' intervals, which are disjoint (overlapping ones charge twice): what the …
+- `previewSecondsSpent` (function) — `function previewSecondsSpent(watched: Window, onAirIntervals: readonly Window[]): number;`
 - `previewTokenExpiresAt` (function) — `function previewTokenExpiresAt(now: Instant, previewSecondsLeft: number): Instant;` — A preview token's expiry: never past the budget left, under the incident veil too, so a veil lifting mid-token opens no on-air second the b…
 - `priceOfTier` (function) — `function priceOfTier(tiers: readonly TierPrice[], tier: PriceTier): Money | null;`
 - `priorityUntilOf` (function) — `function priorityUntilOf(openedAt: Instant): Instant;`
@@ -1055,9 +1070,10 @@ Declarations: `dist/index.d.ts` — 535 exported names.
 
 #### @arthome/core/schema
 
-Declarations: `dist/schema/index.d.ts` — 58 exported names.
+Declarations: `dist/schema/index.d.ts` — 59 exported names.
 
 - `AccountIdSchema` (const) — `AccountIdSchema: z.ZodString`
+- `ActivePlaybackSessionSchema` (const)
 - `ArtistIdSchema` (const) — `ArtistIdSchema: z.ZodString`
 - `BasisPointsSchema` (const) — `BasisPointsSchema: z.ZodInt` — A rate in basis points: 1200 = 12%, 550 = 5.5%.
 - `BuyerTaxLocationSchema` (const) — The location adopted, with the evidence that produced it.

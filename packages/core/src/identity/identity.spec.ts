@@ -7,12 +7,14 @@ import {
   audienceOf,
   isKeyIdOfIssuer,
 } from './internal-token.js';
+import { DEVICE_TOKEN_LIFETIME_SECONDS } from './lifetimes.js';
 import {
   GENERATED_HANDLE_ALPHABET,
   GENERATED_HANDLE_RANDOM_LENGTH,
   generatedPublicHandle,
 } from './public-handle.js';
 import { AuthRateLimit, SignInSlowdown, limitForAddress, signInDelayMs } from './rate-limits.js';
+import * as PUBLISHED from '../index.js';
 import { PublicHandleSchema } from '../schema/identifiers.js';
 import { InternalTokenClaimsSchema } from '../schema/internal-token.js';
 import { Service } from '../vocabulary/people.js';
@@ -49,6 +51,13 @@ describe('a generated public handle', () => {
     expect(() => generatedPublicHandle(new Uint8Array(GENERATED_HANDLE_RANDOM_LENGTH - 1))).toThrow(
       RangeError,
     );
+  });
+});
+
+describe('the device token', () => {
+  it('lives 180 days, and is published from the package root', () => {
+    expect(DEVICE_TOKEN_LIFETIME_SECONDS).toBe(180 * 86_400);
+    expect(PUBLISHED.DEVICE_TOKEN_LIFETIME_SECONDS).toBe(DEVICE_TOKEN_LIFETIME_SECONDS);
   });
 });
 

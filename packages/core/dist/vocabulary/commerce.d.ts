@@ -205,6 +205,21 @@ export declare const TaxSupplyKind: {
     readonly SUBSCRIPTION: "subscription";
     readonly MERCHANDISE: "merchandise";
 };
+/** Where a `ReplayAccess` comes from (`adr-replay.md` §1): the seat (mode `included`) or a unit purchase. */
+export declare const REPLAY_ACCESS_ORIGINS: readonly ["seat", "unit"];
+export type ReplayAccessOrigin = (typeof REPLAY_ACCESS_ORIGINS)[number];
+export declare const ReplayAccessOrigin: {
+    readonly SEAT: "seat";
+    readonly UNIT: "unit";
+};
+/** Why a `ReplayAccess` is revoked (`adr-replay.md` §8): its `Replay` withdrawn, or the money back. */
+export declare const REPLAY_ACCESS_REVOCATION_REASONS: readonly ["replay_withdrawn", "seat_refunded", "access_refunded"];
+export type ReplayAccessRevocationReason = (typeof REPLAY_ACCESS_REVOCATION_REASONS)[number];
+export declare const ReplayAccessRevocationReason: {
+    readonly REPLAY_WITHDRAWN: "replay_withdrawn";
+    readonly SEAT_REFUNDED: "seat_refunded";
+    readonly ACCESS_REFUNDED: "access_refunded";
+};
 /**
  * What may evidence a buyer's location. The EU requires two non-contradictory
  * pieces for a B2C sale, and Stripe Tax favours a single address instead of

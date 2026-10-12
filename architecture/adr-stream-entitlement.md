@@ -330,7 +330,7 @@ end, never a dead screen.
 
 **The budget is spent only while the run is on air with no incident veil up, and there is no
 preview before on air** (D-110): a non-holder in the room is refused `watch.no_seat` with the seat
-action. In core, `isPreviewBudgetSpending`, `previewSecondsSpent` (the seconds of a watched window
+action. In core, `isPreviewBudgetSpending`, `previewMsSpent` (the milliseconds of a watched window
 inside the run's `on_air` intervals) and `previewTokenExpiresAt` (the cap above, under the veil too:
 a veil lifting mid-token must not open on-air seconds the budget does not cover), with
 `previewRenewAfterSeconds` keeping the renewal before that expiry.

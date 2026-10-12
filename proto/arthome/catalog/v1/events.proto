@@ -255,6 +255,38 @@ message DateRightsChanged {
   google.protobuf.Timestamp occurred_at = 3;
 }
 
+// ---------------------------------------------------------------- replay
+
+// The Replay's life (adr-replay.md §5): its own axis, never the publication's.
+enum ReplayState {
+  REPLAY_STATE_UNSPECIFIED = 0;
+  REPLAY_STATE_PENDING = 1;
+  REPLAY_STATE_ONLINE = 2;
+  REPLAY_STATE_CLOSED = 3;
+  REPLAY_STATE_WITHDRAWN = 4;
+}
+
+// catalog.replay.state_changed.v1, on arthome.catalog.date, key date_id.
+// Raised by catalog's Replay on each of its transitions: none -> pending (the
+// live ended), pending -> online, pending|online -> closed, pending|online ->
+// withdrawn. Consumed by ticketing (the `included` accesses, created at
+// pending) and search-indexer; streaming later (its ReplayAsset takes
+// `closes_at` from here). `closes_at` is the one closing (D-113): no other
+// context computes its own.
+message ReplayStateChanged {
+  string date_id = 1;
+  string channel_id = 2;
+  ReplayState from_state = 3;  // UNSPECIFIED when the Replay is created
+  ReplayState to_state = 4;
+  uint64 version = 5;          // the Replay's version after the change; consumers keep the newest
+  ReplayPolicy policy = 6;     // the date's promise, copied when the Replay was created
+  google.protobuf.Timestamp live_ended_at = 7;
+  google.protobuf.Timestamp closes_at = 8;  // replayClosesAt(live_ended_at, window), computed once
+  optional google.protobuf.Timestamp online_at = 9;  // set once online, kept after
+  optional uint32 duration_sec = 10;                 // the file's, set once online, kept after
+  google.protobuf.Timestamp occurred_at = 11;
+}
+
 // ---------------------------------------------------------------- show
 
 message ShowPublished {
