@@ -39,6 +39,16 @@ def envelope_shaped(schema, schemas):
     inner = error.get("properties") or {}
     return "code" in inner and "code" in (error.get("required") or [])
 
+def resolve_ref(d, ref):
+    """The node a `#/` $ref points at, or None when a segment is missing (R3 reports it)."""
+    cur = d
+    for seg in ref[2:].split("/"):
+        seg = seg.replace("~1","/").replace("~0","~")
+        if not isinstance(cur, dict) or seg not in cur:
+            return None
+        cur = cur[seg]
+    return cur
+
 def err(doc, msg): ERRS.append(f"{doc}: {msg}")
 
 def walk(node, path=""):
@@ -172,12 +182,8 @@ def check(fn):
     for p, r in refs:
         if not r.startswith("#/"):
             err(fn, f"R3 external $ref forbidden: {r} ({p})"); continue
-        cur = d
-        for seg in r[2:].split("/"):
-            seg = seg.replace("~1","/").replace("~0","~")
-            if not isinstance(cur, dict) or seg not in cur:
-                err(fn, f"R3 unresolved $ref: {r} ({p})"); cur=None; break
-            cur = cur[seg]
+        if resolve_ref(d, r) is None:
+            err(fn, f"R3 unresolved $ref: {r} ({p})")
 
     ops = [(pp, m, o) for pp, pi in d.get("paths",{}).items()
            for m, o in (pi or {}).items() if m in HTTP]
@@ -258,8 +264,17 @@ def check(fn):
             err(fn, f"R11 exemption without a reason — {oid}")
 
         # R12 — traceparent propagated everywhere
-        if not any(pa.get("$ref","").endswith("/Traceparent") or pa.get("name")=="traceparent"
-                   for pa in params):
+        #   Read as the document declares it: the operation's parameters and its path item's,
+        #   each resolved through its $ref, whatever the component is called.
+        path_params = (d["paths"][pp] or {}).get("parameters") or []
+        declared = []
+        for pa in [*path_params, *params]:
+            if isinstance(pa, dict) and "$ref" in pa:
+                pa = resolve_ref(d, pa["$ref"])
+            if isinstance(pa, dict):
+                declared.append(pa)
+        if not any(str(pa.get("name","")).lower() == "traceparent" and pa.get("in") == "header"
+                   for pa in declared):
             err(fn, f"R12 traceparent missing — {oid}")
 
     # R13 — no interface sentence: no field named `label`, `message`, `title` as a bare
