@@ -4,6 +4,8 @@ import {
   AUDIENCE_SANCTIONS,
   CHAT_MODES,
   FILTER_SEVERITIES,
+  HOLD_SCREEN_AUTO_AFTER_SECONDS_MAX,
+  HOLD_SCREEN_AUTO_AFTER_SECONDS_MIN,
   MEMBER_ROLES,
   MODERATION_REASONS,
   OrderState,
@@ -214,7 +216,11 @@ export const UpdateChannelSettingsBodySchema: z.ZodObject<
   broadcastDefaults: z
     .object({
       ingestProtocol: localVocabulary(INGEST_PROTOCOLS, INGEST_PROTOCOL_REASON).optional(),
-      holdScreenAutoAfterSec: z.int().min(5).max(120).optional(),
+      holdScreenAutoAfterSec: z
+        .int()
+        .min(HOLD_SCREEN_AUTO_AFTER_SECONDS_MIN)
+        .max(HOLD_SCREEN_AUTO_AFTER_SECONDS_MAX)
+        .optional(),
     })
     .optional(),
 });

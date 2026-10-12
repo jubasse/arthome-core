@@ -42,7 +42,7 @@ replay branch around `decideWatch`.
 
 ## 4. The preview is spent on air only
 
-- Charge the budget with `previewSecondsSpent(watched, onAirIntervals)`: an `interrupted` run is the
+- Charge the budget with `previewMsSpent(watched, onAirIntervals)` (milliseconds; `previewSecondsSpent` is deprecated): an `interrupted` run is the
   incident veil, and a veiled second costs nothing (D-110).
 - Issue a preview token with `previewTokenExpiresAt(now, secondsLeft)`, under the veil too: a veil
   lifting mid-token would otherwise open on-air seconds the budget does not cover. Its
@@ -76,3 +76,4 @@ replay branch around `decideWatch`.
   audience fields are absent, never zero, until a viewer count exists.
 - **The replay file.** It closes from the live's real end (`replayClosesAt`), and
   `outcomeWithdrawsReplay` deletes it for a cancelled or an interrupted date.
+- **The hold-screen delay.** Its bounds are `HOLD_SCREEN_AUTO_AFTER_SECONDS_MIN` and `_MAX` (the contract's `holdScreenAutoAfterSec` uses them); `PUBLISHER_GRACE_SECONDS` equals the minimum.

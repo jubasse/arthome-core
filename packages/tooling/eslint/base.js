@@ -33,6 +33,29 @@ export const COMMON_IGNORES = [
   '**/*.min.js',
 ];
 
+/**
+ * The options of `import-x/order`. A workspace scope (`@arthome-platform`) names packages that
+ * resolve as `internal` once built and as `external` before: each sorts with the external packages,
+ * so the rule's verdict does not flip with the build.
+ */
+export function importOrder({ workspaceScopes }) {
+  return {
+    groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index']],
+    pathGroups: [
+      { pattern: '@arthome/**', group: 'internal', position: 'before' },
+      ...workspaceScopes.map((scope) => ({
+        pattern: `${scope}/**`,
+        group: 'external',
+        position: 'before',
+      })),
+    ],
+    pathGroupsExcludedImportTypes: ['builtin'],
+    ...(workspaceScopes.length > 0 && { distinctGroup: false }),
+    'newlines-between': 'always',
+    alphabetize: { order: 'asc', caseInsensitive: true },
+  };
+}
+
 /** The floor, as a flat-config array. */
 export const base = tseslint.config(
   { ignores: COMMON_IGNORES },
@@ -148,16 +171,7 @@ export const base = tseslint.config(
       'import-x/resolver-next': [createTypeScriptImportResolver({ alwaysTryTypes: true })],
     },
     rules: {
-      'import-x/order': [
-        'error',
-        {
-          groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index']],
-          pathGroups: [{ pattern: '@arthome/**', group: 'internal', position: 'before' }],
-          pathGroupsExcludedImportTypes: ['builtin'],
-          'newlines-between': 'always',
-          alphabetize: { order: 'asc', caseInsensitive: true },
-        },
-      ],
+      'import-x/order': ['error', importOrder({ workspaceScopes: [] })],
       // On NestJS under ESM a cycle is a TDZ at boot or a TS1272, and the message
       // does not name the cycle.
       'import-x/no-cycle': ['error', { maxDepth: Infinity, ignoreExternal: true }],

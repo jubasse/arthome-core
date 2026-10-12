@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT,
+  HOLD_SCREEN_AUTO_AFTER_SECONDS_MAX,
+  HOLD_SCREEN_AUTO_AFTER_SECONDS_MIN,
   PUBLISHER_GRACE_SECONDS,
   RUN_AUTO_END_MINUTES,
   RUN_TRANSITIONS,
@@ -147,5 +149,15 @@ describe('the hold screen (D-124)', () => {
 
   it('a glitch the publisher grace absorbs never raises the automatic veil', () => {
     expect(PUBLISHER_GRACE_SECONDS).toBeLessThanOrEqual(HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT);
+    expect(PUBLISHER_GRACE_SECONDS).toBe(HOLD_SCREEN_AUTO_AFTER_SECONDS_MIN);
+  });
+
+  it('the default hold-screen delay lies within its bounds', () => {
+    expect(HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT).toBeGreaterThanOrEqual(
+      HOLD_SCREEN_AUTO_AFTER_SECONDS_MIN,
+    );
+    expect(HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT).toBeLessThanOrEqual(
+      HOLD_SCREEN_AUTO_AFTER_SECONDS_MAX,
+    );
   });
 });

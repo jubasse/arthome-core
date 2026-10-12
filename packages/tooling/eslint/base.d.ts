@@ -15,5 +15,9 @@ export type FlatConfigEntry = Readonly<Record<string, unknown>>;
 
 export declare const SOURCE_FILES: string[];
 export declare const COMMON_IGNORES: string[];
+/** The options object of `import-x/order` (the rule's second element), for `workspaceScopes` sorted with the external packages. */
+export declare function importOrder(options: {
+  workspaceScopes: readonly string[];
+}): Record<string, unknown>;
 export declare const base: FlatConfigEntry[];
 export default base;

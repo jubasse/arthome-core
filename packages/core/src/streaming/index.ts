@@ -9,6 +9,7 @@ export {
   playbackLeaseExpiresAt,
   playbackTokenExpiresAt,
   previewRenewAfterSeconds,
+  previewMsSpent,
   previewSecondsSpent,
   previewTokenExpiresAt,
 } from './playback.js';
@@ -16,6 +17,8 @@ export {
 export type { TechnicalCheckProbe } from './run.js';
 export {
   HOLD_SCREEN_AUTO_AFTER_SECONDS_DEFAULT,
+  HOLD_SCREEN_AUTO_AFTER_SECONDS_MAX,
+  HOLD_SCREEN_AUTO_AFTER_SECONDS_MIN,
   PUBLISHER_GRACE_SECONDS,
   RUN_AUTO_END_MINUTES,
   RUN_TRANSITIONS,
