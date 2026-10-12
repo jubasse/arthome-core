@@ -515,7 +515,7 @@ Declarations: `dist/ticketing/index.d.ts` — 12 exported names.
 
 #### @arthome/core
 
-Declarations: `dist/index.d.ts` — 535 exported names.
+Declarations: `dist/index.d.ts` — 536 exported names.
 
 - `ACCOUNT_STATUSES` (const) — `ACCOUNT_STATUSES: readonly ["active", "suspended", "deletion_requested", "anonymised"]` — An account's lifecycle ('data-model.md' §1.1).
 - `ALMOST_FULL_THRESHOLD_BPS` (const) — `ALMOST_FULL_THRESHOLD_BPS = 8500` — "Almost full" — the same number as a card's scarcity threshold.
@@ -568,6 +568,7 @@ Declarations: `dist/index.d.ts` — 535 exported names.
 - `DAY_MS` (const) — `DAY_MS = 86400000`
 - `DEFAULT_CHANNELS` (const) — `DEFAULT_CHANNELS: readonly NotificationChannel[]` — The channels every trigger offers by default — the third is in-app, not sms (D-017).
 - `DEVICE_KINDS` (const) — `DEVICE_KINDS: readonly ["tv", "mobile", "tablet", "desktop", "stick", "console", "box"]` — A device is registered; a session is the (device, profile) pair.
+- `DEVICE_TOKEN_LIFETIME_SECONDS` (const) — `DEVICE_TOKEN_LIFETIME_SECONDS: number` — 'adr-auth.md' §4/Q3: a device token lives 180 days from its last rotation, the browser's cookie too (D-126).
 - `DISPLAY_STATES` (const) — `DISPLAY_STATES: readonly ["draft", "reserve", "scheduled", "technical", "room_open", "live", "replay", "ended", "postponed", "cancelled", "interrupted"]` — The fourth value, derived: what the badge says.
 - `DOMAIN_ERROR_CODES` (const) — The domain's refusals that reach a surface: a rule said no and somebody has to be told why.
 - `DOMAIN_GUARD_CODES` (const) — The domain's internal guards, which no contract publishes and none should.

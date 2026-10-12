@@ -3508,3 +3508,12 @@ run desk lifts it.
 the end of the paid period. A past_due subscription keeps its access while the payment is retried,
 and loses it when the payment finally fails.
 
+### D-126 — A browser is a registered device, its token in an HttpOnly cookie
+
+**Arbitrated by the product owner on 2026-10-12.** A browser is a registered device. The storefront
+BFF registers it inside sign-up and sign-in, once the credential passed, so registration has those
+routes' caps; a web surface never calls `registerDevice`. Its credential is an opaque random token,
+stored by identity as a digest only, carried in the `__Host-arthome_device` cookie, rotated at each
+sign-up or sign-in that presents it, and living `DEVICE_TOKEN_LIFETIME_SECONDS` from its last
+rotation. Sign-out keeps it; revoking the device ends it. It is not a session and opens nothing.
+Recorded in `architecture/adr-auth.md` §4/Q3.

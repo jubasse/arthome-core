@@ -163,6 +163,9 @@ paths:
 
         It **is not a session** and opens no personal data; in particular it does not open the
         real-time channel.
+
+        `storefront-web` does not call it: the BFF registers the browser at sign-up and
+        sign-in (see `sessionCookie`).
       x-arthome-maturity: stable
       x-arthome-upstream:
       - identity
@@ -10293,6 +10296,12 @@ components:
         the session cookie: sign-up and sign-in are what set it. `signOut` needs none either: a
         forged one ends a session and grants nothing, and a browser that lost its CSRF cookie must
         still be able to sign out.
+
+        **The browser's device, `__Host-arthome_device`**: `signUp` and `signIn` set it beside the
+        session cookie, with the same attributes; it names the browser as a registered device
+        (`adr-auth.md` §4/Q3, D-126). `signOut` keeps it, and revoking the browser's own device
+        (`revokeDevice`) clears it. It is no session and opens nothing. The page has nothing to read
+        or send: the cookie is `HttpOnly`, and the BFF reads it only at sign-up and sign-in.
     csrfToken:
       type: apiKey
       in: header
@@ -10315,10 +10324,13 @@ components:
       name: X-Arthome-Device-Token
       description: |
         ES256 JWT, `aud: "arthome.device"`, 180 days, **rotated on every use**, carrying `device_id`
-        and nothing else. Obtained on first launch through `registerDevice`, **before any session**.
-        It is not a session: it opens only pairing, pairing polling and the public bootstrap, and
-        **opens no personal data** — in particular not the real-time channel (`adr-auth.md` §4/Q3,
-        §5.3).
+        and nothing else. A native surface obtains it on first launch through `registerDevice`,
+        **before any session**. It is not a session: it opens only pairing, pairing polling and the
+        public bootstrap, and **opens no personal data** — in particular not the real-time channel
+        (`adr-auth.md` §4/Q3, §5.3).
+
+        A browser carries none: its device is the `__Host-arthome_device` cookie (see
+        `sessionCookie`).
   parameters:
     Traceparent:
       name: traceparent

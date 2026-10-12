@@ -4,7 +4,7 @@
 > EDIT. `pnpm run check:decisions-index` fails when this file differs from what regenerating
 > would produce. Open `DECISIONS.md` at the id for the reason behind a row.
 
-127 decisions.
+128 decisions.
 
 | Decision | Title | Documents cited |
 |---|---|---|
@@ -135,3 +135,4 @@
 | D-123 | A run left on air ends by itself 15 minutes after its scheduled end | none |
 | D-124 | An automatic hold screen lifts itself when the feed returns | none |
 | D-125 | A cancelled subscription opens what it opened until the end of the paid period | none |
+| D-126 | A browser is a registered device, its token in an HttpOnly cookie | `architecture/adr-auth.md` |

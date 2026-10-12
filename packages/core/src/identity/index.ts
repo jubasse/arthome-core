@@ -6,6 +6,7 @@ export {
   generatedPublicHandle,
 } from './public-handle.js';
 export {
+  DEVICE_TOKEN_LIFETIME_SECONDS,
   EMAIL_VERIFICATION_LINK_LIFETIME_HOURS,
   INTERNAL_TOKEN_LIFETIME_SECONDS,
   SESSION_LIFETIME_SECONDS,
