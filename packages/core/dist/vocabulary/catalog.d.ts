@@ -86,6 +86,19 @@ export declare const ReplayPolicy: {
     readonly UNIT: "unit";
     readonly NONE: "none";
 };
+/**
+ * The `Replay`'s life (`adr-replay.md` §5): its own axis, never the publication's. `pending` from
+ * the live's end, `online` once the studio puts its file on line, then `closed` at its closing or
+ * `withdrawn` by an outcome.
+ */
+export declare const REPLAY_STATES: readonly ["pending", "online", "closed", "withdrawn"];
+export type ReplayState = (typeof REPLAY_STATES)[number];
+export declare const ReplayState: {
+    readonly PENDING: "pending";
+    readonly ONLINE: "online";
+    readonly CLOSED: "closed";
+    readonly WITHDRAWN: "withdrawn";
+};
 export declare const RIGHTS_SCOPES: readonly ["worldwide", "restricted"];
 export type RightsScope = (typeof RIGHTS_SCOPES)[number];
 export declare const RightsScope: {

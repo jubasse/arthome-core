@@ -72,6 +72,14 @@
     {
       "vocabulary": "REPLAY_ASSET_STATES",
       "reason": "A recorded replay file's life in `streaming`, from the recording to its deletion. A surface reads the replay's own state and window from `catalog`, never the file's: a file being processed or deleted is the service's bookkeeping, and the replay's availability is what a viewer is told."
+    },
+    {
+      "vocabulary": "REPLAY_STATES",
+      "reason": "A `Replay`'s life in `catalog` (adr-replay.md §5). It travels between contexts on Kafka (`ReplayState` in catalog.replay.state_changed.v1), never on an HTTP contract: a surface reads what the state causes, `displayState: replay` and the card's `replay.availableFrom`, `expiresAt`, `durationSec`, never the state itself, with one exception: `date.replay_unavailable` names it in its free-text `replayState` param on the studio contract (`withdrawn` included), which the checker does not see. `pending`, `online` and `closed` already appear on the wire as other vocabularies' members; `withdrawn` alone does not. Retract the day a surface is served the state as a field (the replay facet of adr-replay.md §10), or that param becomes this vocabulary."
+    },
+    {
+      "vocabulary": "REPLAY_ACCESS_REVOCATION_REASONS",
+      "reason": "Why `ticketing` revokes a `ReplayAccess` (adr-replay.md §8). Its wire is Kafka's, `ticketing.replay_access.revoked.v1`, which the playback wave adds with its first consumers (`streaming`, `payouts`); no HTTP contract serves a revocation's reason, and no surface renders one. Retract the day one does."
     }
   ]
 }

@@ -69,6 +69,8 @@ export interface ErrorStatusMap {
     readonly [CatalogErrorCode.DATE_NOT_STARTED]: 409;
     readonly [CatalogErrorCode.DATE_ALREADY_ENDED]: 409;
     readonly [CatalogErrorCode.RESCHEDULE_IN_PAST]: 400;
+    readonly [CatalogErrorCode.REPLAY_UNAVAILABLE]: 409;
+    readonly [CatalogErrorCode.REPLAY_ASSET_NOT_READY]: 409;
     readonly [ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS]: 409;
     readonly [ChannelErrorCode.CREW_ROLE_RESERVED]: 403;
     readonly [ChannelErrorCode.ROLE_NOT_ASSIGNABLE]: 403;

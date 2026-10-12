@@ -144,6 +144,8 @@ export const moveDatePublicationState: MoveDatePublicationStateRoute = publicati
       DomainErrorCode.PUBLICATION_TRANSITION_IRREVERSIBLE,
       DomainErrorCode.PUBLICATION_PROMISE_UNACKNOWLEDGED,
       DomainErrorCode.PUBLICATION_CHECKLIST_INCOMPLETE,
+      CatalogErrorCode.REPLAY_UNAVAILABLE,
+      CatalogErrorCode.REPLAY_ASSET_NOT_READY,
     ],
   },
 );

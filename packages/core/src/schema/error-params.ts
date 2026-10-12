@@ -137,6 +137,8 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
   [CatalogErrorCode.DATE_NOT_STARTED]: z.looseObject({ startsAt: text() }),
   [CatalogErrorCode.DATE_ALREADY_ENDED]: z.looseObject({ endsAt: text() }),
   [CatalogErrorCode.RESCHEDULE_IN_PAST]: z.looseObject({ rescheduledTo: text() }),
+  [CatalogErrorCode.REPLAY_UNAVAILABLE]: z.looseObject({ replayState: text().nullable() }),
+  [CatalogErrorCode.REPLAY_ASSET_NOT_READY]: none(),
 
   [ChannelErrorCode.CHANNEL_HAS_OPEN_OBLIGATIONS]: z.looseObject({
     datesOnSale: count(),

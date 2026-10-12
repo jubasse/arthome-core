@@ -6,6 +6,7 @@ import {
   progressOf,
   publicDisplayStateOf,
   type DateTiming,
+  type ReplayDisplayInput,
 } from './date-state.js';
 import { plusMinutes } from '../time/instant.js';
 import {
@@ -14,6 +15,7 @@ import {
   PublicationState,
   RunState,
   ReplayPolicy,
+  ReplayState,
 } from '../vocabulary/catalog.js';
 
 const timing: DateTiming = {
@@ -393,5 +395,105 @@ describe('displayStateOf — the run moves the card', () => {
         now: '2026-09-21T19:20:00.000Z',
       }).state,
     ).toBe(DisplayState.ROOM_OPEN);
+  });
+});
+
+/**
+ * PROTECTED INVARIANT
+ *   An ended run shows `replay` only while its `Replay` is online, and never past the `Replay`'s
+ *   one closing (D-113). Without the input, an ended run shows `ended`, as before.
+ *
+ * WHY THIS TEST EXISTS
+ *   The run's `ended` branch came before the time axis's `replay`, so no card could show a replay:
+ *   the `Replay`'s state is the only thing that may bring it back, and only until its closing.
+ */
+describe('displayStateOf — the replay of an ended run', () => {
+  const closesAt = '2026-09-23T21:10:00.000Z';
+  const at = (replay: ReplayDisplayInput | null | undefined, now: string) =>
+    displayStateOf({
+      publicationState: PublicationState.REPLAY_ONLINE,
+      runState: RunState.ENDED,
+      outcome: null,
+      timing,
+      now,
+      ...(replay === undefined ? {} : { replay }),
+    });
+
+  it('an ended run with an online replay shows replay until its closing', () => {
+    const online = { state: ReplayState.ONLINE, closesAt };
+    expect(at(online, '2026-09-22T10:00:00.000Z')).toEqual({
+      state: DisplayState.REPLAY,
+      validUntil: closesAt,
+    });
+    expect(at(online, '2026-09-23T21:09:59.999Z')).toEqual({
+      state: DisplayState.REPLAY,
+      validUntil: closesAt,
+    });
+  });
+
+  it('an ended run with a pending, closed or withdrawn replay shows ended', () => {
+    for (const state of [ReplayState.PENDING, ReplayState.CLOSED, ReplayState.WITHDRAWN]) {
+      expect(at({ state, closesAt }, '2026-09-22T10:00:00.000Z')).toEqual({
+        state: DisplayState.ENDED,
+        validUntil: null,
+      });
+    }
+  });
+
+  it('an online replay past its closing shows ended', () => {
+    for (const now of [closesAt, '2026-09-24T00:00:00.000Z']) {
+      expect(at({ state: ReplayState.ONLINE, closesAt }, now)).toEqual({
+        state: DisplayState.ENDED,
+        validUntil: null,
+      });
+    }
+  });
+
+  it('an outcome outranks an online replay', () => {
+    expect(
+      displayStateOf({
+        publicationState: PublicationState.REPLAY_ONLINE,
+        runState: RunState.ENDED,
+        outcome: DateOutcome.INTERRUPTED,
+        timing,
+        now: '2026-09-22T10:00:00.000Z',
+        replay: { state: ReplayState.ONLINE, closesAt },
+      }),
+    ).toEqual({ state: DisplayState.INTERRUPTED, validUntil: null });
+  });
+
+  it('without the replay input an ended run shows ended, as before', () => {
+    for (const replay of [undefined, null]) {
+      expect(at(replay, '2026-09-22T10:00:00.000Z')).toEqual({
+        state: DisplayState.ENDED,
+        validUntil: null,
+      });
+    }
+  });
+
+  it('leaves the time axis of an unknown run as it was', () => {
+    expect(
+      displayStateOf({
+        publicationState: PublicationState.LIVE,
+        runState: null,
+        outcome: null,
+        timing,
+        now: '2026-09-22T10:00:00.000Z',
+        replay: { state: ReplayState.PENDING, closesAt },
+      }),
+    ).toEqual({ state: DisplayState.REPLAY, validUntil: '2026-09-23T21:00:00.000Z' });
+  });
+
+  it('publicDisplayStateOf passes the replay through', () => {
+    expect(
+      publicDisplayStateOf({
+        publicationState: PublicationState.REPLAY_ONLINE,
+        runState: RunState.ENDED,
+        outcome: null,
+        timing,
+        now: '2026-09-22T10:00:00.000Z',
+        replay: { state: ReplayState.ONLINE, closesAt },
+      }),
+    ).toEqual({ state: DisplayState.REPLAY, validUntil: closesAt });
   });
 });

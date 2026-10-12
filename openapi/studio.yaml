@@ -2780,6 +2780,11 @@ paths:
         Two transitions are **not** commands: `technical → live` and `live → ended` are **caused by a
         `streaming` event**. Publication does not command the broadcast, it **learns** of it — only
         `streaming` knows whether the feed is arriving.
+
+        **`ended → replay_online` is guarded by the date's `Replay`** (`assertReplayGoesOnline`): refused
+        with `date.replay_unavailable` when the date has none, it is past `pending` (`replayState`
+        names it, `null` for none), or it is past its `closesAt` (`replayState` is `closed`), and with
+        `date.replay_asset_not_ready` while its file has not arrived.
       x-arthome-maturity: stable
       x-arthome-upstream:
       - catalog
@@ -2915,6 +2920,8 @@ paths:
                 - $ref: '#/components/schemas/PublicationTransitionIrreversibleError'
                 - $ref: '#/components/schemas/PublicationPromiseUnacknowledgedError'
                 - $ref: '#/components/schemas/PublicationChecklistIncompleteError'
+                - $ref: '#/components/schemas/DateReplayUnavailableError'
+                - $ref: '#/components/schemas/DateReplayAssetNotReadyError'
               examples:
                 state.conflict:
                   $ref: '#/components/examples/StateConflictError'
@@ -2928,6 +2935,10 @@ paths:
                   $ref: '#/components/examples/PublicationPromiseUnacknowledgedError'
                 publication.checklist_incomplete:
                   $ref: '#/components/examples/PublicationChecklistIncompleteError'
+                date.replay_unavailable:
+                  $ref: '#/components/examples/DateReplayUnavailableError'
+                date.replay_asset_not_ready:
+                  $ref: '#/components/examples/DateReplayAssetNotReadyError'
         '413':
           $ref: '#/components/responses/PayloadTooLarge'
         '415':
@@ -12096,6 +12107,8 @@ components:
           - date.not_started
           - date.already_ended
           - date.reschedule_in_past
+          - date.replay_unavailable
+          - date.replay_asset_not_ready
           - channel.has_open_obligations
           - channel.crew_role_reserved
           - channel.role_not_assignable
@@ -16031,6 +16044,106 @@ components:
       - error
       - servedAt
       additionalProperties: {}
+    DateReplayUnavailableError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: date.replay_unavailable
+            params:
+              type: object
+              properties:
+                replayState:
+                  type:
+                  - string
+                  - 'null'
+              required:
+              - replayState
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
+    DateReplayAssetNotReadyError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              const: date.replay_asset_not_ready
+            params:
+              type: object
+              properties: {}
+              additionalProperties: {}
+            traceId:
+              type: string
+              minLength: 1
+              examples:
+              - 4bf92f3577b34da6a3ce929d0e0e4736
+              description: The one moment left where the person can read out a number and dictate it to support.
+            nature:
+              type: string
+              x-arthome-vocabulary:
+              - refused
+              - unavailable
+              - offline_forbidden
+              x-arthome-vocabulary-source: FAILURE_NATURES
+              x-arthome-unknown-fallback: unavailable
+              description: |
+                `offline_forbidden` is a **local** refusal, never emitted by the server.
+
+                **Open vocabulary on read.** An unknown nature is treated as **`unavailable`**, hence
+                retryable. A frozen `enum` here would make an earlier version of the application reject the
+                **whole** error envelope — that is, lose the ability to read errors at the precise moment
+                something is wrong, on duty, on an application a store review takes days to replace.
+          required:
+          - code
+          - params
+          - traceId
+          - nature
+          additionalProperties: {}
+        servedAt:
+          type: string
+          format: date-time
+      required:
+      - error
+      - servedAt
+      additionalProperties: {}
     DateReplayPolicyFinalError:
       type: object
       properties:
@@ -17940,6 +18053,14 @@ components:
             revisableUntil: '2026-09-18T19:00:00Z'
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
+    DateReplayAssetNotReadyError:
+      value:
+        error:
+          code: date.replay_asset_not_ready
+          nature: refused
+          params: {}
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
     DateReplayPolicyFinalError:
       value:
         error:
@@ -17947,6 +18068,15 @@ components:
           nature: refused
           params:
             currentPolicy: none
+          traceId: 4bf92f3577b34da6a3ce929d0e0e4736
+        servedAt: '2026-09-21T20:31:04.118Z'
+    DateReplayUnavailableError:
+      value:
+        error:
+          code: date.replay_unavailable
+          nature: refused
+          params:
+            replayState: closed
           traceId: 4bf92f3577b34da6a3ce929d0e0e4736
         servedAt: '2026-09-21T20:31:04.118Z'
     DateRescheduleInPastError:

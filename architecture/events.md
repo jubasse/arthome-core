@@ -145,7 +145,7 @@ count, no `groupId` and no AsyncAPI channel, while the definition of done genera
 | `arthome.identity.device` | `identity` | `device_id` | 3 | `device`, `device_session` | **stable** |
 | `arthome.identity.channel` | `identity` | `channel_id` | 3 | `channel`, `date_access` | **stable** |
 | `arthome.identity.email_verification` | `identity` | `account_id` | 3 | `email_verification` | **stable** |
-| `arthome.catalog.date` | `catalog` | `date_id` | **12** | `date`, **`publication`** | **stable** |
+| `arthome.catalog.date` | `catalog` | `date_id` | **12** | `date`, **`publication`**, `replay` | **stable** |
 | `arthome.catalog.show` | `catalog` | `show_id` | 3 | `show` | **stable** |
 | `arthome.catalog.artist` | `catalog` | `artist_id` | 3 | `artist` | **stable** |
 | `arthome.catalog.saved_search` | `catalog` | `account_id` | 3 | `saved_search` | provisional |
@@ -233,6 +233,7 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 | `catalog.date.rescheduled.v1` | `date_id`, `new_starts_at`, `previous_starts_at`, `new_slug`, `new_canonical_url` | `ticketing` (seats follow), `notifications` (**reminders follow**), `streaming` |
 | `catalog.date.outcome_declared.v1` | `date_id`, `outcome`, `declared_by`, `declared_at`, `message` + `content_language` | `ticketing` (refunds or credits), `payouts` (withholds), `catalog` (public copy), `notifications` (warns), `streaming` (the right to watch: `watch.date_cancelled`, `watch.date_interrupted`) |
 | `catalog.date.replay_policy_set.v1` | `date_id`, `policy`, `window_hours` | `streaming` (asset expiry), `ticketing` (putting it on sale) |
+| `catalog.replay.state_changed.v1` | `date_id`, `channel_id`, `from_state` (unset at creation), `to_state` (`pending`\|`online`\|`closed`\|`withdrawn`), `version` (the `Replay`'s, the newest wins), `policy`, `live_ended_at`, `closes_at` (the one closing, D-113), `online_at?` and `duration_sec?` (set once online, kept after), `occurred_at`. One per transition of the `Replay` (`adr-replay.md` §5), after the date's rows of the same transaction | **`ticketing`** (the `included` accesses, at `pending`), `search-indexer`; `streaming` later (`ReplayAsset.expires_at`) |
 | `catalog.date.rights_changed.v1` | `date_id`, `scope`, `territories[]`, `reason_code` | `streaming` (the right to watch) |
 | `catalog.show.published.v1` / `.updated.v1` | `show_id`, `slug` (published), taxonomy, languages, `title` and `synopsis` per language | `ticketing` (shop), index |
 | `catalog.artist.updated.v1` | `artist_id`, `channel_id`, public face: `public_name`, `slug`, `biography`, `category_id`, `country`, `media`, `verified` | `notifications`, `search-indexer` |
@@ -250,7 +251,7 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 | `ticketing.order.paid.v1` | `order_id`, `kind` (`seat`\|`merch`\|`subscription`), `channel_id`, `date_id?`, `account_id`, `gross_ttc`, `vat[]`, `service_fee`, `discount`, `credit_applied`, `payment_intent_ref`, `paid_at`, `buyer_tax_location` (with its evidence) | **`payouts`** (this is the raw material of the right to a payout) |
 | `ticketing.order.refunded.v1` | `order_id`, `channel_id`, `amount` (this refund's, not a total), `refund_ref`, `reason` (the seat's cancellation, if any), `refund_reason` (why the money went back: `REFUND_REASONS`, `hold_expired_capacity_lost` included, D-082). **One per refund**, so several for an order refunded in parts | `payouts`, `notifications` |
 | `ticketing.credit.issued.v1` | `credit_id`, `account_id`, `channel_id`, `amount`, `origin`, `origin_date_id`, `expires_at` | `payouts` (a credit note is a liability), `notifications` |
-| `ticketing.subscription.changed.v1` | `account_id`, `plan`, `state`, `opens[]`, `seat_discount_bps`, `concurrent_streams_allowed` (`streaming` enforces it), `current_period_end`, `paid_through` (the end of the last paid period, which D-125 reads) | **`streaming`** (the right to watch), `catalog` (displayed price) |
+| `ticketing.subscription.changed.v1` | `account_id`, `plan`, `state`, `opens[]`, `seat_discount_bps`, `concurrent_streams_allowed` (`streaming` enforces it), `current_period_end`, `paid_through` (the end of the last paid period, which D-125 reads), `version` (after the change, strictly increasing per `account_id` across all of the account's subscriptions, never restarted by a new one, starting at 1: `streaming` applies only a greater one, an equal one is a redelivery, `0` is unset and falls back to `occurred_at`) | **`streaming`** (the right to watch), `catalog` (displayed price) |
 | `ticketing.waitlist.notified.v1` | `date_id`, `account_ids[]`, `priority_until`. **Chunked**: one tier opening notifies the whole list (D-083) in as many messages as it needs, each naming at most `WAITLIST_NOTIFIED_ACCOUNTS_MAX` (500) accounts | `notifications` |
 
 ### 4.4 `streaming`
@@ -262,8 +263,8 @@ Payload summarised; the schema is authoritative (`proto/`). Every instant is
 | `streaming.run.ended.v1` | `date_id`, `ended_at`, `ended_by` (`SURFACE_SYSTEM` when the run ended by itself, D-123), `peak_viewers?`, `peak_at?`, `avg_viewers?` (absent when unmeasured, never zero), `duration_sec` | **`catalog`** (`live → ended`), `chat` (closes), **`payouts`** (the 14-day due date runs from here), `identity` (`runs_called`) |
 | `streaming.run.state_changed.v1` | `date_id`, `state`, `cause?` | `catalog` (public card) |
 | `streaming.incident.raised.v1` / `.resolved.v1` | `date_id`, `kind`, `cause`, `message`, `content_language`, `triggered_by` (`manual`\|`auto`) | `catalog`, `notifications` (routed to the run desk) |
-| `streaming.replay.asset_ready.v1` | `date_id`, `duration_sec`, `available_from`, `expires_at` | **`catalog`** (the card can say "replay"), `ticketing` (putting it on sale), `notifications` ("expires in 6 h") |
-| `streaming.replay.expired.v1` | `date_id` | `catalog`, `ticketing` |
+| `streaming.replay.asset_ready.v1` | `date_id`, `duration_sec`, `available_from`, `expires_at` | **`catalog`** (its `Replay` records the file, which lets the studio put it online; the card reads the `Replay`), `ticketing` (putting it on sale), `notifications` ("expires in 6 h") |
+| `streaming.replay.expired.v1` | `date_id` | `catalog` (closes its `Replay`), `ticketing` |
 | `streaming.chapter.posted.v1` / `.removed.v1` | `date_id`, `chapter_id`, `vocab_id`, `at_media_sec` | `catalog` (sheet, replay) |
 | `streaming.viewer_count.sampled.v1` | `date_id`, `minute`, `viewers` | `catalog` (card), statistics. **Once per minute, not per second** |
 

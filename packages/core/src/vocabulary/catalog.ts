@@ -119,6 +119,21 @@ export const ReplayPolicy = {
   NONE: 'none',
 } as const;
 
+/**
+ * The `Replay`'s life (`adr-replay.md` §5): its own axis, never the publication's. `pending` from
+ * the live's end, `online` once the studio puts its file on line, then `closed` at its closing or
+ * `withdrawn` by an outcome.
+ */
+export const REPLAY_STATES = ['pending', 'online', 'closed', 'withdrawn'] as const;
+export type ReplayState = (typeof REPLAY_STATES)[number];
+
+export const ReplayState = {
+  PENDING: 'pending',
+  ONLINE: 'online',
+  CLOSED: 'closed',
+  WITHDRAWN: 'withdrawn',
+} as const;
+
 export const RIGHTS_SCOPES = ['worldwide', 'restricted'] as const;
 export type RightsScope = (typeof RIGHTS_SCOPES)[number];
 

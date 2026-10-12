@@ -119,6 +119,7 @@ export declare const DateCardSchema: z.ZodObject<{
         windowHours: z.ZodOptional<z.ZodNullable<z.ZodNumber>>;
         availableFrom: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         expiresAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        durationSec: z.ZodOptional<z.ZodNumber>;
         unitPrice: z.ZodOptional<typeof MoneyOut>;
     }, z.core.$loose>;
     rights: z.ZodObject<{

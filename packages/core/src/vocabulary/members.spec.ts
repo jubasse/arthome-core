@@ -63,6 +63,7 @@ const PAIRS: readonly VocabularyPair[] = [
   { name: 'DateOutcome', values: catalog.DATE_OUTCOMES, members: catalog.DateOutcome },
   { name: 'DisplayState', values: catalog.DISPLAY_STATES, members: catalog.DisplayState },
   { name: 'ReplayPolicy', values: catalog.REPLAY_POLICIES, members: catalog.ReplayPolicy },
+  { name: 'ReplayState', values: catalog.REPLAY_STATES, members: catalog.ReplayState },
   { name: 'RightsScope', values: catalog.RIGHTS_SCOPES, members: catalog.RightsScope },
   { name: 'BlackoutReason', values: catalog.BLACKOUT_REASONS, members: catalog.BlackoutReason },
   {
@@ -108,6 +109,16 @@ const PAIRS: readonly VocabularyPair[] = [
   },
   { name: 'PayoutState', values: commerce.PAYOUT_STATES, members: commerce.PayoutState },
   { name: 'TaxSupplyKind', values: commerce.TAX_SUPPLY_KINDS, members: commerce.TaxSupplyKind },
+  {
+    name: 'ReplayAccessOrigin',
+    values: commerce.REPLAY_ACCESS_ORIGINS,
+    members: commerce.ReplayAccessOrigin,
+  },
+  {
+    name: 'ReplayAccessRevocationReason',
+    values: commerce.REPLAY_ACCESS_REVOCATION_REASONS,
+    members: commerce.ReplayAccessRevocationReason,
+  },
   {
     name: 'TaxEvidenceKind',
     values: commerce.TAX_EVIDENCE_KINDS,
@@ -208,6 +219,6 @@ describe('named members match their vocabulary', () => {
     // stops matching and the omission is visible. The two vocabularies without
     // named members are the publication checklist items, which are consumed as
     // a list and never referenced one by one.
-    expect(PAIRS).toHaveLength(54);
+    expect(PAIRS).toHaveLength(57);
   });
 });
