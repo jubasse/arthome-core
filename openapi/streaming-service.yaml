@@ -4330,8 +4330,38 @@ components:
                   type: array
                   items:
                     type: object
-                    properties: {}
+                    properties:
+                      sessionId:
+                        type: string
+                        format: uuid
+                      deviceId:
+                        description: |
+                          **Served, because without it the list is not actionable.** The surface must be able to
+                          recognise **its own** session in order to offer "resume here" rather than "release another
+                          screen", and a device label is not enough: two phones of the same model carry the same one.
+                        type: string
+                        format: uuid
+                      isCurrentDevice:
+                        type: boolean
+                      deviceLabel:
+                        type: string
+                        examples:
+                        - Téléviseur du salon
+                      city:
+                        type:
+                        - string
+                        - 'null'
+                      openedAt:
+                        type: string
+                        format: date-time
+                    required:
+                    - sessionId
+                    - deviceLabel
+                    - openedAt
                     additionalProperties: {}
+                    description: |
+                      Served **with** the `watch.concurrent_limit_reached` refusal, so the surface can offer to release
+                      one. A bare refusal would leave the viewer with no way out.
               required:
               - allowed
               - activeSessions

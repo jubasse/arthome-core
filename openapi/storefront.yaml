@@ -16756,9 +16756,7 @@ components:
                 activeSessions:
                   type: array
                   items:
-                    type: object
-                    properties: {}
-                    additionalProperties: {}
+                    $ref: '#/components/schemas/ActivePlaybackSession'
               required:
               - allowed
               - activeSessions

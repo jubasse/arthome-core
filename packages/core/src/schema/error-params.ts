@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 
+import { ActivePlaybackSessionSchema } from './playback-session.js';
 import { int64 } from './primitives.js';
 import { vocabularyOut } from './vocabulary.js';
 import type { ErrorParamsMap, NoErrorParams, SchemaIssue } from '../kernel/error-params.js';
@@ -241,7 +242,7 @@ export const ERROR_PARAMS: { readonly [C in ErrorCode]: z.ZodType<ErrorParamsRea
   [WatchDenialReason.PREVIEW_EXHAUSTED]: none(),
   [WatchDenialReason.CONCURRENT_LIMIT_REACHED]: z.looseObject({
     allowed: count(),
-    activeSessions: z.array(z.looseObject({})),
+    activeSessions: z.array(ActivePlaybackSessionSchema),
   }),
   [WatchDenialReason.DATE_CANCELLED]: none(),
   [WatchDenialReason.NOT_PUBLISHED]: none(),
